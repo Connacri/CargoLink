@@ -6,9 +6,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 // ============================================================================
 
 class SupabaseConfig {
-  // Replace with your Supabase credentials
-  static const String supabaseUrl = 'https://YOUR_PROJECT.supabase.co';
-  static const String supabaseAnonKey = 'YOUR_ANON_KEY';
+  // Project URL (public, safe to commit)
+  static const String supabaseUrl = 'https://mxhomeuraxnmjtfhzhvz.supabase.co';
+
+  // Loaded at build time via --dart-define=SUPABASE_ANON_KEY=...
+  // (never hardcode a key; get yours from Supabase -> Settings -> API)
+  static const String supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: 'PASTE_YOUR_SUPABASE_ANON_KEY_HERE',
+  );
 
   static Future<void> initialize() async {
     await Supabase.initialize(
