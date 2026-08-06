@@ -1,0 +1,545 @@
+// ============================================================================
+// USER MODEL
+// ============================================================================
+
+class User {
+  final String id;
+  final String email;
+  final String phone;
+  final String fullName;
+  final String? profilePictureUrl;
+  final String role; // client, shipper, admin
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  User({
+    required this.id,
+    required this.email,
+    required this.phone,
+    required this.fullName,
+    this.profilePictureUrl,
+    required this.role,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'] as String,
+      email: json['email'] as String,
+      phone: json['phone'] as String,
+      fullName: json['full_name'] as String,
+      profilePictureUrl: json['profile_picture_url'] as String?,
+      role: json['role'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'email': email,
+      'phone': phone,
+      'full_name': fullName,
+      'profile_picture_url': profilePictureUrl,
+      'role': role,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+
+  User copyWith({
+    String? id,
+    String? email,
+    String? phone,
+    String? fullName,
+    String? profilePictureUrl,
+    String? role,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return User(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      fullName: fullName ?? this.fullName,
+      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
+      role: role ?? this.role,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}
+
+// ============================================================================
+// SHIPPER MODEL (Micro-importateur)
+// ============================================================================
+
+class Shipper {
+  final String id;
+  final String userId;
+  final String passportNumber;
+  final String passportPhotoUrl;
+  final String livePhotoUrl;
+  final String verificationStatus; // pending, verified, rejected
+  final String? rejectionReason;
+  final String? verifiedByAdminId;
+  final DateTime? verifiedAt;
+  final double rating; // 0-5
+  final int totalShipments;
+  final DateTime createdAt;
+  final User? user; // Related user object
+
+  Shipper({
+    required this.id,
+    required this.userId,
+    required this.passportNumber,
+    required this.passportPhotoUrl,
+    required this.livePhotoUrl,
+    required this.verificationStatus,
+    this.rejectionReason,
+    this.verifiedByAdminId,
+    this.verifiedAt,
+    this.rating = 0.0,
+    this.totalShipments = 0,
+    required this.createdAt,
+    this.user,
+  });
+
+  factory Shipper.fromJson(Map<String, dynamic> json) {
+    return Shipper(
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      passportNumber: json['passport_number'] as String,
+      passportPhotoUrl: json['passport_photo_url'] as String,
+      livePhotoUrl: json['live_photo_url'] as String,
+      verificationStatus: json['verification_status'] as String,
+      rejectionReason: json['rejection_reason'] as String?,
+      verifiedByAdminId: json['verified_by_admin_id'] as String?,
+      verifiedAt: json['verified_at'] != null
+          ? DateTime.parse(json['verified_at'] as String)
+          : null,
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      totalShipments: json['total_shipments'] as int? ?? 0,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      user: json['users'] != null ? User.fromJson(json['users']) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'passport_number': passportNumber,
+      'passport_photo_url': passportPhotoUrl,
+      'live_photo_url': livePhotoUrl,
+      'verification_status': verificationStatus,
+      'rejection_reason': rejectionReason,
+      'verified_by_admin_id': verifiedByAdminId,
+      'verified_at': verifiedAt?.toIso8601String(),
+      'rating': rating,
+      'total_shipments': totalShipments,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+
+  bool get isVerified => verificationStatus == 'verified';
+  bool get isPending => verificationStatus == 'pending';
+  bool get isRejected => verificationStatus == 'rejected';
+
+  String get ratingDisplay => rating.toStringAsFixed(1);
+}
+
+// ============================================================================
+// SHIPMENT MODEL (Offre de transport)
+// ============================================================================
+
+class Shipment {
+  final String id;
+  final String shipperId;
+  final String originCountry;
+  final String destinationCity;
+  final double availableWeightKg;
+  final double reservedWeightKg;
+  final double pricePerKg;
+  final DateTime departureDate;
+  final DateTime arrivalDate;
+  final String? flightNumber;
+  final String status; // active, completed, cancelled
+  final String? description;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final Shipper? shipper; // Related shipper object
+
+  double get remainingWeightKg => availableWeightKg - reservedWeightKg;
+  double get utilizationPercent =>
+      (reservedWeightKg / availableWeightKg) * 100;
+  bool get isFull => remainingWeightKg <= 0;
+  bool get isActive => status == 'active' && arrivalDate.isAfter(DateTime.now());
+
+  Shipment({
+    required this.id,
+    required this.shipperId,
+    required this.originCountry,
+    required this.destinationCity,
+    required this.availableWeightKg,
+    required this.reservedWeightKg,
+    required this.pricePerKg,
+    required this.departureDate,
+    required this.arrivalDate,
+    this.flightNumber,
+    required this.status,
+    this.description,
+    required this.createdAt,
+    required this.updatedAt,
+    this.shipper,
+  });
+
+  factory Shipment.fromJson(Map<String, dynamic> json) {
+    return Shipment(
+      id: json['id'] as String,
+      shipperId: json['shipper_id'] as String,
+      originCountry: json['origin_country'] as String,
+      destinationCity: json['destination_city'] as String,
+      availableWeightKg: (json['available_weight_kg'] as num).toDouble(),
+      reservedWeightKg: (json['reserved_weight_kg'] as num? ?? 0).toDouble(),
+      pricePerKg: (json['price_per_kg'] as num).toDouble(),
+      departureDate: DateTime.parse(json['departure_date'] as String),
+      arrivalDate: DateTime.parse(json['arrival_date'] as String),
+      flightNumber: json['flight_number'] as String?,
+      status: json['status'] as String,
+      description: json['description'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+      shipper: json['shippers'] != null ? Shipper.fromJson(json['shippers']) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'shipper_id': shipperId,
+      'origin_country': originCountry,
+      'destination_city': destinationCity,
+      'available_weight_kg': availableWeightKg,
+      'reserved_weight_kg': reservedWeightKg,
+      'price_per_kg': pricePerKg,
+      'departure_date': departureDate.toIso8601String(),
+      'arrival_date': arrivalDate.toIso8601String(),
+      'flight_number': flightNumber,
+      'status': status,
+      'description': description,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+}
+
+// ============================================================================
+// BOOKING MODEL (Réservation client)
+// ============================================================================
+
+class Booking {
+  final String id;
+  final String shipmentId;
+  final String clientId;
+  final String productName;
+  final String productDescription;
+  final List<String>? productPhotosUrl;
+  final double requestedWeightKg;
+  final double allocatedWeightKg;
+  final double totalPrice;
+  final String status; // pending, confirmed, shipped, delivered, cancelled
+  final String paymentStatus; // pending, paid, refunded
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final Shipment? shipment;
+  final User? client;
+
+  Booking({
+    required this.id,
+    required this.shipmentId,
+    required this.clientId,
+    required this.productName,
+    required this.productDescription,
+    this.productPhotosUrl,
+    required this.requestedWeightKg,
+    required this.allocatedWeightKg,
+    required this.totalPrice,
+    required this.status,
+    required this.paymentStatus,
+    required this.createdAt,
+    required this.updatedAt,
+    this.shipment,
+    this.client,
+  });
+
+  factory Booking.fromJson(Map<String, dynamic> json) {
+    return Booking(
+      id: json['id'] as String,
+      shipmentId: json['shipment_id'] as String,
+      clientId: json['client_id'] as String,
+      productName: json['product_name'] as String,
+      productDescription: json['product_description'] as String,
+      productPhotosUrl: (json['product_photos_url'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(),
+      requestedWeightKg: (json['requested_weight_kg'] as num).toDouble(),
+      allocatedWeightKg: (json['allocated_weight_kg'] as num).toDouble(),
+      totalPrice: (json['total_price'] as num).toDouble(),
+      status: json['status'] as String,
+      paymentStatus: json['payment_status'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+      shipment: json['shipments'] != null ? Shipment.fromJson(json['shipments']) : null,
+      client: json['users'] != null ? User.fromJson(json['users']) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'shipment_id': shipmentId,
+      'client_id': clientId,
+      'product_name': productName,
+      'product_description': productDescription,
+      'product_photos_url': productPhotosUrl,
+      'requested_weight_kg': requestedWeightKg,
+      'allocated_weight_kg': allocatedWeightKg,
+      'total_price': totalPrice,
+      'status': status,
+      'payment_status': paymentStatus,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+
+  bool get isPaid => paymentStatus == 'paid';
+  bool get isDelivered => status == 'delivered';
+}
+
+// ============================================================================
+// SHIPMENT TRACKING MODEL
+// ============================================================================
+
+class ShipmentTracking {
+  final String id;
+  final String bookingId;
+  final double? latitude;
+  final double? longitude;
+  final String status; // collected, in_transit, customs_cleared, delivered
+  final DateTime timestamp;
+  final String? notes;
+
+  ShipmentTracking({
+    required this.id,
+    required this.bookingId,
+    this.latitude,
+    this.longitude,
+    required this.status,
+    required this.timestamp,
+    this.notes,
+  });
+
+  factory ShipmentTracking.fromJson(Map<String, dynamic> json) {
+    return ShipmentTracking(
+      id: json['id'] as String,
+      bookingId: json['booking_id'] as String,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      status: json['status'] as String,
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      notes: json['notes'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'booking_id': bookingId,
+      'latitude': latitude,
+      'longitude': longitude,
+      'status': status,
+      'timestamp': timestamp.toIso8601String(),
+      'notes': notes,
+    };
+  }
+}
+
+// ============================================================================
+// DISPUTE MODEL
+// ============================================================================
+
+class Dispute {
+  final String id;
+  final String bookingId;
+  final String reportedByUserId;
+  final String type; // fraud, customs_seizure, damage, non_delivery, other
+  final String description;
+  final List<String>? evidencePhotosUrl;
+  final String status; // open, investigating, resolved, rejected
+  final String? resolution;
+  final DateTime createdAt;
+  final DateTime? resolvedAt;
+  final Booking? booking;
+
+  Dispute({
+    required this.id,
+    required this.bookingId,
+    required this.reportedByUserId,
+    required this.type,
+    required this.description,
+    this.evidencePhotosUrl,
+    required this.status,
+    this.resolution,
+    required this.createdAt,
+    this.resolvedAt,
+    this.booking,
+  });
+
+  factory Dispute.fromJson(Map<String, dynamic> json) {
+    return Dispute(
+      id: json['id'] as String,
+      bookingId: json['booking_id'] as String,
+      reportedByUserId: json['reported_by_user_id'] as String,
+      type: json['type'] as String,
+      description: json['description'] as String,
+      evidencePhotosUrl: (json['evidence_photos_url'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(),
+      status: json['status'] as String,
+      resolution: json['resolution'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      resolvedAt: json['resolved_at'] != null
+          ? DateTime.parse(json['resolved_at'] as String)
+          : null,
+      booking: json['bookings'] != null ? Booking.fromJson(json['bookings']) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'booking_id': bookingId,
+      'reported_by_user_id': reportedByUserId,
+      'type': type,
+      'description': description,
+      'evidence_photos_url': evidencePhotosUrl,
+      'status': status,
+      'resolution': resolution,
+      'created_at': createdAt.toIso8601String(),
+      'resolved_at': resolvedAt?.toIso8601String(),
+    };
+  }
+
+  bool get isOpen => status == 'open';
+  bool get isResolved => status == 'resolved';
+}
+
+// ============================================================================
+// NOTIFICATION MODEL
+// ============================================================================
+
+class Notification {
+  final String id;
+  final String userId;
+  final String type; // booking_confirmed, shipment_dispatched, etc.
+  final String title;
+  final String message;
+  final String? relatedBookingId;
+  final bool isRead;
+  final DateTime createdAt;
+
+  Notification({
+    required this.id,
+    required this.userId,
+    required this.type,
+    required this.title,
+    required this.message,
+    this.relatedBookingId,
+    this.isRead = false,
+    required this.createdAt,
+  });
+
+  factory Notification.fromJson(Map<String, dynamic> json) {
+    return Notification(
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      type: json['type'] as String,
+      title: json['title'] as String,
+      message: json['message'] as String,
+      relatedBookingId: json['related_booking_id'] as String?,
+      isRead: json['is_read'] as bool? ?? false,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'type': type,
+      'title': title,
+      'message': message,
+      'related_booking_id': relatedBookingId,
+      'is_read': isRead,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+}
+
+// ============================================================================
+// PAYMENT MODEL
+// ============================================================================
+
+class Payment {
+  final String id;
+  final String bookingId;
+  final double amount;
+  final String currency;
+  final String status; // pending, completed, failed, refunded
+  final String? paymentMethod;
+  final String? transactionId;
+  final DateTime createdAt;
+
+  Payment({
+    required this.id,
+    required this.bookingId,
+    required this.amount,
+    this.currency = 'DZD',
+    required this.status,
+    this.paymentMethod,
+    this.transactionId,
+    required this.createdAt,
+  });
+
+  factory Payment.fromJson(Map<String, dynamic> json) {
+    return Payment(
+      id: json['id'] as String,
+      bookingId: json['booking_id'] as String,
+      amount: (json['amount'] as num).toDouble(),
+      currency: json['currency'] as String? ?? 'DZD',
+      status: json['status'] as String,
+      paymentMethod: json['payment_method'] as String?,
+      transactionId: json['transaction_id'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'booking_id': bookingId,
+      'amount': amount,
+      'currency': currency,
+      'status': status,
+      'payment_method': paymentMethod,
+      'transaction_id': transactionId,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+
+  bool get isCompleted => status == 'completed';
+  bool get isPending => status == 'pending';
+}
