@@ -543,3 +543,47 @@ class Payment {
   bool get isCompleted => status == 'completed';
   bool get isPending => status == 'pending';
 }
+
+// ============================================================================
+// BROADCAST MODEL (Annonce dépêchée à tous les utilisateurs)
+// ============================================================================
+
+class Broadcast {
+  final String id;
+  final String title;
+  final String message;
+  final String audience;
+  final String createdBy;
+  final DateTime createdAt;
+
+  Broadcast({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.audience,
+    required this.createdBy,
+    required this.createdAt,
+  });
+
+  factory Broadcast.fromJson(Map<String, dynamic> json) {
+    return Broadcast(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      message: json['message'] as String,
+      audience: json['audience'] as String? ?? 'all',
+      createdBy: json['created_by'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'message': message,
+      'audience': audience,
+      'created_by': createdBy,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+}

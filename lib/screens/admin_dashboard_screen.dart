@@ -35,6 +35,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         title: const Text('Administration'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            tooltip: 'Annonces',
+            icon: const Icon(Icons.campaign),
+            onPressed: () =>
+                Navigator.of(context).pushNamed('/broadcast'),
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

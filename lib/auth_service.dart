@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import 'models.dart';
 import 'supabase_config.dart';
+import 'fcm_service.dart';
 
 // ============================================================================
 // FIREBASE -> SUPABASE ID MAPPING
@@ -89,9 +90,11 @@ class AuthService {
 
   /// Exchange the current Firebase user's ID token for a Supabase access token
   /// (minted by the Edge Function) and point every Supabase call at it.
-  Future<void> _onAuthenticated(fbauth.User user) async {
+Future<void> _onAuthenticated(fbauth.User user) async {
     final token = await _exchangeForSupabaseToken(user);
     SupabaseConfig.setAccessToken(token);
+    final userId = supabaseUserIdFromFirebase(user.uid);
+    await FcmService.instance.registerToken(userId);
   }
 
   Future<String> _exchangeForSupabaseToken(fbauth.User user) async {
@@ -218,9 +221,10 @@ final account = await GoogleSignIn.instance.authenticate();
   }
 
   /// Sign out the current user (Firebase + reset Supabase to anon).
-  Future<void> signOut() async {
+Future<void> signOut() async {
     try {
       _logger.i('Signing out user');
+      await FcmService.instance.clearToken();
       await GoogleSignIn.instance.signOut();
       await _auth.signOut();
       SupabaseConfig.reset();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'supabase_config.dart';
 import 'providers.dart';
+import 'fcm_service.dart';
 import 'client_home_screen.dart';
 import 'booking_screen.dart';
 import 'screens/login_screen.dart';
@@ -13,6 +14,7 @@ import 'screens/tracking_screen.dart';
 import 'screens/shipper_registration_screen.dart';
 import 'screens/shipper_dashboard_screen.dart';
 import 'screens/admin_dashboard_screen.dart';
+import 'screens/broadcast_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +24,9 @@ Future<void> main() async {
 
   // Initialize Firebase (for notifications)
   await initializeFirebase();
+
+  // Wire Firebase Cloud Messaging
+  await FcmService.instance.init();
 
   runApp(const ProviderScope(child: CargoLinkApp()));
 }
@@ -71,6 +76,7 @@ class CargoLinkApp extends ConsumerWidget {
         '/shipper-registration': (context) =>
             const ShipperRegistrationScreen(),
         '/admin-dashboard': (context) => const AdminDashboardScreen(),
+        '/broadcast': (context) => const BroadcastScreen(),
       },
       debugShowCheckedModeBanner: false,
     );
@@ -199,6 +205,8 @@ class HomeTabsScreen extends ConsumerWidget {
           case 'shipper':
             return _buildShipperTabs(context, ref, navIndex);
           case 'admin':
+            return const AdminDashboardScreen();
+          case 'super_admin':
             return const AdminDashboardScreen();
           default:
             return const LoginScreen();

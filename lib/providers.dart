@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'models.dart';
 import 'auth_service.dart';
+import 'broadcast_service.dart';
 import 'shipper_shipment_service.dart';
 import 'booking_payment_service.dart';
 import 'tracking_dispute_service.dart';
@@ -280,6 +281,19 @@ final notificationStreamProvider =
     StreamProvider.family<List<Notification>, String>((ref, userId) {
   final notificationService = ref.watch(notificationServiceProvider);
   return notificationService.listenToNotifications(userId);
+});
+
+// ============================================================================
+// BROADCAST PROVIDERS
+// ============================================================================
+
+final broadcastServiceProvider = Provider<BroadcastService>((ref) {
+  return BroadcastService();
+});
+
+final broadcastsProvider = FutureProvider<List<Broadcast>>((ref) async {
+  final broadcastService = ref.watch(broadcastServiceProvider);
+  return broadcastService.getBroadcasts();
 });
 
 // ============================================================================
