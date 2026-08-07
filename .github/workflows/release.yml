@@ -8,25 +8,50 @@ on:
       - "v*"
   workflow_dispatch:
 
-env:
-  FLUTTER_VERSION: 3.44.0
-  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-
 jobs:
+  version:
+    name: Compute version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      build: ${{ steps.v.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Derive version from git tags
+        id: v
+        run: |
+          LAST=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          BASE=""
+          if [ -n "$LAST" ]; then BASE="${LAST#v}"; fi
+          [ -z "$BASE" ] && BASE="0.0.0"
+          MAJ=$(echo "$BASE" | cut -d. -f1)
+          MIN=$(echo "$BASE" | cut -d. -f2)
+          PATC=$(echo "$BASE" | cut -d. -f3)
+          # Commits not reachable from any tag = the auto-increment at each commit
+          COUNT=$(git rev-list --count HEAD --not --tags 2>/dev/null)
+          COUNT=${COUNT:-0}
+          NEW_PATCH=$((PATC + COUNT))
+          echo "version=${MAJ}.${MIN}.${NEW_PATCH}" >> "$GITHUB_OUTPUT"
+          echo "build=${COUNT}" >> "$GITHUB_OUTPUT"
+
   android:
     name: Android APK (signed)
+    needs: version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          flutter-version: 3.44.0
           channel: stable
 
       - uses: android-actions/setup-android@v3
@@ -42,8 +67,8 @@ jobs:
       - name: Run tests
         run: flutter test
 
-      - name: Build release APK
-        run: flutter build apk --release --dart-define=SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY }}
+      - name: Build signed release APK
+        run: flutter build apk --release --build-name=${{ needs.version.outputs.version }} --build-number=${{ needs.version.outputs.build }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -58,13 +83,16 @@ jobs:
 
   windows:
     name: Windows installer
+    needs: version
     runs-on: windows-latest
+    env:
+      CARGOLINK_VERSION: ${{ needs.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          flutter-version: 3.44.0
           channel: stable
 
       - name: Install Inno Setup
@@ -74,7 +102,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Windows release
-        run: flutter build windows --release --dart-define=SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY }}
+        run: flutter build windows --release --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
 
       - name: Create installer
         run: iscc installer\windows\cargolink.iss
@@ -87,20 +115,21 @@ jobs:
 
   web:
     name: Web build
+    needs: version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          flutter-version: 3.44.0
           channel: stable
 
       - name: Resolve dependencies
         run: flutter pub get
 
       - name: Build web release
-        run: flutter build web --release --dart-define=SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY }}
+        run: flutter build web --release --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
 
       - name: Upload web artifact
         uses: actions/upload-artifact@v4
@@ -110,8 +139,7 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: [android, windows, web]
-    if: startsWith(github.ref, 'refs/tags/')
+    needs: [version, android, windows, web]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -120,7 +148,11 @@ jobs:
         with:
           path: artifacts
 
-      - uses: softprops/action-gh-release@v2
+      - name: Create or update GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ needs.version.outputs.version }}
+          name: v${{ needs.version.outputs.version }}
           files: artifacts/**/*
           generate_release_notes: true
+          fail_on_unmatched_files: false

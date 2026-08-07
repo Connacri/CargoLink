@@ -3,7 +3,12 @@
 ; Expects the Flutter Windows build in build\windows\x64\runner\Release
 
 #define MyAppName "CargoLink"
-#define MyAppVersion "1.0.0"
+#ifndef CARGOLINK_VERSION
+#define CARGOLINK_VERSION GetEnv("CARGOLINK_VERSION")
+#endif
+#ifndef MyAppVersion
+#define MyAppVersion CARGOLINK_VERSION
+#endif
 #define MyAppPublisher "CargoLink"
 #define MyAppExeName "cargolink.exe"
 
