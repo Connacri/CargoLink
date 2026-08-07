@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "41156395312",
+    "firebase_url": "https://cargolink-23dd3-default-rtdb.firebaseio.com",
+    "project_id": "cargolink-23dd3",
+    "storage_bucket": "cargolink-23dd3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:41156395312:android:85408005823586eef208f5",
+        "android_client_info": {
+          "package_name": "com.cargolink.dz.cargolink"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "41156395312-8jodeuqmfdha15j846oh60koh8dsvhil.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cargolink.dz.cargolink",
+            "certificate_hash": "33b5e26a818650de78828244b961c898b920a4ca"
+          }
+        },
+        {
+          "client_id": "41156395312-n8e8b0uus0igqjf6fa88u933rtsnjnqr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cargolink.dz.cargolink",
+            "certificate_hash": "503bca0e7d9cf11193b8a34339154f33bc34aace"
+          }
+        },
+        {
+          "client_id": "41156395312-qceqhovlaoaejdjajb7orl9l9gqvnkpi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxwN7Z-wQi-6rwEcMGM75P8wRj9daPsxs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "41156395312-qceqhovlaoaejdjajb7orl9l9gqvnkpi.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "41156395312-qp13hkg1iof4em2nd6usms0fgqbvdua3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.cargolink.dz.cargolink"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

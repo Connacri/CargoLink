@@ -11,7 +11,7 @@ import 'package:uuid/uuid.dart';
 // ============================================================================
 
 class TrackingService {
-  final SupabaseClient _supabase = SupabaseConfig.client;
+  SupabaseClient get _supabase => SupabaseConfig.client;
   final _logger = Logger();
 
   /// Add tracking update
@@ -144,7 +144,7 @@ class TrackingService {
 // ============================================================================
 
 class DisputeService {
-  final SupabaseClient _supabase = SupabaseConfig.client;
+  SupabaseClient get _supabase => SupabaseConfig.client;
   final _logger = Logger();
 
   /// Create a dispute
@@ -393,7 +393,7 @@ class DisputeService {
 // ============================================================================
 
 class NotificationService {
-  final SupabaseClient _supabase = SupabaseConfig.client;
+  SupabaseClient get _supabase => SupabaseConfig.client;
   final _logger = Logger();
 
   /// Create a notification

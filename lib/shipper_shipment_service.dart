@@ -4,7 +4,7 @@ import 'supabase_config.dart';
 import 'package:logger/logger.dart';
 
 class ShipperService {
-  final SupabaseClient _supabase = SupabaseConfig.client;
+  SupabaseClient get _supabase => SupabaseConfig.client;
   final _logger = Logger();
 
   // ============================================================================
@@ -243,7 +243,7 @@ class ShipperService {
 // ============================================================================
 
 class ShipmentService {
-  final SupabaseClient _supabase = SupabaseConfig.client;
+  SupabaseClient get _supabase => SupabaseConfig.client;
   final _logger = Logger();
 
   /// Publish a new shipment

@@ -6,7 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
 
 class BookingService {
-  final SupabaseClient _supabase = SupabaseConfig.client;
+  SupabaseClient get _supabase => SupabaseConfig.client;
   final _logger = Logger();
   final ShipmentService _shipmentService = ShipmentService();
   final PaymentService _paymentService = PaymentService();
@@ -287,7 +287,7 @@ class BookingService {
 // ============================================================================
 
 class PaymentService {
-  final SupabaseClient _supabase = SupabaseConfig.client;
+  SupabaseClient get _supabase => SupabaseConfig.client;
   final _logger = Logger();
 
   /// Create payment record

@@ -1,0 +1,16 @@
+EMPREINTES ANDROID (SHA-1 / SHA-256) POUR FIREBASE CONSOLE
+===========================================================
+A ajouter dans Firebase Console -> Parametres du projet -> Vos applications
+-> Application Android -> Empreintes de certificats
+
+--- RELEASE keystore (cargolink.keystore / alias cargolink) ---
+SHA-1:    33:B5:E2:6A:81:86:50:DE:78:82:82:44:B9:61:C8:98:B9:20:A4:CA
+SHA-256:  14:A8:23:FF:0E:BE:67:3F:97:DF:3B:E9:5E:57:40:98:8E:D5:36:A0:F8:BF:14:97:D2:C4:C4:4D:EB:AB:A8:B7
+
+--- DEBUG keystore (developpement local / debug.keystore) ---
+SHA-1:    50:3B:CA:0E:7D:9C:F1:11:93:B8:A3:43:39:15:4F:33:BC:34:AA:CE
+SHA-256:  03:94:A7:BB:D4:1D:FE:A1:E7:46:31:00:83:2F:63:B8:E2:1D:0A:E7:E9:7E:38:DC:06:EA:05:92:98:D7:C7:3F
+
+Astuce : Google Sign-In / OAuth demande le SHA-1 (et 256) du certificat
+utilise par le build (debug pour le dev, release pour la prod). Ajoutez
+les deux pour que l'authentification fonctionne dans les deux cas.

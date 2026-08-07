@@ -1,5 +1,8 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'firebase_options.dart';
 
 // ============================================================================
 // SUPABASE CONFIGURATION
@@ -9,22 +12,43 @@ class SupabaseConfig {
   // Project URL (public, safe to commit)
   static const String supabaseUrl = 'https://mxhomeuraxnmjtfhzhvz.supabase.co';
 
-  // Loaded at build time via --dart-define=SUPABASE_ANON_KEY=...
-  // (never hardcode a key; get yours from Supabase -> Settings -> API)
+  // Anon (publishable) key. Loaded at build time via
+  // --dart-define=SUPABASE_ANON_KEY=... (set by the CI / local build script).
   static const String supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
     defaultValue: 'PASTE_YOUR_SUPABASE_ANON_KEY_HERE',
   );
 
+  /// The Publishable API key (supabase-js v2 style), if used.
+  static const String supabasePublishableKey = String.fromEnvironment(
+    'SUPABASE_PUBLISHABLE_KEY',
+    defaultValue: '',
+  );
+
+  // The client is recreated whenever the JWT changes so every service call
+  // automatically uses the latest (Firebase-issued) token.
+  static SupabaseClient _client = _buildAnonClient();
+
+  static SupabaseClient _buildAnonClient() =>
+      SupabaseClient(supabaseUrl, supabaseAnonKey);
+
   static Future<void> initialize() async {
-    await Supabase.initialize(
-      url: supabaseUrl,
-      anonKey: supabaseAnonKey,
-      authFlowType: AuthFlowType.implicit,
-    );
+    _client = _buildAnonClient();
   }
 
-  static SupabaseClient get client => Supabase.instance.client;
+  static SupabaseClient get client => _client;
+
+  /// Point the app's Supabase client at the (Firebase-minted) token, so every
+  /// CRUD is authorized as the authenticated (RLS: auth.uid()) user.
+  static void setAccessToken(String jwt) {
+    _client = SupabaseClient(supabaseUrl, jwt);
+  }
+
+  /// Reset to the public (anon) client — used on sign-out so that no
+  /// authenticated CRUD can be performed afterwards.
+  static void reset() {
+    _client = _buildAnonClient();
+  }
 }
 
 // ============================================================================
@@ -32,8 +56,7 @@ class SupabaseConfig {
 // ============================================================================
 
 Future<void> initializeFirebase() async {
-  // Firebase init is optional and configured separately.
-  // Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
 
 // ============================================================================

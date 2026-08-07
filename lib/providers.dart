@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide User, Provider;
 import 'models.dart';
 import 'auth_service.dart';
 import 'shipper_shipment_service.dart';
@@ -15,7 +14,7 @@ final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService();
 });
 
-final authStateProvider = StreamProvider<AuthState>((ref) {
+final authStateProvider = StreamProvider<AppAuthState>((ref) {
   final authService = ref.watch(authServiceProvider);
   return authService.authStateChanges;
 });

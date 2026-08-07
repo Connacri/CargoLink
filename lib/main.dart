@@ -38,7 +38,7 @@ class CargoLinkApp extends ConsumerWidget {
       theme: AppTheme.darkTheme,
       home: authState.when(
         data: (authData) {
-          if (authData.session != null) {
+          if (authData.isSignedIn) {
             return const HomeTabsScreen();
           } else {
             return const LoginScreen();
