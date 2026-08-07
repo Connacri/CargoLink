@@ -131,11 +131,18 @@ jobs:
       - name: Build web release
         run: flutter build web --release --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
 
+      - name: Write version.json
+        run: |
+          echo "{\"version\":\"${{ needs.version.outputs.version }}\",\"build\":${{ needs.version.outputs.build }}}" > build/web/version.json
+
+      - name: Zip web build
+        run: cd build/web && zip -r ../../cargolink-web.zip . && cd ../..
+
       - name: Upload web artifact
         uses: actions/upload-artifact@v4
         with:
           name: cargolink-web
-          path: build/web
+          path: cargolink-web.zip
 
   release:
     name: Publish GitHub Release

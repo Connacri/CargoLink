@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CargoLink — Télécharger</title>
+<style>
+  :root {
+    --primary: #6366F1;
+    --primary-dark: #4F46E5;
+    --accent: #10B981;
+    --bg: #0F172A;
+    --card: #1E293B;
+    --text: #F1F5F9;
+    --muted: #94A3B8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid rgba(99,102,241,.25);
+    border-radius: 20px;
+    padding: 48px 40px;
+    max-width: 640px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 25px 60px rgba(0,0,0,.5);
+  }
+  .logo {
+    width: 84px; height: 84px;
+    background: var(--primary);
+    border-radius: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 40px; font-weight: 800; color: #fff;
+    margin-bottom: 20px;
+  }
+  h1 { font-size: 28px; margin-bottom: 8px; }
+  .sub { color: var(--muted); margin-bottom: 32px; font-size: 15px; }
+  .version { color: var(--accent); font-weight: 600; }
+  .row { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    padding: 16px 20px; border-radius: 14px; text-decoration: none;
+    font-size: 16px; font-weight: 600; color: #fff; transition: transform .12s, box-shadow .12s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-android { background: var(--accent); box-shadow: 0 10px 24px rgba(16,185,129,.35); }
+  .btn-windows { background: linear-gradient(135deg, #3B82F6, #2563EB); box-shadow: 0 10px 24px rgba(59,130,246,.35); }
+  .btn-web { background: var(--primary); box-shadow: 0 10px 24px rgba(99,102,241,.35); }
+  .ico { font-size: 20px; }
+  .foot { margin-top: 28px; color: var(--muted); font-size: 13px; }
+  .foot a { color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">C</div>
+    <h1>CargoLink</h1>
+    <p class="sub">Plateforme de micro-importation — connectez micro-importateurs et clients.<br>Dernière version&nbsp;: <span class="version" id="version">—</span></p>
+
+    <div class="row">
+      <a class="btn btn-android" href="https://github.com/Connacri/CargoLink/releases/latest/download/app-release.apk">
+        <span class="ico">&#129302;</span> Télécharger Android (APK)
+      </a>
+      <a class="btn btn-windows" href="https://github.com/Connacri/CargoLink/releases/latest/download/CargoLinkSetup.exe">
+        <span class="ico">&#128421;</span> Télécharger Windows (Installateur)
+      </a>
+      <a class="btn btn-web" href="https://github.com/Connacri/CargoLink/releases/latest/download/cargolink-web.zip">
+        <span class="ico">&#127760;</span> Version Web (ZIP)
+      </a>
+    </div>
+
+    <p class="foot">© <span id="year"></span> CargoLink · <a href="https://github.com/Connacri/CargoLink/releases">Toutes les releases</a> · <a href="https://github.com/Connacri/CargoLink">Code source</a></p>
+  </div>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    fetch('https://api.github.com/repos/Connacri/CargoLink/releases/latest')
+      .then(r => r.json())
+      .then(d => { document.getElementById('version').textContent = d.tag_name || '—'; })
+      .catch(() => {});
+  </script>
+</body>
+</html>
