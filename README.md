@@ -162,7 +162,7 @@ flutter build web --release
 flutter build windows --release
 ```
 
-> **Statut build Android** : l'APK nécessite un hotfix amont dans la dépendance `flutter_local_notifications` (erreur Java 17 « bigLargeIcon ambiguous »). Sur cet un point et le `README` sont présentés hors de la chaîne de build — le fix est en cours.
+> **Statut build** : le build Android, Windows et Web compile et est automatisé via GitHub Actions (voir plus bas). La génération de l'APK se fait en CI (`flutter build apk --release --dart-define=SUPABASE_ANON_KEY=...`).
 
 ---
 
@@ -180,6 +180,7 @@ Workflow : `.github/workflows/release.yml`
 | `KEYSTORE_PASSWORD` | Mot de passe du keystore | Signature APK |
 | `KEYSTORE_KEY_ALIAS` | Alias de la clé | Signature APK |
 | `KEY_PASSWORD` | Mot de passe de la clé | Signature APK |
+| `SUPABASE_ANON_KEY` | Clé **anon** Supabase (public API key) | Compilée dans l'APK/web/Windows |
 
 **Générer le keystore (une fois) :**
 ```bash

@@ -19,6 +19,21 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// Force compileSdk 36 across all plugin sub-projects. Several dependencies
+// (androidx.fragment, androidx.window, etc.) require a newer compileSdk.
+subprojects {
+    plugins.withId("com.android.library") {
+        extensions.configure<com.android.build.api.dsl.LibraryExtension> {
+            compileSdk = 36
+        }
+    }
+    plugins.withId("com.android.application") {
+        extensions.configure<com.android.build.api.dsl.ApplicationExtension> {
+            compileSdk = 36
+        }
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
