@@ -49,3 +49,4 @@ app.*.map.json
 /keystore_b64.txt
 
 /supabase/secrets.env
+android/build/

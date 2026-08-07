@@ -29,9 +29,9 @@ class StorageService {
       final fileName = p.basename(file.path);
       final fullPath = '$path/$fileName';
 
-      await _supabase.storage.from(bucket).upload(
+      await _supabase.storage.from(bucket).uploadBinary(
             fullPath,
-            file,
+            await file.readAsBytes(),
             fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
           );
 
@@ -56,9 +56,9 @@ class StorageService {
       final fileName = 'passport_${DateTime.now().millisecondsSinceEpoch}.pdf';
       final fullPath = 'passports/$userId/$fileName';
 
-      await _supabase.storage.from(documentsBucket).upload(
+      await _supabase.storage.from(documentsBucket).uploadBinary(
             fullPath,
-            file,
+            await file.readAsBytes(),
             fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
           );
 
@@ -83,9 +83,9 @@ class StorageService {
       final fileName = 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final fullPath = 'avatars/$userId/$fileName';
 
-      await _supabase.storage.from(profileBucket).upload(
+      await _supabase.storage.from(profileBucket).uploadBinary(
             fullPath,
-            file,
+            await file.readAsBytes(),
             fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
           );
 
@@ -114,9 +114,9 @@ class StorageService {
             'evidence_${DateTime.now().millisecondsSinceEpoch}_${files.indexOf(file)}.jpg';
         final fullPath = 'disputes/$disputeId/$fileName';
 
-        await _supabase.storage.from(bookingsBucket).upload(
+        await _supabase.storage.from(bookingsBucket).uploadBinary(
               fullPath,
-              file,
+              await file.readAsBytes(),
               fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
             );
 
