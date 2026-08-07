@@ -9,7 +9,16 @@ class AuthService {
   final _logger = Logger();
 
   // Stream for auth state changes
-  Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange;
+  // Seeds with the current session so the UI never blocks on "loading" at startup
+  // (onAuthStateChange alone does not emit the initial state on desktop/web).
+  Stream<AuthState> get authStateChanges async* {
+    final session = _supabase.auth.currentSession;
+    yield AuthState(
+      session != null ? AuthChangeEvent.signedIn : AuthChangeEvent.signedOut,
+      session,
+    );
+    yield* _supabase.auth.onAuthStateChange;
+  }
 
   // Get current user session
   Session? get currentSession => _supabase.auth.currentSession;
