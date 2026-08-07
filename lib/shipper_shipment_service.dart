@@ -17,8 +17,7 @@ class ShipperService {
     required String passportNumber,
     required String passportPhotoUrl,
     required String livePhotoUrl,
-  }) async {
-    try {
+  }) async {    try {
       _logger.i('Registering shipper: $userId');
 
       final response = await _supabase
@@ -40,6 +39,44 @@ class ShipperService {
       return Shipper.fromJson(response);
     } catch (e) {
       _logger.e('Error registering shipper: $e');
+      rethrow;
+    }
+  }
+
+  /// Re-submit shipper documents after a rejection
+  Future<Shipper?> updateShipperDocuments({
+    required String shipperId,
+    String? passportNumber,
+    String? passportPhotoUrl,
+    String? livePhotoUrl,
+  }) async {
+    try {
+      _logger.i('Updating shipper documents: $shipperId');
+
+      final updateData = <String, dynamic>{
+        'verification_status': 'pending',
+        'rejection_reason': null,
+        'verified_by_admin_id': null,
+        'verified_at': null,
+      };
+
+      if (passportNumber != null) updateData['passport_number'] = passportNumber;
+      if (passportPhotoUrl != null) {
+        updateData['passport_photo_url'] = passportPhotoUrl;
+      }
+      if (livePhotoUrl != null) updateData['live_photo_url'] = livePhotoUrl;
+
+      final response = await _supabase
+          .from('shippers')
+          .update(updateData)
+          .eq('id', shipperId)
+          .select()
+          .single();
+
+      _logger.i('Shipper documents updated');
+      return Shipper.fromJson(response);
+    } catch (e) {
+      _logger.e('Error updating shipper documents: $e');
       rethrow;
     }
   }
@@ -173,21 +210,26 @@ class ShipperService {
           .from('shipments')
           .select()
           .eq('shipper_id', shipperId);
+      final shipmentsList = shipments as List;
 
-      final completedShipments = (shipments as List)
+      final completedShipments = shipmentsList
           .where((s) => s['status'] == 'completed')
           .length;
 
-      final totalBookings = await _supabase
-          .from('bookings')
-          .select()
-          .eq('shipment_id', (shipments.first ?? {})['id']);
+      var totalBookings = 0;
+      if (shipmentsList.isNotEmpty) {
+        final bookings = await _supabase
+            .from('bookings')
+            .select('id, shipments!inner(shipper_id)')
+            .eq('shipments.shipper_id', shipperId);
+        totalBookings = (bookings as List).length;
+      }
 
       return {
-        'total_shipments': shipments.length,
+        'total_shipments': shipmentsList.length,
         'completed_shipments': completedShipments,
-        'active_shipments': shipments.length - completedShipments,
-        'total_bookings': (totalBookings as List).length,
+        'active_shipments': shipmentsList.length - completedShipments,
+        'total_bookings': totalBookings,
       };
     } catch (e) {
       _logger.e('Error getting shipper stats: $e');

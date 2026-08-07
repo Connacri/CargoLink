@@ -501,7 +501,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
         Navigator.of(context).pushReplacementNamed(
           '/payment',
-          arguments: {'bookingId': booking.id},
+          arguments: booking.id,
         );
       }
     } catch (e) {

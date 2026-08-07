@@ -36,6 +36,13 @@ class BookingService {
       final shipment = await _shipmentService.getShipmentById(shipmentId);
       if (shipment == null) throw Exception('Shipment not found');
 
+      // Business rule: only verified shippers can take bookings
+      if (shipment.shipper == null || !shipment.shipper!.isVerified) {
+        throw Exception(
+          'Ce transporteur n\'est pas encore vérifié par l\'administration',
+        );
+      }
+
       if (shipment.remainingWeightKg <= 0) {
         throw Exception('No weight available on this shipment');
       }

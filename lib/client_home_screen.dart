@@ -12,6 +12,7 @@ class ClientHomeScreen extends ConsumerWidget {
     final currentUser = ref.watch(currentUserProvider);
     final destination = ref.watch(destinationFilterProvider);
     final origin = ref.watch(originFilterProvider);
+    final searchQuery = ref.watch(searchQueryProvider);
     final activeShipments = ref.watch(
       activeShipmentsProvider(
         (
@@ -34,10 +35,7 @@ class ClientHomeScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 16),
             child: GestureDetector(
               onTap: () => _showNotificationsSheet(context, ref),
-              child: Badge.count(
-                count: 3,
-                child: Icon(Icons.notifications_outlined),
-              ),
+              child: const _UnreadBadge(),
             ),
           ),
         ],
@@ -64,16 +62,10 @@ class ClientHomeScreen extends ConsumerWidget {
               _buildFilters(context, ref),
 
               // Available shipments
-              _buildShipmentsList(activeShipments),
+              _buildShipmentsList(activeShipments, searchQuery),
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: _buildBottomNavBar(context, ref),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToMyOrders(context, ref),
-        backgroundColor: AppTheme.primaryColor,
-        child: const Icon(Icons.shopping_bag),
       ),
     );
   }
@@ -189,10 +181,23 @@ class ClientHomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildShipmentsList(AsyncValue<List<Shipment>> shipments) {
+  Widget _buildShipmentsList(
+    AsyncValue<List<Shipment>> shipments,
+    String searchQuery,
+  ) {
     return shipments.when(
       data: (data) {
-        if (data.isEmpty) {
+        final query = searchQuery.trim().toLowerCase();
+        final filtered = query.isEmpty
+            ? data
+            : data
+                .where((s) =>
+                    s.originCountry.toLowerCase().contains(query) ||
+                    s.destinationCity.toLowerCase().contains(query) ||
+                    (s.description?.toLowerCase().contains(query) ?? false))
+                .toList();
+
+        if (filtered.isEmpty) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
@@ -221,9 +226,9 @@ class ClientHomeScreen extends ConsumerWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
-          itemCount: data.length,
+          itemCount: filtered.length,
           itemBuilder: (context, index) {
-            return _ShipmentCard(shipment: data[index]);
+            return _ShipmentCard(shipment: filtered[index]);
           },
         );
       },
@@ -231,42 +236,6 @@ class ClientHomeScreen extends ConsumerWidget {
       error: (error, stack) => Center(
         child: Text('Erreur: $error'),
       ),
-    );
-  }
-
-  Widget _buildBottomNavBar(BuildContext context, WidgetRef ref) {
-    final navIndex = ref.watch(navigationIndexProvider);
-
-    return BottomNavigationBar(
-      currentIndex: navIndex,
-      onTap: (index) {
-        ref.read(navigationIndexProvider.notifier).state = index;
-        switch (index) {
-          case 0:
-            // Home
-            break;
-          case 1:
-            _navigateToMyOrders(context, ref);
-            break;
-          case 2:
-            _navigateToProfile(context);
-            break;
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Accueil',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.shopping_bag),
-          label: 'Mes Commandes',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profil',
-        ),
-      ],
     );
   }
 
@@ -306,15 +275,6 @@ class ClientHomeScreen extends ConsumerWidget {
             .toList(),
       ),
     );
-  }
-
-  void _navigateToMyOrders(BuildContext context, WidgetRef ref) {
-    // Navigate to my orders screen
-    Navigator.of(context).pushNamed('/my-orders');
-  }
-
-  void _navigateToProfile(BuildContext context) {
-    Navigator.of(context).pushNamed('/profile');
   }
 
   void _showNotificationsSheet(BuildContext context, WidgetRef ref) {
@@ -465,7 +425,44 @@ class _ShipmentCard extends ConsumerWidget {
   void _navigateToBooking(BuildContext context, WidgetRef ref) {
     Navigator.of(context).pushNamed(
       '/booking',
-      arguments: {'shipmentId': shipment.id},
+      arguments: shipment.id,
+    );
+  }
+}
+
+// ============================================================================
+// NOTIFICATIONS BADGE
+// ============================================================================
+
+class _UnreadBadge extends ConsumerWidget {
+  const _UnreadBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userId = ref.read(authServiceProvider).currentUserId;
+    if (userId == null) {
+      return const Icon(Icons.notifications_outlined);
+    }
+
+    final unread = ref.watch(
+      userNotificationsProvider(
+        (userId: userId, unreadOnly: true, limit: 100, offset: 0),
+      ),
+    );
+
+    return unread.when(
+      data: (notifs) {
+        final count = notifs.length;
+        if (count == 0) {
+          return const Icon(Icons.notifications_outlined);
+        }
+        return Badge.count(
+          count: count > 99 ? 99 : count,
+          child: const Icon(Icons.notifications_outlined),
+        );
+      },
+      loading: () => const Icon(Icons.notifications_outlined),
+      error: (error, stack) => const Icon(Icons.notifications_outlined),
     );
   }
 }
