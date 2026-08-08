@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'supabase_config.dart';
 import 'providers.dart';
@@ -126,10 +127,22 @@ class LoadingScreen extends StatelessWidget {
 // ERROR SCREEN
 // ============================================================================
 
-class ErrorScreen extends StatelessWidget {
+class ErrorScreen extends StatefulWidget {
   final String error;
 
   const ErrorScreen({Key? key, required this.error}) : super(key: key);
+
+  @override
+  State<ErrorScreen> createState() => _ErrorScreenState();
+}
+
+class _ErrorScreenState extends State<ErrorScreen> {
+  bool _copied = false;
+
+  Future<void> _copy() async {
+    await Clipboard.setData(ClipboardData(text: widget.error));
+    if (mounted) setState(() => _copied = true);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -154,8 +167,8 @@ class ErrorScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
-                error,
+              SelectableText(
+                widget.error,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14,
@@ -163,6 +176,12 @@ class ErrorScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
+              OutlinedButton.icon(
+                onPressed: _copied ? null : _copy,
+                icon: Icon(_copied ? Icons.check : Icons.copy),
+                label: Text(_copied ? 'Copié' : 'Copier l\'erreur'),
+              ),
+              const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pushReplacementNamed('/login');

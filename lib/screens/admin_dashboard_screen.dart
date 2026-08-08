@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models.dart';
 import '../providers.dart';
 import '../supabase_config.dart';
+import '../error_dialog.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({Key? key}) : super(key: key);
@@ -288,12 +289,7 @@ class _ShipperVerificationCard extends ConsumerWidget {
 
   void _showError(BuildContext context, Object error) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Erreur: $error'),
-        backgroundColor: AppTheme.errorColor,
-      ),
-    );
+    showAppErrorDialog(context, message: 'Erreur: $error');
   }
 }
 
@@ -471,12 +467,7 @@ class _DisputeCard extends ConsumerWidget {
       ref.invalidate(openDisputesProvider((limit: 100, offset: 0)));
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        await showAppErrorDialog(context, message: 'Erreur: $e');
       }
     }
   }

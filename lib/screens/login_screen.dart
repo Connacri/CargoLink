@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
 import '../supabase_config.dart';
+import '../error_dialog.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -36,12 +37,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ref.invalidate(currentUserProvider);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur de connexion: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        await showAppErrorDialog(context, message: 'Erreur de connexion: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -55,12 +51,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ref.invalidate(currentUserProvider);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        await showAppErrorDialog(context, message: 'Erreur: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -87,12 +78,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        await showAppErrorDialog(context, message: 'Erreur: $e');
       }
     }
   }

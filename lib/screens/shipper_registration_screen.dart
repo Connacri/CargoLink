@@ -6,6 +6,7 @@ import '../models.dart';
 import '../providers.dart';
 import '../storage_service.dart';
 import '../supabase_config.dart';
+import '../error_dialog.dart';
 
 class ShipperRegistrationScreen extends ConsumerStatefulWidget {
   const ShipperRegistrationScreen({Key? key}) : super(key: key);
@@ -100,7 +101,9 @@ class _ShipperRegistrationScreenState
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
-      if (mounted) _showMessage('Erreur: $e', isError: true);
+      if (mounted) {
+        await showAppErrorDialog(context, message: 'Erreur: $e');
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

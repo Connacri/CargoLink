@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models.dart';
 import '../providers.dart';
 import '../supabase_config.dart';
+import '../error_dialog.dart';
 
 class MyOrdersScreen extends ConsumerStatefulWidget {
   const MyOrdersScreen({Key? key}) : super(key: key);
@@ -58,12 +59,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erreur: $e'),
-              backgroundColor: AppTheme.errorColor,
-            ),
-          );
+          await showAppErrorDialog(context, message: 'Erreur: $e');
         }
       }
     }

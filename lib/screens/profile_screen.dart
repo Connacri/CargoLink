@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models.dart';
 import '../providers.dart';
 import '../supabase_config.dart';
+import '../error_dialog.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -56,12 +57,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        await showAppErrorDialog(context, message: 'Erreur: $e');
       }
     }
   }
@@ -85,12 +81,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        await showAppErrorDialog(context, message: 'Erreur: $e');
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -121,12 +112,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         await ref.read(authServiceProvider).signOut();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erreur: $e'),
-              backgroundColor: AppTheme.errorColor,
-            ),
-          );
+          await showAppErrorDialog(context, message: 'Erreur: $e');
         }
       }
     }

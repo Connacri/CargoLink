@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
 import '../supabase_config.dart';
+import '../error_dialog.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -69,12 +70,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur d\'inscription: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        await showAppErrorDialog(context, message: 'Erreur d\'inscription: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

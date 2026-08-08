@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models.dart';
 import '../providers.dart';
 import '../supabase_config.dart';
+import '../error_dialog.dart';
 
 class PaymentScreen extends ConsumerStatefulWidget {
   final String bookingId;
@@ -38,12 +39,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur de paiement: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        await showAppErrorDialog(context, message: 'Erreur de paiement: $e');
       }
     } finally {
       if (mounted) setState(() => _isProcessing = false);

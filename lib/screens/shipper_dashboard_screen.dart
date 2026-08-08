@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models.dart';
 import '../providers.dart';
 import '../supabase_config.dart';
+import '../error_dialog.dart';
 
 // ============================================================================
 // SHIPPER DASHBOARD
@@ -426,11 +427,9 @@ class _ShipperDashboardScreenState extends ConsumerState<ShipperDashboardScreen>
                             } catch (e) {
                               if (sheetContext.mounted) {
                                 setSheetState(() => submitting = false);
-                                ScaffoldMessenger.of(sheetContext).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Erreur: $e'),
-                                    backgroundColor: AppTheme.errorColor,
-                                  ),
+                                await showAppErrorDialog(
+                                  sheetContext,
+                                  message: 'Erreur: $e',
                                 );
                               }
                             }
@@ -916,11 +915,6 @@ class _ManageBookingCard extends ConsumerWidget {
 
   void _showError(BuildContext context, Object error) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Erreur: $error'),
-        backgroundColor: AppTheme.errorColor,
-      ),
-    );
+    showAppErrorDialog(context, message: 'Erreur: $error');
   }
 }
