@@ -23,6 +23,8 @@ class _ShipperRegistrationScreenState
   File? _passportPhoto;
   File? _livePhoto;
   String? _existingShipperId;
+  String? _existingPassportUrl;
+  String? _existingLiveUrl;
   bool _isSubmitting = false;
 
   @override
@@ -47,11 +49,15 @@ class _ShipperRegistrationScreenState
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_passportPhoto == null) {
+
+    // Keep existing photos if the user did not pick a replacement
+    final hasExisting = _existingShipperId != null;
+
+    if (_passportPhoto == null && (!hasExisting || _existingPassportUrl == null)) {
       _showMessage('Veuillez choisir une photo de passeport', isError: true);
       return;
     }
-    if (_livePhoto == null) {
+    if (_livePhoto == null && (!hasExisting || _existingLiveUrl == null)) {
       _showMessage('Veuillez prendre une photo en direct', isError: true);
       return;
     }
@@ -62,30 +68,38 @@ class _ShipperRegistrationScreenState
       if (userId == null) throw Exception('Utilisateur non identifié');
 
       final storage = ref.read(storageServiceProvider);
-      final passportUrl = await storage.uploadImage(
-        file: _passportPhoto!,
-        path: 'passports/$userId',
-        bucket: StorageService.documentsBucket,
-      );
-      final liveUrl = await storage.uploadImage(
-        file: _livePhoto!,
-        path: 'live/$userId',
-        bucket: StorageService.documentsBucket,
-      );
 
-      if (_existingShipperId != null) {
+      String? passportUrl = _existingPassportUrl;
+      if (_passportPhoto != null) {
+        passportUrl = await storage.uploadImage(
+          file: _passportPhoto!,
+          path: 'passports/$userId/${DateTime.now().millisecondsSinceEpoch}',
+          bucket: StorageService.documentsBucket,
+        );
+      }
+
+      String? liveUrl = _existingLiveUrl;
+      if (_livePhoto != null) {
+        liveUrl = await storage.uploadImage(
+          file: _livePhoto!,
+          path: 'live/$userId/${DateTime.now().millisecondsSinceEpoch}',
+          bucket: StorageService.documentsBucket,
+        );
+      }
+
+      if (hasExisting) {
         await ref.read(shipperServiceProvider).updateShipperDocuments(
               shipperId: _existingShipperId!,
               passportNumber: _passportNumberController.text.trim(),
-              passportPhotoUrl: passportUrl,
-              livePhotoUrl: liveUrl,
+              passportPhotoUrl: passportUrl!,
+              livePhotoUrl: liveUrl!,
             );
       } else {
         await ref.read(shipperServiceProvider).registerShipper(
               userId: userId,
               passportNumber: _passportNumberController.text.trim(),
-              passportPhotoUrl: passportUrl,
-              livePhotoUrl: liveUrl,
+              passportPhotoUrl: passportUrl!,
+              livePhotoUrl: liveUrl!,
             );
       }
 
@@ -125,6 +139,8 @@ class _ShipperRegistrationScreenState
   Widget build(BuildContext context) {
     final shipper = ref.watch(currentShipperProvider);
     _existingShipperId = shipper.valueOrNull?.id;
+    _existingPassportUrl = shipper.valueOrNull?.passportPhotoUrl;
+    _existingLiveUrl = shipper.valueOrNull?.livePhotoUrl;
 
     return Scaffold(
       appBar: AppBar(
@@ -203,21 +219,29 @@ class _ShipperRegistrationScreenState
               const SizedBox(height: 16),
               _buildUploadTile(
                 title: 'Photo du passeport',
-                subtitle: _passportPhoto?.path.split('/').last ??
-                    'Choisir une photo',
+                subtitle: _passportPhoto != null
+                    ? _passportPhoto!.path.split('/').last
+                    : (_existingPassportUrl != null
+                        ? 'Image actuelle — toucher pour changer'
+                        : 'Choisir une photo'),
                 icon: Icons.description_outlined,
                 hasFile: _passportPhoto != null,
                 previewFile: _passportPhoto,
+                previewUrl: _existingPassportUrl,
                 onTap: _pickPassport,
               ),
               const SizedBox(height: 16),
               _buildUploadTile(
                 title: 'Photo en direct (selfie)',
-                subtitle: _livePhoto?.path.split('/').last ??
-                    'Prendre une photo',
+                subtitle: _livePhoto != null
+                    ? _livePhoto!.path.split('/').last
+                    : (_existingLiveUrl != null
+                        ? 'Image actuelle — toucher pour changer'
+                        : 'Prendre une photo'),
                 icon: Icons.camera_alt_outlined,
                 hasFile: _livePhoto != null,
                 previewFile: _livePhoto,
+                previewUrl: _existingLiveUrl,
                 onTap: _pickLivePhoto,
               ),
               const SizedBox(height: 24),
@@ -248,7 +272,10 @@ class _ShipperRegistrationScreenState
     required bool hasFile,
     required VoidCallback onTap,
     File? previewFile,
+    String? previewUrl,
   }) {
+    final showNetworkPreview = previewFile == null && previewUrl != null;
+
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -267,6 +294,21 @@ class _ShipperRegistrationScreenState
                   width: 56,
                   height: 56,
                   fit: BoxFit.cover,
+                ),
+              )
+            else if (showNetworkPreview)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  previewUrl!,
+                  width: 56,
+                  height: 56,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => SizedBox(
+                    width: 56,
+                    height: 56,
+                    child: Icon(icon, color: AppTheme.textSecondaryColor),
+                  ),
                 ),
               )
             else
