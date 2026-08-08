@@ -177,7 +177,7 @@ class AuthService {
       // will keep showing the verification page until the user clicks the link.
       if (!user.emailVerified) {
         _logger.i('signUp: email not verified, sending verification email');
-        await user.sendEmailVerification();
+        await _sendVerificationEmail(user);
         _logger.i('signUp: verification email sent');
       }
 
@@ -306,13 +306,31 @@ class AuthService {
   }
 
   /// Sign out the current user (Firebase + reset Supabase to anon).
+  ///
+  /// `GoogleSignIn().signOut()` is only available on mobile (Android / iOS /
+  /// macOS). On web and desktop it has no implementation and throws
+  /// `MissingPluginException`, so it is guarded by platform and never allowed
+  /// to block the sign-out.
   Future<void> signOut() async {
     try {
       _logger.i('=== Sign out ===');
-      await FcmService.instance.clearToken();
-      _logger.i('signOut: FCM token cleared');
-      await GoogleSignIn().signOut();
-      _logger.i('signOut: GoogleSignIn signed out');
+      try {
+        await FcmService.instance.clearToken();
+        _logger.i('signOut: FCM token cleared');
+      } catch (e) {
+        _logger.w('signOut: FCM token clear failed (ignored): $e');
+      }
+      if (!kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.android ||
+              defaultTargetPlatform == TargetPlatform.iOS ||
+              defaultTargetPlatform == TargetPlatform.macOS)) {
+        try {
+          await GoogleSignIn().signOut();
+          _logger.i('signOut: GoogleSignIn signed out');
+        } catch (e) {
+          _logger.w('signOut: GoogleSignIn signOut failed (ignored): $e');
+        }
+      }
       await _auth.signOut();
       _logger.i('signOut: FirebaseAuth signed out');
       SupabaseConfig.reset();
@@ -485,13 +503,50 @@ class AuthService {
 
   bool get isAuthenticated => _auth.currentUser != null;
 
+  /// Build the action-code settings used for the email verification / password
+  /// reset links. `handleCodeInApp: false` lets Firebase's hosted action
+  /// handler (https://<project>.firebaseapp.com/__/auth/action) verify the
+  /// email server-side and then continue to the deployed web app. The GitHub
+  /// Pages domain must be listed in the Firebase console under
+  /// Authentication -> Settings -> Authorized domains, otherwise Firebase
+  /// rejects the send with INVALID_CONTINUE_URI.
+  static final fbauth.ActionCodeSettings _verificationCodeSettings =
+      fbauth.ActionCodeSettings(
+    url: 'https://connacri.github.io/CargoLink/',
+    handleCodeInApp: false,
+    androidPackageName: 'com.cargolink.dz.cargolink',
+    androidInstallApp: true,
+    androidMinimumVersion: '1',
+    iOSBundleId: 'com.cargolink.dz.cargolink',
+  );
+
+  /// Ask Firebase to send the email-verification link for the given user.
+  ///
+  /// Tries the app-specific action link first (returns the user to the web app
+  /// after verifying). If the continue URL domain is not yet in the Firebase
+  /// "Authorized domains" list, Firebase rejects the send with
+  /// INVALID_CONTINUE_URI, so we retry with the default action handler — this
+  /// guarantees the email always gets dispatched.
+  Future<void> _sendVerificationEmail(fbauth.User user) async {
+    try {
+      await user.sendEmailVerification(_verificationCodeSettings);
+      _logger.i('Verification email sent (app action link)');
+    } catch (e) {
+      _logger.w(
+        'Verification email with action settings failed ($e); '
+        'retrying with default handler',
+      );
+      await user.sendEmailVerification();
+    }
+  }
+
   /// Re-send the email verification link for the currently signed-in user.
   Future<void> resendVerificationEmail() async {
     try {
       _logger.i('=== Resend verification email ===');
       final user = _auth.currentUser;
       if (user == null) throw Exception('Aucun utilisateur connecté');
-      await user.sendEmailVerification();
+      await _sendVerificationEmail(user);
       _logger.i('Verification email re-sent');
     } on fbauth.FirebaseAuthException catch (e) {
       _logger.e('Resend verification email error: ${e.message} (code ${e.code})');

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
 import '../auth_service.dart';
-import '../supabase_config.dart';
 import '../error_dialog.dart';
 import '../main.dart';
 import 'account_status_screen.dart';
