@@ -59,28 +59,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleForgotPassword() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Entrez votre email d\'abord')),
-      );
-      return;
-    }
-    try {
-      await ref.read(authServiceProvider).resetPassword(email);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Un email de réinitialisation a été envoyé'),
-            backgroundColor: AppTheme.accentColor,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        await showAppErrorDialog(context, message: 'Erreur: $e');
-      }
-    }
+    // Navigate to the dedicated "mot de passe oublié" screen (same UX as the
+    // login/signup/email-verification screens).
+    Navigator.of(context).pushNamed('/forgot-password');
   }
 
   @override

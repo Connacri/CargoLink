@@ -49,6 +49,17 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
       if (!mounted) return;
 
+      final authService = ref.read(authServiceProvider);
+      final emailVerified =
+          authService.firebaseAuth.currentUser?.emailVerified ?? false;
+
+      if (!emailVerified) {
+        // Email verification pending: go back to the root, which will show the
+        // verification page (routing is driven by AppAuthState.emailVerified).
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        return;
+      }
+
       if (_role == 'shipper') {
         // Shipper must complete registration documents
         Navigator.of(context).pushReplacementNamed('/shipper-registration');

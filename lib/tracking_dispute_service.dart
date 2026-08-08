@@ -21,6 +21,7 @@ class TrackingService {
     double? latitude,
     double? longitude,
     String? notes,
+    String? location,
   }) async {
     try {
       _logger.i('Adding tracking update for booking: $bookingId');
@@ -35,6 +36,7 @@ class TrackingService {
             'status': status,
             'timestamp': DateTime.now().toIso8601String(),
             'notes': notes,
+            'location': location,
           })
           .select()
           .single();

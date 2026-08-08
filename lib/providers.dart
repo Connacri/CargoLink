@@ -284,6 +284,20 @@ final notificationStreamProvider =
 });
 
 // ============================================================================
+// ADMIN / SUPER_ADMIN (FOUNDER) PROVIDERS
+// ============================================================================
+
+final allUsersProvider = FutureProvider<List<User>>((ref) async {
+  final authService = ref.watch(authServiceProvider);
+  return authService.getAllUsers();
+});
+
+final platformStatsProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
+  final authService = ref.watch(authServiceProvider);
+  return authService.getPlatformStats();
+});
+
+// ============================================================================
 // BROADCAST PROVIDERS
 // ============================================================================
 

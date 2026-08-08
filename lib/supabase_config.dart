@@ -12,11 +12,15 @@ class SupabaseConfig {
   // Project URL (public, safe to commit)
   static const String supabaseUrl = 'https://mxhomeuraxnmjtfhzhvz.supabase.co';
 
-  // Anon (publishable) key. Loaded at build time via
-  // --dart-define=SUPABASE_ANON_KEY=... (set by the CI / local build script).
+  // Anon (publishable) key. It is public by design, so the real project key is
+  // baked in as the default (works in local runs). CI may still override it via
+  // --dart-define=SUPABASE_ANON_KEY=...
   static const String supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: 'PASTE_YOUR_SUPABASE_ANON_KEY_HERE',
+    defaultValue:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.'
+        'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14aG9tZXVyYXhubWp0Zmh6aHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNDMyODIsImV4cCI6MjEwMTYxOTI4Mn0.'
+        'phNESFfG1i7Xd-Z_oc_xTEX14KIL7rVGUyHJzkwKDHw',
   );
 
   /// The Publishable API key (supabase-js v2 style), if used.

@@ -8,6 +8,9 @@ import 'client_home_screen.dart';
 import 'booking_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
+import 'screens/email_verification_screen.dart';
+import 'screens/forgot_password_screen.dart';
+import 'screens/account_gate_screen.dart';
 import 'screens/my_orders_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/payment_screen.dart';
@@ -15,6 +18,7 @@ import 'screens/tracking_screen.dart';
 import 'screens/shipper_registration_screen.dart';
 import 'screens/shipper_dashboard_screen.dart';
 import 'screens/admin_dashboard_screen.dart';
+import 'screens/super_admin_dashboard_screen.dart';
 import 'screens/broadcast_screen.dart';
 
 Future<void> main() async {
@@ -39,10 +43,13 @@ class CargoLinkApp extends ConsumerWidget {
     return MaterialApp(
       title: 'CargoLink',
       theme: AppTheme.darkTheme,
-      home: authState.when(
+        home: authState.when(
         data: (authData) {
           if (authData.isSignedIn) {
-            return const HomeTabsScreen();
+            if (!authData.emailVerified) {
+              return const EmailVerificationScreen();
+            }
+            return const AccountGateScreen();
           } else {
             return const LoginScreen();
           }
@@ -53,6 +60,7 @@ class CargoLinkApp extends ConsumerWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignupScreen(),
+        '/forgot-password': (context) => const ForgotPasswordScreen(),
         '/home': (context) => const HomeTabsScreen(),
         '/booking': (context) {
           final shipmentId =
@@ -223,7 +231,7 @@ class HomeTabsScreen extends ConsumerWidget {
           case 'admin':
             return const AdminDashboardScreen();
           case 'super_admin':
-            return const AdminDashboardScreen();
+            return const SuperAdminDashboardScreen();
           default:
             return const LoginScreen();
         }

@@ -9,6 +9,15 @@ class User {
   final String fullName;
   final String? profilePictureUrl;
   final String role; // client, shipper, admin
+  final String? wechat;
+  final String? whatsapp;
+  final String? telegram;
+  final String? facebook;
+  final String? instagram;
+  final String? tiktok;
+  final bool isActive;
+  final DateTime? deactivatedAt;
+  final DateTime? deletionRequestedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -19,6 +28,15 @@ class User {
     required this.fullName,
     this.profilePictureUrl,
     required this.role,
+    this.wechat,
+    this.whatsapp,
+    this.telegram,
+    this.facebook,
+    this.instagram,
+    this.tiktok,
+    this.isActive = true,
+    this.deactivatedAt,
+    this.deletionRequestedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -31,6 +49,19 @@ class User {
       fullName: json['full_name'] as String,
       profilePictureUrl: json['profile_picture_url'] as String?,
       role: json['role'] as String,
+      wechat: json['wechat'] as String?,
+      whatsapp: json['whatsapp'] as String?,
+      telegram: json['telegram'] as String?,
+      facebook: json['facebook'] as String?,
+      instagram: json['instagram'] as String?,
+      tiktok: json['tiktok'] as String?,
+      isActive: json['is_active'] as bool? ?? true,
+      deactivatedAt: json['deactivated_at'] != null
+          ? DateTime.tryParse(json['deactivated_at'] as String)
+          : null,
+      deletionRequestedAt: json['deletion_requested_at'] != null
+          ? DateTime.tryParse(json['deletion_requested_at'] as String)
+          : null,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -44,6 +75,15 @@ class User {
       'full_name': fullName,
       'profile_picture_url': profilePictureUrl,
       'role': role,
+      'wechat': wechat,
+      'whatsapp': whatsapp,
+      'telegram': telegram,
+      'facebook': facebook,
+      'instagram': instagram,
+      'tiktok': tiktok,
+      'is_active': isActive,
+      'deactivated_at': deactivatedAt?.toIso8601String(),
+      'deletion_requested_at': deletionRequestedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -56,6 +96,15 @@ class User {
     String? fullName,
     String? profilePictureUrl,
     String? role,
+    String? wechat,
+    String? whatsapp,
+    String? telegram,
+    String? facebook,
+    String? instagram,
+    String? tiktok,
+    bool? isActive,
+    DateTime? deactivatedAt,
+    DateTime? deletionRequestedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -66,6 +115,15 @@ class User {
       fullName: fullName ?? this.fullName,
       profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
       role: role ?? this.role,
+      wechat: wechat ?? this.wechat,
+      whatsapp: whatsapp ?? this.whatsapp,
+      telegram: telegram ?? this.telegram,
+      facebook: facebook ?? this.facebook,
+      instagram: instagram ?? this.instagram,
+      tiktok: tiktok ?? this.tiktok,
+      isActive: isActive ?? this.isActive,
+      deactivatedAt: deactivatedAt ?? this.deactivatedAt,
+      deletionRequestedAt: deletionRequestedAt ?? this.deletionRequestedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -252,6 +310,7 @@ class Booking {
   final double totalPrice;
   final String status; // pending, confirmed, shipped, delivered, cancelled
   final String paymentStatus; // pending, paid, refunded
+  final String? trackingNumber;
   final DateTime createdAt;
   final DateTime updatedAt;
   final Shipment? shipment;
@@ -269,6 +328,7 @@ class Booking {
     required this.totalPrice,
     required this.status,
     required this.paymentStatus,
+    this.trackingNumber,
     required this.createdAt,
     required this.updatedAt,
     this.shipment,
@@ -290,6 +350,7 @@ class Booking {
       totalPrice: (json['total_price'] as num).toDouble(),
       status: json['status'] as String,
       paymentStatus: json['payment_status'] as String,
+      trackingNumber: json['tracking_number'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       shipment: json['shipments'] != null ? Shipment.fromJson(json['shipments']) : null,
@@ -310,6 +371,7 @@ class Booking {
       'total_price': totalPrice,
       'status': status,
       'payment_status': paymentStatus,
+      'tracking_number': trackingNumber,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -328,9 +390,10 @@ class ShipmentTracking {
   final String bookingId;
   final double? latitude;
   final double? longitude;
-  final String status; // collected, in_transit, customs_cleared, delivered
+  final String status; // order_processed, collected, departed_origin, in_transit, arrived_destination, customs_cleared, out_for_delivery, delivered
   final DateTime timestamp;
   final String? notes;
+  final String? location;
 
   ShipmentTracking({
     required this.id,
@@ -340,6 +403,7 @@ class ShipmentTracking {
     required this.status,
     required this.timestamp,
     this.notes,
+    this.location,
   });
 
   factory ShipmentTracking.fromJson(Map<String, dynamic> json) {
@@ -351,6 +415,7 @@ class ShipmentTracking {
       status: json['status'] as String,
       timestamp: DateTime.parse(json['timestamp'] as String),
       notes: json['notes'] as String?,
+      location: json['location'] as String?,
     );
   }
 
@@ -363,6 +428,7 @@ class ShipmentTracking {
       'status': status,
       'timestamp': timestamp.toIso8601String(),
       'notes': notes,
+      'location': location,
     };
   }
 }

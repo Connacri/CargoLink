@@ -1,6 +1,7 @@
 ﻿import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart' as fbauth;
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
@@ -22,8 +23,11 @@ import 'fcm_service.dart';
 const _uidNamespace = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 const _uidNamePrefix = 'cargolink:';
 
+// NOTE: in the `uuid` package v4+ the signature is `v5(namespace, name)`
+// (namespace FIRST). Passing them reversed throws
+// `FormatException: The provided UUID is invalid.`
 String supabaseUserIdFromFirebase(String firebaseUid) =>
-    const Uuid().v5('$_uidNamePrefix$firebaseUid', _uidNamespace);
+    const Uuid().v5(_uidNamespace, '$_uidNamePrefix$firebaseUid');
 
 // ============================================================================
 // APP AUTH STATE
@@ -32,7 +36,8 @@ String supabaseUserIdFromFirebase(String firebaseUid) =>
 class AppAuthState {
   final String? firebaseUid;
   final String? userId; // deterministic Supabase user id
-  const AppAuthState({this.firebaseUid, this.userId});
+  final bool emailVerified;
+  const AppAuthState({this.firebaseUid, this.userId, this.emailVerified = false});
 
   bool get isSignedIn => firebaseUid != null;
 }
@@ -67,7 +72,10 @@ class AuthService {
     }
     yield _buildState();
 
-    await for (final user in _auth.authStateChanges()) {
+    // Listen to idTokenChanges rather than authStateChanges so that a
+    // `reload()` (e.g. after clicking the email verification link) re-emits the
+    // state with the fresh `emailVerified` flag.
+    await for (final user in _auth.idTokenChanges()) {
       if (user != null) {
         try {
           await _onAuthenticated(user);
@@ -85,20 +93,33 @@ class AuthService {
     final user = _auth.currentUser;
     if (user == null) return const AppAuthState();
     final userId = supabaseUserIdFromFirebase(user.uid);
-    return AppAuthState(firebaseUid: user.uid, userId: userId);
+    return AppAuthState(
+      firebaseUid: user.uid,
+      userId: userId,
+      emailVerified: user.emailVerified,
+    );
   }
 
   /// Exchange the current Firebase user's ID token for a Supabase access token
   /// (minted by the Edge Function) and point every Supabase call at it.
-Future<void> _onAuthenticated(fbauth.User user) async {
+  Future<void> _onAuthenticated(fbauth.User user) async {
+    _logger.i('_onAuthenticated: exchanging Firebase token for Supabase JWT');
     final token = await _exchangeForSupabaseToken(user);
+    _logger.i('_onAuthenticated: received Supabase access token');
     SupabaseConfig.setAccessToken(token);
     final userId = supabaseUserIdFromFirebase(user.uid);
+    _logger.i('_onAuthenticated: supabase userId=$userId');
     await FcmService.instance.registerToken(userId);
+    _logger.i('_onAuthenticated: FCM token registered');
   }
 
   Future<String> _exchangeForSupabaseToken(fbauth.User user) async {
+    _logger.i('_exchange: fetching fresh Firebase idToken');
     final idToken = await user.getIdToken(true);
+    _logger.i(
+      '_exchange: posting to auth-exchange-firebase '
+      '(idToken.length=${idToken?.length ?? 0})',
+    );
     final response = await http.post(
       Uri.parse(
         '${SupabaseConfig.supabaseUrl}/functions/v1/auth-exchange-firebase',
@@ -106,10 +127,12 @@ Future<void> _onAuthenticated(fbauth.User user) async {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'idToken': idToken}),
     );
+    _logger.i('_exchange: HTTP ${response.statusCode}');
 
     if (response.statusCode != 200) {
+      _logger.e('_exchange: failed response body=${response.body}');
       throw Exception(
-        'Ã‰chec de l\'Ã©change de session (${response.statusCode}): '
+        'Échec de l\'échange de session (${response.statusCode}): '
         '${response.body}',
       );
     }
@@ -135,18 +158,29 @@ Future<void> _onAuthenticated(fbauth.User user) async {
     required String role, // client or shipper
   }) async {
     try {
-      _logger.i('Signing up user with email: $email');
-
+      _logger.i('=== Email sign-up === email=$email role=$role');
       final credential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
       final user = credential.user;
       if (user == null) {
-        throw Exception('CrÃ©ation du compte impossible');
+        throw Exception('Création du compte impossible');
       }
+      _logger.i('signUp: Firebase user created uid=${user.uid}');
 
       await user.updateDisplayName(fullName);
+      _logger.i('signUp: displayName set to $fullName');
+
+      // Ask Firebase to send the verification email. When the app restarts and
+      // the user signs in, authState will carry emailVerified and the router
+      // will keep showing the verification page until the user clicks the link.
+      if (!user.emailVerified) {
+        _logger.i('signUp: email not verified, sending verification email');
+        await user.sendEmailVerification();
+        _logger.i('signUp: verification email sent');
+      }
+
       await _onAuthenticated(user);
 
       await _createUserProfile(
@@ -157,9 +191,9 @@ Future<void> _onAuthenticated(fbauth.User user) async {
         role: role,
       );
 
-      _logger.i('User created successfully: ${user.uid}');
+      _logger.i('signUp: SUCCESS uid=${user.uid}');
     } on fbauth.FirebaseAuthException catch (e) {
-      _logger.e('Sign up error: ${e.message}');
+      _logger.e('Sign up error: ${e.message} (code ${e.code})');
       throw AuthServiceException(e.message ?? 'Erreur d\'inscription');
     } catch (e) {
       _logger.e('Unexpected error during sign up: $e');
@@ -173,64 +207,116 @@ Future<void> _onAuthenticated(fbauth.User user) async {
     required String password,
   }) async {
     try {
-      _logger.i('Signing in user with email: $email');
-
+      _logger.i('=== Email sign-in ===');
+      _logger.i('signInWithEmail: email=$email');
       await _auth.signInWithEmailAndPassword(email: email, password: password);
       final user = _auth.currentUser;
       if (user == null) throw Exception('Connexion impossible');
+      _logger.i('signInWithEmail: Firebase auth OK uid=${user.uid}');
 
       await _onAuthenticated(user);
       await _ensureProfileIfAbsent(user, email: email);
 
-      _logger.i('User signed in successfully');
+      _logger.i('signInWithEmail: SUCCESS');
     } on fbauth.FirebaseAuthException catch (e) {
-      _logger.e('Sign in error: ${e.message}');
+      _logger.e('Email sign-in error: ${e.message} (code ${e.code})');
       throw AuthServiceException(e.message ?? 'Erreur de connexion');
     } catch (e) {
-      _logger.e('Unexpected error during sign in: $e');
+      _logger.e('Unexpected error during email sign in: $e');
       rethrow;
     }
   }
 
   /// Sign in with Google (Firebase).
+  ///
+  /// Platform-aware:
+  ///  - Web: uses the Firebase `signInWithPopup(GoogleAuthProvider)` flow (the
+  ///    `google_sign_in` plugin is discouraged on the web and cannot reliably
+  ///    provide an `idToken`, which caused "null check operator used on a null
+  ///    value").
+  ///  - Android / iOS / macOS: uses `google_sign_in` v6 `signIn()` (the pattern
+  ///    proven to work on devices) and exchanges accessToken + idToken.
+  ///  - Windows / Linux: `google_sign_in` has no implementation and
+  ///    `signInWithPopup` is web-only, so a clear error is raised instead.
   Future<void> signInWithGoogle() async {
     try {
-      _logger.i('Signing in with Google');
-
-      final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) {
-        throw AuthServiceException('Connexion Google annulée');
-      }
-      final googleAuth = await googleUser.authentication;
-
-      final credential = fbauth.GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+      _logger.i('=== Google sign-in ===');
+      _logger.i(
+        'Platform: ${kIsWeb ? 'web' : defaultTargetPlatform.name}',
       );
 
-      await _auth.signInWithCredential(credential);
+      if (kIsWeb) {
+        _logger.i('Web: starting FirebaseAuth.signInWithPopup(GoogleAuthProvider)');
+        final userCredential =
+            await _auth.signInWithPopup(fbauth.GoogleAuthProvider());
+        _logger.i(
+          'Web: popup returned uid=${userCredential.user?.uid} '
+          'email=${userCredential.user?.email}',
+        );
+      } else if (defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.linux) {
+        _logger.e(
+          'Google sign-in unsupported on ${defaultTargetPlatform.name}',
+        );
+        throw AuthServiceException(
+          'Google Sign-In n\'est pas encore disponible sur '
+          '${defaultTargetPlatform.name}. Utilisez email/mot de passe ou '
+          'l\'application mobile.',
+        );
+      } else {
+        _logger.i('Mobile: starting GoogleSignIn().signIn()');
+        final googleUser = await GoogleSignIn().signIn();
+        if (googleUser == null) {
+          _logger.w('Mobile: user cancelled the Google dialog');
+          throw AuthServiceException('Connexion Google annulée');
+        }
+        _logger.i('Mobile: Google account email=${googleUser.email}');
+        final googleAuth = await googleUser.authentication;
+        _logger.i(
+          'Mobile: got idToken=${googleAuth.idToken != null} '
+          'accessToken=${googleAuth.accessToken != null}',
+        );
+        final credential = fbauth.GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        _logger.i('Mobile: calling FirebaseAuth.signInWithCredential');
+        await _auth.signInWithCredential(credential);
+        _logger.i('Mobile: FirebaseAuth.signInWithCredential OK');
+      }
+
       final user = _auth.currentUser;
-      if (user == null) throw Exception('Connexion Google impossible');
+      if (user == null) {
+        _logger.e('Google sign-in: currentUser is null after auth');
+        throw Exception('Connexion Google impossible');
+      }
+      _logger.i(
+        'Google sign-in: Firebase user uid=${user.uid} email=${user.email}',
+      );
 
       await _onAuthenticated(user);
-      await _ensureProfileIfAbsent(user, email: user.email);
+      _logger.i('Google sign-in: Supabase session + FCM token ready');
 
-      _logger.i('Google sign in succeeded');
+      await _ensureProfileIfAbsent(user, email: user.email);
+      _logger.i('Google sign-in: profile ensured, SUCCESS');
     } catch (e) {
-      _logger.e('Google sign in failed: $e');
+      _logger.e('Google sign-in FAILED: $e');
       rethrow;
     }
   }
 
   /// Sign out the current user (Firebase + reset Supabase to anon).
-Future<void> signOut() async {
+  Future<void> signOut() async {
     try {
-      _logger.i('Signing out user');
+      _logger.i('=== Sign out ===');
       await FcmService.instance.clearToken();
+      _logger.i('signOut: FCM token cleared');
       await GoogleSignIn().signOut();
+      _logger.i('signOut: GoogleSignIn signed out');
       await _auth.signOut();
+      _logger.i('signOut: FirebaseAuth signed out');
       SupabaseConfig.reset();
-      _logger.i('User signed out successfully');
+      _logger.i('signOut: Supabase session reset, SUCCESS');
     } catch (e) {
       _logger.e('Sign out error: $e');
       rethrow;
@@ -240,14 +326,149 @@ Future<void> signOut() async {
   /// Request a password reset email.
   Future<void> resetPassword(String email) async {
     try {
-      _logger.i('Requesting password reset for: $email');
+      _logger.i('=== Password reset === email=$email');
       await _auth.sendPasswordResetEmail(email: email);
       _logger.i('Password reset email sent');
     } on fbauth.FirebaseAuthException catch (e) {
-      _logger.e('Reset password error: ${e.message}');
-      throw AuthServiceException(e.message ?? 'Erreur de rÃ©initialisation');
+      _logger.e('Reset password error: ${e.message} (code ${e.code})');
+        throw AuthServiceException(e.message ?? 'Erreur de réinitialisation');
     } catch (e) {
       _logger.e('Unexpected error during password reset: $e');
+      rethrow;
+    }
+  }
+
+  // ==========================================================================
+  // ACCOUNT STATUS (deactivate / delete with 30-day grace period)
+  // ==========================================================================
+
+  static const Duration deletionGracePeriod = Duration(days: 30);
+
+  /// Facebook-style deactivation: the profile is flagged inactive, the user is
+  /// signed out, but nothing is deleted. The account can be reactivated later.
+  Future<void> deactivateAccount() async {
+    try {
+      _logger.i('=== Deactivate account ===');
+      final userId = currentUserId;
+      if (userId == null) throw Exception('Aucun utilisateur connecté');
+      await SupabaseConfig.client
+          .from('users')
+          .update({
+            'is_active': false,
+            'deactivated_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', userId);
+      _logger.i('Account deactivated');
+      await signOut();
+    } catch (e) {
+      _logger.e('Error deactivating account: $e');
+      rethrow;
+    }
+  }
+
+  /// Reactivate a deactivated account.
+  Future<void> reactivateAccount() async {
+    try {
+      _logger.i('=== Reactivate account ===');
+      final userId = currentUserId;
+      if (userId == null) throw Exception('Aucun utilisateur connecté');
+      await SupabaseConfig.client
+          .from('users')
+          .update({
+            'is_active': true,
+            'deactivated_at': null,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', userId);
+      _logger.i('Account reactivated');
+    } catch (e) {
+      _logger.e('Error reactivating account: $e');
+      rethrow;
+    }
+  }
+
+  /// Request permanent deletion. The account is flagged and the actual deletion
+  /// happens after [deletionGracePeriod] (30 days). During that window the user
+  /// can log back in and cancel the deletion.
+  Future<void> requestAccountDeletion() async {
+    try {
+      _logger.i('=== Request account deletion ===');
+      final userId = currentUserId;
+      if (userId == null) throw Exception('Aucun utilisateur connecté');
+      await SupabaseConfig.client
+          .from('users')
+          .update({
+            'is_active': false,
+            'deletion_requested_at': DateTime.now().toIso8601String(),
+            'deactivated_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', userId);
+      _logger.i('Deletion requested (30-day grace period)');
+      await signOut();
+    } catch (e) {
+      _logger.e('Error requesting deletion: $e');
+      rethrow;
+    }
+  }
+
+  /// Cancel a pending deletion request.
+  Future<void> cancelAccountDeletion() async {
+    try {
+      _logger.i('=== Cancel account deletion ===');
+      final userId = currentUserId;
+      if (userId == null) throw Exception('Aucun utilisateur connecté');
+      await SupabaseConfig.client
+          .from('users')
+          .update({
+            'is_active': true,
+            'deletion_requested_at': null,
+            'deactivated_at': null,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', userId);
+      _logger.i('Deletion cancelled');
+    } catch (e) {
+      _logger.e('Error cancelling deletion: $e');
+      rethrow;
+    }
+  }
+
+  /// Whether the deletion grace period has elapsed since the request.
+  bool deletionGraceElapsed(DateTime requestedAt) {
+    return DateTime.now().difference(requestedAt) >= deletionGracePeriod;
+  }
+
+  /// Permanently delete the account now (after the 30-day grace period has
+  /// elapsed). Calls the `delete-account` Edge Function which purges every row
+  /// (public tables, storage objects), the Supabase auth user and finally the
+  /// Firebase account, server-side.
+  Future<void> deleteAccountPermanently() async {
+    try {
+      _logger.i('=== Permanent account deletion ===');
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('Aucun utilisateur connecté');
+      final idToken = await user.getIdToken(true);
+      final response = await http.post(
+        Uri.parse(
+          '${SupabaseConfig.supabaseUrl}/functions/v1/delete-account',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'idToken': idToken}),
+      );
+      _logger.i('delete-account: HTTP ${response.statusCode}');
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Échec de la suppression (${response.statusCode}): ${response.body}',
+        );
+      }
+      // Account is gone — fully sign out.
+      SupabaseConfig.reset();
+      await _auth.signOut();
+      _logger.i('Account permanently deleted');
+    } catch (e) {
+      _logger.e('Error deleting account permanently: $e');
       rethrow;
     }
   }
@@ -263,6 +484,36 @@ Future<void> signOut() async {
   }
 
   bool get isAuthenticated => _auth.currentUser != null;
+
+  /// Re-send the email verification link for the currently signed-in user.
+  Future<void> resendVerificationEmail() async {
+    try {
+      _logger.i('=== Resend verification email ===');
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('Aucun utilisateur connecté');
+      await user.sendEmailVerification();
+      _logger.i('Verification email re-sent');
+    } on fbauth.FirebaseAuthException catch (e) {
+      _logger.e('Resend verification email error: ${e.message} (code ${e.code})');
+      throw AuthServiceException(e.message ?? 'Erreur d\'envoi');
+    } catch (e) {
+      _logger.e('Unexpected error while resending verification email: $e');
+      rethrow;
+    }
+  }
+
+  /// Reload the Firebase user and return whether the email is verified now.
+  Future<bool> refreshEmailVerified() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return false;
+      await user.reload();
+      return user.emailVerified;
+    } catch (e) {
+      _logger.e('Error refreshing email verification: $e');
+      return _auth.currentUser?.emailVerified ?? false;
+    }
+  }
 
   /// Create (idempotent) the user profile in the database. RLS allows the
   /// insert only when `auth.uid() = id`, which holds because the Supabase token
@@ -294,8 +545,12 @@ Future<void> signOut() async {
   /// If a profile row does not exist yet (e.g. Google sign-in), create a
   /// minimal one so the user can be routed by role.
   Future<void> _ensureProfileIfAbsent(fbauth.User user, {String? email}) async {
+    _logger.i('_ensureProfileIfAbsent: checking users row');
     final existing = await getCurrentUserProfile();
-    if (existing != null) return;
+    if (existing != null) {
+      _logger.i('_ensureProfileIfAbsent: profile exists (role=${existing.role})');
+      return;
+    }
 
     try {
       await _createUserProfile(
@@ -308,6 +563,7 @@ Future<void> signOut() async {
         phone: '',
         role: 'client',
       );
+      _logger.i('_ensureProfileIfAbsent: profile auto-created');
     } catch (e) {
       _logger.w('Could not auto-create profile: $e');
     }
@@ -338,6 +594,12 @@ Future<void> signOut() async {
     String? fullName,
     String? phone,
     String? profilePictureUrl,
+    String? wechat,
+    String? whatsapp,
+    String? telegram,
+    String? facebook,
+    String? instagram,
+    String? tiktok,
   }) async {
     try {
       final Map<String, dynamic> updateData = {
@@ -349,6 +611,20 @@ Future<void> signOut() async {
       if (profilePictureUrl != null) {
         updateData['profile_picture_url'] = profilePictureUrl;
       }
+      if (wechat != null) updateData['wechat'] = wechat.isEmpty ? null : wechat;
+      if (whatsapp != null) {
+        updateData['whatsapp'] = whatsapp.isEmpty ? null : whatsapp;
+      }
+      if (telegram != null) {
+        updateData['telegram'] = telegram.isEmpty ? null : telegram;
+      }
+      if (facebook != null) {
+        updateData['facebook'] = facebook.isEmpty ? null : facebook;
+      }
+      if (instagram != null) {
+        updateData['instagram'] = instagram.isEmpty ? null : instagram;
+      }
+      if (tiktok != null) updateData['tiktok'] = tiktok.isEmpty ? null : tiktok;
 
       final response = await SupabaseConfig.client
           .from('users')
@@ -377,6 +653,146 @@ Future<void> signOut() async {
       return User.fromJson(response);
     } catch (e) {
       _logger.e('Error getting user: $e');
+      return null;
+    }
+  }
+
+  // ==========================================================================
+  // ADMIN / SUPER_ADMIN METHODS (founder = full control)
+  // ==========================================================================
+
+  /// List all users (admin / super_admin). Excludes own row.
+  Future<List<User>> getAllUsers({int limit = 200, int offset = 0}) async {
+    try {
+      final response = await SupabaseConfig.client
+          .from('users')
+          .select()
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      final userId = currentUserId;
+      return (response as List)
+          .map((item) => User.fromJson(item as Map<String, dynamic>))
+          .where((u) => u.id != userId)
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting all users: $e');
+      return [];
+    }
+  }
+
+  /// Update a user's role (admin / super_admin).
+  Future<User?> updateUserRole(String userId, String newRole) async {
+    try {
+      final response = await SupabaseConfig.client
+          .from('users')
+          .update({
+            'role': newRole,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', userId)
+          .select()
+          .single();
+      _logger.i('User role updated to $newRole');
+      return User.fromJson(response);
+    } catch (e) {
+      _logger.e('Error updating user role: $e');
+      rethrow;
+    }
+  }
+
+  /// Activate or deactivate any user (admin / super_admin).
+  Future<User?> setUserActive(String userId, bool active) async {
+    try {
+      final response = await SupabaseConfig.client
+          .from('users')
+          .update({
+            'is_active': active,
+            'deactivated_at': active ? null : DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', userId)
+          .select()
+          .single();
+      _logger.i('User active=$active');
+      return User.fromJson(response);
+    } catch (e) {
+      _logger.e('Error setting user active: $e');
+      rethrow;
+    }
+  }
+
+  /// Permanently delete any user (super_admin only). Calls the delete-account
+  /// edge function in admin mode.
+  Future<void> deleteUserAsAdmin(String targetUserUuid) async {
+    try {
+      _logger.i('=== Super admin deletes user $targetUserUuid ===');
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('Aucun utilisateur connecté');
+      final adminToken = await user.getIdToken(true);
+      final response = await http.post(
+        Uri.parse(
+          '${SupabaseConfig.supabaseUrl}/functions/v1/delete-account',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'adminToken': adminToken,
+          'targetUserUuid': targetUserUuid,
+        }),
+      );
+      _logger.i('admin delete-account: HTTP ${response.statusCode}');
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Échec de la suppression (${response.statusCode}): ${response.body}',
+        );
+      }
+      _logger.i('User deleted by admin');
+    } catch (e) {
+      _logger.e('Error deleting user as admin: $e');
+      rethrow;
+    }
+  }
+
+  /// Platform-wide stats for the founder dashboard.
+  Future<Map<String, dynamic>?> getPlatformStats() async {
+    try {
+      final users = await SupabaseConfig.client.from('users').select('id, role');
+      final usersList = users as List;
+      final clients =
+          usersList.where((u) => u['role'] == 'client').length;
+      final shippers =
+          usersList.where((u) => u['role'] == 'shipper').length;
+      final admins =
+          usersList.where((u) => u['role'] == 'admin' || u['role'] == 'super_admin').length;
+
+      final shipments = await SupabaseConfig.client
+          .from('shipments')
+          .select('id, status');
+      final shipmentsList = shipments as List;
+      final activeShipments = shipmentsList
+          .where((s) => s['status'] == 'active')
+          .length;
+
+      final bookings = await SupabaseConfig.client
+          .from('bookings')
+          .select('id, status');
+      final bookingsList = bookings as List;
+      final activeBookings = bookingsList
+          .where((b) => b['status'] == 'pending' || b['status'] == 'confirmed')
+          .length;
+
+      return {
+        'total_users': usersList.length,
+        'clients': clients,
+        'shippers': shippers,
+        'admins': admins,
+        'total_shipments': shipmentsList.length,
+        'active_shipments': activeShipments,
+        'total_bookings': bookingsList.length,
+        'active_bookings': activeBookings,
+      };
+    } catch (e) {
+      _logger.e('Error getting platform stats: $e');
       return null;
     }
   }

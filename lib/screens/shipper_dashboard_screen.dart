@@ -850,8 +850,9 @@ class _ManageBookingCard extends ConsumerWidget {
       await ref.read(bookingServiceProvider).markAsShipped(booking.id);
       await ref.read(trackingServiceProvider).addTrackingUpdate(
             bookingId: booking.id,
-            status: 'in_transit',
+            status: 'departed_origin',
             notes: 'Colis expédié depuis ${booking.shipment?.originCountry}',
+            location: booking.shipment?.originCountry,
           );
       await ref.read(notificationServiceProvider).notifyClientShipmentDispatched(
             clientId: booking.clientId,
@@ -871,6 +872,7 @@ class _ManageBookingCard extends ConsumerWidget {
             bookingId: booking.id,
             status: 'delivered',
             notes: 'Colis livré à ${booking.shipment?.destinationCity}',
+            location: booking.shipment?.destinationCity,
           );
       await ref.read(notificationServiceProvider).notifyClientShipmentDelivered(
             clientId: booking.clientId,
