@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
@@ -54,16 +54,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _pickAndUploadPicture(String userId) async {
     try {
-      final picker = ImagePicker();
-      final file = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 800,
-      );
-      if (file == null) return;
+      final result =
+          await FilePicker.platform.pickFiles(type: FileType.image);
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
 
       final url = await ref.read(storageServiceProvider).uploadProfilePicture(
-            file: File(file.path),
+            file: File(file.path!),
             userId: userId,
           );
 

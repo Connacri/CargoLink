@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
@@ -431,24 +431,21 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result == null || result.files.isEmpty) return;
+    final imageFile = File(result.files.first.path!);
 
-    if (image != null) {
-      final imageFile = File(image.path);
-
-      // Check file size
-      if (await imageFile.length() > AppConstants.maxFileSize) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Image too large (max 5MB)')),
-        );
-        return;
-      }
-
-      setState(() {
-        _productImages.add(imageFile);
-      });
+    // Check file size
+    if (await imageFile.length() > AppConstants.maxFileSize) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Image too large (max 5MB)')),
+      );
+      return;
     }
+
+    setState(() {
+      _productImages.add(imageFile);
+    });
   }
 
   Future<void> _submitBooking(

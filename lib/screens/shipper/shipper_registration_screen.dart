@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../data/services/storage_service.dart';
@@ -32,15 +32,17 @@ class _ShipperRegistrationScreenState
   }
 
   Future<void> _pickPassport() async {
-    final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery);
-    if (file != null) setState(() => _passportPhoto = File(file.path));
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result != null && result.files.isNotEmpty) {
+      setState(() => _passportPhoto = File(result.files.first.path!));
+    }
   }
 
   Future<void> _pickLivePhoto() async {
-    final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.camera);
-    if (file != null) setState(() => _livePhoto = File(file.path));
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result != null && result.files.isNotEmpty) {
+      setState(() => _livePhoto = File(result.files.first.path!));
+    }
   }
 
   Future<void> _submit() async {
