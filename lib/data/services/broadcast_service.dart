@@ -50,4 +50,40 @@ class BroadcastService {
       return [];
     }
   }
+
+  /// Update an existing announcement (admin / super_admin only, enforced by RLS).
+  Future<Broadcast> updateBroadcast({
+    required String broadcastId,
+    required String title,
+    required String message,
+  }) async {
+    try {
+      final response = await SupabaseConfig.client
+          .from('broadcasts')
+          .update({'title': title, 'message': message})
+          .eq('id', broadcastId)
+          .select()
+          .single();
+
+      _logger.i('Broadcast updated: $broadcastId');
+      return Broadcast.fromJson(response);
+    } catch (e) {
+      _logger.e('Error updating broadcast: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete an announcement (admin / super_admin only, enforced by RLS).
+  Future<void> deleteBroadcast(String broadcastId) async {
+    try {
+      await SupabaseConfig.client
+          .from('broadcasts')
+          .delete()
+          .eq('id', broadcastId);
+      _logger.i('Broadcast deleted: $broadcastId');
+    } catch (e) {
+      _logger.e('Error deleting broadcast: $e');
+      rethrow;
+    }
+  }
 }

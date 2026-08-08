@@ -18,6 +18,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
   final _messageController = TextEditingController();
   bool _isSending = false;
   String _currentRole = 'client';
+  Broadcast? _editing;
 
   @override
   void initState() {
@@ -58,19 +59,79 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
     }
 
     setState(() => _isSending = true);
+    final wasEditing = _editing != null;
     try {
-      await ref.read(broadcastServiceProvider).sendBroadcast(
-            title: title,
-            message: message,
-          );
+      if (wasEditing) {
+        await ref.read(broadcastServiceProvider).updateBroadcast(
+              broadcastId: _editing!.id,
+              title: title,
+              message: message,
+            );
+      } else {
+        await ref.read(broadcastServiceProvider).sendBroadcast(
+              title: title,
+              message: message,
+            );
+      }
       _titleController.clear();
       _messageController.clear();
+      setState(() => _editing = null);
       ref.invalidate(broadcastsProvider);
-      _snack('Annonce envoyée à tous les utilisateurs', AppTheme.accentColor);
+      _snack(
+        wasEditing
+            ? 'Annonce mise à jour'
+            : 'Annonce envoyée à tous les utilisateurs',
+        AppTheme.accentColor,
+      );
     } catch (e) {
-      _snack('Échec de l\'envoi: $e', AppTheme.errorColor);
+      _snack('Échec: $e', AppTheme.errorColor);
     } finally {
       if (mounted) setState(() => _isSending = false);
+    }
+  }
+
+  void _startEdit(Broadcast broadcast) {
+    _titleController.text = broadcast.title;
+    _messageController.text = broadcast.message;
+    setState(() => _editing = broadcast);
+  }
+
+  void _cancelEdit() {
+    _titleController.clear();
+    _messageController.clear();
+    setState(() => _editing = null);
+  }
+
+  Future<void> _deleteBroadcast(Broadcast broadcast) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer l\'annonce'),
+        content: Text(
+          'Voulez-vous vraiment supprimer « ${broadcast.title} » ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(broadcastServiceProvider).deleteBroadcast(broadcast.id);
+      if (_editing?.id == broadcast.id) _cancelEdit();
+      ref.invalidate(broadcastsProvider);
+      _snack('Annonce supprimée', AppTheme.accentColor);
+    } catch (e) {
+      _snack('Échec de la suppression: $e', AppTheme.errorColor);
     }
   }
 
@@ -108,8 +169,12 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
                 return ListView.builder(
                   padding: const EdgeInsets.all(12),
                   itemCount: items.length,
-                  itemBuilder: (context, index) =>
-                      _BroadcastCard(broadcast: items[index]),
+                  itemBuilder: (context, index) => _BroadcastCard(
+                    broadcast: items[index],
+                    canManage: _canSend,
+                    onEdit: () => _startEdit(items[index]),
+                    onDelete: () => _deleteBroadcast(items[index]),
+                  ),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -127,21 +192,26 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
   }
 
   Widget _buildComposer() {
+    final editing = _editing != null;
     return Container(
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.primaryColor),
+        border: Border.all(
+          color: editing ? AppTheme.warningColor : AppTheme.primaryColor,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            _currentRole == 'super_admin'
-                ? 'Envoyer une annonce à tous (Fondateur)'
-                : 'Envoyer une annonce à tous',
+            editing
+                ? 'Modifier l\'annonce'
+                : _currentRole == 'super_admin'
+                    ? 'Envoyer une annonce à tous (Fondateur)'
+                    : 'Envoyer une annonce à tous',
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -180,9 +250,16 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
                       color: Colors.white,
                     ),
                   )
-                : const Icon(Icons.send),
-            label: const Text('Publier l\'annonce'),
+                : Icon(editing ? Icons.save : Icons.send),
+            label: Text(editing ? 'Enregistrer' : 'Publier l\'annonce'),
           ),
+          if (editing) ...[
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: _isSending ? null : _cancelEdit,
+              child: const Text('Annuler'),
+            ),
+          ],
         ],
       ),
     );
@@ -190,8 +267,16 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
 }
 
 class _BroadcastCard extends StatelessWidget {
-  const _BroadcastCard({required this.broadcast});
+  const _BroadcastCard({
+    required this.broadcast,
+    required this.canManage,
+    required this.onEdit,
+    required this.onDelete,
+  });
   final Broadcast broadcast;
+  final bool canManage;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -216,6 +301,37 @@ class _BroadcastCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (canManage)
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        onEdit();
+                      } else if (value == 'delete') {
+                        onDelete();
+                      }
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: ListTile(
+                          leading: Icon(Icons.edit, size: 18),
+                          title: Text('Modifier'),
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: ListTile(
+                          leading: Icon(Icons.delete_outline,
+                              size: 18, color: AppTheme.errorColor),
+                          title: Text('Supprimer'),
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                        ),
+                      ),
+                    ],
+                  ),
               ],
             ),
             const SizedBox(height: 8),
