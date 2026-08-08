@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:cargolink/models.dart';
+import 'package:cargolink/data/models/models.dart';
 
 void main() {
   test('User.fromJson parses a valid payload', () {
