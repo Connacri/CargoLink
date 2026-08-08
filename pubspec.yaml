@@ -17,8 +17,8 @@ dependencies:
   riverpod_generator: ^2.3.0
 
   # Supabase
-  supabase_flutter: ^1.10.0
-  supabase: ^1.10.0
+  supabase_flutter: ^2.17.1
+  supabase: ^2.16.0
 
   # Authentication
   google_sign_in: ^7.2.0
@@ -70,11 +70,11 @@ dependencies:
   connectivity_plus: ^5.0.0
   permission_handler: ^11.4.0
   url_launcher: ^6.1.0
-  firebase_core: ^4.7.0
-  firebase_auth: ^6.4.0
-  firebase_messaging: ^16.2.0
-  cloud_firestore: ^6.3.0
-  firebase_storage: ^13.1.0
+  firebase_core: ^4.13.0
+  firebase_auth: ^6.5.7
+  firebase_messaging: ^16.5.0
+  cloud_firestore: ^6.8.0
+  firebase_storage: ^13.4.6
 
 dev_dependencies:
   flutter_test:

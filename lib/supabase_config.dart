@@ -25,29 +25,31 @@ class SupabaseConfig {
     defaultValue: '',
   );
 
-  // The client is recreated whenever the JWT changes so every service call
-  // automatically uses the latest (Firebase-issued) token.
-  static SupabaseClient _client = _buildAnonClient();
+  // Single client, created once. The current (Firebase-issued) JWT is provided
+  // through the `accessToken` callback (the documented way to bridge a
+  // third-party auth system with Supabase): every request carries it as the
+  // `Authorization` header while it is non-null, and falls back to the anon key
+  // when signed out.
+  static final SupabaseClient _client = SupabaseClient(
+    supabaseUrl,
+    supabaseAnonKey,
+    accessToken: () async => _supabaseJwt,
+  );
 
-  static SupabaseClient _buildAnonClient() =>
-      SupabaseClient(supabaseUrl, supabaseAnonKey);
-
-  static Future<void> initialize() async {
-    _client = _buildAnonClient();
-  }
+  static String? _supabaseJwt;
 
   static SupabaseClient get client => _client;
 
   /// Point the app's Supabase client at the (Firebase-minted) token, so every
   /// CRUD is authorized as the authenticated (RLS: auth.uid()) user.
   static void setAccessToken(String jwt) {
-    _client = SupabaseClient(supabaseUrl, jwt);
+    _supabaseJwt = jwt;
   }
 
   /// Reset to the public (anon) client — used on sign-out so that no
   /// authenticated CRUD can be performed afterwards.
   static void reset() {
-    _client = _buildAnonClient();
+    _supabaseJwt = null;
   }
 }
 

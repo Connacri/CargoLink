@@ -19,9 +19,6 @@ import 'screens/broadcast_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Supabase
-  await SupabaseConfig.initialize();
-
   // Initialize Firebase (for notifications)
   await initializeFirebase();
 

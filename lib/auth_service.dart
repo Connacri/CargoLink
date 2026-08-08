@@ -213,7 +213,28 @@ final account = await GoogleSignIn.instance.authenticate();
       _logger.i('Google sign in succeeded');
     } on GoogleSignInException catch (e) {
       _logger.e('Google sign in failed: $e');
-      throw AuthServiceException('Connexion Google annulée');
+      final message = switch (e.code) {
+        GoogleSignInExceptionCode.canceled => 'Connexion Google annulée',
+        GoogleSignInExceptionCode.clientConfigurationError =>
+          'Configuration Google sign-in incorrecte',
+        GoogleSignInExceptionCode.providerConfigurationError =>
+          'Le fournisseur Google n\'est pas configuré',
+        GoogleSignInExceptionCode.uiUnavailable =>
+          'Interface de connexion indisponible',
+        GoogleSignInExceptionCode.interrupted =>
+          'Connexion Google interrompue',
+        GoogleSignInExceptionCode.userMismatch =>
+          'Utilisateur Google incohérent',
+        GoogleSignInExceptionCode.unknownError =>
+          'Erreur Google inconnue',
+      };
+      final detail = e.description;
+      throw AuthServiceException(
+        detail == null || detail.isEmpty
+            ? message
+            : '$message ($detail)',
+        cause: e,
+      );
     } catch (e) {
       _logger.e('Unexpected error during Google sign in: $e');
       rethrow;
@@ -383,7 +404,9 @@ Future<void> signOut() async {
 /// A user-facing auth error with a friendly message.
 class AuthServiceException implements Exception {
   final String message;
-  AuthServiceException(this.message);
+  AuthServiceException(this.message, {this.cause});
+
+  final Object? cause;
 
   @override
   String toString() => message;
