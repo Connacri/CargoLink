@@ -73,22 +73,27 @@ class _StatsOverview extends ConsumerWidget {
     return stats.when(
       data: (s) {
         final data = s ?? {};
+        final screenWidth = MediaQuery.of(context).size.width;
+        final isWide = screenWidth >= 700;
+        final cardWidth = isWide ? 170.0 : (screenWidth - 56) / 3;
         return Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
           spacing: 12,
           runSpacing: 12,
           children: [
             _statCard(context, Icons.people, 'Utilisateurs',
-                '${data['total_users'] ?? 0}', AppTheme.primaryColor),
+                '${data['total_users'] ?? 0}', AppTheme.primaryColor, cardWidth),
             _statCard(context, Icons.person_outline, 'Clients',
-                '${data['clients'] ?? 0}', AppTheme.primaryDark),
+                '${data['clients'] ?? 0}', AppTheme.primaryDark, cardWidth),
             _statCard(context, Icons.verified_user, 'Expéditeurs',
-                '${data['shippers'] ?? 0}', AppTheme.warningColor),
+                '${data['shippers'] ?? 0}', AppTheme.warningColor, cardWidth),
             _statCard(context, Icons.admin_panel_settings, 'Admins',
-                '${data['admins'] ?? 0}', AppTheme.errorColor),
+                '${data['admins'] ?? 0}', AppTheme.errorColor, cardWidth),
             _statCard(context, Icons.flight, 'Vols',
-                '${data['total_shipments'] ?? 0}', AppTheme.accentColor),
+                '${data['total_shipments'] ?? 0}', AppTheme.accentColor, cardWidth),
             _statCard(context, Icons.receipt_long, 'Commandes',
-                '${data['total_bookings'] ?? 0}', AppTheme.primaryColor),
+                '${data['total_bookings'] ?? 0}', AppTheme.primaryColor, cardWidth),
           ],
         );
       },
@@ -99,9 +104,10 @@ class _StatsOverview extends ConsumerWidget {
   }
 
   Widget _statCard(
-      BuildContext context, IconData icon, String label, String value, Color color) {
+      BuildContext context, IconData icon, String label, String value, Color color,
+      double cardWidth) {
     return Container(
-      width: (MediaQuery.of(context).size.width - 48) / 3,      padding: const EdgeInsets.all(12),
+      width: cardWidth,      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
