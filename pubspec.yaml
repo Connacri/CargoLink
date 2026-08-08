@@ -21,7 +21,7 @@ dependencies:
   supabase: ^2.16.0
 
   # Authentication
-  google_sign_in: ^7.2.0
+  google_sign_in: ^6.3.0
 
   # Networking
   http: ^1.1.0

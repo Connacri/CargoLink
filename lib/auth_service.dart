@@ -197,10 +197,15 @@ Future<void> _onAuthenticated(fbauth.User user) async {
     try {
       _logger.i('Signing in with Google');
 
-final account = await GoogleSignIn.instance.authenticate();
-      final tokens = account.authentication;
+      final googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        throw AuthServiceException('Connexion Google annulée');
+      }
+      final googleAuth = await googleUser.authentication;
+
       final credential = fbauth.GoogleAuthProvider.credential(
-        idToken: tokens.idToken,
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
 
       await _auth.signInWithCredential(credential);
@@ -211,32 +216,8 @@ final account = await GoogleSignIn.instance.authenticate();
       await _ensureProfileIfAbsent(user, email: user.email);
 
       _logger.i('Google sign in succeeded');
-    } on GoogleSignInException catch (e) {
-      _logger.e('Google sign in failed: $e');
-      final message = switch (e.code) {
-        GoogleSignInExceptionCode.canceled => 'Connexion Google annulée',
-        GoogleSignInExceptionCode.clientConfigurationError =>
-          'Configuration Google sign-in incorrecte',
-        GoogleSignInExceptionCode.providerConfigurationError =>
-          'Le fournisseur Google n\'est pas configuré',
-        GoogleSignInExceptionCode.uiUnavailable =>
-          'Interface de connexion indisponible',
-        GoogleSignInExceptionCode.interrupted =>
-          'Connexion Google interrompue',
-        GoogleSignInExceptionCode.userMismatch =>
-          'Utilisateur Google incohérent',
-        GoogleSignInExceptionCode.unknownError =>
-          'Erreur Google inconnue',
-      };
-      final detail = e.description;
-      throw AuthServiceException(
-        detail == null || detail.isEmpty
-            ? message
-            : '$message ($detail)',
-        cause: e,
-      );
     } catch (e) {
-      _logger.e('Unexpected error during Google sign in: $e');
+      _logger.e('Google sign in failed: $e');
       rethrow;
     }
   }
@@ -246,7 +227,7 @@ Future<void> signOut() async {
     try {
       _logger.i('Signing out user');
       await FcmService.instance.clearToken();
-      await GoogleSignIn.instance.signOut();
+      await GoogleSignIn().signOut();
       await _auth.signOut();
       SupabaseConfig.reset();
       _logger.i('User signed out successfully');
