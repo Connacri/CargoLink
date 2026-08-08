@@ -76,7 +76,7 @@ class BookingService {
             'created_at': DateTime.now().toIso8601String(),
             'updated_at': DateTime.now().toIso8601String(),
           })
-          .select('*, shipments(*, shippers(*, users(*)))')
+          .select('*, shipments(*, shippers(*, users!shippers_user_id_fkey(*)))')
           .single();
 
       // Update shipment reserved weight
@@ -102,7 +102,7 @@ class BookingService {
     try {
       final response = await _supabase
           .from('bookings')
-          .select('*, shipments(*, shippers(*, users(*))), users(*)')
+          .select('*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
           .eq('id', bookingId)
           .single();
 
@@ -123,7 +123,7 @@ class BookingService {
     try {
       var query = _supabase
           .from('bookings')
-          .select('*, shipments(*, shippers(*, users(*))), users(*)')
+          .select('*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
           .eq('client_id', clientId);
 
       if (status != null) {
@@ -152,7 +152,7 @@ class BookingService {
     try {
       final response = await _supabase
           .from('bookings')
-          .select('*, shipments(*, shippers(*, users(*))), users(*)')
+          .select('*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
           .eq('shipment_id', shipmentId)
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
@@ -179,7 +179,7 @@ class BookingService {
             'updated_at': DateTime.now().toIso8601String(),
           })
           .eq('id', bookingId)
-          .select('*, shipments(*, shippers(*, users(*))), users(*)')
+          .select('*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
           .single();
 
       _logger.i('Booking status updated to: $newStatus');

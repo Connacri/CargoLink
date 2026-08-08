@@ -172,7 +172,7 @@ class DisputeService {
             'status': 'open',
             'created_at': DateTime.now().toIso8601String(),
           })
-          .select('*, bookings(*, shipments(*, shippers(*, users(*))), users(*))')
+          .select('*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
           .single();
 
       _logger.i('Dispute created successfully');
@@ -188,7 +188,7 @@ class DisputeService {
     try {
       final response = await _supabase
           .from('disputes')
-          .select('*, bookings(*, shipments(*, shippers(*, users(*))), users(*))')
+          .select('*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
           .eq('id', disputeId)
           .single();
 
@@ -204,7 +204,7 @@ class DisputeService {
     try {
       final response = await _supabase
           .from('disputes')
-          .select('*, bookings(*, shipments(*, shippers(*, users(*))), users(*))')
+          .select('*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
           .eq('booking_id', bookingId)
           .order('created_at', ascending: false);
 
@@ -222,7 +222,7 @@ class DisputeService {
     try {
       final response = await _supabase
           .from('disputes')
-          .select('*, bookings(*, shipments(*, shippers(*, users(*))), users(*))')
+          .select('*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
           .eq('status', 'open')
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
@@ -259,7 +259,7 @@ class DisputeService {
           .from('disputes')
           .update(updateData)
           .eq('id', disputeId)
-          .select('*, bookings(*, shipments(*, shippers(*, users(*))), users(*))')
+          .select('*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
           .single();
 
       _logger.i('Dispute status updated');

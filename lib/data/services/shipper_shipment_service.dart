@@ -87,7 +87,7 @@ class ShipperService {
     try {
       final response = await _supabase
           .from('shippers')
-          .select('*, users(*)')
+          .select('*, users!shippers_user_id_fkey(*)')
           .eq('user_id', userId)
           .single();
 
@@ -103,7 +103,7 @@ class ShipperService {
     try {
       final response = await _supabase
           .from('shippers')
-          .select('*, users(*)')
+          .select('*, users!shippers_user_id_fkey(*)')
           .eq('id', shipperId)
           .single();
 
@@ -119,7 +119,7 @@ class ShipperService {
     try {
       final response = await _supabase
           .from('shippers')
-          .select('*, users(*)')
+          .select('*, users!shippers_user_id_fkey(*)')
           .eq('verification_status', 'pending')
           .range(offset, offset + limit - 1)
           .order('created_at', ascending: false);
@@ -279,7 +279,7 @@ class ShipmentService {
             'created_at': DateTime.now().toIso8601String(),
             'updated_at': DateTime.now().toIso8601String(),
           })
-          .select('*, shippers(*, users(*))')
+          .select('*, shippers(*, users!shippers_user_id_fkey(*))')
           .single();
 
       _logger.i('Shipment published successfully');
@@ -295,7 +295,7 @@ class ShipmentService {
     try {
       final response = await _supabase
           .from('shipments')
-          .select('*, shippers(*, users(*))')
+          .select('*, shippers(*, users!shippers_user_id_fkey(*))')
           .eq('id', shipmentId)
           .single();
 
@@ -316,7 +316,7 @@ class ShipmentService {
     try {
       var query = _supabase
           .from('shipments')
-          .select('*, shippers(*, users(*))')
+          .select('*, shippers(*, users!shippers_user_id_fkey(*))')
           .eq('status', 'active')
           .gt('available_weight_kg', 0);
 
@@ -350,7 +350,7 @@ class ShipmentService {
     try {
       final response = await _supabase
           .from('shipments')
-          .select('*, shippers(*, users(*))')
+          .select('*, shippers(*, users!shippers_user_id_fkey(*))')
           .eq('shipper_id', shipperId)
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
@@ -377,7 +377,7 @@ class ShipmentService {
             'updated_at': DateTime.now().toIso8601String(),
           })
           .eq('id', shipmentId)
-          .select('*, shippers(*, users(*))')
+          .select('*, shippers(*, users!shippers_user_id_fkey(*))')
           .single();
 
       _logger.i('Shipment status updated to: $newStatus');
@@ -446,7 +446,7 @@ class ShipmentService {
     try {
       final response = await _supabase
           .from('shipments')
-          .select('*, shippers(*, users(*))')
+          .select('*, shippers(*, users!shippers_user_id_fkey(*))')
           .or(
             'origin_country.ilike.%$query%,destination_city.ilike.%$query%',
           )

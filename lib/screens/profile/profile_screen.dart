@@ -27,6 +27,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _instagramController = TextEditingController();
   final _tiktokController = TextEditingController();
   bool _isSaving = false;
+  File? _pendingPicture;
 
   @override
   void dispose() {
@@ -57,10 +58,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final result =
           await FilePicker.platform.pickFiles(type: FileType.image);
       if (result == null || result.files.isEmpty) return;
-      final file = result.files.first;
+      final file = File(result.files.first.path!);
+
+      setState(() => _pendingPicture = file);
 
       final url = await ref.read(storageServiceProvider).uploadProfilePicture(
-            file: File(file.path!),
+            file: file,
             userId: userId,
           );
 
@@ -71,6 +74,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
       ref.invalidate(currentUserProvider);
       if (mounted) {
+        setState(() => _pendingPicture = null);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Photo de profil mise à jour'),
@@ -80,6 +84,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _pendingPicture = null);
         await showAppErrorDialog(context, message: 'Erreur: $e');
       }
     }
@@ -249,10 +254,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       CircleAvatar(
                         radius: 48,
                         backgroundColor: AppTheme.primaryColor,
-                        backgroundImage: userData.profilePictureUrl != null
-                            ? NetworkImage(userData.profilePictureUrl!)
-                            : null,
-                        child: userData.profilePictureUrl == null
+                        backgroundImage: (_pendingPicture != null
+                                ? FileImage(_pendingPicture!)
+                                : userData.profilePictureUrl != null
+                                    ? NetworkImage(userData.profilePictureUrl!)
+                                    : null)
+                            as ImageProvider?,
+                        child: _pendingPicture == null &&
+                                userData.profilePictureUrl == null
                             ? const Icon(
                                 Icons.person,
                                 size: 48,

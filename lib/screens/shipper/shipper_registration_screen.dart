@@ -207,6 +207,7 @@ class _ShipperRegistrationScreenState
                     'Choisir une photo',
                 icon: Icons.description_outlined,
                 hasFile: _passportPhoto != null,
+                previewFile: _passportPhoto,
                 onTap: _pickPassport,
               ),
               const SizedBox(height: 16),
@@ -216,6 +217,7 @@ class _ShipperRegistrationScreenState
                     'Prendre une photo',
                 icon: Icons.camera_alt_outlined,
                 hasFile: _livePhoto != null,
+                previewFile: _livePhoto,
                 onTap: _pickLivePhoto,
               ),
               const SizedBox(height: 24),
@@ -245,6 +247,7 @@ class _ShipperRegistrationScreenState
     required IconData icon,
     required bool hasFile,
     required VoidCallback onTap,
+    File? previewFile,
   }) {
     return InkWell(
       onTap: onTap,
@@ -256,10 +259,21 @@ class _ShipperRegistrationScreenState
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: hasFile ? AppTheme.accentColor : AppTheme.primaryColor,
-            ),
+            if (previewFile != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(
+                  previewFile,
+                  width: 56,
+                  height: 56,
+                  fit: BoxFit.cover,
+                ),
+              )
+            else
+              Icon(
+                icon,
+                color: hasFile ? AppTheme.accentColor : AppTheme.primaryColor,
+              ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
