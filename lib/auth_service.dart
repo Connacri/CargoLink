@@ -42,6 +42,20 @@ class AppAuthState {
   bool get isSignedIn => firebaseUid != null;
 }
 
+/// Result of a Google sign-in. `isNewUser` is true when the Firebase user has
+/// no CargoLink profile yet (first sign-in), in which case the UI must ask the
+/// user to pick a role before entering the app.
+class GoogleSignInResult {
+  final bool isNewUser;
+  final String? email;
+  final String? fullName;
+  const GoogleSignInResult({
+    required this.isNewUser,
+    this.email,
+    this.fullName,
+  });
+}
+
 // ============================================================================
 // AUTH SERVICE (FirebaseAuth + Supabase session)
 // ============================================================================
@@ -238,7 +252,11 @@ class AuthService {
   ///    proven to work on devices) and exchanges accessToken + idToken.
   ///  - Windows / Linux: `google_sign_in` has no implementation and
   ///    `signInWithPopup` is web-only, so a clear error is raised instead.
-  Future<void> signInWithGoogle() async {
+  ///
+  /// Returns [GoogleSignInResult]. When `isNewUser` is true, no profile row
+  /// exists yet: the caller must let the user choose a role and create the
+  /// profile (via [createProfileWithRole]) before entering the app.
+  Future<GoogleSignInResult> signInWithGoogle() async {
     try {
       _logger.i('=== Google sign-in ===');
       _logger.i(
@@ -297,8 +315,21 @@ class AuthService {
       await _onAuthenticated(user);
       _logger.i('Google sign-in: Supabase session + FCM token ready');
 
-      await _ensureProfileIfAbsent(user, email: user.email);
-      _logger.i('Google sign-in: profile ensured, SUCCESS');
+      // First-time detection: no profile row means the user must pick a role.
+      final existing = await getCurrentUserProfile();
+      final isNewUser = existing == null;
+      if (isNewUser) {
+        _logger.i('Google sign-in: NEW user, role must be chosen');
+        return GoogleSignInResult(
+          isNewUser: true,
+          email: user.email,
+          fullName: user.displayName,
+        );
+      }
+      _logger.i(
+        'Google sign-in: returning user (role=${existing.role}), SUCCESS',
+      );
+      return const GoogleSignInResult(isNewUser: false);
     } catch (e) {
       _logger.e('Google sign-in FAILED: $e');
       rethrow;
@@ -598,7 +629,9 @@ class AuthService {
   }
 
   /// If a profile row does not exist yet (e.g. Google sign-in), create a
-  /// minimal one so the user can be routed by role.
+  /// minimal one so the user can be routed by role. For existing users this is
+  /// a safety net; new Google users go through [createProfileWithRole] instead
+  /// (so they get to pick their role).
   Future<void> _ensureProfileIfAbsent(fbauth.User user, {String? email}) async {
     _logger.i('_ensureProfileIfAbsent: checking users row');
     final existing = await getCurrentUserProfile();
@@ -622,6 +655,42 @@ class AuthService {
     } catch (e) {
       _logger.w('Could not auto-create profile: $e');
     }
+  }
+
+  /// Create the CargoLink profile for a brand-new user (e.g. first Google
+  /// sign-in) with the role they picked. Used by the role-selection flow.
+  Future<void> createProfileWithRole({
+    required String role,
+    String? fullName,
+    String? phone,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('Aucun utilisateur connecté');
+    }
+    await _createUserProfile(
+      userId: supabaseUserIdFromFirebase(user.uid),
+      email: user.email ?? 'user@cargolink.app',
+      fullName: fullName ??
+          user.displayName ??
+          ((user.email ?? '').isNotEmpty ? user.email!.split('@').first : 'Utilisateur'),
+      phone: phone ?? '',
+      role: role,
+    );
+    _logger.i('createProfileWithRole: profile created (role=$role)');
+  }
+
+  /// Let the signed-in user change their own role (client <-> shipper only).
+  /// Admin roles cannot be self-assigned.
+  Future<User?> changeMyRole(String newRole) async {
+    if (newRole != 'client' && newRole != 'shipper') {
+      throw AuthServiceException('Rôle non autorisé');
+    }
+    final userId = currentUserId;
+    if (userId == null) throw Exception('Aucun utilisateur connecté');
+    final updated = await updateUserRole(userId, newRole);
+    _logger.i('changeMyRole: role updated to $newRole');
+    return updated;
   }
 
   /// Get current user profile from the database.

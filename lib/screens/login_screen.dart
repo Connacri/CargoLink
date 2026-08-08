@@ -25,6 +25,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  /// After any successful sign-in, force the auth state + profile providers to
+  /// refresh so the router leaves the login screen without a restart.
+  void _afterSignIn() {
+    ref.invalidate(authStateProvider);
+    ref.invalidate(currentUserProvider);
+  }
+
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -34,7 +41,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
-      ref.invalidate(currentUserProvider);
+      _afterSignIn();
     } catch (e) {
       if (mounted) {
         await showAppErrorDialog(context, message: 'Erreur de connexion: $e');
@@ -48,7 +55,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       await ref.read(authServiceProvider).signInWithGoogle();
-      ref.invalidate(currentUserProvider);
+      _afterSignIn();
+      // If first sign-in, the AccountGateScreen shows the role picker until a
+      // profile exists (no extra navigation needed — routing is state-driven).
     } catch (e) {
       if (mounted) {
         await showAppErrorDialog(context, message: 'Erreur: $e');

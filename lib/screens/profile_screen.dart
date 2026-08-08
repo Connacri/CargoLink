@@ -6,6 +6,7 @@ import '../models.dart';
 import '../providers.dart';
 import '../supabase_config.dart';
 import '../error_dialog.dart';
+import 'role_selection_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -292,6 +293,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                 ),
                 if (userData.role == 'shipper') _buildShipperStatus(),
+                const SizedBox(height: 16),
+                _buildRoleSettings(userData),
                 const SizedBox(height: 24),
                 const Text(
                   'Informations personnelles',
@@ -393,6 +396,77 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       default:
         return 'Client';
     }
+  }
+
+  Widget _buildRoleSettings(User userData) {
+    final isShipper = userData.role == 'shipper';
+    return Card(
+      color: AppTheme.surfaceColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Mon rôle',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimaryColor,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              isShipper
+                  ? 'Vous êtes expéditeur : vous transportez des colis '
+                      'pour les clients.'
+                  : 'Vous êtes client : vous envoyez vos colis avec des '
+                      'expéditeurs.',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppTheme.textSecondaryColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(
+                  isShipper ? Icons.local_shipping : Icons.shopping_bag,
+                  color: AppTheme.primaryColor,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Changer de rôle',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimaryColor,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => RoleSelectionScreen(
+                          firstTime: false,
+                          currentRole: userData.role,
+                        ),
+                      ),
+                    );
+                    if (!mounted) return;
+                    ref.invalidate(currentUserProvider);
+                    ref.invalidate(currentShipperProvider);
+                  },
+                  child: const Text('Modifier'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildSocialSection() {

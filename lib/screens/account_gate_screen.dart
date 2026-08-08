@@ -5,6 +5,7 @@ import '../auth_service.dart';
 import '../error_dialog.dart';
 import '../main.dart';
 import 'account_status_screen.dart';
+import 'role_selection_screen.dart';
 
 /// Checks the authenticated user's account status before entering the app:
 ///  - active account          -> HomeTabsScreen
@@ -21,9 +22,9 @@ class AccountGateScreen extends ConsumerWidget {
     return user.when(
       data: (userData) {
         if (userData == null) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          // Signed in (authState says so) but no profile row yet: this is a
+          // brand-new user (e.g. first Google sign-in) who must pick a role.
+          return const RoleSelectionScreen(firstTime: true);
         }
 
         // Pending permanent deletion.
