@@ -300,7 +300,7 @@ class _ShipperRegistrationScreenState
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
-                  previewUrl!,
+                  previewUrl,
                   width: 56,
                   height: 56,
                   fit: BoxFit.cover,
