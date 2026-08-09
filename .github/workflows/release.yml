@@ -23,15 +23,20 @@ jobs:
       - name: Derive version from git tags
         id: v
         run: |
-          LAST=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          BASE=""
-          if [ -n "$LAST" ]; then BASE="${LAST#v}"; fi
-          [ -z "$BASE" ] && BASE="0.0.0"
+          # Highest semver tag, NOT git describe: describe can return a stale tag
+          # when two tags sit on the same commit, causing version collisions.
+          LAST=$(git tag --sort=-v:refname | head -n1 || true)
+          BASE="${LAST#v}"
+          BASE=${BASE:-0.0.0}
           MAJ=$(echo "$BASE" | cut -d. -f1)
           MIN=$(echo "$BASE" | cut -d. -f2)
           PATC=$(echo "$BASE" | cut -d. -f3)
-          # Commits not reachable from any tag = the auto-increment at each commit
-          COUNT=$(git rev-list --count HEAD --not --tags 2>/dev/null)
+          # Commits since the highest tag = the auto-increment at each commit
+          if [ -z "$LAST" ]; then
+            COUNT=$(git rev-list --count HEAD 2>/dev/null)
+          else
+            COUNT=$(git rev-list --count HEAD --not "$LAST" 2>/dev/null)
+          fi
           COUNT=${COUNT:-0}
           NEW_PATCH=$((PATC + COUNT))
           echo "version=${MAJ}.${MIN}.${NEW_PATCH}" >> "$GITHUB_OUTPUT"
