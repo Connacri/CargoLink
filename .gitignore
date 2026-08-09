@@ -49,4 +49,7 @@ app.*.map.json
 /keystore_b64.txt
 
 /supabase/secrets.env
+
+# Firebase Admin SDK service account (contains private key)
+/cargolink-23dd3-firebase-adminsdk-fbsvc-3f0001ce48.json
 android/build/
