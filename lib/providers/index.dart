@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/models.dart';
+import '../data/models/v2_models.dart';
 import '../data/services/auth_service.dart';
 import '../data/services/broadcast_service.dart';
 import '../data/services/shipper_shipment_service.dart';
 import '../data/services/booking_payment_service.dart';
 import '../data/services/tracking_dispute_service.dart';
 import '../data/services/storage_service.dart';
+import '../data/services/v2_service.dart';
 
 // ============================================================================
 // AUTH PROVIDERS
@@ -378,6 +380,156 @@ final broadcastServiceProvider = Provider<BroadcastService>((ref) {
 final broadcastsProvider = FutureProvider<List<Broadcast>>((ref) async {
   final broadcastService = ref.watch(broadcastServiceProvider);
   return broadcastService.getBroadcasts();
+});
+
+// ============================================================================
+// V2 PROVIDERS — Réseau logistique multi-shipper
+// ============================================================================
+
+final v2ServiceProvider = Provider<V2Service>((ref) {
+  return V2Service();
+});
+
+// --- Trips ---
+
+final activeTripsProvider = FutureProvider.family<List<Trip>,
+    ({String? destination, String? origin, int limit, int offset})>(
+    (ref, params) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getActiveTrips(
+    destination: params.destination,
+    origin: params.origin,
+    limit: params.limit,
+    offset: params.offset,
+  );
+});
+
+final shipperTripsProvider = FutureProvider.family<List<Trip>,
+    ({String shipperId, int limit, int offset})>((ref, params) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getShipperTrips(
+    shipperId: params.shipperId,
+    limit: params.limit,
+    offset: params.offset,
+  );
+});
+
+// --- Packages ---
+
+final shipmentPackagesProvider =
+    FutureProvider.family<List<ShipmentPackage>, String>((ref, shipmentId) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getShipmentPackages(shipmentId);
+});
+
+final custodyPackagesProvider =
+    FutureProvider.family<List<ShipmentPackage>, String>((ref, custodianId) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getPackagesInCustody(custodianId);
+});
+
+// --- Legs ---
+
+final shipmentLegsProvider =
+    FutureProvider.family<List<ShipmentLeg>, String>((ref, shipmentId) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getShipmentLegs(shipmentId);
+});
+
+final shipperLegsProvider =
+    FutureProvider.family<List<ShipmentLeg>, String>((ref, shipperId) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getShipperLegs(shipperId);
+});
+
+// --- Events ---
+
+final shipmentEventsProvider = FutureProvider.family<List<ShipmentEvent>,
+    ({String shipmentId, String? packageId})>((ref, params) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getShipmentEvents(params.shipmentId, packageId: params.packageId);
+});
+
+// --- Custody transfers ---
+
+final shipmentTransfersProvider =
+    FutureProvider.family<List<CustodyTransfer>, String>((ref, shipmentId) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getShipmentTransfers(shipmentId);
+});
+
+final userTransfersProvider =
+    FutureProvider.family<List<CustodyTransfer>, String>((ref, userId) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getUserTransfers(userId);
+});
+
+// --- Proofs ---
+
+final shipmentProofsProvider =
+    FutureProvider.family<List<ShipmentProof>, String>((ref, shipmentId) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getShipmentProofs(shipmentId);
+});
+
+// --- Tracking points ---
+
+final shipmentTrackingPointsProvider =
+    FutureProvider.family<List<TrackingPoint>, String>((ref, shipmentId) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getShipmentTrackingPoints(shipmentId);
+});
+
+// --- Allocations / payouts ---
+
+final shipmentAllocationsProvider =
+    FutureProvider.family<List<PaymentAllocation>, String>((ref, shipmentId) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getShipmentAllocations(shipmentId);
+});
+
+final shipperAllocationsProvider =
+    FutureProvider.family<List<PaymentAllocation>, String>((ref, shipperId) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getShipperAllocations(shipperId);
+});
+
+final shipperPayoutsProvider =
+    FutureProvider.family<List<Payout>, String>((ref, shipperId) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getShipperPayouts(shipperId);
+});
+
+// --- Exceptions ---
+
+final openExceptionsProvider = FutureProvider.family<List<ShipmentException>,
+    ({String? shipmentId, int limit})>((ref, params) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getOpenExceptions(
+    shipmentId: params.shipmentId,
+    limit: params.limit,
+  );
+});
+
+// --- Claims ---
+
+final userClaimsProvider =
+    FutureProvider.family<List<Claim>, String>((ref, userId) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getUserClaims(userId);
+});
+
+final openClaimsProvider = FutureProvider<List<Claim>>((ref) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.getOpenClaims();
+});
+
+// --- Chaîne de garde ---
+
+final chainIntegrityProvider = FutureProvider.family<List<CustodyTransfer>,
+    ({String shipmentId, String? packageId})>((ref, params) async {
+  final v2 = ref.watch(v2ServiceProvider);
+  return v2.verifyChainIntegrity(params.shipmentId, packageId: params.packageId);
 });
 
 // ============================================================================
