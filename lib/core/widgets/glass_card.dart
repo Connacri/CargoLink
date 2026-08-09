@@ -24,26 +24,28 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final container = Container(
-      padding: padding,
+    final content = Padding(padding: padding, child: child);
+
+    // The transparent Material sits above the decorative background so that
+    // ListTile/InkWell ink splashes stay visible (never hidden behind the
+    // DecoratedBox color).
+    return Container(
       decoration: BoxDecoration(
         color: color.withOpacity(0.92),
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: Colors.white.withOpacity(borderOpacity)),
         boxShadow: AppTheme.shadowSm,
       ),
-      child: child,
-    );
-
-    if (onTap == null) return container;
-
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(radius),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: container,
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: BorderRadius.circular(radius),
+        clipBehavior: Clip.antiAlias,
+        child: onTap == null
+            ? content
+            : InkWell(
+                onTap: onTap,
+                child: content,
+              ),
       ),
     );
   }

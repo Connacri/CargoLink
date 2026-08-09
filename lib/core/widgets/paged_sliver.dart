@@ -56,7 +56,7 @@ class PagedSliverList<T> extends ConsumerWidget {
         hasScrollBody: false,
         child: _ErrorState(
           error: list.error,
-          onRetry: () => paginatedList.loadInitial(),
+          onRetry: () => list.onReload?.call() ?? Future<void>.value(),
         ),
       );
     }
@@ -83,7 +83,7 @@ class PagedSliverList<T> extends ConsumerWidget {
           if (index >= list.items.length) {
             // Footer row: triggers next page load
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              paginatedList.loadMore();
+              list.onLoadMore?.call();
             });
             return _LoadMoreFooter(loading: list.loading);
           }
@@ -147,7 +147,7 @@ class PagedSliverGrid<T> extends ConsumerWidget {
         hasScrollBody: false,
         child: _ErrorState(
           error: list.error,
-          onRetry: () => paginatedList.loadInitial(),
+          onRetry: () => list.onReload?.call() ?? Future<void>.value(),
         ),
       );
     }
@@ -172,7 +172,7 @@ class PagedSliverGrid<T> extends ConsumerWidget {
         itemBuilder: (context, index) {
           if (index >= list.items.length) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              paginatedList.loadMore();
+              list.onLoadMore?.call();
             });
             return _LoadMoreFooter(loading: list.loading);
           }

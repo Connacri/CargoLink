@@ -93,48 +93,55 @@ class _HeaderBackground extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppTheme.spaceMd,
-              kToolbarHeight + AppTheme.spaceMd,
+              kToolbarHeight + AppTheme.spaceSm,
               AppTheme.spaceMd,
               AppTheme.spaceLg,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (icon != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.16),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
+            // Bottom-anchored and never overflows: long titles/subtitles
+            // (or small custom expandedHeights) are clipped instead of
+            // throwing a RenderFlex overflow.
+            child: SingleChildScrollView(
+              reverse: true,
+              physics: const NeverScrollableScrollPhysics(),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (icon != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.16),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Icon(icon, color: Colors.white, size: 24),
+                    ),
+                    const SizedBox(height: AppTheme.spaceSm),
+                  ],
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle!,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.85),
+                        fontSize: 14,
                       ),
                     ),
-                    child: Icon(icon, color: Colors.white, size: 28),
-                  ),
-                  const SizedBox(height: AppTheme.spaceMd),
+                  ],
                 ],
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle!,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.85),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
         ],

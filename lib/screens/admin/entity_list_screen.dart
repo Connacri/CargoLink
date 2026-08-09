@@ -43,7 +43,8 @@ class _UsersScanner {
 }
 
 class _UsersPagerNotifier extends PaginatedListNotifier<User> {
-  _UsersPagerNotifier(super.list, this._scanner);
+  _UsersPagerNotifier(this._scanner,
+      {required super.loader, super.pageSize = 20});
 
   final _UsersScanner _scanner;
 
@@ -69,11 +70,9 @@ final pagedUsersProvider = StateNotifierProvider.family<
       .read(authServiceProvider)
       .getAllUsers(limit: limit, offset: offset);
   return _UsersPagerNotifier(
-    PaginatedList<User>(
-      pageSize: 20,
-      loader: (limit, offset) => scanner.load(fetch, params.role, limit),
-    ),
     scanner,
+    loader: (limit, offset) => scanner.load(fetch, params.role, limit),
+    pageSize: 20,
   );
 });
 

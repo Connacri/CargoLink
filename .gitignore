@@ -56,3 +56,6 @@ app.*.map.json
 # Supabase local state (linked project ref, cli cache)
 /supabase/.temp/
 android/build/
+
+# Local DevTools / IDE config
+/devtools_options.yaml
