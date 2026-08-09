@@ -8,17 +8,20 @@ class AppTheme {
   // Primary Colors
   static const Color primaryColor = Color(0xFF6366F1); // Indigo
   static const Color primaryDark = Color(0xFF4F46E5);
-  static const Color primaryLight = Color(0xE0E7FF);
+  static const Color primaryLight = Color(0xFFBA1A1A);
+  static const Color red = Colors.red;
+  static const Color green = Colors.green;
+  static const Color blue = Colors.blue;
   
   // Accent Colors
   static const Color accentColor = Color(0xFF10B981); // Green
   static const Color warningColor = Color(0xFFF59E0B); // Amber
-  static const Color errorColor = Color(0xEF4444); // Red
+  static const Color errorColor = Colors.red; // Red
   
   // Neutral Colors
   static const Color backgroundColor = Color(0xFFFAFAFA);
   static const Color surfaceColor = Color(0xFFFFFFFF);
-  static const Color textPrimaryColor = Color(0xFF1F2937);
+  static const Color textPrimaryColor = Colors.white70;
   static const Color textSecondaryColor = Color(0xFF6B7280);
   static const Color dividerColor = Color(0xFFE5E7EB);
   

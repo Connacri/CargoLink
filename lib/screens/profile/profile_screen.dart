@@ -362,7 +362,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   icon: const Icon(Icons.logout),
                   label: const Text('Se déconnecter'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.accentColor,
+                    foregroundColor: AppTheme.green,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -380,7 +380,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   icon: const Icon(Icons.delete_forever_outlined),
                   label: const Text('Supprimer définitivement le compte'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.primaryLight,
+                    foregroundColor: AppTheme.red,
                   ),
                 ),
               ],
@@ -718,7 +718,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         }
         return Card(
           margin: const EdgeInsets.only(top: 16),
-          color: color.withOpacity(0.12),
+          //color: color.withOpacity(0.12),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(

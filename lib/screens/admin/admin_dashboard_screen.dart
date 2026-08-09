@@ -183,7 +183,7 @@ class _ShipperVerificationCard extends ConsumerWidget {
                     icon: const Icon(Icons.close, size: 18),
                     label: const Text('Rejeter'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.errorColor,
+                      foregroundColor: AppTheme.red,
                     ),
                   ),
                 ),
@@ -409,7 +409,7 @@ class _DisputeCard extends ConsumerWidget {
                     icon: const Icon(Icons.thumb_down, size: 18),
                     label: const Text('Rejeter'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.errorColor,
+                      foregroundColor: AppTheme.red,
                     ),
                   ),
                 ),
@@ -549,7 +549,7 @@ class _RevenueTab extends ConsumerWidget {
           value,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimaryColor,
+            color: AppTheme.blue,
           ),
         ),
       ),

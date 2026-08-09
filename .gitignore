@@ -52,4 +52,7 @@ app.*.map.json
 
 # Firebase Admin SDK service account (contains private key)
 /cargolink-23dd3-firebase-adminsdk-fbsvc-3f0001ce48.json
+
+# Supabase local state (linked project ref, cli cache)
+/supabase/.temp/
 android/build/
