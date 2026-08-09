@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/index.dart';
 import '../../data/services/auth_service.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/widgets/ui_kit.dart';
 import '../../app/home_tabs_screen.dart';
 import './account_status_screen.dart';
 import './role_selection_screen.dart';
@@ -48,10 +50,8 @@ class AccountGateScreen extends ConsumerWidget {
 
         return const HomeTabsScreen();
       },
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (e, s) => Center(child: Text('Erreur: $e')),
+      loading: () => const _GateLoading(),
+      error: (e, s) => _GateError(message: 'Erreur: $e'),
     );
   }
 }
@@ -88,8 +88,96 @@ class _PurgeAndSignOutState extends ConsumerState<_PurgeAndSignOut> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+    return const _GateLoading();
+  }
+}
+
+/// Full-screen gradient wrapper for the transient gate states.
+class _GateScaffold extends StatelessWidget {
+  const _GateScaffold({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppTheme.primaryGradient),
+        child: SafeArea(child: child),
+      ),
+    );
+  }
+}
+
+/// Premium loading state used while the account status resolves.
+class _GateLoading extends StatelessWidget {
+  const _GateLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return _GateScaffold(
+      child: Center(
+        child: StaggeredEntrance(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              AnimatedIconDot(
+                icon: Icons.local_shipping,
+                color: Colors.white,
+                size: 28,
+              ),
+              SizedBox(height: AppTheme.spaceMd),
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Premium error state if the account status fails to resolve.
+class _GateError extends StatelessWidget {
+  const _GateError({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GateScaffold(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppTheme.spaceLg),
+          child: StaggeredEntrance(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AnimatedIconDot(
+                  icon: Icons.error_outline,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                const SizedBox(height: AppTheme.spaceMd),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

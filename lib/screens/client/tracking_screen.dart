@@ -4,6 +4,7 @@ import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/ui_kit.dart';
 
 class TrackingScreen extends ConsumerWidget {
   final String bookingId;
@@ -103,72 +104,98 @@ class TrackingScreen extends ConsumerWidget {
     final booking = ref.watch(bookingByIdProvider(bookingId));
     final tracking = ref.watch(trackingHistoryProvider(bookingId));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Suivi de colis'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      body: booking.when(
-        data: (bookingData) {
-          if (bookingData == null) {
-            return const Center(child: Text('Réservation introuvable'));
-          }
-          return Column(
-            children: [
-              _buildHeader(bookingData),
-              const Divider(height: 1),
-              Expanded(
-                child: tracking.when(
-                  data: (events) => events.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'Aucune mise à jour de suivi pour le moment',
-                            style: TextStyle(color: AppTheme.textSecondaryColor),
-                          ),
-                        )
-                      : _buildProgressAndTimeline(events),
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(),
+    return booking.when(
+      data: (bookingData) {
+        if (bookingData == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Suivi de colis')),
+            body: const Center(child: Text('Réservation introuvable')),
+          );
+        }
+        return Scaffold(
+          body: CustomScrollView(
+            slivers: [
+              GradientSliverHeader(
+                title: 'Suivi de colis',
+                subtitle: bookingData.productName,
+                icon: Icons.route_rounded,
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTheme.spaceMd,
+                    AppTheme.spaceMd,
+                    AppTheme.spaceMd,
+                    0,
                   ),
-                  error: (e, s) => Center(child: Text('Erreur: $e')),
+                  child: _buildHeader(bookingData),
                 ),
               ),
+              ...tracking.when<List<Widget>>(
+                data: (events) => events.isEmpty
+                    ? [SliverToBoxAdapter(child: _buildEmptyTimeline())]
+                    : [
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppTheme.spaceMd,
+                              AppTheme.spaceMd,
+                              AppTheme.spaceMd,
+                              AppTheme.spaceSm,
+                            ),
+                            child: _buildProgressBar(
+                              stageIndex(events.last.status),
+                            ),
+                          ),
+                        ),
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppTheme.spaceMd,
+                            AppTheme.spaceSm,
+                            AppTheme.spaceMd,
+                            AppTheme.spaceXxl,
+                          ),
+                          sliver: SliverList.builder(
+                            itemCount: events.length,
+                            itemBuilder: (context, index) {
+                              final event = events[events.length - 1 - index];
+                              return StaggeredEntrance(
+                                delay:
+                                    Duration(milliseconds: (index % 10) * 40),
+                                child: _buildTimelineItem(event, index == 0),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                loading: () => const [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                ],
+                error: (e, s) => [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(child: Text('Erreur: $e')),
+                  ),
+                ],
+              ),
             ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, s) => Center(child: Text('Erreur: $e')),
-      ),
-    );
-  }
-
-  Widget _buildProgressAndTimeline(List<ShipmentTracking> events) {
-    final latest = events.last;
-    final latestIndex = stageIndex(latest.status);
-    return Column(
-      children: [
-        _buildProgressBar(latestIndex),
-        const Divider(height: 1),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: events.length,
-            itemBuilder: (context, index) {
-              final event = events[events.length - 1 - index];
-              return _buildTimelineItem(event, index == 0);
-            },
           ),
-        ),
-      ],
+        );
+      },
+      loading: () => Scaffold(
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, s) => Scaffold(
+        body: Center(child: Text('Erreur: $e')),
+      ),
     );
   }
 
   Widget _buildProgressBar(int latestIndex) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-      color: AppTheme.backgroundColor,
+    return GlassCard(
       child: Row(
         children: List.generate(_order.length, (i) {
           final reached = i <= latestIndex;
@@ -186,25 +213,32 @@ class TrackingScreen extends ConsumerWidget {
                           shape: BoxShape.circle,
                           color: reached
                               ? AppTheme.accentColor
-                              : AppTheme.dividerColor,
+                              : AppTheme.surfaceMuted,
+                          border: Border.all(
+                            color: reached
+                                ? AppTheme.accentColor
+                                : AppTheme.dividerColor,
+                            width: 1.5,
+                          ),
                         ),
                         child: Icon(
                           statusIcon(_order[i]),
                           size: 15,
-                          color: reached ? Colors.white : AppTheme.textSecondaryColor,
+                          color: reached
+                              ? Colors.white
+                              : AppTheme.textSecondaryColor,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppTheme.spaceXs),
                       Text(
-                        _order[i] == 'delivered'
-                            ? 'Livré'
-                            : stageLabel(_order[i]),
+                        stageLabel(_order[i]),
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         style: TextStyle(
                           fontSize: 9,
                           height: 1.1,
-                          fontWeight: reached ? FontWeight.bold : FontWeight.normal,
+                          fontWeight:
+                              reached ? FontWeight.bold : FontWeight.normal,
                           color: reached
                               ? AppTheme.textPrimaryColor
                               : AppTheme.textSecondaryColor,
@@ -217,7 +251,8 @@ class TrackingScreen extends ConsumerWidget {
                   Container(
                     height: 2,
                     width: 10,
-                    color: reached ? AppTheme.accentColor : AppTheme.dividerColor,
+                    color:
+                        reached ? AppTheme.accentColor : AppTheme.dividerColor,
                   ),
               ],
             ),
@@ -251,36 +286,33 @@ class TrackingScreen extends ConsumerWidget {
   }
 
   Widget _buildHeader(Booking booking) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      color: AppTheme.primaryLight,
+    final status = BookingStatusExt.fromString(booking.status);
+    return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.inventory_2, color: AppTheme.primaryColor),
-              const SizedBox(width: 8),
+              AnimatedIconDot(
+                icon: Icons.inventory_2_rounded,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(width: AppTheme.spaceMd),
               Expanded(
-                child: Text(
-                  booking.productName,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimaryColor,
-                  ),
-                ),
+                child: Text(booking.productName, style: AppTheme.h3),
               ),
             ],
           ),
-          const SizedBox(height: 4),
           if (booking.trackingNumber != null &&
-              booking.trackingNumber!.isNotEmpty)
+              booking.trackingNumber!.isNotEmpty) ...[
+            const SizedBox(height: AppTheme.spaceSm),
             Row(
               children: [
-                const Icon(Icons.qr_code_2,
-                    size: 16, color: AppTheme.textSecondaryColor),
+                const Icon(
+                  Icons.qr_code_2_rounded,
+                  size: 16,
+                  color: AppTheme.textSecondaryColor,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   'N° suivi: ${booking.trackingNumber}',
@@ -293,46 +325,48 @@ class TrackingScreen extends ConsumerWidget {
                 ),
               ],
             ),
-          const SizedBox(height: 8),
-          if (booking.shipment != null)
+          ],
+          if (booking.shipment != null) ...[
+            const SizedBox(height: AppTheme.spaceSm),
             Row(
               children: [
-                const Icon(Icons.flight_takeoff,
-                    size: 16, color: AppTheme.textSecondaryColor),
+                const Icon(
+                  Icons.flight_takeoff_rounded,
+                  size: 16,
+                  color: AppTheme.textSecondaryColor,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     '${booking.shipment!.originCountry} → ${booking.shipment!.destinationCity}',
-                    style: const TextStyle(
-                      color: AppTheme.textSecondaryColor,
-                    ),
+                    style: AppTheme.bodySecondary,
                   ),
                 ),
               ],
             ),
-          if (booking.shipment?.flightNumber != null &&
-              booking.shipment!.flightNumber!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(left: 22, top: 4),
-              child: Text(
-                'Vol ${booking.shipment!.flightNumber}',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppTheme.textSecondaryColor,
+            if (booking.shipment!.flightNumber != null &&
+                booking.shipment!.flightNumber!.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Padding(
+                padding: const EdgeInsets.only(left: 22),
+                child: Text(
+                  'Vol ${booking.shipment!.flightNumber}',
+                  style: AppTheme.caption,
                 ),
               ),
-            ),
-          const SizedBox(height: 8),
+            ],
+          ],
+          const SizedBox(height: AppTheme.spaceMd),
           Row(
             children: [
-              _statusChip(booking.status),
+              GradientBadge(
+                label: status.displayName,
+                gradient: _bookingGradient(booking.status),
+              ),
               const Spacer(),
               Text(
                 '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimaryColor,
-                ),
+                style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
               ),
             ],
           ),
@@ -341,56 +375,21 @@ class TrackingScreen extends ConsumerWidget {
     );
   }
 
-  Widget _statusChip(String status) {
-    final color = BookingStatusExt.fromString(status).color;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        BookingStatusExt.fromString(status).displayName,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-
   Widget _buildTimelineItem(ShipmentTracking event, bool isLatest) {
     final color = statusColor(event.status);
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Column(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isLatest ? AppTheme.accentColor : color.withOpacity(0.15),
-                  border: Border.all(color: isLatest ? AppTheme.accentColor : color, width: 1.5),
-                ),
-                child: Icon(
-                  statusIcon(event.status),
-                  size: 17,
-                  color: isLatest ? Colors.white : color,
-                ),
-              ),
-              Expanded(
-                child: Container(width: 2, color: AppTheme.dividerColor),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 24, top: 4),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
+      child: GlassCard(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AnimatedIconDot(
+              icon: statusIcon(event.status),
+              color: isLatest ? AppTheme.accentColor : color,
+              size: 20,
+            ),
+            const SizedBox(width: AppTheme.spaceMd),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -399,55 +398,74 @@ class TrackingScreen extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           statusLabel(event.status),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimaryColor,
-                          ),
+                          style: AppTheme.body
+                              .copyWith(fontWeight: FontWeight.w700),
                         ),
                       ),
                       Text(
                         _formatDate(event.timestamp),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textSecondaryColor,
-                        ),
+                        style: AppTheme.caption,
                       ),
                     ],
                   ),
-                  if (event.location != null && event.location!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.location_on_outlined,
-                              size: 14, color: AppTheme.textSecondaryColor),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              event.location!,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: AppTheme.textSecondaryColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                  if (isLatest) ...[
+                    const SizedBox(height: AppTheme.spaceSm),
+                    const GradientBadge(
+                      label: 'Dernière mise à jour',
+                      gradient: AppTheme.successGradient,
+                      compact: true,
                     ),
-                  if (event.notes != null && event.notes!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        event.notes!,
-                        style: const TextStyle(
-                          fontSize: 13,
+                  ],
+                  if (event.location != null && event.location!.isNotEmpty) ...[
+                    const SizedBox(height: AppTheme.spaceSm),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 14,
                           color: AppTheme.textSecondaryColor,
                         ),
-                      ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            event.location!,
+                            style: AppTheme.caption,
+                          ),
+                        ),
+                      ],
                     ),
+                  ],
+                  if (event.notes != null && event.notes!.isNotEmpty) ...[
+                    const SizedBox(height: AppTheme.spaceSm),
+                    Text(event.notes!, style: AppTheme.bodySecondary),
+                  ],
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyTimeline() {
+    return const Padding(
+      padding: EdgeInsets.all(AppTheme.spaceXl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.timeline_rounded,
+            size: 56,
+            color: AppTheme.textMutedColor,
+          ),
+          SizedBox(height: AppTheme.spaceMd),
+          Text('Aucune mise à jour de suivi', style: AppTheme.h3),
+          SizedBox(height: AppTheme.spaceSm),
+          Text(
+            'Le suivi sera disponible dès la prise en charge du colis.',
+            style: AppTheme.bodySecondary,
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -456,5 +474,22 @@ class TrackingScreen extends ConsumerWidget {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+LinearGradient _bookingGradient(String status) {
+  switch (status) {
+    case 'pending':
+      return AppTheme.warningGradient;
+    case 'confirmed':
+      return AppTheme.primaryGradient;
+    case 'shipped':
+      return AppTheme.infoGradient;
+    case 'delivered':
+      return AppTheme.successGradient;
+    case 'cancelled':
+      return AppTheme.errorGradient;
+    default:
+      return AppTheme.primaryGradient;
   }
 }

@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/widgets/ui_kit.dart';
 
 /// Shown right after an email/password sign-up (or when a signed-in user's
 /// email is not verified yet). It tells the user to click the link in the
@@ -148,74 +150,131 @@ class _EmailVerificationScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const CircleAvatar(
-                  radius: 48,
-                  backgroundColor: AppTheme.warningColor,
-                  child: Icon(Icons.mark_email_read, size: 48, color: Colors.white),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Confirmez votre email',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimaryColor,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Un email de confirmation vous a été envoyé. '
-                  'Cliquez sur le lien qu\'il contient pour activer votre compte, '
-                  'puis revenez ici.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                    color: AppTheme.textSecondaryColor,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: _checking ? null : _checkVerified,
-                  child: _checking
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+      body: CustomScrollView(
+        slivers: [
+          const GradientSliverHeader(
+            title: 'Confirmez votre email',
+            subtitle: 'Dernière étape avant de commencer',
+            icon: Icons.mark_email_read,
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.all(AppTheme.spaceMd),
+            sliver: SliverToBoxAdapter(
+              child: StaggeredEntrance(
+                child: GlassCard(
+                  padding: const EdgeInsets.all(AppTheme.spaceLg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: AppTheme.infoGradient,
+                            boxShadow: AppTheme.shadowSm,
                           ),
-                        )
-                      : const Text('J\'ai confirmé mon email'),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: _sending ? null : _resend,
-                  icon: const Icon(Icons.send),
-                  label: Text(
-                    _sending
-                        ? 'Envoi en cours...'
-                        : 'Renvoyer l\'email de confirmation',
+                          child: const Icon(
+                            Icons.mark_email_read,
+                            color: Colors.white,
+                            size: 36,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppTheme.spaceMd),
+                      const Text(
+                        'Un email de confirmation vous a été envoyé.',
+                        textAlign: TextAlign.center,
+                        style: AppTheme.body,
+                      ),
+                      const SizedBox(height: AppTheme.spaceXs),
+                      const Text(
+                        'Cliquez sur le lien qu\'il contient pour activer '
+                        'votre compte, puis revenez ici.',
+                        textAlign: TextAlign.center,
+                        style: AppTheme.bodySecondary,
+                      ),
+                      const SizedBox(height: AppTheme.spaceLg),
+                      _buildStep(
+                        icon: Icons.mail_outline,
+                        color: AppTheme.infoColor,
+                        label: 'Vérifiez votre boîte mail',
+                      ),
+                      _buildStep(
+                        icon: Icons.link,
+                        color: AppTheme.primaryColor,
+                        label: 'Cliquez sur le lien reçu',
+                      ),
+                      _buildStep(
+                        icon: Icons.mark_email_read,
+                        color: AppTheme.accentColor,
+                        label: 'Revenez ici pour continuer',
+                      ),
+                      const SizedBox(height: AppTheme.spaceLg),
+                      FilledButton(
+                        onPressed: _checking
+                            ? null
+                            : () {
+                                HapticFeedback.selectionClick();
+                                _checkVerified();
+                              },
+                        child: _checking
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('J\'ai confirmé mon email'),
+                      ),
+                      const SizedBox(height: AppTheme.spaceSm),
+                      OutlinedButton.icon(
+                        onPressed: _sending
+                            ? null
+                            : () {
+                                HapticFeedback.selectionClick();
+                                _resend();
+                              },
+                        icon: const Icon(Icons.send),
+                        label: Text(
+                          _sending
+                              ? 'Envoi en cours...'
+                              : 'Renvoyer l\'email de confirmation',
+                        ),
+                      ),
+                      const SizedBox(height: AppTheme.spaceMd),
+                      TextButton(
+                        onPressed: _signOut,
+                        child: const Text('Se déconnecter'),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 24),
-                TextButton(
-                  onPressed: _signOut,
-                  child: const Text('Se déconnecter'),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLg)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStep({
+    required IconData icon,
+    required Color color,
+    required String label,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceXs),
+      child: Row(
+        children: [
+          AnimatedIconDot(icon: icon, color: color),
+          const SizedBox(width: AppTheme.spaceMd),
+          Expanded(child: Text(label, style: AppTheme.body)),
+        ],
       ),
     );
   }

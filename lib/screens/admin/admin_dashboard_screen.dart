@@ -5,9 +5,34 @@ import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/widgets/ui_kit.dart';
+
+// ============================================================================
+// PAGINATED PROVIDERS (local to this screen)
+// ============================================================================
+
+final pendingShippersPagerProvider = StateNotifierProvider<
+    PaginatedListNotifier<Shipper>, PaginatedList<Shipper>>((ref) {
+  return createPaginatedNotifier(
+    (limit, offset) => ref
+        .read(shipperServiceProvider)
+        .getPendingShippers(limit: limit, offset: offset),
+    pageSize: 10,
+  );
+});
+
+final openDisputesPagerProvider = StateNotifierProvider<
+    PaginatedListNotifier<Dispute>, PaginatedList<Dispute>>((ref) {
+  return createPaginatedNotifier(
+    (limit, offset) => ref
+        .read(disputeServiceProvider)
+        .getOpenDisputes(limit: limit, offset: offset),
+    pageSize: 10,
+  );
+});
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
-  const AdminDashboardScreen({Key? key}) : super(key: key);
+  const AdminDashboardScreen({super.key});
 
   @override
   ConsumerState<AdminDashboardScreen> createState() =>
@@ -22,6 +47,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(pendingShippersPagerProvider.notifier).loadInitial();
+      ref.read(openDisputesPagerProvider.notifier).loadInitial();
+    });
   }
 
   @override
@@ -33,34 +62,40 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Administration'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            tooltip: 'Annonces',
-            icon: const Icon(Icons.campaign),
-            onPressed: () =>
-                Navigator.of(context).pushNamed('/broadcast'),
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          GradientSliverHeader(
+            title: 'Administration',
+            subtitle: 'Vérification, litiges et revenus',
+            icon: Icons.shield_outlined,
+            trailing: IconButton(
+              tooltip: 'Annonces',
+              icon: const Icon(Icons.campaign, color: Colors.white),
+              onPressed: () =>
+                  Navigator.of(context).pushNamed('/broadcast'),
+            ),
+            bottom: TabBar(
+              controller: _tabController,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+              indicatorColor: Colors.white,
+              indicatorWeight: 3,
+              tabs: const [
+                Tab(icon: Icon(Icons.verified_user), text: 'Expéditeurs'),
+                Tab(icon: Icon(Icons.gavel), text: 'Litiges'),
+                Tab(icon: Icon(Icons.monetization_on), text: 'Revenus'),
+              ],
+            ),
           ),
         ],
-        bottom: TabBar(
+        body: TabBarView(
           controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.verified_user), text: 'Expéditeurs'),
-            Tab(icon: Icon(Icons.gavel), text: 'Litiges'),
-            Tab(icon: Icon(Icons.monetization_on), text: 'Revenus'),
+          children: const [
+            _ShippersTab(),
+            _DisputesTab(),
+            _RevenueTab(),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [
-          _ShippersTab(),
-          _DisputesTab(),
-          _RevenueTab(),
-        ],
       ),
     );
   }
@@ -75,32 +110,42 @@ class _ShippersTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final list = ref.watch(pendingShippersProvider((limit: 100, offset: 0)));
+    final pager = ref.watch(pendingShippersPagerProvider);
 
     return RefreshIndicator(
-      onRefresh: () async {
-        ref.invalidate(pendingShippersProvider((limit: 100, offset: 0)));
-      },
-      child: list.when(
-        data: (shippers) {
-          if (shippers.isEmpty) {
-            return const Center(
-              child: Text(
-                'Aucun dossier en attente',
-                style: TextStyle(color: AppTheme.textSecondaryColor),
+      onRefresh: () =>
+          ref.read(pendingShippersPagerProvider.notifier).refresh(),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.spaceMd,
+                AppTheme.spaceMd,
+                AppTheme.spaceMd,
+                AppTheme.spaceSm,
               ),
-            );
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: shippers.length,
-            itemBuilder: (context, index) {
-              return _ShipperVerificationCard(shipper: shippers[index]);
-            },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, s) => Center(child: Text('Erreur: $e')),
+              child: Text(
+                'Dossiers en attente de vérification',
+                style: AppTheme.h3,
+              ),
+            ),
+          ),
+          PagedSliverList<Shipper>(
+            paginatedList: pager,
+            padding: const EdgeInsets.fromLTRB(
+                AppTheme.spaceMd, 0, AppTheme.spaceMd, AppTheme.spaceXxl),
+            emptyState: const _EmptyTabState(
+              icon: Icons.fact_check_outlined,
+              message: 'Aucun dossier en attente',
+            ),
+            itemBuilder: (context, shipper, index) => StaggeredEntrance(
+              delay: Duration(milliseconds: (index % 10) * 40),
+              child: _ShipperVerificationCard(shipper: shipper),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -115,68 +160,62 @@ class _ShipperVerificationCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final adminId = ref.read(authServiceProvider).currentUserId ?? '';
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
+      child: GlassCard(
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: AppTheme.primaryLight,
-                  child: Text(
-                    (shipper.user?.fullName ?? '?')
-                        .split(' ')
-                        .map((w) => w.isNotEmpty ? w[0] : '')
-                        .take(2)
-                        .join(),
-                  ),
+                GradientAvatar(
+                  initial: shipper.user?.fullName ?? '?',
+                  imageUrl: shipper.user?.profilePictureUrl,
+                  radius: 20,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppTheme.spaceSm + 4),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         shipper.user?.fullName ?? 'Utilisateur',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimaryColor,
-                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            AppTheme.body.copyWith(fontWeight: FontWeight.w700),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         'Passport: ${shipper.passportNumber}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textSecondaryColor,
-                        ),
+                        style: AppTheme.caption,
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceSm + 4),
             if (shipper.passportPhotoUrl.isNotEmpty)
               _preview(context, 'Photo passeport', shipper.passportPhotoUrl),
             if (shipper.livePhotoUrl.isNotEmpty)
               _preview(context, 'Photo en direct', shipper.livePhotoUrl),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceSm + 4),
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: FilledButton.icon(
                     onPressed: () => _verify(context, ref, adminId),
                     icon: const Icon(Icons.check, size: 18),
                     label: const Text('Vérifier'),
-                    style: ElevatedButton.styleFrom(
+                    style: FilledButton.styleFrom(
                       backgroundColor: AppTheme.accentColor,
+                      minimumSize: const Size(48, 48),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.spaceSm),
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _reject(context, ref, adminId),
@@ -184,6 +223,7 @@ class _ShipperVerificationCard extends ConsumerWidget {
                     label: const Text('Rejeter'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.red,
+                      minimumSize: const Size(48, 48),
                     ),
                   ),
                 ),
@@ -201,23 +241,21 @@ class _ShipperVerificationCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppTheme.textSecondaryColor,
-            ),
-          ),
-          const SizedBox(height: 4),
+          Text(label, style: AppTheme.caption),
+          const SizedBox(height: AppTheme.spaceXs),
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
             child: Image.network(
               url,
               height: 80,
+              width: double.infinity,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => const SizedBox(
                 height: 80,
-                child: Center(child: Text('Aperçu indisponible')),
+                child: Center(
+                  child: Text('Aperçu indisponible',
+                      style: AppTheme.bodySecondary),
+                ),
               ),
             ),
           ),
@@ -226,13 +264,14 @@ class _ShipperVerificationCard extends ConsumerWidget {
     );
   }
 
-  Future<void> _verify(BuildContext context, WidgetRef ref, String adminId) async {
+  Future<void> _verify(
+      BuildContext context, WidgetRef ref, String adminId) async {
     try {
       await ref.read(shipperServiceProvider).verifyShipper(
             shipperId: shipper.id,
             adminId: adminId,
           );
-      ref.invalidate(pendingShippersProvider((limit: 100, offset: 0)));
+      ref.read(pendingShippersPagerProvider.notifier).refresh();
       // Refresh the verified shipper so their dashboard unlocks
       ref.invalidate(currentShipperProvider);
       ref.invalidate(shipperByIdProvider(shipper.id));
@@ -245,11 +284,12 @@ class _ShipperVerificationCard extends ConsumerWidget {
         );
       }
     } catch (e) {
-      _showError(context, e);
+      if (context.mounted) _showError(context, e);
     }
   }
 
-  Future<void> _reject(BuildContext context, WidgetRef ref, String adminId) async {
+  Future<void> _reject(
+      BuildContext context, WidgetRef ref, String adminId) async {
     final reasonController = TextEditingController();
     final reason = await showDialog<String>(
       context: context,
@@ -282,9 +322,9 @@ class _ShipperVerificationCard extends ConsumerWidget {
             adminId: adminId,
             rejectionReason: reason,
           );
-      ref.invalidate(pendingShippersProvider((limit: 100, offset: 0)));
+      ref.read(pendingShippersPagerProvider.notifier).refresh();
     } catch (e) {
-      _showError(context, e);
+      if (context.mounted) _showError(context, e);
     }
   }
 
@@ -303,32 +343,41 @@ class _DisputesTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final list = ref.watch(openDisputesProvider((limit: 100, offset: 0)));
+    final pager = ref.watch(openDisputesPagerProvider);
 
     return RefreshIndicator(
-      onRefresh: () async {
-        ref.invalidate(openDisputesProvider((limit: 100, offset: 0)));
-      },
-      child: list.when(
-        data: (disputes) {
-          if (disputes.isEmpty) {
-            return const Center(
-              child: Text(
-                'Aucun litige ouvert',
-                style: TextStyle(color: AppTheme.textSecondaryColor),
+      onRefresh: () => ref.read(openDisputesPagerProvider.notifier).refresh(),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.spaceMd,
+                AppTheme.spaceMd,
+                AppTheme.spaceMd,
+                AppTheme.spaceSm,
               ),
-            );
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: disputes.length,
-            itemBuilder: (context, index) {
-              return _DisputeCard(dispute: disputes[index]);
-            },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, s) => Center(child: Text('Erreur: $e')),
+              child: Text(
+                'Litiges ouverts',
+                style: AppTheme.h3,
+              ),
+            ),
+          ),
+          PagedSliverList<Dispute>(
+            paginatedList: pager,
+            padding: const EdgeInsets.fromLTRB(
+                AppTheme.spaceMd, 0, AppTheme.spaceMd, AppTheme.spaceXxl),
+            emptyState: const _EmptyTabState(
+              icon: Icons.verified_user_outlined,
+              message: 'Aucun litige ouvert',
+            ),
+            itemBuilder: (context, dispute, index) => StaggeredEntrance(
+              delay: Duration(milliseconds: (index % 10) * 40),
+              child: _DisputeCard(dispute: dispute),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -356,53 +405,49 @@ class _DisputeCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    final isFraud = dispute.type == 'fraud';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
+      child: GlassCard(
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.gavel,
-                  size: 18,
-                  color: dispute.type == 'fraud'
-                      ? AppTheme.errorColor
-                      : AppTheme.warningColor,
+                AnimatedIconDot(
+                  icon: Icons.gavel_rounded,
+                  color: isFraud ? AppTheme.errorColor : AppTheme.warningColor,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.spaceSm + 4),
                 Expanded(
                   child: Text(
                     _disputeTypeLabel(dispute.type),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimaryColor,
-                    ),
+                    style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSm),
             Text(
               dispute.description,
-              style: const TextStyle(color: AppTheme.textSecondaryColor),
+              style: AppTheme.bodySecondary,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceSm + 4),
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: FilledButton.icon(
                     onPressed: () => _resolveInFavorOfClient(context, ref),
                     icon: const Icon(Icons.thumb_up, size: 18),
                     label: const Text('Rembourser'),
-                    style: ElevatedButton.styleFrom(
+                    style: FilledButton.styleFrom(
                       backgroundColor: AppTheme.accentColor,
+                      minimumSize: const Size(48, 48),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.spaceSm),
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _reject(context, ref),
@@ -410,6 +455,7 @@ class _DisputeCard extends ConsumerWidget {
                     label: const Text('Rejeter'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.red,
+                      minimumSize: const Size(48, 48),
                     ),
                   ),
                 ),
@@ -465,7 +511,7 @@ class _DisputeCard extends ConsumerWidget {
               resolution: resolution,
             );
       }
-      ref.invalidate(openDisputesProvider((limit: 100, offset: 0)));
+      ref.read(openDisputesPagerProvider.notifier).refresh();
     } catch (e) {
       if (context.mounted) {
         await showAppErrorDialog(context, message: 'Erreur: $e');
@@ -474,7 +520,9 @@ class _DisputeCard extends ConsumerWidget {
   }
 
   Future<void> _resolveInFavorOfClient(BuildContext context, WidgetRef ref) =>
-      _resolveWithStatus(context, ref, 'Résolution en faveur du client (remboursement)', refund: true);
+      _resolveWithStatus(
+          context, ref, 'Résolution en faveur du client (remboursement)',
+          refund: true);
 
   Future<void> _reject(BuildContext context, WidgetRef ref) =>
       _resolveWithStatus(context, ref, 'Rejeter le litige', refund: false);
@@ -489,70 +537,179 @@ class _RevenueTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final revenue = ref.watch(revenueStatsProvider((startDate: null, endDate: null)));
+    final revenue =
+        ref.watch(revenueStatsProvider((startDate: null, endDate: null)));
 
     return revenue.when(
       data: (stats) {
         final total = (stats?['total_revenue'] as num?)?.toDouble() ?? 0;
-        final transactions = (stats?['total_transactions'] as num?)?.toInt() ?? 0;
-        final average = (stats?['average_transaction'] as num?)?.toDouble() ?? 0;
-        final commission = total * AppConstants.platformCommissionPercent / 100;
+        final transactions =
+            (stats?['total_transactions'] as num?)?.toInt() ?? 0;
+        final average =
+            (stats?['average_transaction'] as num?)?.toDouble() ?? 0;
+        final commission =
+            total * AppConstants.platformCommissionPercent / 100;
 
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Card(
-              color: AppTheme.surfaceColor,
+        return CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    const Icon(Icons.trending_up,
-                        color: AppTheme.accentColor, size: 40),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${total.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimaryColor,
-                      ),
-                    ),
-                    const Text(
-                      'Chiffre d\'affaires',
-                      style: TextStyle(color: AppTheme.textSecondaryColor),
-                    ),
-                  ],
+                padding: const EdgeInsets.all(AppTheme.spaceMd),
+                child: _RevenueHero(total: total),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spaceMd,
+                ),
+                child: _RevenueRow(
+                  icon: Icons.swap_horiz_rounded,
+                  color: AppTheme.infoColor,
+                  label: 'Transactions',
+                  value: transactions.toString(),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            _revenueRow('Transactions', transactions.toString()),
-            _revenueRow('Panier moyen', '${average.toStringAsFixed(0)} DZD'),
-            _revenueRow(
-              'Commission plateforme (${AppConstants.platformCommissionPercent}%)',
-              '${commission.toStringAsFixed(0)} DZD',
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(AppTheme.spaceMd,
+                    AppTheme.spaceSm, AppTheme.spaceMd, AppTheme.spaceSm),
+                child: _RevenueRow(
+                  icon: Icons.calculate_outlined,
+                  color: AppTheme.primaryColor,
+                  label: 'Panier moyen',
+                  value: '${average.toStringAsFixed(0)} DZD',
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppTheme.spaceMd,
+                    AppTheme.spaceSm,
+                    AppTheme.spaceMd,
+                    AppTheme.spaceXxl),
+                child: _RevenueRow(
+                  icon: Icons.percent_rounded,
+                  color: AppTheme.warningColor,
+                  label:
+                      'Commission plateforme (${AppConstants.platformCommissionPercent}%)',
+                  value: '${commission.toStringAsFixed(0)} DZD',
+                ),
+              ),
             ),
           ],
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, s) => Center(child: Text('Erreur: $e')),
+      error: (e, s) => Center(
+        child: Text('Erreur: $e', style: AppTheme.bodySecondary),
+      ),
     );
   }
+}
 
-  Widget _revenueRow(String label, String value) {
-    return Card(
-      child: ListTile(
-        title: Text(label, style: const TextStyle(color: AppTheme.textSecondaryColor)),
-        trailing: Text(
-          value,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppTheme.blue,
+class _RevenueHero extends StatelessWidget {
+  const _RevenueHero({required this.total});
+
+  final double total;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spaceLg),
+      decoration: BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        boxShadow: AppTheme.shadowLg,
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.trending_up_rounded,
+              color: Colors.white, size: 40),
+          const SizedBox(height: AppTheme.spaceSm),
+          Text(
+            '${total.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            'Chiffre d\'affaires',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.85)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RevenueRow extends StatelessWidget {
+  const _RevenueRow({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
+      child: GlassCard(
+        child: Row(
+          children: [
+            AnimatedIconDot(icon: icon, color: color),
+            const SizedBox(width: AppTheme.spaceSm + 4),
+            Expanded(
+              child: Text(
+                label,
+                style: AppTheme.bodySecondary,
+              ),
+            ),
+            Text(
+              value,
+              style: AppTheme.body.copyWith(
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+}
+
+// ============================================================================
+// EMPTY STATE
+// ============================================================================
+
+class _EmptyTabState extends StatelessWidget {
+  const _EmptyTabState({required this.icon, required this.message});
+
+  final IconData icon;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 56, color: AppTheme.textMutedColor),
+        const SizedBox(height: AppTheme.spaceMd),
+        Text(message, style: AppTheme.h3),
+      ],
     );
   }
 }

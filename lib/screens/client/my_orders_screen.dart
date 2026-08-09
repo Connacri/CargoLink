@@ -6,6 +6,25 @@ import '../../core/constants/app_constants.dart';
 import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/widgets/ui_kit.dart';
+
+/// Lazy paged source for the current client's bookings, keyed by status filter.
+final clientBookingsPagerProvider = StateNotifierProvider.family<
+    PaginatedListNotifier<Booking>,
+    PaginatedList<Booking>,
+    ({String clientId, String? status})>(
+  (ref, params) {
+    return createPaginatedNotifier(
+      (limit, offset) => ref.read(clientBookingsProvider((
+        clientId: params.clientId,
+        status: params.status,
+        limit: limit,
+        offset: offset,
+      )).future),
+      pageSize: 15,
+    );
+  },
+);
 
 class MyOrdersScreen extends ConsumerStatefulWidget {
   const MyOrdersScreen({Key? key}) : super(key: key);
@@ -15,7 +34,57 @@ class MyOrdersScreen extends ConsumerStatefulWidget {
 }
 
 class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
+  static const _statusOptions = [
+    (label: 'Toutes', value: null),
+    (label: 'En attente', value: 'pending'),
+    (label: 'Confirmées', value: 'confirmed'),
+    (label: 'Expédiées', value: 'shipped'),
+    (label: 'Livrées', value: 'delivered'),
+    (label: 'Annulées', value: 'cancelled'),
+  ];
+
+  final _scrollController = ScrollController();
   String? _statusFilter;
+  String _lastFilterKey = '';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncPager();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// (Re)loads the first page whenever the client or status filter changes.
+  void _syncPager() {
+    final userId = ref.read(authServiceProvider).currentUserId;
+    if (userId == null) return;
+    final key = '$userId|$_statusFilter';
+    if (key == _lastFilterKey) return;
+    _lastFilterKey = key;
+    ref
+        .read(clientBookingsPagerProvider((
+          clientId: userId,
+          status: _statusFilter,
+        )).notifier)
+        .loadInitial();
+  }
+
+  void _onStatusSelected(String? status) {
+    if (status == _statusFilter) return;
+    setState(() => _statusFilter = status);
+    _syncPager();
+  }
 
   Future<void> _cancelBooking(String bookingId) async {
     final confirmed = await showDialog<bool>(
@@ -43,13 +112,13 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
       try {
         await ref.read(bookingServiceProvider).cancelBooking(bookingId);
         final userId = ref.read(authServiceProvider).currentUserId;
-        if (userId != null) {
-          ref.invalidate(clientBookingsProvider((
-            clientId: userId,
-            status: _statusFilter,
-            limit: 100,
-            offset: 0,
-          )));
+        if (userId != null && mounted) {
+          await ref
+              .read(clientBookingsPagerProvider((
+                clientId: userId,
+                status: _statusFilter,
+              )).notifier)
+              .refresh();
         }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -71,88 +140,91 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
   Widget build(BuildContext context) {
     final userId = ref.watch(authServiceProvider).currentUserId;
     if (userId == null) {
-      return const Center(child: Text('Utilisateur non identifié'));
+      return Scaffold(
+        body: Center(
+          child: Text(
+            'Utilisateur non identifié',
+            style: AppTheme.bodySecondary,
+          ),
+        ),
+      );
     }
 
-    final bookings = ref.watch(clientBookingsProvider((
+    final pager = ref.watch(clientBookingsPagerProvider((
       clientId: userId,
       status: _statusFilter,
-      limit: 100,
-      offset: 0,
     )));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mes Commandes'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              setState(() {
-                _statusFilter = value == 'all' ? null : value;
-              });
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'all', child: Text('Toutes')),
-              PopupMenuItem(value: 'pending', child: Text('En attente')),
-              PopupMenuItem(value: 'confirmed', child: Text('Confirmées')),
-              PopupMenuItem(value: 'shipped', child: Text('Expédiées')),
-              PopupMenuItem(value: 'delivered', child: Text('Livrées')),
-              PopupMenuItem(value: 'cancelled', child: Text('Annulées')),
-            ],
-          ),
-        ],
-      ),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(clientBookingsProvider((
-            clientId: userId,
-            status: _statusFilter,
-            limit: 100,
-            offset: 0,
-          )));
+          await ref
+              .read(clientBookingsPagerProvider((
+                clientId: userId,
+                status: _statusFilter,
+              )).notifier)
+              .refresh();
         },
-        child: bookings.when(
-          data: (items) {
-            if (items.isEmpty) {
-              return ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  Icon(
-                    Icons.receipt_long_outlined,
-                    size: 64,
-                    color: AppTheme.textSecondaryColor,
-                  ),
-                  SizedBox(height: 16),
-                  Center(
-                    child: Text(
-                      'Aucune commande',
-                      style: TextStyle(color: AppTheme.textSecondaryColor),
-                    ),
-                  ),
-                ],
-              );
-            }
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                return _BookingCard(
-                  booking: items[index],
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            GradientSliverHeader(
+              title: 'Mes Commandes',
+              subtitle: 'Suis et gère tes réservations',
+              icon: Icons.receipt_long_rounded,
+            ),
+            SliverToBoxAdapter(
+              child: _buildStatusFilters(),
+            ),
+            PagedSliverList<Booking>(
+              paginatedList: pager,
+              padding: const EdgeInsets.fromLTRB(
+                AppTheme.spaceMd,
+                AppTheme.spaceSm,
+                AppTheme.spaceMd,
+                AppTheme.spaceXxl,
+              ),
+              emptyState: const _EmptyOrders(),
+              itemBuilder: (context, booking, index) => StaggeredEntrance(
+                delay: Duration(milliseconds: (index % 10) * 40),
+                child: _BookingCard(
+                  booking: booking,
                   onTrack: () => Navigator.of(context)
-                      .pushNamed('/tracking', arguments: items[index].id),
-                  onCancel: (items[index].status == 'pending' ||
-                          items[index].paymentStatus == 'pending')
-                      ? () => _cancelBooking(items[index].id)
+                      .pushNamed('/tracking', arguments: booking.id),
+                  onCancel: (booking.status == 'pending' ||
+                          booking.paymentStatus == 'pending')
+                      ? () => _cancelBooking(booking.id)
                       : null,
-                );
-              },
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, s) => Center(child: Text('Erreur: $e')),
+                ),
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatusFilters() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: Row(
+        children: [
+          for (final option in _statusOptions) ...[
+            ChoiceChip(
+              label: Text(option.label),
+              selected: _statusFilter == option.value,
+              onSelected: (_) => _onStatusSelected(option.value),
+            ),
+            const SizedBox(width: AppTheme.spaceSm),
+          ],
+        ],
       ),
     );
   }
@@ -175,97 +247,115 @@ class _BookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = BookingStatusExt.fromString(booking.status).color;
+    final status = BookingStatusExt.fromString(booking.status);
+    final route = booking.shipment != null
+        ? '${booking.shipment!.originCountry} → ${booking.shipment!.destinationCity}'
+        : null;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
+      child: GlassCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AnimatedIconDot(
+                  icon: Icons.inventory_2_outlined,
+                  color: status.color,
+                ),
+                const SizedBox(width: AppTheme.spaceMd),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(booking.productName, style: AppTheme.h3),
+                      const SizedBox(height: AppTheme.spaceXs),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: route == null
+                                ? const SizedBox.shrink()
+                                : Text(
+                                    route,
+                                    style: AppTheme.caption,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                          ),
+                          const SizedBox(width: AppTheme.spaceSm),
+                          GradientBadge(
+                            label: status.displayName,
+                            gradient: _statusGradient(booking.status),
+                            compact: true,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            Row(
               children: [
                 Expanded(
-                  child: Text(
-                    booking.productName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimaryColor,
-                    ),
+                  child: _InfoTile(
+                    icon: Icons.monitor_weight_outlined,
+                    label: 'Poids',
+                    value: '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
                   ),
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    BookingStatusExt.fromString(booking.status).displayName,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
+                Expanded(
+                  child: _InfoTile(
+                    icon: Icons.payments_outlined,
+                    label: 'Total',
+                    value:
+                        '${booking.totalPrice.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+                    valueColor: AppTheme.primaryColor,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            if (booking.shipment != null)
-              Text(
-                '${booking.shipment!.originCountry} → ${booking.shipment!.destinationCity}',
-                style: const TextStyle(
-                  color: AppTheme.textSecondaryColor,
-                  fontSize: 13,
-                ),
-              ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSm),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
-                  style: const TextStyle(color: AppTheme.textSecondaryColor),
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 14,
+                  color: booking.isPaid
+                      ? AppTheme.accentColor
+                      : AppTheme.warningColor,
                 ),
+                const SizedBox(width: AppTheme.spaceXs),
                 Text(
-                  '${booking.totalPrice.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
+                  'Paiement: ${booking.isPaid ? 'Payé' : 'En attente'}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: booking.isPaid
+                        ? AppTheme.accentColor
+                        : AppTheme.warningColor,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Paiement: ${booking.isPaid ? 'Payé' : 'En attente'}',
-              style: TextStyle(
-                fontSize: 12,
-                color: booking.isPaid
-                    ? AppTheme.accentColor
-                    : AppTheme.warningColor,
-              ),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceMd),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: onTrack,
-                    icon: const Icon(Icons.route, size: 18),
+                    icon: const Icon(Icons.route_rounded, size: 18),
                     label: const Text('Suivre'),
                   ),
                 ),
                 if (onCancel != null) ...[
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppTheme.spaceSm),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: onCancel,
-                      icon: const Icon(Icons.close, size: 18),
+                      icon: const Icon(Icons.close_rounded, size: 18),
                       label: const Text('Annuler'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppTheme.errorColor,
@@ -278,6 +368,89 @@ class _BookingCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+LinearGradient _statusGradient(String status) {
+  switch (status) {
+    case 'pending':
+      return AppTheme.warningGradient;
+    case 'confirmed':
+    case 'shipped':
+      return AppTheme.primaryGradient;
+    case 'delivered':
+      return AppTheme.successGradient;
+    case 'cancelled':
+      return AppTheme.errorGradient;
+    default:
+      return AppTheme.primaryGradient;
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        AnimatedIconDot(icon: icon, color: AppTheme.primaryColor),
+        const SizedBox(width: AppTheme.spaceSm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: AppTheme.caption),
+              Text(
+                value,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: valueColor ?? AppTheme.textPrimaryColor,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EmptyOrders extends StatelessWidget {
+  const _EmptyOrders();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.receipt_long_outlined,
+          size: 64,
+          color: AppTheme.textMutedColor,
+        ),
+        SizedBox(height: AppTheme.spaceMd),
+        Text('Aucune commande', style: AppTheme.h3),
+        SizedBox(height: AppTheme.spaceSm),
+        Text(
+          'Réserve un shipment pour retrouver tes commandes ici.',
+          style: AppTheme.bodySecondary,
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }

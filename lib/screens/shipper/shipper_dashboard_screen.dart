@@ -6,6 +6,37 @@ import '../../core/constants/app_constants.dart';
 import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/widgets/ui_kit.dart';
+
+// ============================================================================
+// PAGINATED PROVIDERS (local to this file)
+// ============================================================================
+
+final shipperShipmentsPagerProvider = StateNotifierProvider.family<
+    PaginatedListNotifier<Shipment>, PaginatedList<Shipment>, String>(
+  (ref, shipperId) {
+    return createPaginatedNotifier(
+      (limit, offset) => ref
+          .read(shipmentServiceProvider)
+          .getShipperShipments(shipperId: shipperId, limit: limit, offset: offset),
+      pageSize: 15,
+    );
+  },
+);
+
+final shipperShipmentBookingsPagerProvider = StateNotifierProvider.family<
+    PaginatedListNotifier<Booking>, PaginatedList<Booking>, String>(
+  (ref, shipmentId) {
+    return createPaginatedNotifier(
+      (limit, offset) => ref.read(shipmentBookingsProvider((
+        shipmentId: shipmentId,
+        limit: limit,
+        offset: offset,
+      )).future),
+      pageSize: 15,
+    );
+  },
+);
 
 // ============================================================================
 // SHIPPER DASHBOARD
@@ -19,7 +50,50 @@ class ShipperDashboardScreen extends ConsumerStatefulWidget {
       _ShipperDashboardScreenState();
 }
 
-class _ShipperDashboardScreenState extends ConsumerState<ShipperDashboardScreen> {
+class _ShipperDashboardScreenState
+    extends ConsumerState<ShipperDashboardScreen> {
+  static const _statusOptions = [
+    (label: 'Toutes', value: null),
+    (label: 'Actives', value: 'active'),
+    (label: 'Terminées', value: 'completed'),
+    (label: 'Annulées', value: 'cancelled'),
+  ];
+
+  final _scrollController = ScrollController();
+  String? _statusFilter;
+  String _lastShipperId = '';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncPager();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// (Re)loads the first page whenever the shipper id changes.
+  void _syncPager() {
+    final shipperId = ref.read(currentShipperProvider).valueOrNull?.id;
+    if (shipperId == null || shipperId == _lastShipperId) return;
+    _lastShipperId = shipperId;
+    ref.read(shipperShipmentsPagerProvider(shipperId).notifier).loadInitial();
+  }
+
+  void _onStatusSelected(String? status) {
+    if (status == _statusFilter) return;
+    setState(() => _statusFilter = status);
+  }
+
   @override
   Widget build(BuildContext context) {
     final shipper = ref.watch(currentShipperProvider);
@@ -31,64 +105,74 @@ class _ShipperDashboardScreenState extends ConsumerState<ShipperDashboardScreen>
         }
         return _buildDashboard(shipperData);
       },
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, s) => Scaffold(body: Center(child: Text('Erreur: $e'))),
     );
   }
 
   Widget _buildNotVerified(Shipper? shipper) {
     final isRejected = shipper?.isRejected ?? false;
+    final title =
+        isRejected ? 'Dossier rejeté' : 'Vérification en attente';
+    final message = isRejected
+        ? shipper?.rejectionReason ??
+            'Veuillez soumettre à nouveau vos documents.'
+        : 'Un administrateur doit valider votre identité avant '
+            'de pouvoir publier des offres de transport.';
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tableau de bord'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                isRejected
-                    ? Icons.error_outline
-                    : Icons.verified_user_outlined,
-                size: 72,
-                color: isRejected ? AppTheme.errorColor : AppTheme.warningColor,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                isRejected
-                    ? 'Votre dossier a été rejeté'
-                    : 'Dossier en attente de vérification',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimaryColor,
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppTheme.primaryGradient),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppTheme.spaceLg),
+              child: GlassCard(
+                padding: const EdgeInsets.all(AppTheme.spaceLg),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedIconDot(
+                      icon: isRejected
+                          ? Icons.error_outline_rounded
+                          : Icons.verified_user_outlined,
+                      color: isRejected
+                          ? AppTheme.errorColor
+                          : AppTheme.warningColor,
+                      size: 32,
+                    ),
+                    const SizedBox(height: AppTheme.spaceMd),
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: AppTheme.h3,
+                    ),
+                    const SizedBox(height: AppTheme.spaceSm),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: AppTheme.bodySecondary,
+                    ),
+                    const SizedBox(height: AppTheme.spaceLg),
+                    FilledButton.icon(
+                      onPressed: () => Navigator.of(context)
+                          .pushNamed('/shipper-registration'),
+                      icon: Icon(
+                        isRejected
+                            ? Icons.replay_rounded
+                            : Icons.assignment_rounded,
+                      ),
+                      label: Text(
+                        isRejected
+                            ? 'Soumettre à nouveau'
+                            : 'Voir mon dossier',
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                isRejected
-                    ? shipper?.rejectionReason ??
-                        'Veuillez soumettre à nouveau vos documents.'
-                    : 'Un administrateur doit valider votre identité avant '
-                        'de pouvoir publier des offres de transport.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppTheme.textSecondaryColor,
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context)
-                    .pushNamed('/shipper-registration'),
-                child: Text(isRejected ? 'Soumettre à nouveau' : 'Voir mon dossier'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -96,136 +180,186 @@ class _ShipperDashboardScreenState extends ConsumerState<ShipperDashboardScreen>
   }
 
   Widget _buildDashboard(Shipper shipper) {
-    final stats = ref.watch(shipperStatsProvider(shipper.id));
-    final shipments = ref.watch(shipperShipmentsProvider((
-      shipperId: shipper.id,
-      limit: 10,
-      offset: 0,
-    )));
+    final pager = ref.watch(shipperShipmentsPagerProvider(shipper.id));
+
+    final filtered = _statusFilter == null
+        ? null
+        : pager.items.where((s) => s.status == _statusFilter).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tableau de bord'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(shipperStatsProvider(shipper.id));
-          ref.invalidate(shipperShipmentsProvider((
-            shipperId: shipper.id,
-            limit: 10,
-            offset: 0,
-          )));
+          ref.invalidate(shipperEarningsProvider(shipper.id));
+          await ref
+              .read(shipperShipmentsPagerProvider(shipper.id).notifier)
+              .refresh();
         },
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _buildStatsGrid(stats.valueOrNull),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Offres récentes',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimaryColor,
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            GradientSliverHeader(
+              title: 'Tableau de bord',
+              subtitle: shipper.user?.fullName ?? 'Espace expéditeur',
+              icon: Icons.local_shipping_rounded,
+              trailing: IconButton(
+                tooltip: 'Publier une offre',
+                icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+                onPressed: () => _showPublishDialog(shipper.id),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _buildStats(shipper),
+            ),
+            SliverToBoxAdapter(
+              child: _buildSectionHeader(shipper.id),
+            ),
+            SliverToBoxAdapter(
+              child: _buildStatusFilters(),
+            ),
+            if (filtered == null)
+              PagedSliverList<Shipment>(
+                paginatedList: pager,
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd,
+                  AppTheme.spaceSm,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceXxl,
+                ),
+                emptyState: const _EmptyShipments(),
+                itemBuilder: (context, shipment, index) => StaggeredEntrance(
+                  delay: Duration(milliseconds: (index % 10) * 40),
+                  child: _ShipmentMiniCard(shipment: shipment),
+                ),
+              )
+            else if (filtered.isEmpty)
+              const SliverToBoxAdapter(child: _EmptyFilteredShipments())
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd,
+                  AppTheme.spaceSm,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceXxl,
+                ),
+                sliver: SliverList.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) => StaggeredEntrance(
+                    delay: Duration(milliseconds: (index % 10) * 40),
+                    child: _ShipmentMiniCard(shipment: filtered[index]),
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: () => _showPublishDialog(shipper.id),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Publier'),
-                ),
-              ],
-            ),
-            shipments.when(
-              data: (items) => items.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Center(
-                        child: Text(
-                          'Aucune offre publiée. Publiez votre première offre !',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: AppTheme.textSecondaryColor),
-                        ),
-                      ),
-                    )
-                  : Column(
-                      children: items
-                          .map((s) => _ShipmentMiniCard(shipment: s))
-                          .toList(),
-                    ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Center(child: Text('Erreur: $e')),
-            ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatsGrid(Map<String, dynamic>? stats) {
-    return Row(
-      children: [
-        _statCard(
-          'Offres',
-          '${stats?['total_shipments'] ?? 0}',
-          Icons.local_shipping,
-          AppTheme.primaryColor,
-        ),
-        _statCard(
-          'Commandes',
-          '${stats?['total_bookings'] ?? 0}',
-          Icons.receipt_long,
-          AppTheme.accentColor,
-        ),
-        _statCard(
-          'Actives',
-          '${stats?['active_shipments'] ?? 0}',
-          Icons.play_circle,
-          AppTheme.warningColor,
-        ),
-      ],
+  Widget _buildStats(Shipper shipper) {
+    final stats = ref.watch(shipperStatsProvider(shipper.id));
+    final earnings = ref.watch(shipperEarningsProvider(shipper.id));
+
+    final revenue = earnings.valueOrNull ?? 0.0;
+    final active =
+        (stats.valueOrNull?['active_shipments'] as num?)?.toInt() ?? 0;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _StatCard(
+              label: 'Chiffre d\'affaires',
+              value: _formatCompact(revenue),
+              icon: Icons.payments_outlined,
+              color: AppTheme.accentColor,
+            ),
+          ),
+          const SizedBox(width: AppTheme.spaceSm),
+          Expanded(
+            child: _StatCard(
+              label: 'Offres actives',
+              value: '$active',
+              icon: Icons.play_circle_outline_rounded,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          const SizedBox(width: AppTheme.spaceSm),
+          Expanded(
+            child: _StatCard(
+              label: 'Note',
+              value: shipper.ratingDisplay,
+              icon: Icons.star_outline_rounded,
+              color: Colors.amber,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _statCard(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Expanded(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: [
-              Icon(icon, color: color),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimaryColor,
-                ),
-              ),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondaryColor,
-                ),
-              ),
-            ],
+  Widget _buildSectionHeader(String shipperId) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+        AppTheme.spaceSm,
+        0,
+      ),
+      child: Row(
+        children: [
+          const Expanded(
+            child: Text('Mes offres', style: AppTheme.h2),
           ),
-        ),
+          TextButton.icon(
+            onPressed: () => _showPublishDialog(shipperId),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Publier'),
+          ),
+        ],
       ),
     );
+  }
+
+  Widget _buildStatusFilters() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: Row(
+        children: [
+          for (final option in _statusOptions) ...[
+            ChoiceChip(
+              label: Text(option.label),
+              selected: _statusFilter == option.value,
+              onSelected: (_) => _onStatusSelected(option.value),
+            ),
+            const SizedBox(width: AppTheme.spaceSm),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatCompact(double value) {
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(1)}M';
+    }
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(0)}k';
+    }
+    return value.toStringAsFixed(0);
   }
 
   Future<void> _showPublishDialog(String shipperId) async {
@@ -271,8 +405,7 @@ class _ShipperDashboardScreenState extends ConsumerState<ShipperDashboardScreen>
                     initialValue: originCountry,
                     decoration: const InputDecoration(labelText: 'Origine'),
                     items: AppConstants.populateOrigins
-                        .map((c) =>
-                            DropdownMenuItem(value: c, child: Text(c)))
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                         .toList(),
                     onChanged: (v) =>
                         setSheetState(() => originCountry = v ?? originCountry),
@@ -282,11 +415,10 @@ class _ShipperDashboardScreenState extends ConsumerState<ShipperDashboardScreen>
                     initialValue: destinationCity,
                     decoration: const InputDecoration(labelText: 'Destination'),
                     items: AppConstants.majorCities
-                        .map((c) =>
-                            DropdownMenuItem(value: c, child: Text(c)))
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                         .toList(),
-                    onChanged: (v) =>
-                        setSheetState(() => destinationCity = v ?? destinationCity),
+                    onChanged: (v) => setSheetState(
+                        () => destinationCity = v ?? destinationCity),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -348,16 +480,15 @@ class _ShipperDashboardScreenState extends ConsumerState<ShipperDashboardScreen>
                               context: sheetContext,
                               initialDate: departure,
                               firstDate: DateTime.now(),
-                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                              lastDate:
+                                  DateTime.now().add(const Duration(days: 365)),
                             );
                             if (date != null) {
                               setSheetState(() => departure = date);
                             }
                           },
                           icon: const Icon(Icons.flight_takeoff, size: 18),
-                          label: Text(
-                            'Départ ${departure.day}/${departure.month}',
-                          ),
+                          label: Text('Départ ${departure.day}/${departure.month}'),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -368,7 +499,8 @@ class _ShipperDashboardScreenState extends ConsumerState<ShipperDashboardScreen>
                               context: sheetContext,
                               initialDate: arrival,
                               firstDate: departure,
-                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                              lastDate:
+                                  DateTime.now().add(const Duration(days: 365)),
                             );
                             if (date != null) {
                               setSheetState(() => arrival = date);
@@ -403,18 +535,18 @@ class _ShipperDashboardScreenState extends ConsumerState<ShipperDashboardScreen>
                                     flightNumber: flightController.text.isEmpty
                                         ? null
                                         : flightController.text,
-                                    description: descriptionController.text
-                                            .isEmpty
-                                        ? null
-                                        : descriptionController.text,
+                                    description:
+                                        descriptionController.text.isEmpty
+                                            ? null
+                                            : descriptionController.text,
                                   );
-                              ref.invalidate(shipperShipmentsProvider((
-                                shipperId: shipperId,
-                                limit: 10,
-                                offset: 0,
-                              )));
+                              await ref
+                                  .read(shipperShipmentsPagerProvider(shipperId)
+                                      .notifier)
+                                  .refresh();
+                              ref.invalidate(shipperStatsProvider(shipperId));
                               ref.invalidate(
-                                  shipperStatsProvider(shipperId));
+                                  shipperEarningsProvider(shipperId));
                               if (sheetContext.mounted) {
                                 Navigator.pop(sheetContext);
                               }
@@ -457,6 +589,62 @@ class _ShipperDashboardScreenState extends ConsumerState<ShipperDashboardScreen>
   }
 }
 
+// ============================================================================
+// STATS CARD
+// ============================================================================
+
+class _StatCard extends StatelessWidget {
+  const _StatCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: const EdgeInsets.symmetric(
+        vertical: AppTheme.spaceMd,
+        horizontal: AppTheme.spaceSm,
+      ),
+      child: Column(
+        children: [
+          AnimatedIconDot(icon: icon, color: color),
+          const SizedBox(height: AppTheme.spaceSm),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.textPrimaryColor,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: AppTheme.caption,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// SHIPMENT CARD
+// ============================================================================
+
 class _ShipmentMiniCard extends ConsumerWidget {
   final Shipment shipment;
 
@@ -464,32 +652,128 @@ class _ShipmentMiniCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: AppTheme.primaryLight,
-          child: Icon(Icons.local_shipping, color: AppTheme.primaryColor),
-        ),
-        title: Text(
-          '${shipment.originCountry} → ${shipment.destinationCity}',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          '${shipment.remainingWeightKg.toStringAsFixed(1)} kg restants • '
-          '${shipment.pricePerKg.toStringAsFixed(0)} DZD/kg',
-        ),
-        trailing: shipment.isFull
-            ? const Icon(Icons.check_circle, color: AppTheme.accentColor)
-            : null,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
+      child: GlassCard(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => ShipperShipmentDetailScreen(shipment: shipment),
           ),
         ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AnimatedIconDot(
+                  icon: Icons.local_shipping_rounded,
+                  color: _shipmentStatusColor(shipment.status),
+                ),
+                const SizedBox(width: AppTheme.spaceMd),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              shipment.originCountry,
+                              style: AppTheme.h3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 18,
+                            color: AppTheme.textMutedColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              shipment.destinationCity,
+                              style: AppTheme.h3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppTheme.spaceXs),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.event_rounded,
+                            size: 14,
+                            color: AppTheme.textMutedColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Départ ${_formatDate(shipment.departureDate)}',
+                            style: AppTheme.caption,
+                          ),
+                          if (shipment.flightNumber != null) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              '• Vol ${shipment.flightNumber}',
+                              style: AppTheme.caption,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                GradientBadge(
+                  label: _shipmentStatusLabel(shipment.status),
+                  gradient: _shipmentStatusGradient(shipment.status),
+                  compact: true,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            Row(
+              children: [
+                Expanded(
+                  child: _InfoTile(
+                    icon: Icons.monitor_weight_outlined,
+                    label: 'Restant',
+                    value: '${shipment.remainingWeightKg.toStringAsFixed(1)} kg',
+                  ),
+                ),
+                Expanded(
+                  child: _InfoTile(
+                    icon: Icons.payments_outlined,
+                    label: 'Prix / kg',
+                    value:
+                        '${shipment.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+                    valueColor: AppTheme.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+            if (shipment.isFull) ...[
+              const SizedBox(height: AppTheme.spaceSm),
+              const Row(
+                children: [
+                  Icon(
+                    Icons.check_circle_rounded,
+                    size: 14,
+                    color: AppTheme.accentColor,
+                  ),
+                  SizedBox(width: AppTheme.spaceXs),
+                  Text('Offre complète', style: AppTheme.caption),
+                ],
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
+
+  String _formatDate(DateTime d) => '${d.day}/${d.month}/${d.year}';
 }
 
 // ============================================================================
@@ -505,6 +789,34 @@ class ActiveShipmentsScreen extends ConsumerStatefulWidget {
 }
 
 class _ActiveShipmentsScreenState extends ConsumerState<ActiveShipmentsScreen> {
+  final _scrollController = ScrollController();
+  String _lastShipperId = '';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncPager();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _syncPager() {
+    final shipperId = ref.read(currentShipperProvider).valueOrNull?.id;
+    if (shipperId == null || shipperId == _lastShipperId) return;
+    _lastShipperId = shipperId;
+    ref.read(shipperShipmentsPagerProvider(shipperId).notifier).loadInitial();
+  }
+
   @override
   Widget build(BuildContext context) {
     final shipper = ref.watch(currentShipperProvider);
@@ -512,63 +824,58 @@ class _ActiveShipmentsScreenState extends ConsumerState<ActiveShipmentsScreen> {
     return shipper.when(
       data: (shipperData) {
         if (shipperData == null || !shipperData.isVerified) {
-          return const Center(
-            child: Text(
-              'Complétez votre dossier de vérification pour voir vos offres',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppTheme.textSecondaryColor),
+          return const Scaffold(
+            body: Center(
+              child: Padding(
+                padding: EdgeInsets.all(AppTheme.spaceLg),
+                child: Text(
+                  'Complétez votre dossier de vérification pour voir vos offres',
+                  textAlign: TextAlign.center,
+                  style: AppTheme.bodySecondary,
+                ),
+              ),
             ),
           );
         }
         return _buildList(shipperData);
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, s) => Center(child: Text('Erreur: $e')),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (e, s) => Scaffold(body: Center(child: Text('Erreur: $e'))),
     );
   }
 
   Widget _buildList(Shipper shipper) {
-    final shipments = ref.watch(shipperShipmentsProvider((
-      shipperId: shipper.id,
-      limit: 100,
-      offset: 0,
-    )));
+    final pager = ref.watch(shipperShipmentsPagerProvider(shipper.id));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mes Offres'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-      ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(shipperShipmentsProvider((
-            shipperId: shipper.id,
-            limit: 100,
-            offset: 0,
-          )));
-        },
-        child: shipments.when(
-          data: (items) {
-            if (items.isEmpty) {
-              return const Center(
-                child: Text(
-                  'Aucune offre. Publiez depuis le tableau de bord.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppTheme.textSecondaryColor),
-                ),
-              );
-            }
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                return _ShipmentMiniCard(shipment: items[index]);
-              },
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, s) => Center(child: Text('Erreur: $e')),
+        onRefresh: () =>
+            ref.read(shipperShipmentsPagerProvider(shipper.id).notifier).refresh(),
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            const GradientSliverHeader(
+              title: 'Mes Offres',
+              subtitle: 'Toutes tes offres publiées',
+              icon: Icons.local_shipping_rounded,
+            ),
+            PagedSliverList<Shipment>(
+              paginatedList: pager,
+              padding: const EdgeInsets.fromLTRB(
+                AppTheme.spaceMd,
+                AppTheme.spaceMd,
+                AppTheme.spaceMd,
+                AppTheme.spaceXxl,
+              ),
+              emptyState: const _EmptyShipments(),
+              itemBuilder: (context, shipment, index) => StaggeredEntrance(
+                delay: Duration(milliseconds: (index % 10) * 40),
+                child: _ShipmentMiniCard(shipment: shipment),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -579,133 +886,108 @@ class _ActiveShipmentsScreenState extends ConsumerState<ActiveShipmentsScreen> {
 // SHIPMENT DETAIL + BOOKING MANAGEMENT
 // ============================================================================
 
-class ShipperShipmentDetailScreen extends ConsumerWidget {
+class ShipperShipmentDetailScreen extends ConsumerStatefulWidget {
   final Shipment shipment;
 
   const ShipperShipmentDetailScreen({Key? key, required this.shipment})
       : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final bookings = ref.watch(shipmentBookingsProvider((
-      shipmentId: shipment.id,
-      limit: 100,
-      offset: 0,
-    )));
+  ConsumerState<ShipperShipmentDetailScreen> createState() =>
+      _ShipperShipmentDetailScreenState();
+}
+
+class _ShipperShipmentDetailScreenState
+    extends ConsumerState<ShipperShipmentDetailScreen> {
+  final _scrollController = ScrollController();
+  String _lastShipmentId = '';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncPager();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _syncPager() {
+    final shipmentId = widget.shipment.id;
+    if (shipmentId == _lastShipmentId) return;
+    _lastShipmentId = shipmentId;
+    ref
+        .read(shipperShipmentBookingsPagerProvider(shipmentId).notifier)
+        .loadInitial();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shipment = widget.shipment;
+    final pager = ref.watch(shipperShipmentBookingsPagerProvider(shipment.id));
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${shipment.originCountry} → ${shipment.destinationCity}'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-      ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(shipmentBookingsProvider((
-            shipmentId: shipment.id,
-            limit: 100,
-            offset: 0,
-          )));
-        },
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _buildSummary(),
-            const SizedBox(height: 16),
-            const Text(
-              'Commandes reçues',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimaryColor,
+        onRefresh: () => ref
+            .read(shipperShipmentBookingsPagerProvider(shipment.id).notifier)
+            .refresh(),
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              expandedHeight: 120,
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              iconTheme: const IconThemeData(color: Colors.white),
+              title: Text(
+                '${shipment.originCountry} → ${shipment.destinationCity}',
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(height: 8),
-            bookings.when(
-              data: (items) => items.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Center(
-                        child: Text(
-                          'Aucune commande pour cette offre',
-                          style: TextStyle(color: AppTheme.textSecondaryColor),
-                        ),
-                      ),
-                    )
-                  : Column(
-                      children: items
-                          .map((b) => _ManageBookingCard(booking: b))
-                          .toList(),
-                    ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Center(child: Text('Erreur: $e')),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSummary() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Poids total', style: _labelStyle),
-                Text(
-                  '${shipment.availableWeightKg.toStringAsFixed(1)} kg',
-                  style: _valueStyle,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Réservé', style: _labelStyle),
-                Text(
-                  '${shipment.reservedWeightKg.toStringAsFixed(1)} kg',
-                  style: _valueStyle,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Restant', style: _labelStyle),
-                Text(
-                  '${shipment.remainingWeightKg.toStringAsFixed(1)} kg',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.accentColor,
+              flexibleSpace: const FlexibleSpaceBar(
+                background: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.primaryGradient,
                   ),
                 ),
-              ],
-            ),
-            const Divider(height: 24),
-            LinearProgressIndicator(
-              value: shipment.utilizationPercent / 100,
-              minHeight: 8,
-              backgroundColor: AppTheme.dividerColor,
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                AppTheme.primaryColor,
               ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Prix/kg', style: _labelStyle),
-                Text(
-                  '${shipment.pricePerKg.toStringAsFixed(0)} DZD',
-                  style: _valueStyle,
+            SliverToBoxAdapter(
+              child: _buildSummary(shipment),
+            ),
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceSm,
                 ),
-              ],
+                child: Text('Commandes reçues', style: AppTheme.h2),
+              ),
+            ),
+            PagedSliverList<Booking>(
+              paginatedList: pager,
+              padding: const EdgeInsets.fromLTRB(
+                AppTheme.spaceMd,
+                0,
+                AppTheme.spaceMd,
+                AppTheme.spaceXxl,
+              ),
+              emptyState: const _EmptyBookings(),
+              itemBuilder: (context, booking, index) => StaggeredEntrance(
+                delay: Duration(milliseconds: (index % 10) * 40),
+                child: _ManageBookingCard(booking: booking),
+              ),
             ),
           ],
         ),
@@ -713,13 +995,88 @@ class ShipperShipmentDetailScreen extends ConsumerWidget {
     );
   }
 
-  static const _labelStyle =
-      TextStyle(color: AppTheme.textSecondaryColor, fontSize: 14);
-  static const _valueStyle = TextStyle(
-    fontWeight: FontWeight.bold,
-    color: AppTheme.textPrimaryColor,
-    fontSize: 14,
-  );
+  Widget _buildSummary(Shipment shipment) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: GlassCard(
+        child: Column(
+          children: [
+            _SummaryRow(
+              label: 'Poids total',
+              value: '${shipment.availableWeightKg.toStringAsFixed(1)} kg',
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            _SummaryRow(
+              label: 'Réservé',
+              value: '${shipment.reservedWeightKg.toStringAsFixed(1)} kg',
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            _SummaryRow(
+              label: 'Restant',
+              value: '${shipment.remainingWeightKg.toStringAsFixed(1)} kg',
+              valueColor: AppTheme.accentColor,
+            ),
+            const Divider(height: AppTheme.spaceLg),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: (shipment.utilizationPercent / 100).clamp(0, 1),
+                minHeight: 8,
+                backgroundColor: AppTheme.surfaceMuted,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppTheme.primaryColor,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            _SummaryRow(
+              label: 'Prix / kg',
+              value: '${shipment.pricePerKg.toStringAsFixed(0)} DZD',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// SUMMARY ROW
+// ============================================================================
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: AppTheme.bodySecondary),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: valueColor ?? AppTheme.textPrimaryColor,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // ============================================================================
@@ -733,55 +1090,76 @@ class _ManageBookingCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final statusColor = BookingStatusExt.fromString(booking.status).color;
+    final status = BookingStatusExt.fromString(booking.status);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
+      child: GlassCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    booking.productName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimaryColor,
-                    ),
-                  ),
+                AnimatedIconDot(
+                  icon: Icons.inventory_2_outlined,
+                  color: status.color,
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    BookingStatusExt.fromString(booking.status).displayName,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
+                const SizedBox(width: AppTheme.spaceMd),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              booking.productName,
+                              style: AppTheme.h3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: AppTheme.spaceSm),
+                          GradientBadge(
+                            label: status.displayName,
+                            gradient: _bookingStatusGradient(booking.status),
+                            compact: true,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppTheme.spaceXs),
+                      Text(
+                        '${booking.client?.fullName ?? 'Client'} • '
+                        '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
+                        style: AppTheme.caption,
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              '${booking.client?.fullName ?? 'Client'} • '
-              '${booking.allocatedWeightKg.toStringAsFixed(1)} kg • '
-              '${booking.totalPrice.toStringAsFixed(0)} DZD',
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppTheme.textSecondaryColor,
-              ),
+            const SizedBox(height: AppTheme.spaceMd),
+            Row(
+              children: [
+                Expanded(
+                  child: _InfoTile(
+                    icon: Icons.monitor_weight_outlined,
+                    label: 'Poids',
+                    value: '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
+                  ),
+                ),
+                Expanded(
+                  child: _InfoTile(
+                    icon: Icons.payments_outlined,
+                    label: 'Total',
+                    value:
+                        '${booking.totalPrice.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+                    valueColor: AppTheme.primaryColor,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceMd),
             _buildActions(context, ref),
           ],
         ),
@@ -795,44 +1173,56 @@ class _ManageBookingCard extends ConsumerWidget {
     switch (booking.status) {
       case 'pending':
         actions.add(
-          ElevatedButton(
+          FilledButton.icon(
             onPressed: () => _confirmBooking(context, ref),
-            child: const Text('Confirmer'),
+            icon: const Icon(Icons.check_rounded, size: 18),
+            label: const Text('Confirmer'),
           ),
         );
         actions.add(
-          TextButton(
+          OutlinedButton.icon(
             onPressed: () => _cancelBooking(context, ref),
-            child: const Text('Refuser', style: TextStyle(color: AppTheme.errorColor)),
+            icon: const Icon(Icons.close_rounded, size: 18),
+            label: const Text('Refuser'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.errorColor,
+            ),
           ),
         );
         break;
       case 'confirmed':
         actions.add(
-          ElevatedButton(
+          FilledButton.icon(
             onPressed: () => _markShipped(context, ref),
-            child: const Text('Marquer expédié'),
+            icon: const Icon(Icons.flight_takeoff_rounded, size: 18),
+            label: const Text('Marquer expédié'),
           ),
         );
         actions.add(
-          TextButton(
+          OutlinedButton.icon(
             onPressed: () => _cancelBooking(context, ref),
-            child: const Text('Annuler', style: TextStyle(color: AppTheme.errorColor)),
+            icon: const Icon(Icons.close_rounded, size: 18),
+            label: const Text('Annuler'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.errorColor,
+            ),
           ),
         );
         break;
       case 'shipped':
         actions.add(
-          ElevatedButton(
+          FilledButton.icon(
             onPressed: () => _markDelivered(context, ref),
-            child: const Text('Marquer livré'),
+            icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+            label: const Text('Marquer livré'),
           ),
         );
         break;
     }
 
     return Wrap(
-      spacing: 8,
+      spacing: AppTheme.spaceSm,
+      runSpacing: AppTheme.spaceSm,
       children: actions,
     );
   }
@@ -896,16 +1286,13 @@ class _ManageBookingCard extends ConsumerWidget {
   }
 
   void _reload(BuildContext context, WidgetRef ref) {
-    ref.invalidate(shipmentBookingsProvider((
-      shipmentId: booking.shipmentId,
-      limit: 100,
-      offset: 0,
-    )));
-    ref.invalidate(shipperShipmentsProvider((
-      shipperId: booking.shipment?.shipperId ?? '',
-      limit: 100,
-      offset: 0,
-    )));
+    ref
+        .read(shipperShipmentBookingsPagerProvider(booking.shipmentId).notifier)
+        .refresh();
+    final shipperId = booking.shipment?.shipperId ?? '';
+    if (shipperId.isNotEmpty) {
+      ref.read(shipperShipmentsPagerProvider(shipperId).notifier).refresh();
+    }
   }
 
   void _notifyShipper(BuildContext context, WidgetRef ref) {
@@ -920,5 +1307,174 @@ class _ManageBookingCard extends ConsumerWidget {
   void _showError(BuildContext context, Object error) {
     if (!context.mounted) return;
     showAppErrorDialog(context, message: 'Erreur: $error');
+  }
+}
+
+// ============================================================================
+// SHARED HELPERS
+// ============================================================================
+
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        AnimatedIconDot(icon: icon, color: AppTheme.primaryColor),
+        const SizedBox(width: AppTheme.spaceSm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: AppTheme.caption),
+              Text(
+                value,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: valueColor ?? AppTheme.textPrimaryColor,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EmptyShipments extends StatelessWidget {
+  const _EmptyShipments();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.local_shipping_outlined,
+          size: 64,
+          color: AppTheme.textMutedColor,
+        ),
+        SizedBox(height: AppTheme.spaceMd),
+        Text('Aucune offre publiée', style: AppTheme.h3),
+        SizedBox(height: AppTheme.spaceSm),
+        Text(
+          'Publie ta première offre pour commencer.',
+          style: AppTheme.bodySecondary,
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
+class _EmptyFilteredShipments extends StatelessWidget {
+  const _EmptyFilteredShipments();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.all(AppTheme.spaceXl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.filter_alt_off_outlined,
+            size: 56,
+            color: AppTheme.textMutedColor,
+          ),
+          SizedBox(height: AppTheme.spaceMd),
+          Text('Aucune offre pour ce filtre', style: AppTheme.h3),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyBookings extends StatelessWidget {
+  const _EmptyBookings();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.receipt_long_outlined,
+          size: 64,
+          color: AppTheme.textMutedColor,
+        ),
+        SizedBox(height: AppTheme.spaceMd),
+        Text('Aucune commande pour cette offre', style: AppTheme.h3),
+      ],
+    );
+  }
+}
+
+String _shipmentStatusLabel(String status) {
+  switch (status) {
+    case 'active':
+      return 'Active';
+    case 'completed':
+      return 'Terminée';
+    case 'cancelled':
+      return 'Annulée';
+    default:
+      return status;
+  }
+}
+
+Color _shipmentStatusColor(String status) {
+  switch (status) {
+    case 'active':
+      return AppTheme.accentColor;
+    case 'completed':
+      return AppTheme.primaryColor;
+    case 'cancelled':
+      return AppTheme.errorColor;
+    default:
+      return AppTheme.textSecondaryColor;
+  }
+}
+
+LinearGradient _shipmentStatusGradient(String status) {
+  switch (status) {
+    case 'active':
+      return AppTheme.successGradient;
+    case 'completed':
+      return AppTheme.primaryGradient;
+    case 'cancelled':
+      return AppTheme.errorGradient;
+    default:
+      return AppTheme.primaryGradient;
+  }
+}
+
+LinearGradient _bookingStatusGradient(String status) {
+  switch (status) {
+    case 'pending':
+      return AppTheme.warningGradient;
+    case 'confirmed':
+    case 'shipped':
+      return AppTheme.primaryGradient;
+    case 'delivered':
+      return AppTheme.successGradient;
+    case 'cancelled':
+      return AppTheme.errorGradient;
+    default:
+      return AppTheme.primaryGradient;
   }
 }

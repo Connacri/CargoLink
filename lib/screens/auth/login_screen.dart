@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/widgets/ui_kit.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -78,142 +80,175 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const CircleAvatar(
-                    radius: 48,
-                    backgroundColor: AppTheme.primaryColor,
-                    child: Icon(
-                      Icons.local_shipping,
-                      size: 48,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'CargoLink',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Connexion à votre compte',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppTheme.textSecondaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    autofillHints: const [AutofillHints.email],
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'votre@email.com',
-                      prefixIcon: Icon(Icons.email_outlined),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Email requis';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Email invalide';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Mot de passe',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword,
-                        ),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Mot de passe requis';
-                      }
-                      if (value.length < AppConstants.minPasswordLength) {
-                        return 'Minimum ${AppConstants.minPasswordLength} caractères';
-                      }
-                      return null;
-                    },
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: _isLoading ? null : _handleForgotPassword,
-                      child: const Text('Mot de passe oublié ?'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin,
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Se connecter'),
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: _isLoading ? null : _handleGoogleSignIn,
-                    icon: const Icon(Icons.g_mobiledata),
-                    label: const Text('Continuer avec Google'),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+      body: CustomScrollView(
+        slivers: [
+          const GradientSliverHeader(
+            title: 'CargoLink',
+            subtitle: 'Connexion à votre compte',
+            icon: Icons.local_shipping,
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.all(AppTheme.spaceMd),
+            sliver: SliverToBoxAdapter(
+              child: Form(
+                key: _formKey,
+                child: GlassCard(
+                  padding: const EdgeInsets.all(AppTheme.spaceLg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
-                        'Pas de compte ? ',
-                        style: TextStyle(color: AppTheme.textSecondaryColor),
+                      StaggeredEntrance(
+                        delay: const Duration(milliseconds: 100),
+                        child: TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          autofillHints: const [AutofillHints.email],
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            hintText: 'votre@email.com',
+                            prefixIcon: Icon(Icons.email_outlined),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Email requis';
+                            }
+                            if (!value.contains('@')) {
+                              return 'Email invalide';
+                            }
+                            return null;
+                          },
+                        ),
                       ),
-                      TextButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () => Navigator.of(context)
-                                .pushReplacementNamed('/signup'),
-                        child: const Text('S\'inscrire'),
+                      const SizedBox(height: AppTheme.spaceMd),
+                      StaggeredEntrance(
+                        delay: const Duration(milliseconds: 180),
+                        child: TextFormField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            labelText: 'Mot de passe',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Mot de passe requis';
+                            }
+                            if (value.length < AppConstants.minPasswordLength) {
+                              return 'Minimum ${AppConstants.minPasswordLength} caractères';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: _isLoading ? null : _handleForgotPassword,
+                          child: const Text('Mot de passe oublié ?'),
+                        ),
+                      ),
+                      const SizedBox(height: AppTheme.spaceSm),
+                      StaggeredEntrance(
+                        delay: const Duration(milliseconds: 260),
+                        child: FilledButton(
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  HapticFeedback.selectionClick();
+                                  _handleLogin();
+                                },
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Se connecter'),
+                        ),
+                      ),
+                      StaggeredEntrance(
+                        delay: const Duration(milliseconds: 320),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppTheme.spaceSm,
+                          ),
+                          child: _buildDivider('ou continuer avec'),
+                        ),
+                      ),
+                      StaggeredEntrance(
+                        delay: const Duration(milliseconds: 380),
+                        child: OutlinedButton.icon(
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  HapticFeedback.selectionClick();
+                                  _handleGoogleSignIn();
+                                },
+                          icon: const Icon(Icons.g_mobiledata),
+                          label: const Text('Continuer avec Google'),
+                        ),
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+          SliverToBoxAdapter(
+            child: StaggeredEntrance(
+              delay: const Duration(milliseconds: 440),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppTheme.spaceSm,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Pas de compte ? ',
+                      style: TextStyle(color: AppTheme.textSecondaryColor),
+                    ),
+                    TextButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () => Navigator.of(context)
+                              .pushReplacementNamed('/signup'),
+                      child: const Text('S\'inscrire'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLg)),
+        ],
       ),
+    );
+  }
+
+  Widget _buildDivider(String label) {
+    return Row(
+      children: [
+        const Expanded(child: Divider()),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceSm),
+          child: Text(label, style: AppTheme.caption),
+        ),
+        const Expanded(child: Divider()),
+      ],
     );
   }
 }

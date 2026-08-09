@@ -6,6 +6,7 @@ import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/ui_kit.dart';
 
 class BookingScreen extends ConsumerStatefulWidget {
   final String shipmentId;
@@ -50,33 +51,75 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         }
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Nouvelle Réservation'),
-            elevation: 0,
-          ),
-          body: SingleChildScrollView(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  // Shipment Summary
-                  _buildShipmentSummary(shipmentData),
-
-                  // Product Details Form
-                  _buildProductForm(shipmentData),
-
-                  // Images section
-                  _buildImageSection(),
-
-                  // Weight calculation
-                  _buildWeightCalculation(shipmentData),
-
-                  // Summary and CTA
-                  _buildSummary(shipmentData),
-
-                  SizedBox(height: 32),
-                ],
-              ),
+          body: Form(
+            key: _formKey,
+            child: CustomScrollView(
+              slivers: [
+                GradientSliverHeader(
+                  title: 'Nouvelle Réservation',
+                  subtitle:
+                      '${shipmentData.originCountry} → ${shipmentData.destinationCity}',
+                  icon: Icons.assignment_turned_in_rounded,
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      0,
+                    ),
+                    child: _buildShipmentSummary(shipmentData),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      0,
+                    ),
+                    child: _buildProductForm(shipmentData),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      0,
+                    ),
+                    child: _buildImageSection(),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      0,
+                    ),
+                    child: _buildWeightCalculation(shipmentData),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd,
+                      AppTheme.spaceLg,
+                      AppTheme.spaceMd,
+                      0,
+                    ),
+                    child: _buildSummary(shipmentData),
+                  ),
+                ),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: AppTheme.spaceXxl),
+                ),
+              ],
             ),
           ),
         );
@@ -93,54 +136,66 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   }
 
   Widget _buildShipmentSummary(Shipment shipment) {
-    return Container(
-      color: AppTheme.primaryLight,
-      padding: const EdgeInsets.all(16),
+    return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Détails du Shipment',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
+          const Text('Détails du Shipment', style: AppTheme.label),
+          const SizedBox(height: AppTheme.spaceMd),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${shipment.originCountry} → ${shipment.destinationCity}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Arrive: ${shipment.arrivalDate.day}/${shipment.arrivalDate.month}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ],
+              AnimatedIconDot(
+                icon: Icons.route_rounded,
+                color: AppTheme.primaryColor,
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${shipment.remainingWeightKg.toStringAsFixed(1)} kg',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.accentColor,
+              const SizedBox(width: AppTheme.spaceMd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${shipment.originCountry} → ${shipment.destinationCity}',
+                      style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${shipment.pricePerKg.toStringAsFixed(0)} DZD/kg',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.event_rounded,
+                          size: 14,
+                          color: AppTheme.textMutedColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Arrive: ${shipment.arrivalDate.day}/${shipment.arrivalDate.month}',
+                          style: AppTheme.caption,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceMd),
+          Row(
+            children: [
+              Expanded(
+                child: _InfoTile(
+                  icon: Icons.monitor_weight_outlined,
+                  label: 'Disponible',
+                  value: '${shipment.remainingWeightKg.toStringAsFixed(1)} kg',
+                  valueColor: AppTheme.accentColor,
+                ),
+              ),
+              Expanded(
+                child: _InfoTile(
+                  icon: Icons.payments_outlined,
+                  label: 'Prix / kg',
+                  value:
+                      '${shipment.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+                  valueColor: AppTheme.primaryColor,
+                ),
               ),
             ],
           ),
@@ -150,27 +205,15 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   }
 
   Widget _buildProductForm(Shipment shipment) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
+    return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Détails du Produit',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          // Product name
+          const Text('Détails du Produit', style: AppTheme.label),
+          const SizedBox(height: AppTheme.spaceMd),
           TextFormField(
             controller: _productNameController,
-            decoration: InputDecoration(
-              labelText: 'Nom du produit',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              filled: true,
-              fillColor: Colors.white,
-            ),
+            decoration: const InputDecoration(labelText: 'Nom du produit'),
             validator: (value) {
               if (value?.isEmpty ?? true) {
                 return 'Le nom du produit est requis';
@@ -178,19 +221,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               return null;
             },
           ),
-          const SizedBox(height: 12),
-
-          // Product description
+          const SizedBox(height: AppTheme.spaceMd),
           TextFormField(
             controller: _productDescController,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: 'Description du produit',
               hintText: 'Marque, modèle, couleur, etc.',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              filled: true,
-              fillColor: Colors.white,
             ),
             maxLines: 3,
             validator: (value) {
@@ -200,20 +236,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               return null;
             },
           ),
-          const SizedBox(height: 12),
-
-          // Weight input
+          const SizedBox(height: AppTheme.spaceMd),
           TextFormField(
             controller: _weightController,
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
               labelText: 'Poids du produit (kg)',
               suffixText: 'kg',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              filled: true,
-              fillColor: Colors.white,
             ),
             onChanged: (_) {
               setState(() {}); // Trigger rebuild for weight calculation
@@ -238,18 +267,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   }
 
   Widget _buildImageSection() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
+    return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Photos du Produit',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-
-          // Image preview grid
+          const Text('Photos du Produit', style: AppTheme.label),
+          const SizedBox(height: AppTheme.spaceMd),
           if (_productImages.isNotEmpty)
             GridView.builder(
               shrinkWrap: true,
@@ -266,7 +289,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusXs),
                           image: DecorationImage(
                             image: FileImage(_productImages[index]),
                             fit: BoxFit.cover,
@@ -303,7 +326,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     child: Container(
                       decoration: BoxDecoration(
                         border: Border.all(color: AppTheme.dividerColor),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusXs),
                       ),
                       child: const Icon(Icons.add, size: 32),
                     ),
@@ -319,14 +342,21 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 height: 120,
                 decoration: BoxDecoration(
                   border: Border.all(color: AppTheme.dividerColor),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusXs),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.image, size: 48, color: AppTheme.textSecondaryColor),
-                    const SizedBox(height: 8),
-                    const Text('Tap pour ajouter une photo'),
+                    Icon(
+                      Icons.image_rounded,
+                      size: 48,
+                      color: AppTheme.textSecondaryColor,
+                    ),
+                    const SizedBox(height: AppTheme.spaceSm),
+                    const Text(
+                      'Tap pour ajouter une photo',
+                      style: AppTheme.bodySecondary,
+                    ),
                   ],
                 ),
               ),
@@ -343,35 +373,30 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         : 0.0;
     final totalPrice = allocatedWeight * shipment.pricePerKg;
 
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.dividerColor),
-      ),
+    return GlassCard(
       child: Column(
         children: [
           _PriceRow(
             label: 'Poids demandé',
             value: '${requestedWeight.toStringAsFixed(2)} kg',
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSm),
           _PriceRow(
             label: 'Poids alloué (arrondi)',
             value: '${allocatedWeight.toStringAsFixed(1)} kg',
             highlight: true,
           ),
-          const Divider(height: 16),
+          const Divider(height: AppTheme.spaceMd),
           _PriceRow(
             label: 'Prix par kg',
-            value: '${shipment.pricePerKg.toStringAsFixed(0)} DZD',
+            value:
+                '${shipment.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSm),
           _PriceRow(
             label: 'Prix total',
-            value: '${totalPrice.toStringAsFixed(0)} DZD',
+            value:
+                '${totalPrice.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
             highlight: true,
             color: AppTheme.accentColor,
           ),
@@ -387,40 +412,38 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         : 0.0;
     final totalPrice = allocatedWeight * shipment.pricePerKg;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isLoading
-                  ? null
-                  : () => _submitBooking(shipment, allocatedWeight, totalPrice),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text(
-                      'Procéder au Paiement',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Le paiement sera traité de manière sécurisée après confirmation',
-            style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryColor),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _GradientButton(
+          onPressed: _isLoading
+              ? null
+              : () => _submitBooking(shipment, allocatedWeight, totalPrice),
+          child: _isLoading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text(
+                  'Procéder au Paiement',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+        ),
+        const SizedBox(height: AppTheme.spaceSm),
+        const Text(
+          'Le paiement sera traité de manière sécurisée après confirmation',
+          style: AppTheme.caption,
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 
@@ -551,6 +574,86 @@ class _PriceRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        AnimatedIconDot(icon: icon, color: valueColor ?? AppTheme.primaryColor),
+        const SizedBox(width: AppTheme.spaceSm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: AppTheme.caption),
+              Text(
+                value,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: valueColor ?? AppTheme.textPrimaryColor,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GradientButton extends StatelessWidget {
+  const _GradientButton({
+    required this.onPressed,
+    required this.child,
+  });
+
+  final VoidCallback? onPressed;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+      clipBehavior: Clip.antiAlias,
+      child: Ink(
+        decoration: BoxDecoration(
+          gradient: enabled
+              ? AppTheme.primaryGradient
+              : const LinearGradient(
+                  colors: [AppTheme.surfaceMuted, AppTheme.surfaceMuted],
+                ),
+          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+          boxShadow: enabled ? AppTheme.shadowMd : null,
+        ),
+        child: InkWell(
+          onTap: onPressed,
+          child: SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: Center(child: child),
+          ),
+        ),
+      ),
     );
   }
 }

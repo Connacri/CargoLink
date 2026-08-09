@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/widgets/ui_kit.dart';
 
 /// Lets the user pick their role.
 ///
@@ -76,81 +78,100 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.firstTime
-            ? 'Choisissez votre rôle'
-            : 'Changer de rôle'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 16),
-              const Text(
-                'Que souhaitez-vous faire sur CargoLink ?',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimaryColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Vous pourrez modifier ce choix à tout moment depuis '
-                'les paramètres du profil.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppTheme.textSecondaryColor,
-                ),
-              ),
-              const SizedBox(height: 32),
-              _buildRoleCard(
-                title: 'Client',
-                subtitle: 'Je cherche des expéditeurs et je veux envoyer '
-                    'mes colis.',
-                icon: Icons.shopping_bag,
-                value: 'client',
-              ),
-              const SizedBox(height: 16),
-              _buildRoleCard(
-                title: 'Expéditeur',
-                subtitle: 'Je transporte des colis pour des clients '
-                    '(dossier de vérification requis).',
-                icon: Icons.local_shipping,
-                value: 'shipper',
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: (_selectedRole == null || _saving) ? null : _confirm,
-                child: _saving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(_selectedRole == null
-                        ? 'Sélectionnez un rôle'
-                        : (_selectedRole == 'shipper'
-                            ? 'Continuer comme expéditeur'
-                            : 'Continuer comme client')),
-              ),
-            ],
+      backgroundColor: AppTheme.backgroundColor,
+      body: CustomScrollView(
+        slivers: [
+          GradientSliverHeader(
+            title: widget.firstTime
+                ? 'Choisissez votre rôle'
+                : 'Changer de rôle',
+            subtitle: 'Que souhaitez-vous faire sur CargoLink ?',
+            icon: Icons.verified_user,
           ),
-        ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.spaceMd,
+              AppTheme.spaceXs,
+              AppTheme.spaceMd,
+              AppTheme.spaceXs,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: StaggeredEntrance(
+                delay: const Duration(milliseconds: 100),
+                child: const Text(
+                  'Vous pourrez modifier ce choix à tout moment depuis '
+                  'les paramètres du profil.',
+                  textAlign: TextAlign.center,
+                  style: AppTheme.bodySecondary,
+                ),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.spaceMd,
+              AppTheme.spaceSm,
+              AppTheme.spaceMd,
+              AppTheme.spaceMd,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  StaggeredEntrance(
+                    delay: const Duration(milliseconds: 160),
+                    child: _buildRoleOption(
+                      title: 'Client',
+                      subtitle: 'Je cherche des expéditeurs et je veux envoyer '
+                          'mes colis.',
+                      icon: Icons.shopping_bag,
+                      value: 'client',
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spaceMd),
+                  StaggeredEntrance(
+                    delay: const Duration(milliseconds: 240),
+                    child: _buildRoleOption(
+                      title: 'Expéditeur',
+                      subtitle: 'Je transporte des colis pour des clients '
+                          '(dossier de vérification requis).',
+                      icon: Icons.local_shipping,
+                      value: 'shipper',
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spaceXl),
+                  StaggeredEntrance(
+                    delay: const Duration(milliseconds: 320),
+                    child: FilledButton(
+                      onPressed:
+                          (_selectedRole == null || _saving) ? null : _confirm,
+                      child: _saving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(_selectedRole == null
+                              ? 'Sélectionnez un rôle'
+                              : (_selectedRole == 'shipper'
+                                  ? 'Continuer comme expéditeur'
+                                  : 'Continuer comme client')),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLg)),
+        ],
       ),
     );
   }
 
-  Widget _buildRoleCard({
+  Widget _buildRoleOption({
     required String title,
     required String subtitle,
     required IconData icon,
@@ -158,44 +179,50 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
   }) {
     final selected = _selectedRole == value;
     final disabled = widget.currentRole == value;
-    return Card(
-      color: selected
-          ? AppTheme.primaryLight
-          : (disabled ? null : AppTheme.surfaceColor),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: selected ? AppTheme.primaryColor : AppTheme.dividerColor,
-          width: selected ? 2 : 1,
-        ),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          backgroundColor: AppTheme.primaryColor,
-          child: Icon(icon, color: Colors.white),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimaryColor,
+    return GlassCard(
+      onTap: disabled
+          ? null
+          : () {
+              HapticFeedback.selectionClick();
+              setState(() => _selectedRole = value);
+            },
+      padding: const EdgeInsets.all(AppTheme.spaceMd),
+      child: Row(
+        children: [
+          AnimatedIconDot(
+            icon: icon,
+            color: selected
+                ? AppTheme.primaryColor
+                : AppTheme.textMutedColor,
+            size: 24,
           ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppTheme.textSecondaryColor,
+          const SizedBox(width: AppTheme.spaceMd),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: disabled
+                        ? AppTheme.textMutedColor
+                        : AppTheme.textPrimaryColor,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spaceXs),
+                Text(subtitle, style: AppTheme.caption),
+              ],
+            ),
           ),
-        ),
-        trailing: selected
-            ? const Icon(Icons.check_circle, color: AppTheme.primaryColor)
-            : const Icon(Icons.circle_outlined,
-                color: AppTheme.textSecondaryColor),
-        onTap: disabled
-            ? null
-            : () => setState(() => _selectedRole = value),
+          const SizedBox(width: AppTheme.spaceSm),
+          Icon(
+            selected ? Icons.check_circle : Icons.radio_button_unchecked,
+            color: selected
+                ? AppTheme.primaryColor
+                : AppTheme.dividerColor,
+          ),
+        ],
       ),
     );
   }

@@ -7,6 +7,7 @@ import '../../providers/index.dart';
 import '../../data/services/storage_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/widgets/ui_kit.dart';
 
 class ShipperRegistrationScreen extends ConsumerStatefulWidget {
   const ShipperRegistrationScreen({Key? key}) : super(key: key);
@@ -53,7 +54,8 @@ class _ShipperRegistrationScreenState
     // Keep existing photos if the user did not pick a replacement
     final hasExisting = _existingShipperId != null;
 
-    if (_passportPhoto == null && (!hasExisting || _existingPassportUrl == null)) {
+    if (_passportPhoto == null &&
+        (!hasExisting || _existingPassportUrl == null)) {
       _showMessage('Veuillez choisir une photo de passeport', isError: true);
       return;
     }
@@ -143,17 +145,10 @@ class _ShipperRegistrationScreenState
     _existingLiveUrl = shipper.valueOrNull?.livePhotoUrl;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Inscription Expéditeur'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-      ),
       body: shipper.when(
         data: (existing) {
           if (existing != null && existing.isVerified) {
-            return const Center(
-              child: Text('Vous êtes déjà vérifié comme expéditeur'),
-            );
+            return _buildAlreadyVerified();
           }
           return _buildForm(existing);
         },
@@ -163,102 +158,155 @@ class _ShipperRegistrationScreenState
     );
   }
 
+  Widget _buildAlreadyVerified() {
+    return const CustomScrollView(
+      slivers: [
+        GradientSliverHeader(
+          title: 'Inscription Expéditeur',
+          subtitle: 'Profil vérifié',
+          icon: Icons.verified_user_rounded,
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spaceXl),
+            child: GlassCard(
+              child: Column(
+                children: [
+                  AnimatedIconDot(
+                    icon: Icons.check_circle_rounded,
+                    color: AppTheme.accentColor,
+                    size: 32,
+                  ),
+                  SizedBox(height: AppTheme.spaceMd),
+                  Text(
+                    'Vous êtes déjà vérifié comme expéditeur',
+                    textAlign: TextAlign.center,
+                    style: AppTheme.h3,
+                  ),
+                  SizedBox(height: AppTheme.spaceSm),
+                  Text(
+                    'Votre identité a été validée par l\'administration.',
+                    textAlign: TextAlign.center,
+                    style: AppTheme.bodySecondary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildForm(Shipper? existing) {
     if (existing != null) {
       _passportNumberController.text = existing.passportNumber;
     }
 
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        const Icon(
-          Icons.verified_user_outlined,
-          size: 64,
-          color: AppTheme.primaryColor,
+    return CustomScrollView(
+      slivers: [
+        const GradientSliverHeader(
+          title: 'Inscription Expéditeur',
+          subtitle: 'Vérification de l\'identité pour publier des offres',
+          icon: Icons.verified_user_rounded,
         ),
-        const SizedBox(height: 12),
-        const Text(
-          'Vérification de l\'identité',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimaryColor,
-          ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Fournissez les documents requis pour être vérifié comme '
-          'expéditeur. Un administrateur validera votre dossier.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 13,
-            color: AppTheme.textSecondaryColor,
-          ),
-        ),
-        const SizedBox(height: 24),
-        Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _passportNumberController,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(
-                  labelText: 'Numéro de passeport',
-                  prefixIcon: Icon(Icons.card_membership),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Numéro de passeport requis';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              _buildUploadTile(
-                title: 'Photo du passeport',
-                subtitle: _passportPhoto != null
-                    ? _passportPhoto!.path.split('/').last
-                    : (_existingPassportUrl != null
-                        ? 'Image actuelle — toucher pour changer'
-                        : 'Choisir une photo'),
-                icon: Icons.description_outlined,
-                hasFile: _passportPhoto != null,
-                previewFile: _passportPhoto,
-                previewUrl: _existingPassportUrl,
-                onTap: _pickPassport,
-              ),
-              const SizedBox(height: 16),
-              _buildUploadTile(
-                title: 'Photo en direct (selfie)',
-                subtitle: _livePhoto != null
-                    ? _livePhoto!.path.split('/').last
-                    : (_existingLiveUrl != null
-                        ? 'Image actuelle — toucher pour changer'
-                        : 'Prendre une photo'),
-                icon: Icons.camera_alt_outlined,
-                hasFile: _livePhoto != null,
-                previewFile: _livePhoto,
-                previewUrl: _existingLiveUrl,
-                onTap: _pickLivePhoto,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isSubmitting ? null : _submit,
-                child: _isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(AppTheme.spaceMd),
+            child: GlassCard(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      controller: _passportNumberController,
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: const InputDecoration(
+                        labelText: 'Numéro de passeport',
+                        prefixIcon: Icon(Icons.card_membership),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Numéro de passeport requis';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: AppTheme.spaceMd),
+                    _buildUploadTile(
+                      title: 'Photo du passeport',
+                      subtitle: _passportPhoto != null
+                          ? _passportPhoto!.path.split('/').last
+                          : (_existingPassportUrl != null
+                              ? 'Image actuelle — toucher pour changer'
+                              : 'Choisir une photo'),
+                      icon: Icons.description_outlined,
+                      hasFile: _passportPhoto != null,
+                      previewFile: _passportPhoto,
+                      previewUrl: _existingPassportUrl,
+                      onTap: _pickPassport,
+                    ),
+                    const SizedBox(height: AppTheme.spaceMd),
+                    _buildUploadTile(
+                      title: 'Photo en direct (selfie)',
+                      subtitle: _livePhoto != null
+                          ? _livePhoto!.path.split('/').last
+                          : (_existingLiveUrl != null
+                              ? 'Image actuelle — toucher pour changer'
+                              : 'Prendre une photo'),
+                      icon: Icons.camera_alt_outlined,
+                      hasFile: _livePhoto != null,
+                      previewFile: _livePhoto,
+                      previewUrl: _existingLiveUrl,
+                      onTap: _pickLivePhoto,
+                    ),
+                    const SizedBox(height: AppTheme.spaceLg),
+                    Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                      child: Ink(
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.primaryGradient,
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusSm),
+                          boxShadow: AppTheme.shadowMd,
                         ),
-                      )
-                    : Text(existing == null ? 'Soumettre le dossier' : 'Soumettre à nouveau'),
+                        child: InkWell(
+                          onTap: _isSubmitting ? null : _submit,
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusSm),
+                          child: SizedBox(
+                            height: 52,
+                            child: Center(
+                              child: _isSubmitting
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text(
+                                      existing == null
+                                          ? 'Soumettre le dossier'
+                                          : 'Soumettre à nouveau',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         ),
       ],
@@ -276,70 +324,78 @@ class _ShipperRegistrationScreenState
   }) {
     final showNetworkPreview = previewFile == null && previewUrl != null;
 
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppTheme.dividerColor),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            if (previewFile != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  previewFile,
-                  width: 56,
-                  height: 56,
-                  fit: BoxFit.cover,
-                ),
-              )
-            else if (showNetworkPreview)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  previewUrl,
-                  width: 56,
-                  height: 56,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => SizedBox(
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+        child: Ink(
+          padding: const EdgeInsets.all(AppTheme.spaceMd),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceMuted,
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+            border: Border.all(color: AppTheme.dividerColor),
+          ),
+          child: Row(
+            children: [
+              if (previewFile != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusXs),
+                  child: Image.file(
+                    previewFile,
                     width: 56,
                     height: 56,
-                    child: Icon(icon, color: AppTheme.textSecondaryColor),
+                    fit: BoxFit.cover,
                   ),
+                )
+              else if (showNetworkPreview)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusXs),
+                  child: Image.network(
+                    previewUrl,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: Icon(icon, color: AppTheme.textSecondaryColor),
+                    ),
+                  ),
+                )
+              else
+                Icon(
+                  icon,
+                  color: hasFile ? AppTheme.accentColor : AppTheme.primaryColor,
+                  size: 32,
                 ),
-              )
-            else
-              Icon(
-                icon,
-                color: hasFile ? AppTheme.accentColor : AppTheme.primaryColor,
-              ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimaryColor,
+              const SizedBox(width: AppTheme.spaceMd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimaryColor,
+                      ),
                     ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondaryColor,
+                    const SizedBox(height: AppTheme.spaceXs),
+                    Text(
+                      subtitle,
+                      style: AppTheme.caption,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const Icon(Icons.chevron_right),
-          ],
+              const Icon(
+                Icons.chevron_right,
+                color: AppTheme.textMutedColor,
+              ),
+            ],
+          ),
         ),
       ),
     );

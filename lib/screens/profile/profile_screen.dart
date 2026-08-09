@@ -8,10 +8,43 @@ import '../../core/constants/app_constants.dart';
 import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/widgets/ui_kit.dart';
 import '../auth/role_selection_screen.dart';
 
+// ============================================================================
+// PAGINATED PROVIDERS (local to this screen — history lists)
+// ============================================================================
+
+final clientHistoryPagerProvider = StateNotifierProvider.family<
+    PaginatedListNotifier<Booking>, PaginatedList<Booking>, String>(
+  (ref, userId) {
+    return createPaginatedNotifier(
+      (limit, offset) => ref.read(bookingServiceProvider).getClientBookings(
+            clientId: userId,
+            limit: limit,
+            offset: offset,
+          ),
+      pageSize: 15,
+    );
+  },
+);
+
+final shipperHistoryPagerProvider = StateNotifierProvider.family<
+    PaginatedListNotifier<Shipment>, PaginatedList<Shipment>, String>(
+  (ref, shipperId) {
+    return createPaginatedNotifier(
+      (limit, offset) => ref.read(shipmentServiceProvider).getShipperShipments(
+            shipperId: shipperId,
+            limit: limit,
+            offset: offset,
+          ),
+      pageSize: 15,
+    );
+  },
+);
+
 class ProfileScreen extends ConsumerStatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
@@ -28,6 +61,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _tiktokController = TextEditingController();
   bool _isSaving = false;
   File? _pendingPicture;
+  String? _lastClientHistoryKey;
+  String? _lastShipperHistoryKey;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initHistoryFromCache());
+  }
 
   @override
   void dispose() {
@@ -40,6 +81,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _instagramController.dispose();
     _tiktokController.dispose();
     super.dispose();
+  }
+
+  void _initHistoryFromCache() {
+    final user = ref.read(currentUserProvider).value;
+    if (user != null && user.role != 'shipper') {
+      _initClientHistory(user.id);
+    }
+    final shipper = ref.read(currentShipperProvider).value;
+    if (shipper != null) {
+      _initShipperHistory(shipper.id);
+    }
+  }
+
+  void _initClientHistory(String userId) {
+    if (_lastClientHistoryKey == userId) return;
+    _lastClientHistoryKey = userId;
+    ref.read(clientHistoryPagerProvider(userId).notifier).loadInitial();
+  }
+
+  void _initShipperHistory(String shipperId) {
+    if (_lastShipperHistoryKey == shipperId) return;
+    _lastShipperHistoryKey = shipperId;
+    ref.read(shipperHistoryPagerProvider(shipperId).notifier).loadInitial();
   }
 
   void _fillControllers(User userData) {
@@ -204,10 +268,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Supprimer'),
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.errorColor,
             ),
+            child: const Text('Supprimer'),
           ),
         ],
       ),
@@ -226,6 +290,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<User?>>(currentUserProvider, (prev, next) {
+      final user = next.value;
+      if (user != null && user.role != 'shipper') {
+        _initClientHistory(user.id);
+      }
+    });
+
+    ref.listen<AsyncValue<Shipper?>>(currentShipperProvider, (prev, next) {
+      final shipper = next.value;
+      if (shipper != null) {
+        _initShipperHistory(shipper.id);
+      }
+    });
+
     final user = ref.watch(currentUserProvider);
 
     return user.when(
@@ -236,152 +314,43 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _fillControllers(userData);
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Profil'),
-            backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
-          ),
           body: RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(currentUserProvider);
+              ref.invalidate(currentShipperProvider);
             },
-            child: ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                Center(
-                  child: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 48,
-                        backgroundColor: AppTheme.primaryColor,
-                        backgroundImage: (_pendingPicture != null
-                                ? FileImage(_pendingPicture!)
-                                : userData.profilePictureUrl != null
-                                    ? NetworkImage(userData.profilePictureUrl!)
-                                    : null)
-                            as ImageProvider?,
-                        child: _pendingPicture == null &&
-                                userData.profilePictureUrl == null
-                            ? const Icon(
-                                Icons.person,
-                                size: 48,
-                                color: Colors.white,
-                              )
-                            : null,
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: InkResponse(
-                          onTap: () => _pickAndUploadPicture(userData.id),
-                          child: const CircleAvatar(
-                            radius: 16,
-                            backgroundColor: AppTheme.primaryDark,
-                            child: Icon(
-                              Icons.camera_alt,
-                              size: 18,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                GradientSliverHeader(
+                  title: 'Mon profil',
+                  subtitle: userData.fullName,
+                  icon: Icons.person_rounded,
                 ),
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    _roleLabel(userData.role).toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                      color: AppTheme.primaryColor,
+                SliverToBoxAdapter(
+                  child: _buildProfileHeader(userData),
+                ),
+                if (userData.role == 'shipper')
+                  SliverToBoxAdapter(child: _buildShipperStatus()),
+                SliverToBoxAdapter(child: _buildRoleSettings(userData)),
+                SliverToBoxAdapter(child: _buildPersonalInfo(userData)),
+                SliverToBoxAdapter(child: _buildSocialSection()),
+                SliverToBoxAdapter(child: _buildSaveButton(userData)),
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd,
+                      AppTheme.spaceLg,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceSm,
                     ),
+                    child: Text('Mon historique', style: AppTheme.h2),
                   ),
                 ),
-                if (userData.role == 'shipper') _buildShipperStatus(),
-                const SizedBox(height: 16),
-                _buildRoleSettings(userData),
-                const SizedBox(height: 24),
-                const Text(
-                  'Informations personnelles',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimaryColor,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _fullNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nom complet',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Téléphone',
-                    prefixIcon: Icon(Icons.phone_outlined),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: TextEditingController(text: userData.email),
-                  enabled: false,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                _buildSocialSection(),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isSaving ? null : () => _saveProfile(userData),
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Enregistrer'),
-                ),
-                const SizedBox(height: 24),
-                _buildHistorySection(userData),
-                const SizedBox(height: 24),
-                OutlinedButton.icon(
-                  onPressed: _signOut,
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Se déconnecter'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.green,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _deactivateAccount,
-                  icon: const Icon(Icons.pause_circle_outline),
-                  label: const Text('Désactiver le compte'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.warningColor,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _requestDeletion,
-                  icon: const Icon(Icons.delete_forever_outlined),
-                  label: const Text('Supprimer définitivement le compte'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.red,
-                  ),
+                ..._buildHistorySlivers(userData),
+                SliverToBoxAdapter(child: _buildActionsSection()),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: AppTheme.spaceXxl),
                 ),
               ],
             ),
@@ -406,23 +375,108 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
+  LinearGradient _roleGradient(String role) {
+    switch (role) {
+      case 'shipper':
+        return AppTheme.warningGradient;
+      case 'admin':
+        return AppTheme.errorGradient;
+      case 'super_admin':
+        return AppTheme.darkGradient;
+      default:
+        return AppTheme.successGradient;
+    }
+  }
+
+  Widget _buildProfileHeader(User userData) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              _avatar(userData),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: InkResponse(
+                  onTap: () => _pickAndUploadPicture(userData.id),
+                  child: const CircleAvatar(
+                    radius: 16,
+                    backgroundColor: AppTheme.primaryDark,
+                    child: Icon(
+                      Icons.camera_alt,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceSm + 4),
+          Text(
+            userData.fullName,
+            textAlign: TextAlign.center,
+            style: AppTheme.h2,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            userData.email,
+            textAlign: TextAlign.center,
+            style: AppTheme.bodySecondary,
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
+          Center(
+            child: GradientBadge(
+              label: _roleLabel(userData.role).toUpperCase(),
+              gradient: _roleGradient(userData.role),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _avatar(User userData) {
+    final file = _pendingPicture;
+    if (file != null) {
+      return CircleAvatar(
+        radius: 48,
+        backgroundColor: AppTheme.primaryColor,
+        backgroundImage: FileImage(file),
+      );
+    }
+    return GradientAvatar(
+      initial: userData.fullName,
+      imageUrl: userData.profilePictureUrl,
+      radius: 48,
+      onTap: () => _pickAndUploadPicture(userData.id),
+    );
+  }
+
   Widget _buildRoleSettings(User userData) {
     final isShipper = userData.role == 'shipper';
-    return Card(
-      color: AppTheme.surfaceColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: GlassCard(
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Mon rôle',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimaryColor,
-              ),
+              style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             Text(
@@ -431,19 +485,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       'pour les clients.'
                   : 'Vous êtes client : vous envoyez vos colis avec des '
                       'expéditeurs.',
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppTheme.textSecondaryColor,
-              ),
+              style: AppTheme.caption,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceSm + 4),
             Row(
               children: [
-                Icon(
-                  isShipper ? Icons.local_shipping : Icons.shopping_bag,
+                AnimatedIconDot(
+                  icon: isShipper
+                      ? Icons.local_shipping_rounded
+                      : Icons.shopping_bag_rounded,
                   color: AppTheme.primaryColor,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.spaceSm + 4),
                 const Expanded(
                   child: Text(
                     'Changer de rôle',
@@ -477,209 +530,252 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  Widget _buildPersonalInfo(User userData) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: GlassCard(
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Informations personnelles',
+              style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: AppTheme.spaceSm + 4),
+            TextField(
+              controller: _fullNameController,
+              decoration: const InputDecoration(
+                labelText: 'Nom complet',
+                prefixIcon: Icon(Icons.person_outline),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceSm + 4),
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Téléphone',
+                prefixIcon: Icon(Icons.phone_outlined),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceSm + 4),
+            TextFormField(
+              initialValue: userData.email,
+              enabled: false,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSocialSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Réseaux sociaux & contacts',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimaryColor,
-          ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: GlassCard(
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Réseaux sociaux & contacts',
+              style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Partagez vos identifiants pour que clients et expéditeurs '
+              'puissent vous contacter facilement.',
+              style: AppTheme.caption,
+            ),
+            const SizedBox(height: AppTheme.spaceSm + 4),
+            TextField(
+              controller: _whatsappController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'WhatsApp',
+                hintText: '+213 6 00 00 00 00',
+                prefixIcon: Icon(Icons.chat),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceSm + 4),
+            TextField(
+              controller: _wechatController,
+              decoration: const InputDecoration(
+                labelText: 'WeChat',
+                hintText: 'Votre identifiant WeChat',
+                prefixIcon: Icon(Icons.wechat),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceSm + 4),
+            TextField(
+              controller: _telegramController,
+              decoration: const InputDecoration(
+                labelText: 'Telegram',
+                hintText: '@votrecompte',
+                prefixIcon: Icon(Icons.send),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceSm + 4),
+            TextField(
+              controller: _facebookController,
+              decoration: const InputDecoration(
+                labelText: 'Facebook',
+                hintText: 'Votre profil Facebook',
+                prefixIcon: Icon(Icons.facebook),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceSm + 4),
+            TextField(
+              controller: _instagramController,
+              decoration: const InputDecoration(
+                labelText: 'Instagram',
+                hintText: '@votrecompte',
+                prefixIcon: Icon(Icons.camera_alt_outlined),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceSm + 4),
+            TextField(
+              controller: _tiktokController,
+              decoration: const InputDecoration(
+                labelText: 'TikTok',
+                hintText: '@votrecompte',
+                prefixIcon: Icon(Icons.music_note_outlined),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        const Text(
-          'Partagez vos identifiants pour que clients et expéditeurs '
-          'puissent vous contacter facilement.',
-          style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryColor),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _whatsappController,
-          keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(
-            labelText: 'WhatsApp',
-            hintText: '+213 6 00 00 00 00',
-            prefixIcon: Icon(Icons.chat),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _wechatController,
-          decoration: const InputDecoration(
-            labelText: 'WeChat',
-            hintText: 'Votre identifiant WeChat',
-            prefixIcon: Icon(Icons.wechat),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _telegramController,
-          decoration: const InputDecoration(
-            labelText: 'Telegram',
-            hintText: '@votrecompte',
-            prefixIcon: Icon(Icons.send),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _facebookController,
-          decoration: const InputDecoration(
-            labelText: 'Facebook',
-            hintText: 'Votre profil Facebook',
-            prefixIcon: Icon(Icons.facebook),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _instagramController,
-          decoration: const InputDecoration(
-            labelText: 'Instagram',
-            hintText: '@votrecompte',
-            prefixIcon: Icon(Icons.camera_alt_outlined),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _tiktokController,
-          decoration: const InputDecoration(
-            labelText: 'TikTok',
-            hintText: '@votrecompte',
-            prefixIcon: Icon(Icons.music_note_outlined),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildHistorySection(User userData) {
+  Widget _buildSaveButton(User userData) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: FilledButton(
+        onPressed: _isSaving ? null : () => _saveProfile(userData),
+        child: _isSaving
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Text('Enregistrer'),
+      ),
+    );
+  }
+
+  List<Widget> _buildHistorySlivers(User userData) {
     if (userData.role == 'shipper') {
-      return _buildShipperHistory(userData.id);
+      return _buildShipperHistorySlivers(userData);
     }
-    return _buildClientHistory(userData.id);
+    return _buildClientHistorySlivers(userData);
   }
 
-  Widget _buildClientHistory(String userId) {
-    final bookings = ref.watch(clientBookingsProvider((
-      clientId: userId,
-      status: null,
-      limit: 50,
-      offset: 0,
-    )));
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Mon historique',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimaryColor,
+  List<Widget> _buildClientHistorySlivers(User userData) {
+    final pager = ref.watch(clientHistoryPagerProvider(userData.id));
+    return [
+      PagedSliverList<Booking>(
+        paginatedList: pager,
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.spaceMd,
+          0,
+          AppTheme.spaceMd,
+          AppTheme.spaceMd,
+        ),
+        emptyState: const _HistoryEmpty(message: 'Aucune commande pour le moment.'),
+        itemBuilder: (context, b, index) => StaggeredEntrance(
+          delay: Duration(milliseconds: (index % 10) * 40),
+          child: _HistoryRow(
+            color: BookingStatusExt.fromString(b.status).color,
+            title: b.productName,
+            subtitle: '${b.allocatedWeightKg.toStringAsFixed(1)} kg • '
+                '${b.totalPrice.toStringAsFixed(0)} ${AppConstants.defaultCurrency} • '
+                '${BookingStatusExt.fromString(b.status).displayName}',
+            onTap: () => Navigator.of(context)
+                .pushNamed('/tracking', arguments: b.id),
           ),
         ),
-        const SizedBox(height: 8),
-        bookings.when(
-          data: (items) {
-            if (items.isEmpty) {
-              return const Text(
-                'Aucune commande pour le moment.',
-                style: TextStyle(color: AppTheme.textSecondaryColor),
-              );
-            }
-            return Column(
-              children: items
-                  .map((b) => _HistoryRow(
-                        icon: BookingStatusExt.fromString(b.status).color,
-                        iconData: BookingStatusExt.fromString(b.status).displayName,
-                        title: b.productName,
-                        subtitle:
-                            '${b.allocatedWeightKg.toStringAsFixed(1)} kg • '
-                            '${b.totalPrice.toStringAsFixed(0)} ${AppConstants.defaultCurrency} • '
-                            '${BookingStatusExt.fromString(b.status).displayName}',
-                        onTap: () => Navigator.of(context)
-                            .pushNamed('/tracking', arguments: b.id),
-                      ))
-                  .toList(),
-            );
-          },
-          loading: () => const Padding(
-            padding: EdgeInsets.all(8),
-            child: Center(child: CircularProgressIndicator()),
-          ),
-          error: (e, s) => Text('Erreur: $e',
-              style: const TextStyle(color: AppTheme.textSecondaryColor)),
-        ),
-      ],
-    );
+      ),
+    ];
   }
 
-  Widget _buildShipperHistory(String userId) {
+  List<Widget> _buildShipperHistorySlivers(User userData) {
     final shipper = ref.watch(currentShipperProvider);
     return shipper.when(
       data: (shipperData) {
         if (shipperData == null) {
-          return const Text(
-            'Historique indisponible tant que votre dossier expéditeur '
-            'n\'est pas validé.',
-            style: TextStyle(color: AppTheme.textSecondaryColor),
-          );
+          return const [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                    AppTheme.spaceMd, 0, AppTheme.spaceMd, AppTheme.spaceSm),
+                child: Text(
+                  'Historique indisponible tant que votre dossier expéditeur '
+                  'n\'est pas validé.',
+                  style: AppTheme.bodySecondary,
+                ),
+              ),
+            ),
+          ];
         }
-        final shipments = ref.watch(shipperShipmentsProvider((
-          shipperId: shipperData.id,
-          limit: 50,
-          offset: 0,
-        )));
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Mon historique',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimaryColor,
+        final pager = ref.watch(shipperHistoryPagerProvider(shipperData.id));
+        return [
+          PagedSliverList<Shipment>(
+            paginatedList: pager,
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.spaceMd,
+              0,
+              AppTheme.spaceMd,
+              AppTheme.spaceMd,
+            ),
+            emptyState: const _HistoryEmpty(message: 'Aucune offre pour le moment.'),
+            itemBuilder: (context, s, index) => StaggeredEntrance(
+              delay: Duration(milliseconds: (index % 10) * 40),
+              child: _HistoryRow(
+                color: AppTheme.primaryColor,
+                title: 'Vol ${s.flightNumber ?? '—'}',
+                subtitle: '${s.originCountry} → ${s.destinationCity} • '
+                    '${s.availableWeightKg.toStringAsFixed(0)} kg • '
+                    '${s.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}/kg • '
+                    '${s.isActive ? 'Actif' : s.status}',
+                onTap: null,
               ),
             ),
-            const SizedBox(height: 8),
-            shipments.when(
-              data: (items) {
-                if (items.isEmpty) {
-                  return const Text(
-                    'Aucune offre pour le moment.',
-                    style: TextStyle(color: AppTheme.textSecondaryColor),
-                  );
-                }
-                return Column(
-                  children: items
-                      .map((s) => _HistoryRow(
-                            icon: AppTheme.primaryColor,
-                            iconData: '${s.originCountry} → ${s.destinationCity}',
-                            title: 'Vol ${s.flightNumber ?? '—'}',
-                            subtitle:
-                                '${s.availableWeightKg.toStringAsFixed(0)} kg • '
-                                '${s.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}/kg • '
-                                '${s.isActive ? 'Actif' : s.status}',
-                            onTap: null,
-                          ))
-                      .toList(),
-                );
-              },
-              loading: () => const Padding(
-                padding: EdgeInsets.all(8),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (e, s) => Text('Erreur: $e',
-                  style: const TextStyle(color: AppTheme.textSecondaryColor)),
-            ),
-          ],
-        );
+          ),
+        ];
       },
-      loading: () => const SizedBox.shrink(),
-      error: (e, s) => const SizedBox.shrink(),
+      loading: () => const [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spaceMd),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        ),
+      ],
+      error: (e, s) => const [SliverToBoxAdapter(child: SizedBox.shrink())],
     );
   }
 
@@ -688,14 +784,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return shipper.when(
       data: (shipperData) {
         if (shipperData == null) {
-          return const Card(
-            margin: EdgeInsets.only(top: 8),
-            color: AppTheme.primaryLight,
-            child: Padding(
-              padding: EdgeInsets.all(12),
-              child: Text(
-                'Expéditeur non enregistré. Complétez votre dossier dans le tableau de bord.',
-                style: TextStyle(color: AppTheme.primaryDark),
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceMd, 0),
+            child: Container(
+              padding: const EdgeInsets.all(AppTheme.spaceSm + 4),
+              decoration: AppTheme.softDecoration(AppTheme.primaryLight),
+              child: const Row(
+                children: [
+                  Icon(Icons.verified_user, color: AppTheme.primaryDark),
+                  SizedBox(width: AppTheme.spaceSm + 4),
+                  Expanded(
+                    child: Text(
+                      'Expéditeur non enregistré. Complétez votre dossier '
+                      'dans le tableau de bord.',
+                      style: TextStyle(color: AppTheme.primaryDark),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
@@ -716,15 +822,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             text = 'Dossier en attente de vérification';
             color = AppTheme.warningColor;
         }
-        return Card(
-          margin: const EdgeInsets.only(top: 16),
-          //color: color.withOpacity(0.12),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceMd, 0),
+          child: Container(
+            padding: const EdgeInsets.all(AppTheme.spaceSm + 4),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+              border: Border.all(color: color.withValues(alpha: 0.3)),
+            ),
             child: Row(
               children: [
-                Icon(Icons.verified_user, color: color),
-                const SizedBox(width: 8),
+                AnimatedIconDot(
+                  icon: Icons.verified_user_rounded,
+                  color: color,
+                  size: 18,
+                ),
+                const SizedBox(width: AppTheme.spaceSm + 4),
                 Expanded(child: Text(text, style: TextStyle(color: color))),
               ],
             ),
@@ -735,6 +850,57 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       error: (e, s) => const SizedBox.shrink(),
     );
   }
+
+  Widget _buildActionsSection() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceLg,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: GlassCard(
+        padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            ListTile(
+              leading: const AnimatedIconDot(
+                  icon: Icons.logout_rounded, color: AppTheme.accentColor),
+              title: const Text('Se déconnecter'),
+              trailing: const Icon(Icons.chevron_right,
+                  color: AppTheme.textSecondaryColor),
+              onTap: _signOut,
+            ),
+            const Divider(height: 1, indent: AppTheme.spaceXxl),
+            ListTile(
+              leading: const AnimatedIconDot(
+                  icon: Icons.pause_circle_rounded,
+                  color: AppTheme.warningColor),
+              title: const Text('Désactiver le compte'),
+              subtitle: const Text('Masquer temporairement votre compte'),
+              trailing: const Icon(Icons.chevron_right,
+                  color: AppTheme.textSecondaryColor),
+              onTap: _deactivateAccount,
+            ),
+            const Divider(height: 1, indent: AppTheme.spaceXxl),
+            ListTile(
+              leading: const AnimatedIconDot(
+                  icon: Icons.delete_forever_rounded,
+                  color: AppTheme.errorColor),
+              title: const Text(
+                'Supprimer définitivement le compte',
+                style: TextStyle(color: AppTheme.errorColor),
+              ),
+              subtitle: const Text('30 jours avant suppression définitive'),
+              trailing: const Icon(Icons.chevron_right,
+                  color: AppTheme.textSecondaryColor),
+              onTap: _requestDeletion,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ============================================================================
@@ -742,15 +908,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 // ============================================================================
 
 class _HistoryRow extends StatelessWidget {
-  final Color icon;
-  final String iconData;
+  final Color color;
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
 
   const _HistoryRow({
-    required this.icon,
-    required this.iconData,
+    required this.color,
     required this.title,
     required this.subtitle,
     this.onTap,
@@ -758,33 +922,64 @@ class _HistoryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          radius: 18,
-          backgroundColor: icon.withOpacity(0.15),
-          child: Icon(Icons.inventory_2_outlined, size: 18, color: icon),
-        ),
-        title: Text(title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimaryColor,
-            )),
-        subtitle: Text(subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppTheme.textSecondaryColor,
-            )),
-        trailing: onTap != null
-            ? const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor)
-            : null,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
+      child: GlassCard(
         onTap: onTap,
+        padding: const EdgeInsets.all(AppTheme.spaceSm + 4),
+        child: Row(
+          children: [
+            AnimatedIconDot(icon: Icons.inventory_2_outlined, color: color),
+            const SizedBox(width: AppTheme.spaceSm + 4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.body.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.caption,
+                  ),
+                ],
+              ),
+            ),
+            if (onTap != null)
+              const Icon(Icons.chevron_right,
+                  color: AppTheme.textSecondaryColor),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _HistoryEmpty extends StatelessWidget {
+  const _HistoryEmpty({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.history_rounded,
+            size: 48, color: AppTheme.textMutedColor),
+        const SizedBox(height: AppTheme.spaceMd),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: AppTheme.bodySecondary,
+        ),
+      ],
     );
   }
 }

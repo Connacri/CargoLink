@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/ui_kit.dart';
 import '../../data/models/models.dart';
 
 /// Announcements sent to every user. Admins / super admins can compose a new
 /// one; everyone else just reads the feed.
 class BroadcastScreen extends ConsumerStatefulWidget {
-  const BroadcastScreen({Key? key}) : super(key: key);
+  const BroadcastScreen({super.key});
 
   @override
   ConsumerState<BroadcastScreen> createState() => _BroadcastScreenState();
@@ -147,78 +148,131 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
     final broadcasts = ref.watch(broadcastsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Annonces'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      body: Column(
-        children: [
-          if (_canSend) _buildComposer(),
-          Expanded(
-            child: broadcasts.when(
-              data: (items) {
-                if (items.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'Aucune annonce pour le moment',
-                      style: TextStyle(color: AppTheme.textSecondaryColor),
-                    ),
-                  );
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) => _BroadcastCard(
-                    broadcast: items[index],
-                    canManage: _canSend,
-                    onEdit: () => _startEdit(items[index]),
-                    onDelete: () => _deleteBroadcast(items[index]),
-                  ),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Center(
-                child: Text(
-                  'Erreur de chargement: $e',
-                  style: const TextStyle(color: AppTheme.errorColor),
+      body: RefreshIndicator(
+        onRefresh: () async => ref.invalidate(broadcastsProvider),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            const GradientSliverHeader(
+              title: 'Annonces',
+              subtitle: 'Communiquez avec tous les utilisateurs',
+              icon: Icons.campaign_rounded,
+            ),
+            if (_canSend)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppTheme.spaceMd),
+                  child: _buildComposer(),
                 ),
               ),
+            ...broadcasts.when(
+              data: (items) => _buildListSlivers(items),
+              loading: () => [
+                SliverPadding(
+                  padding: const EdgeInsets.all(AppTheme.spaceMd),
+                  sliver: SliverList.builder(
+                    itemCount: 4,
+                    itemBuilder: (_, i) => const ShimmerCard(lines: 2),
+                  ),
+                ),
+              ],
+              error: (e, s) => [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppTheme.spaceLg),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.cloud_off_rounded,
+                              size: 48, color: AppTheme.textMutedColor),
+                          const SizedBox(height: AppTheme.spaceMd),
+                          Text(
+                            'Erreur de chargement: $e',
+                            textAlign: TextAlign.center,
+                            style: AppTheme.bodySecondary,
+                          ),
+                          const SizedBox(height: AppTheme.spaceLg),
+                          FilledButton.icon(
+                            onPressed: () =>
+                                ref.invalidate(broadcastsProvider),
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('Réessayer'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+            const SliverToBoxAdapter(
+              child: SizedBox(height: AppTheme.spaceXxl),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildComposer() {
-    final editing = _editing != null;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: editing ? AppTheme.warningColor : AppTheme.primaryColor,
+  List<Widget> _buildListSlivers(List<Broadcast> items) {
+    if (items.isEmpty) {
+      return const [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: _EmptyBroadcasts(),
+        ),
+      ];
+    }
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(
+            AppTheme.spaceMd, 0, AppTheme.spaceMd, AppTheme.spaceSm),
+        sliver: SliverList.builder(
+          itemCount: items.length,
+          itemBuilder: (context, index) => StaggeredEntrance(
+            delay: Duration(milliseconds: (index % 10) * 40),
+            child: _BroadcastCard(
+              broadcast: items[index],
+              canManage: _canSend,
+              onEdit: () => _startEdit(items[index]),
+              onDelete: () => _deleteBroadcast(items[index]),
+            ),
+          ),
         ),
       ),
+    ];
+  }
+
+  Widget _buildComposer() {
+    final editing = _editing != null;
+    return GlassCard(
+      padding: const EdgeInsets.all(AppTheme.spaceMd),
+      radius: AppTheme.radiusMd,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            editing
-                ? 'Modifier l\'annonce'
-                : _currentRole == 'super_admin'
-                    ? 'Envoyer une annonce à tous (Fondateur)'
-                    : 'Envoyer une annonce à tous',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimaryColor,
-            ),
+          Row(
+            children: [
+              AnimatedIconDot(
+                icon: editing ? Icons.edit_rounded : Icons.send_rounded,
+                color: editing ? AppTheme.warningColor : AppTheme.primaryColor,
+              ),
+              const SizedBox(width: AppTheme.spaceSm + 4),
+              Expanded(
+                child: Text(
+                  editing
+                      ? 'Modifier l\'annonce'
+                      : _currentRole == 'super_admin'
+                          ? 'Envoyer une annonce à tous (Fondateur)'
+                          : 'Envoyer une annonce à tous',
+                  style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceSm + 4),
           TextField(
             controller: _titleController,
             decoration: const InputDecoration(
@@ -227,7 +281,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
               prefixIcon: Icon(Icons.title),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceSm + 4),
           TextField(
             controller: _messageController,
             maxLines: 4,
@@ -238,8 +292,8 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
               prefixIcon: Icon(Icons.campaign_outlined),
             ),
           ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
+          const SizedBox(height: AppTheme.spaceMd),
+          FilledButton.icon(
             onPressed: _isSending ? null : _sendBroadcast,
             icon: _isSending
                 ? const SizedBox(
@@ -250,11 +304,11 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
                       color: Colors.white,
                     ),
                   )
-                : Icon(editing ? Icons.save : Icons.send),
+                : Icon(editing ? Icons.save_rounded : Icons.send_rounded),
             label: Text(editing ? 'Enregistrer' : 'Publier l\'annonce'),
           ),
           if (editing) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSm),
             TextButton(
               onPressed: _isSending ? null : _cancelEdit,
               child: const Text('Annuler'),
@@ -262,6 +316,28 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _EmptyBroadcasts extends StatelessWidget {
+  const _EmptyBroadcasts();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.campaign_outlined, size: 56, color: AppTheme.textMutedColor),
+        SizedBox(height: AppTheme.spaceMd),
+        Text('Aucune annonce pour le moment', style: AppTheme.h3),
+        SizedBox(height: AppTheme.spaceSm),
+        Text(
+          'Les annonces de la plateforme apparaîtront ici.',
+          style: AppTheme.bodySecondary,
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }
@@ -280,25 +356,24 @@ class _BroadcastCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
+      child: GlassCard(
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.campaign, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
+                const AnimatedIconDot(
+                  icon: Icons.campaign_rounded,
+                  color: AppTheme.primaryColor,
+                ),
+                const SizedBox(width: AppTheme.spaceSm + 4),
                 Expanded(
                   child: Text(
                     broadcast.title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimaryColor,
-                    ),
+                    style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
                   ),
                 ),
                 if (canManage)
@@ -334,21 +409,19 @@ class _BroadcastCard extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSm),
             Text(
               broadcast.message,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppTheme.textSecondaryColor,
-              ),
+              style: AppTheme.bodySecondary,
             ),
-            const SizedBox(height: 8),
-            Text(
-              _formatDate(broadcast.createdAt),
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppTheme.dividerColor,
-              ),
+            const SizedBox(height: AppTheme.spaceSm + 4),
+            Row(
+              children: [
+                const Icon(Icons.schedule_rounded,
+                    size: 14, color: AppTheme.textMutedColor),
+                const SizedBox(width: AppTheme.spaceXs),
+                Text(_formatDate(broadcast.createdAt), style: AppTheme.caption),
+              ],
             ),
           ],
         ),

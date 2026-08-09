@@ -3,55 +3,223 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/ui_kit.dart';
 import 'user_details_screen.dart';
 
-enum EntityListType { users, shipments, bookings }
+enum EntityListType { users, shipments, bookings, payments, disputes }
+
+// ============================================================================
+// PAGINATED PROVIDERS (local to this screen — infinite scroll)
+// ============================================================================
+
+/// Walks the raw `users` table server-side so a role filter can be applied
+/// without breaking offset pagination (the service has no role parameter).
+class _UsersScanner {
+  int _rawOffset = 0;
+
+  void reset() => _rawOffset = 0;
+
+  Future<List<User>> load(
+    Future<List<User>> Function(int limit, int offset) fetch,
+    String? role,
+    int limit,
+  ) async {
+    if (role == null) {
+      final page = await fetch(limit, _rawOffset);
+      _rawOffset += page.length;
+      return page;
+    }
+    final collected = <User>[];
+    final chunk = limit > 100 ? limit : 100;
+    while (collected.length < limit) {
+      final page = await fetch(chunk, _rawOffset);
+      if (page.isEmpty) break;
+      _rawOffset += page.length;
+      collected.addAll(page.where((u) => u.role == role));
+      if (page.length < chunk) break;
+    }
+    return collected.take(limit).toList();
+  }
+}
+
+class _UsersPagerNotifier extends PaginatedListNotifier<User> {
+  _UsersPagerNotifier(super.list, this._scanner);
+
+  final _UsersScanner _scanner;
+
+  @override
+  Future<void> loadInitial() async {
+    _scanner.reset();
+    await super.loadInitial();
+  }
+
+  @override
+  Future<void> refresh() async {
+    _scanner.reset();
+    await super.refresh();
+  }
+}
+
+final pagedUsersProvider = StateNotifierProvider.family<
+    _UsersPagerNotifier,
+    PaginatedList<User>,
+    ({String? role})>((ref, params) {
+  final scanner = _UsersScanner();
+  Future<List<User>> fetch(int limit, int offset) => ref
+      .read(authServiceProvider)
+      .getAllUsers(limit: limit, offset: offset);
+  return _UsersPagerNotifier(
+    PaginatedList<User>(
+      pageSize: 20,
+      loader: (limit, offset) => scanner.load(fetch, params.role, limit),
+    ),
+    scanner,
+  );
+});
+
+final pagedShipmentsProvider = StateNotifierProvider<
+    PaginatedListNotifier<Shipment>, PaginatedList<Shipment>>((ref) {
+  return createPaginatedNotifier(
+    (limit, offset) => ref
+        .read(shipmentServiceProvider)
+        .getAllShipments(limit: limit, offset: offset),
+    pageSize: 20,
+  );
+});
+
+final pagedBookingsProvider = StateNotifierProvider<
+    PaginatedListNotifier<Booking>, PaginatedList<Booking>>((ref) {
+  return createPaginatedNotifier(
+    (limit, offset) => ref
+        .read(bookingServiceProvider)
+        .getAllBookings(limit: limit, offset: offset),
+    pageSize: 20,
+  );
+});
+
+final pagedPaymentsProvider = StateNotifierProvider<
+    PaginatedListNotifier<Payment>, PaginatedList<Payment>>((ref) {
+  return createPaginatedNotifier(
+    (limit, offset) => ref
+        .read(paymentServiceProvider)
+        .getAllPayments(limit: limit, offset: offset),
+    pageSize: 20,
+  );
+});
+
+final pagedDisputesProvider = StateNotifierProvider<
+    PaginatedListNotifier<Dispute>, PaginatedList<Dispute>>((ref) {
+  return createPaginatedNotifier(
+    (limit, offset) => ref
+        .read(disputeServiceProvider)
+        .getAllDisputes(limit: limit, offset: offset),
+    pageSize: 20,
+  );
+});
 
 /// Generic drill-down screen opened from a stats card. Shows a grid or list
 /// depending on the entity type, and lets the super_admin open a full user
 /// dossier from any row that references a user.
-class EntityListScreen extends ConsumerWidget {
+class EntityListScreen extends ConsumerStatefulWidget {
   final EntityListType type;
   final String? roleFilter;
 
-  const EntityListScreen({Key? key, required this.type, this.roleFilter})
-      : super(key: key);
+  const EntityListScreen({super.key, required this.type, this.roleFilter});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final String title;
-    switch (type) {
-      case EntityListType.users:
-        title = roleFilter == null
-            ? 'Tous les utilisateurs'
-            : 'Utilisateurs · ${_roleLabel(roleFilter!)}';
-        break;
-      case EntityListType.shipments:
-        title = 'Vols / Expéditions';
-        break;
-      case EntityListType.bookings:
-        title = 'Commandes';
-        break;
-    }
+  ConsumerState<EntityListScreen> createState() => _EntityListScreenState();
+}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      body: _buildBody(context, ref),
-    );
+class _EntityListScreenState extends ConsumerState<EntityListScreen> {
+  String _lastKey = '';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
   }
 
-  Widget _buildBody(BuildContext context, WidgetRef ref) {
-    switch (type) {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncPager();
+  }
+
+  void _syncPager() {
+    final key = '${widget.type}|${widget.roleFilter}';
+    if (key == _lastKey) return;
+    _lastKey = key;
+    _loadInitial();
+  }
+
+  void _loadInitial() {
+    switch (widget.type) {
       case EntityListType.users:
-        return _UsersList(roleFilter: roleFilter);
+        ref
+            .read(pagedUsersProvider((role: widget.roleFilter)).notifier)
+            .loadInitial();
+        break;
       case EntityListType.shipments:
-        return _ShipmentsList();
+        ref.read(pagedShipmentsProvider.notifier).loadInitial();
+        break;
       case EntityListType.bookings:
-        return _BookingsList();
+        ref.read(pagedBookingsProvider.notifier).loadInitial();
+        break;
+      case EntityListType.payments:
+        ref.read(pagedPaymentsProvider.notifier).loadInitial();
+        break;
+      case EntityListType.disputes:
+        ref.read(pagedDisputesProvider.notifier).loadInitial();
+        break;
+    }
+  }
+
+  Future<void> _refresh() {
+    switch (widget.type) {
+      case EntityListType.users:
+        return ref
+            .read(pagedUsersProvider((role: widget.roleFilter)).notifier)
+            .refresh();
+      case EntityListType.shipments:
+        return ref.read(pagedShipmentsProvider.notifier).refresh();
+      case EntityListType.bookings:
+        return ref.read(pagedBookingsProvider.notifier).refresh();
+      case EntityListType.payments:
+        return ref.read(pagedPaymentsProvider.notifier).refresh();
+      case EntityListType.disputes:
+        return ref.read(pagedDisputesProvider.notifier).refresh();
+    }
+  }
+
+  String get _title {
+    switch (widget.type) {
+      case EntityListType.users:
+        return widget.roleFilter == null
+            ? 'Tous les utilisateurs'
+            : 'Utilisateurs · ${_roleLabel(widget.roleFilter!)}';
+      case EntityListType.shipments:
+        return 'Vols / Expéditions';
+      case EntityListType.bookings:
+        return 'Commandes';
+      case EntityListType.payments:
+        return 'Paiements';
+      case EntityListType.disputes:
+        return 'Litiges';
+    }
+  }
+
+  IconData get _icon {
+    switch (widget.type) {
+      case EntityListType.users:
+        return Icons.people_alt_outlined;
+      case EntityListType.shipments:
+        return Icons.flight_takeoff_rounded;
+      case EntityListType.bookings:
+        return Icons.receipt_long_outlined;
+      case EntityListType.payments:
+        return Icons.account_balance_wallet_outlined;
+      case EntityListType.disputes:
+        return Icons.gavel_rounded;
     }
   }
 
@@ -67,107 +235,171 @@ class EntityListScreen extends ConsumerWidget {
         return 'Clients';
     }
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            GradientSliverHeader(
+              title: _title,
+              subtitle: 'Dossiers administrateur',
+              icon: _icon,
+            ),
+            ..._buildBody(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildBody() {
+    switch (widget.type) {
+      case EntityListType.users:
+        final pager = ref.watch(pagedUsersProvider((role: widget.roleFilter)));
+        return [
+          PagedSliverGrid<User>(
+            paginatedList: pager,
+            padding: const EdgeInsets.all(AppTheme.spaceMd),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 230,
+              crossAxisSpacing: AppTheme.spaceSm + 2,
+              mainAxisSpacing: AppTheme.spaceSm + 2,
+              childAspectRatio: 1.1,
+            ),
+            emptyState: const _EmptyState(
+              icon: Icons.people_outline_rounded,
+              message: 'Aucun utilisateur',
+            ),
+            itemBuilder: (context, user, index) => StaggeredEntrance(
+              delay: Duration(milliseconds: (index % 12) * 40),
+              child: _UserGridCard(user: user),
+            ),
+          ),
+        ];
+      case EntityListType.shipments:
+        final pager = ref.watch(pagedShipmentsProvider);
+        return [
+          PagedSliverList<Shipment>(
+            paginatedList: pager,
+            padding: const EdgeInsets.fromLTRB(AppTheme.spaceMd,
+                AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceXxl),
+            emptyState: const _EmptyState(
+              icon: Icons.flight_takeoff_rounded,
+              message: 'Aucun vol / expédition',
+            ),
+            itemBuilder: (context, shipment, index) => StaggeredEntrance(
+              delay: Duration(milliseconds: (index % 10) * 40),
+              child: _ShipmentCard(shipment: shipment),
+            ),
+          ),
+        ];
+      case EntityListType.bookings:
+        final pager = ref.watch(pagedBookingsProvider);
+        return [
+          PagedSliverList<Booking>(
+            paginatedList: pager,
+            padding: const EdgeInsets.fromLTRB(AppTheme.spaceMd,
+                AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceXxl),
+            emptyState: const _EmptyState(
+              icon: Icons.receipt_long_outlined,
+              message: 'Aucune commande',
+            ),
+            itemBuilder: (context, booking, index) => StaggeredEntrance(
+              delay: Duration(milliseconds: (index % 10) * 40),
+              child: _BookingCard(booking: booking),
+            ),
+          ),
+        ];
+      case EntityListType.payments:
+        final pager = ref.watch(pagedPaymentsProvider);
+        return [
+          PagedSliverList<Payment>(
+            paginatedList: pager,
+            padding: const EdgeInsets.fromLTRB(AppTheme.spaceMd,
+                AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceXxl),
+            emptyState: const _EmptyState(
+              icon: Icons.account_balance_wallet_outlined,
+              message: 'Aucun paiement',
+            ),
+            itemBuilder: (context, payment, index) => StaggeredEntrance(
+              delay: Duration(milliseconds: (index % 10) * 40),
+              child: _PaymentCard(payment: payment),
+            ),
+          ),
+        ];
+      case EntityListType.disputes:
+        final pager = ref.watch(pagedDisputesProvider);
+        return [
+          PagedSliverList<Dispute>(
+            paginatedList: pager,
+            padding: const EdgeInsets.fromLTRB(AppTheme.spaceMd,
+                AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceXxl),
+            emptyState: const _EmptyState(
+              icon: Icons.gavel_rounded,
+              message: 'Aucun litige',
+            ),
+            itemBuilder: (context, dispute, index) => StaggeredEntrance(
+              delay: Duration(milliseconds: (index % 10) * 40),
+              child: _DisputeCard(dispute: dispute),
+            ),
+          ),
+        ];
+    }
+  }
 }
 
 // ============================================================================
 // USERS (grid)
 // ============================================================================
 
-class _UsersList extends ConsumerWidget {
-  final String? roleFilter;
-  const _UsersList({this.roleFilter});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final users = ref.watch(allUsersProvider);
-    return users.when(
-      data: (all) {
-        final filtered = roleFilter == null
-            ? all
-            : all.where((u) => u.role == roleFilter).toList();
-        if (filtered.isEmpty) {
-          return const Center(
-            child: Text(
-              'Aucun utilisateur',
-              style: TextStyle(color: AppTheme.textSecondaryColor),
-            ),
-          );
-        }
-        return GridView.builder(
-          padding: const EdgeInsets.all(12),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 220,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 1.3,
-          ),
-          itemCount: filtered.length,
-          itemBuilder: (context, index) {
-            final user = filtered[index];
-            return _UserGridCard(user: user);
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, s) => Center(child: Text('Erreur: $e')),
-    );
-  }
-}
-
 class _UserGridCard extends ConsumerWidget {
   final User user;
+
   const _UserGridCard({required this.user});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => UserDetailsScreen(user: user),
+    return GlassCard(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => UserDetailsScreen(user: user)),
+      ),
+      padding: const EdgeInsets.all(AppTheme.spaceSm + 4),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          GradientAvatar(
+            initial: user.fullName,
+            imageUrl: user.profilePictureUrl,
+            radius: 22,
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: AppTheme.primaryLight,
-                backgroundImage: user.profilePictureUrl != null
-                    ? NetworkImage(user.profilePictureUrl!)
-                    : null,
-                child: user.profilePictureUrl == null
-                    ? const Icon(Icons.person, color: AppTheme.primaryColor)
-                    : null,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                user.fullName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  color: AppTheme.textPrimaryColor,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                _roleLabel(user.role),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppTheme.textSecondaryColor,
-                ),
-              ),
-            ],
+          const SizedBox(height: AppTheme.spaceSm),
+          Text(
+            user.fullName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
           ),
-        ),
+          const SizedBox(height: 2),
+          Text(
+            _roleLabel(user.role),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTheme.caption,
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
+          GradientBadge(
+            label: user.isActive ? 'Actif' : 'Désactivé',
+            gradient: user.isActive
+                ? AppTheme.successGradient
+                : AppTheme.errorGradient,
+            compact: true,
+          ),
+        ],
       ),
     );
   }
@@ -190,68 +422,94 @@ class _UserGridCard extends ConsumerWidget {
 // SHIPMENTS (list)
 // ============================================================================
 
-class _ShipmentsList extends ConsumerWidget {
-  const _ShipmentsList();
+class _ShipmentCard extends ConsumerWidget {
+  final Shipment shipment;
+
+  const _ShipmentCard({required this.shipment});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final shipments = ref.watch(allShipmentsProvider);
-    return shipments.when(
-      data: (items) {
-        if (items.isEmpty) {
-          return const Center(
-            child: Text(
-              'Aucun vol',
-              style: TextStyle(color: AppTheme.textSecondaryColor),
+    final s = shipment;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
+      child: GlassCard(
+        child: Row(
+          children: [
+            const AnimatedIconDot(
+              icon: Icons.flight_rounded,
+              color: AppTheme.accentColor,
             ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(12),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final s = items[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                leading: const Icon(Icons.flight, color: AppTheme.accentColor),
-                title: Text(
-                  '${s.originCountry} → ${s.destinationCity}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimaryColor,
+            const SizedBox(width: AppTheme.spaceSm + 4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${s.originCountry} → ${s.destinationCity}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${s.pricePerKg.toStringAsFixed(0)} DZD/kg · '
+                    '${s.availableWeightKg.toStringAsFixed(0)}kg dispo',
+                    style: AppTheme.caption,
+                  ),
+                ],
+              ),
+            ),
+            GradientBadge(
+              label: _statusLabel(s.status),
+              gradient: _statusGradient(s.status),
+              compact: true,
+            ),
+            if (s.shipper?.user != null)
+              GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => UserDetailsScreen(user: s.shipper!.user!),
                   ),
                 ),
-                subtitle: Text(
-                  '${s.pricePerKg} DZD/kg · ${s.availableWeightKg}kg dispo · '
-                  '${s.status}',
-                  style: const TextStyle(fontSize: 12),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: AppTheme.spaceSm + 4),
+                  child: GradientAvatar(
+                    initial: s.shipper!.user!.fullName,
+                    imageUrl: s.shipper!.user!.profilePictureUrl,
+                    radius: 14,
+                  ),
                 ),
-                trailing: s.shipper?.user != null
-                    ? InkWell(
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => UserDetailsScreen(
-                              user: s.shipper!.user!,
-                            ),
-                          ),
-                        ),
-                        child: const CircleAvatar(
-                          radius: 14,
-                          backgroundColor: AppTheme.primaryLight,
-                          child: Icon(Icons.person,
-                              size: 16, color: AppTheme.primaryColor),
-                        ),
-                      )
-                    : null,
               ),
-            );
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, s) => Center(child: Text('Erreur: $e')),
+          ],
+        ),
+      ),
     );
+  }
+
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'active':
+        return 'Actif';
+      case 'completed':
+        return 'Terminé';
+      case 'cancelled':
+        return 'Annulé';
+      default:
+        return status;
+    }
+  }
+
+  LinearGradient _statusGradient(String status) {
+    switch (status) {
+      case 'active':
+        return AppTheme.successGradient;
+      case 'completed':
+        return AppTheme.infoGradient;
+      case 'cancelled':
+        return AppTheme.errorGradient;
+      default:
+        return AppTheme.warningGradient;
+    }
   }
 }
 
@@ -259,66 +517,264 @@ class _ShipmentsList extends ConsumerWidget {
 // BOOKINGS (list)
 // ============================================================================
 
-class _BookingsList extends ConsumerWidget {
-  const _BookingsList();
+class _BookingCard extends ConsumerWidget {
+  final Booking booking;
+
+  const _BookingCard({required this.booking});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bookings = ref.watch(allBookingsProvider);
-    return bookings.when(
-      data: (items) {
-        if (items.isEmpty) {
-          return const Center(
-            child: Text(
-              'Aucune commande',
-              style: TextStyle(color: AppTheme.textSecondaryColor),
+    final b = booking;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
+      child: GlassCard(
+        child: Row(
+          children: [
+            const AnimatedIconDot(
+              icon: Icons.receipt_long_rounded,
+              color: AppTheme.primaryColor,
             ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(12),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final b = items[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                leading: const Icon(Icons.receipt_long,
-                    color: AppTheme.primaryColor),
-                title: Text(
-                  b.productName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimaryColor,
+            const SizedBox(width: AppTheme.spaceSm + 4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    b.productName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${b.totalPrice.toStringAsFixed(0)} DZD · '
+                    '${b.shipment?.originCountry ?? ''}→'
+                    '${b.shipment?.destinationCity ?? ''}',
+                    style: AppTheme.caption,
+                  ),
+                ],
+              ),
+            ),
+            GradientBadge(
+              label: _statusLabel(b.status),
+              gradient: _statusGradient(b.status),
+              compact: true,
+            ),
+            if (b.client != null)
+              GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => UserDetailsScreen(user: b.client!),
                   ),
                 ),
-                subtitle: Text(
-                  '${b.totalPrice} DZD · ${b.status} · '
-                  '${b.shipment?.originCountry ?? ''}→${b.shipment?.destinationCity ?? ''}',
-                  style: const TextStyle(fontSize: 12),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: AppTheme.spaceSm + 4),
+                  child: GradientAvatar(
+                    initial: b.client!.fullName,
+                    imageUrl: b.client!.profilePictureUrl,
+                    radius: 14,
+                  ),
                 ),
-                trailing: b.client != null
-                    ? InkWell(
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => UserDetailsScreen(user: b.client!),
-                          ),
-                        ),
-                        child: const CircleAvatar(
-                          radius: 14,
-                          backgroundColor: AppTheme.primaryLight,
-                          child: Icon(Icons.person,
-                              size: 16, color: AppTheme.primaryColor),
-                        ),
-                      )
-                    : null,
               ),
-            );
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, s) => Center(child: Text('Erreur: $e')),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'pending':
+        return 'En attente';
+      case 'confirmed':
+        return 'Confirmé';
+      case 'shipped':
+        return 'Expédié';
+      case 'delivered':
+        return 'Livré';
+      case 'cancelled':
+        return 'Annulé';
+      default:
+        return status;
+    }
+  }
+
+  LinearGradient _statusGradient(String status) {
+    switch (status) {
+      case 'delivered':
+        return AppTheme.successGradient;
+      case 'cancelled':
+        return AppTheme.errorGradient;
+      case 'shipped':
+        return AppTheme.infoGradient;
+      default:
+        return AppTheme.warningGradient;
+    }
+  }
+}
+
+// ============================================================================
+// PAYMENTS (list)
+// ============================================================================
+
+class _PaymentCard extends ConsumerWidget {
+  final Payment payment;
+
+  const _PaymentCard({required this.payment});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = payment;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
+      child: GlassCard(
+        child: Row(
+          children: [
+            AnimatedIconDot(
+              icon: Icons.account_balance_wallet_rounded,
+              color: p.isCompleted ? AppTheme.accentColor : AppTheme.warningColor,
+            ),
+            const SizedBox(width: AppTheme.spaceSm + 4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${p.amount.toStringAsFixed(0)} ${p.currency}',
+                    style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${p.paymentMethod ?? '—'} · ${_date(p.createdAt)}',
+                    style: AppTheme.caption,
+                  ),
+                ],
+              ),
+            ),
+            GradientBadge(
+              label: p.isCompleted ? 'Payé' : (p.status),
+              gradient: p.isCompleted
+                  ? AppTheme.successGradient
+                  : AppTheme.warningGradient,
+              compact: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _date(DateTime dt) =>
+      '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+}
+
+// ============================================================================
+// DISPUTES (list)
+// ============================================================================
+
+class _DisputeCard extends ConsumerWidget {
+  final Dispute dispute;
+
+  const _DisputeCard({required this.dispute});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final d = dispute;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
+      child: GlassCard(
+        child: Row(
+          children: [
+            AnimatedIconDot(
+              icon: Icons.gavel_rounded,
+              color: d.isOpen ? AppTheme.errorColor : AppTheme.accentColor,
+            ),
+            const SizedBox(width: AppTheme.spaceSm + 4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _typeLabel(d.type),
+                    style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    d.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.caption,
+                  ),
+                ],
+              ),
+            ),
+            GradientBadge(
+              label: _statusLabel(d.status),
+              gradient: d.isOpen ? AppTheme.errorGradient : AppTheme.successGradient,
+              compact: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _typeLabel(String type) {
+    switch (type) {
+      case 'fraud':
+        return 'Fraude';
+      case 'customs_seizure':
+        return 'Saisie Douane';
+      case 'damage':
+        return 'Endommagé';
+      case 'non_delivery':
+        return 'Non Livré';
+      default:
+        return 'Autre';
+    }
+  }
+
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'open':
+        return 'Ouvert';
+      case 'investigating':
+        return 'Enquête';
+      case 'resolved':
+        return 'Résolu';
+      case 'rejected':
+        return 'Rejeté';
+      default:
+        return status;
+    }
+  }
+}
+
+// ============================================================================
+// EMPTY STATE
+// ============================================================================
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.icon, required this.message});
+
+  final IconData icon;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 56, color: AppTheme.textMutedColor),
+        const SizedBox(height: AppTheme.spaceMd),
+        Text(message, style: AppTheme.h3),
+        const SizedBox(height: AppTheme.spaceSm),
+        const Text(
+          'Rechargez ou réessayez plus tard.',
+          style: AppTheme.bodySecondary,
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }

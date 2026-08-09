@@ -4,6 +4,7 @@ import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/widgets/ui_kit.dart';
 import 'entity_list_screen.dart';
 import 'user_details_screen.dart';
 
@@ -12,7 +13,7 @@ import 'user_details_screen.dart';
 /// suppression définitive), plus les onglets admin (expéditeurs, litiges,
 /// revenus) réutilisés depuis AdminDashboardScreen.
 class SuperAdminDashboardScreen extends ConsumerStatefulWidget {
-  const SuperAdminDashboardScreen({Key? key}) : super(key: key);
+  const SuperAdminDashboardScreen({super.key});
 
   @override
   ConsumerState<SuperAdminDashboardScreen> createState() =>
@@ -21,42 +22,167 @@ class SuperAdminDashboardScreen extends ConsumerStatefulWidget {
 
 class _SuperAdminDashboardScreenState
     extends ConsumerState<SuperAdminDashboardScreen> {
+  String? _roleFilter;
+  String _lastKey = '';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncPager();
+  }
+
+  void _syncPager() {
+    final key = 'users|$_roleFilter';
+    if (key == _lastKey) return;
+    _lastKey = key;
+    ref.read(pagedUsersProvider((role: _roleFilter)).notifier).loadInitial();
+  }
+
+  Future<void> _refreshUsers() =>
+      ref.read(pagedUsersProvider((role: _roleFilter)).notifier).refresh();
+
+  void _onUserChanged() {
+    _refreshUsers();
+    ref.invalidate(platformStatsProvider);
+  }
+
+  Future<void> _refreshAll() async {
+    ref.invalidate(platformStatsProvider);
+    await _refreshUsers();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Fondateur'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
+      body: RefreshIndicator(
+        onRefresh: _refreshAll,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            const GradientSliverHeader(
+              title: 'Fondateur',
+              subtitle: 'Contrôle total de la plateforme',
+              icon: Icons.admin_panel_settings_outlined,
+            ),
+            const SliverToBoxAdapter(child: _StatsOverview()),
+            const SliverToBoxAdapter(
+              child: _SectionTitle(title: 'Gestion des comptes'),
+            ),
+            SliverToBoxAdapter(child: _buildRoleFilter()),
+            ..._buildUsersSliver(),
+            const SliverToBoxAdapter(
+              child: _SectionTitle(title: 'Modération'),
+            ),
+            const SliverToBoxAdapter(child: _AdminShortcuts()),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: AppTheme.spaceXxl),
+            ),
+          ],
+        ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: const [
-          _StatsOverview(),
-          SizedBox(height: 16),
-          Text(
-            'Gestion des comptes',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimaryColor,
+    );
+  }
+
+  Widget _buildRoleFilter() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        0,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: DropdownButtonFormField<String?>(
+        initialValue: _roleFilter,
+        decoration: const InputDecoration(
+          labelText: 'Filtrer par rôle',
+          prefixIcon: Icon(Icons.filter_alt_outlined),
+        ),
+        items: const [
+          DropdownMenuItem(
+            value: null,
+            child: Text(
+              'Tous',
+              style: TextStyle(color: AppTheme.textSecondaryColor),
             ),
           ),
-          SizedBox(height: 8),
-          _UsersManager(),
-          SizedBox(height: 16),
-          Text(
-            'Modération',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimaryColor,
-            ),
+          DropdownMenuItem(
+            value: 'client',
+            child: Text('Clients',
+                style: TextStyle(color: AppTheme.textSecondaryColor)),
           ),
-          SizedBox(height: 8),
-          _AdminShortcuts(),
+          DropdownMenuItem(
+            value: 'shipper',
+            child: Text('Expéditeurs',
+                style: TextStyle(color: AppTheme.textSecondaryColor)),
+          ),
+          DropdownMenuItem(
+            value: 'admin',
+            child: Text('Admins',
+                style: TextStyle(color: AppTheme.textSecondaryColor)),
+          ),
+          DropdownMenuItem(
+            value: 'super_admin',
+            child: Text('Fondateurs',
+                style: TextStyle(color: AppTheme.textSecondaryColor)),
+          ),
         ],
+        onChanged: (v) {
+          setState(() => _roleFilter = v);
+          _syncPager();
+        },
       ),
+    );
+  }
+
+  List<Widget> _buildUsersSliver() {
+    final pager = ref.watch(pagedUsersProvider((role: _roleFilter)));
+    return [
+      PagedSliverList<User>(
+        paginatedList: pager,
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.spaceMd,
+          AppTheme.spaceSm,
+          AppTheme.spaceMd,
+          AppTheme.spaceMd,
+        ),
+        emptyState: const _EmptyAccounts(),
+        itemBuilder: (context, user, index) => StaggeredEntrance(
+          delay: Duration(milliseconds: (index % 10) * 40),
+          child: _UserManagementCard(
+            user: user,
+            onUserChanged: _onUserChanged,
+          ),
+        ),
+      ),
+    ];
+  }
+}
+
+// ============================================================================
+// SECTION TITLE
+// ============================================================================
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: Text(title, style: AppTheme.h2),
     );
   }
 }
@@ -78,49 +204,62 @@ class _StatsOverview extends ConsumerWidget {
         final screenWidth = MediaQuery.of(context).size.width;
         final isWide = screenWidth >= 700;
         final cardWidth = isWide ? 170.0 : (screenWidth - 56) / 3;
-        return Wrap(
-          alignment: WrapAlignment.center,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _statCard(context, Icons.people, 'Utilisateurs',
-                '${data['total_users'] ?? 0}', AppTheme.primaryColor, cardWidth,
-                onTap: () => _openList(context, EntityListType.users)),
-            _statCard(context, Icons.person_outline, 'Clients',
-                '${data['clients'] ?? 0}', AppTheme.primaryDark, cardWidth,
-                onTap: () =>
-                    _openList(context, EntityListType.users, role: 'client')),
-            _statCard(context, Icons.verified_user, 'Expéditeurs',
-                '${data['shippers'] ?? 0}', AppTheme.warningColor, cardWidth,
-                onTap: () =>
-                    _openList(context, EntityListType.users, role: 'shipper')),
-            _statCard(context, Icons.admin_panel_settings, 'Admins',
-                '${data['admins'] ?? 0}', AppTheme.errorColor, cardWidth,
-                onTap: () =>
-                    _openList(context, EntityListType.users, role: 'admin')),
-            _statCard(
-                context,
-                Icons.flight,
-                'Vols',
-                '${data['total_shipments'] ?? 0}',
-                AppTheme.accentColor,
-                cardWidth,
-                onTap: () => _openList(context, EntityListType.shipments)),
-            _statCard(
-                context,
-                Icons.receipt_long,
-                'Commandes',
-                '${data['total_bookings'] ?? 0}',
-                AppTheme.primaryColor,
-                cardWidth,
-                onTap: () => _openList(context, EntityListType.bookings)),
-          ],
+        return Padding(
+          padding: const EdgeInsets.all(AppTheme.spaceMd),
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: AppTheme.spaceSm + 4,
+            runSpacing: AppTheme.spaceSm + 4,
+            children: [
+              _statCard(context, Icons.people_alt_outlined, 'Utilisateurs',
+                  '${data['total_users'] ?? 0}', AppTheme.primaryColor,
+                  cardWidth,
+                  onTap: () => _openList(context, EntityListType.users)),
+              _statCard(context, Icons.person_outline, 'Clients',
+                  '${data['clients'] ?? 0}', AppTheme.primaryDark, cardWidth,
+                  onTap: () =>
+                      _openList(context, EntityListType.users, role: 'client')),
+              _statCard(context, Icons.verified_user, 'Expéditeurs',
+                  '${data['shippers'] ?? 0}', AppTheme.warningColor, cardWidth,
+                  onTap: () =>
+                      _openList(context, EntityListType.users, role: 'shipper')),
+              _statCard(context, Icons.admin_panel_settings, 'Admins',
+                  '${data['admins'] ?? 0}', AppTheme.errorColor, cardWidth,
+                  onTap: () =>
+                      _openList(context, EntityListType.users, role: 'admin')),
+              _statCard(
+                  context,
+                  Icons.flight_rounded,
+                  'Vols',
+                  '${data['total_shipments'] ?? 0}',
+                  AppTheme.accentColor,
+                  cardWidth,
+                  onTap: () => _openList(context, EntityListType.shipments)),
+              _statCard(
+                  context,
+                  Icons.receipt_long_rounded,
+                  'Commandes',
+                  '${data['total_bookings'] ?? 0}',
+                  AppTheme.primaryColor,
+                  cardWidth,
+                  onTap: () => _openList(context, EntityListType.bookings)),
+            ],
+          ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, s) => const Text('Erreur lors du chargement des stats',
-          style: TextStyle(color: AppTheme.textSecondaryColor)),
+      loading: () => const Padding(
+        padding: EdgeInsets.all(AppTheme.spaceLg),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, s) => const Padding(
+        padding: EdgeInsets.all(AppTheme.spaceLg),
+        child: Text(
+          'Erreur lors du chargement des stats',
+          style: AppTheme.bodySecondary,
+          textAlign: TextAlign.center,
+        ),
+      ),
     );
   }
 
@@ -137,32 +276,32 @@ class _StatsOverview extends ConsumerWidget {
       {VoidCallback? onTap}) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       child: Container(
         width: cardWidth,
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppTheme.spaceSm + 4),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          border: Border.all(color: color.withValues(alpha: 0.25)),
+          boxShadow: AppTheme.shadowSm,
         ),
         child: Column(
           children: [
-            Icon(icon, color: color),
-            const SizedBox(height: 6),
+            AnimatedIconDot(icon: icon, color: color, size: 20),
+            const SizedBox(height: AppTheme.spaceSm),
             Text(
               value,
               style: TextStyle(
                 fontSize: 20,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w800,
                 color: color,
               ),
             ),
             Text(
               label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                  fontSize: 11, color: AppTheme.textSecondaryColor),
+              style: AppTheme.caption,
             ),
           ],
         ),
@@ -175,96 +314,31 @@ class _StatsOverview extends ConsumerWidget {
 // USERS MANAGEMENT (full control)
 // ============================================================================
 
-class _UsersManager extends ConsumerStatefulWidget {
-  const _UsersManager();
-
-  @override
-  ConsumerState<_UsersManager> createState() => _UsersManagerState();
-}
-
-class _UsersManagerState extends ConsumerState<_UsersManager> {
-  String? _roleFilter;
+class _EmptyAccounts extends StatelessWidget {
+  const _EmptyAccounts();
 
   @override
   Widget build(BuildContext context) {
-    final users = ref.watch(allUsersProvider);
-
-    return users.when(
-      data: (allUsers) {
-        final filtered = _roleFilter == null
-            ? allUsers
-            : allUsers.where((u) => u.role == _roleFilter).toList();
-        if (filtered.isEmpty) {
-          return const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Aucun compte',
-                style: TextStyle(color: AppTheme.textSecondaryColor),
-              ),
-            ),
-          );
-        }
-        return Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String?>(
-                    value: _roleFilter,
-                    decoration: const InputDecoration(
-                      labelText: 'Filtrer par rôle',
-                    ),
-                    items: const [
-                      DropdownMenuItem(
-                          value: null,
-                          child: Text(
-                            'Tous',
-                            style:
-                                TextStyle(color: AppTheme.textSecondaryColor),
-                          )),
-                      DropdownMenuItem(
-                          value: 'client',
-                          child: Text('Clients',
-                              style: TextStyle(
-                                  color: AppTheme.textSecondaryColor))),
-                      DropdownMenuItem(
-                          value: 'shipper',
-                          child: Text('Expéditeurs',
-                              style: TextStyle(
-                                  color: AppTheme.textSecondaryColor))),
-                      DropdownMenuItem(
-                          value: 'admin',
-                          child: Text('Admins',
-                              style: TextStyle(
-                                  color: AppTheme.textSecondaryColor))),
-                      DropdownMenuItem(
-                          value: 'super_admin',
-                          child: Text('Fondateurs',
-                              style: TextStyle(
-                                  color: AppTheme.textSecondaryColor))),
-                    ],
-                    onChanged: (v) => setState(() => _roleFilter = v),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ...filtered.map((u) => _UserManagementCard(user: u)).toList(),
-          ],
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, s) => Text('Erreur: $e',
-          style: const TextStyle(color: AppTheme.textSecondaryColor)),
+    return const Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.person_off_outlined,
+            size: 56, color: AppTheme.textMutedColor),
+        SizedBox(height: AppTheme.spaceMd),
+        Text('Aucun compte', style: AppTheme.h3),
+      ],
     );
   }
 }
 
 class _UserManagementCard extends ConsumerStatefulWidget {
   final User user;
+  final VoidCallback onUserChanged;
 
-  const _UserManagementCard({required this.user});
+  const _UserManagementCard({
+    required this.user,
+    required this.onUserChanged,
+  });
 
   @override
   ConsumerState<_UserManagementCard> createState() =>
@@ -284,19 +358,6 @@ class _UserManagementCardState extends ConsumerState<_UserManagementCard> {
         return 'Fondateur';
       default:
         return 'Client';
-    }
-  }
-
-  Color _roleColor(String role) {
-    switch (role) {
-      case 'shipper':
-        return AppTheme.warningColor;
-      case 'admin':
-        return AppTheme.errorColor;
-      case 'super_admin':
-        return AppTheme.primaryDark;
-      default:
-        return AppTheme.accentColor;
     }
   }
 
@@ -328,7 +389,7 @@ class _UserManagementCardState extends ConsumerState<_UserManagementCard> {
     if (role == null) return;
     try {
       await ref.read(authServiceProvider).updateUserRole(widget.user.id, role);
-      ref.invalidate(allUsersProvider);
+      widget.onUserChanged();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -348,7 +409,7 @@ class _UserManagementCardState extends ConsumerState<_UserManagementCard> {
       await ref
           .read(authServiceProvider)
           .setUserActive(widget.user.id, !widget.user.isActive);
-      ref.invalidate(allUsersProvider);
+      widget.onUserChanged();
     } catch (e) {
       if (mounted) await showAppErrorDialog(context, message: 'Erreur: $e');
     } finally {
@@ -374,10 +435,10 @@ class _UserManagementCardState extends ConsumerState<_UserManagementCard> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Supprimer'),
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.errorColor,
             ),
+            child: const Text('Supprimer'),
           ),
         ],
       ),
@@ -386,8 +447,7 @@ class _UserManagementCardState extends ConsumerState<_UserManagementCard> {
     setState(() => _busy = true);
     try {
       await ref.read(authServiceProvider).deleteUserAsAdmin(widget.user.id);
-      ref.invalidate(allUsersProvider);
-      ref.invalidate(platformStatsProvider);
+      widget.onUserChanged();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -405,124 +465,122 @@ class _UserManagementCardState extends ConsumerState<_UserManagementCard> {
 
   @override
   Widget build(BuildContext context) {
-    final color = _roleColor(widget.user.role);
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
+      child: GlassCard(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => UserDetailsScreen(user: widget.user),
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: widget.user.profilePictureUrl != null
-                        ? null
-                        : color.withOpacity(0.15),
-                    backgroundImage: widget.user.profilePictureUrl != null
-                        ? NetworkImage(widget.user.profilePictureUrl!)
-                        : null,
-                    child: widget.user.profilePictureUrl == null
-                        ? Icon(Icons.person, size: 18, color: color)
-                        : null,
+        padding: const EdgeInsets.all(AppTheme.spaceSm + 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                GradientAvatar(
+                  initial: widget.user.fullName,
+                  imageUrl: widget.user.profilePictureUrl,
+                  radius: 16,
+                ),
+                const SizedBox(width: AppTheme.spaceSm + 2),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.user.fullName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.body
+                            .copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      Text(
+                        widget.user.email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.caption,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.user.fullName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimaryColor,
-                          ),
-                        ),
-                        Text(
-                          widget.user.email,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
+                ),
+                GradientBadge(
+                  label: _roleLabel(widget.user.role),
+                  gradient: _roleGradient(widget.user.role),
+                  compact: true,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            Row(
+              children: [
+                AnimatedIconDot(
+                  icon: widget.user.isActive
+                      ? Icons.check_circle_rounded
+                      : Icons.pause_circle_rounded,
+                  color: widget.user.isActive
+                      ? AppTheme.accentColor
+                      : AppTheme.errorColor,
+                  size: 14,
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                Text(
+                  widget.user.isActive ? 'Actif' : 'Désactivé',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: widget.user.isActive
+                        ? AppTheme.accentColor
+                        : AppTheme.errorColor,
                   ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _roleLabel(widget.user.role),
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: color,
-                          fontWeight: FontWeight.bold),
-                    ),
+                ),
+                const Spacer(),
+                IconButton(
+                  tooltip: 'Changer le rôle',
+                  icon: const Icon(Icons.admin_panel_settings_outlined,
+                      size: 20),
+                  onPressed: _busy ? null : _changeRole,
+                ),
+                IconButton(
+                  tooltip:
+                      widget.user.isActive ? 'Désactiver' : 'Réactiver',
+                  icon: Icon(
+                    widget.user.isActive
+                        ? Icons.pause_circle_outline
+                        : Icons.play_circle_outline,
+                    size: 20,
+                    color: widget.user.isActive
+                        ? AppTheme.warningColor
+                        : AppTheme.accentColor,
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Text(
-                    widget.user.isActive ? 'Actif' : 'Désactivé',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: widget.user.isActive
-                          ? AppTheme.accentColor
-                          : AppTheme.errorColor,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    tooltip: 'Changer le rôle',
-                    icon: const Icon(Icons.admin_panel_settings_outlined,
-                        size: 20),
-                    onPressed: _busy ? null : _changeRole,
-                  ),
-                  IconButton(
-                    tooltip: widget.user.isActive ? 'Désactiver' : 'Réactiver',
-                    icon: Icon(
-                      widget.user.isActive
-                          ? Icons.pause_circle_outline
-                          : Icons.play_circle_outline,
-                      size: 20,
-                      color: widget.user.isActive
-                          ? AppTheme.warningColor
-                          : AppTheme.accentColor,
-                    ),
-                    onPressed: _busy ? null : _toggleActive,
-                  ),
-                  IconButton(
-                    tooltip: 'Supprimer définitivement',
-                    icon: const Icon(Icons.delete_forever_outlined, size: 20),
-                    color: AppTheme.errorColor,
-                    onPressed: _busy ? null : _deleteUser,
-                  ),
-                ],
-              ),
-            ],
-          ),
+                  onPressed: _busy ? null : _toggleActive,
+                ),
+                IconButton(
+                  tooltip: 'Supprimer définitivement',
+                  icon: const Icon(Icons.delete_forever_outlined, size: 20),
+                  color: AppTheme.errorColor,
+                  onPressed: _busy ? null : _deleteUser,
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  LinearGradient _roleGradient(String role) {
+    switch (role) {
+      case 'shipper':
+        return AppTheme.warningGradient;
+      case 'admin':
+        return AppTheme.errorGradient;
+      case 'super_admin':
+        return AppTheme.darkGradient;
+      default:
+        return AppTheme.successGradient;
+    }
   }
 }
 
@@ -535,34 +593,46 @@ class _AdminShortcuts extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Card(
-      child: Column(
-        children: [
-          ListTile(
-            leading:
-                const Icon(Icons.verified_user, color: AppTheme.primaryColor),
-            title: const Text('Vérification des expéditeurs'),
-            subtitle: const Text('Valider ou rejeter les dossiers'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).pushNamed('/admin-dashboard'),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.gavel, color: AppTheme.warningColor),
-            title: const Text('Litiges'),
-            subtitle: const Text('Gérer les litiges ouverts'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).pushNamed('/admin-dashboard'),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.campaign, color: AppTheme.accentColor),
-            title: const Text('Annonces'),
-            subtitle: const Text('Diffuser une annonce à tous'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).pushNamed('/broadcast'),
-          ),
-        ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+      child: GlassCard(
+        padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            ListTile(
+              leading:
+                  const AnimatedIconDot(
+                      icon: Icons.verified_user, color: AppTheme.primaryColor),
+              title: const Text('Vérification des expéditeurs'),
+              subtitle: const Text('Valider ou rejeter les dossiers'),
+              trailing: const Icon(Icons.chevron_right,
+                  color: AppTheme.textSecondaryColor),
+              onTap: () =>
+                  Navigator.of(context).pushNamed('/admin-dashboard'),
+            ),
+            const Divider(height: 1, indent: AppTheme.spaceXxl),
+            ListTile(
+              leading: const AnimatedIconDot(
+                  icon: Icons.gavel_rounded, color: AppTheme.warningColor),
+              title: const Text('Litiges'),
+              subtitle: const Text('Gérer les litiges ouverts'),
+              trailing: const Icon(Icons.chevron_right,
+                  color: AppTheme.textSecondaryColor),
+              onTap: () =>
+                  Navigator.of(context).pushNamed('/admin-dashboard'),
+            ),
+            const Divider(height: 1, indent: AppTheme.spaceXxl),
+            ListTile(
+              leading: const AnimatedIconDot(
+                  icon: Icons.campaign_rounded, color: AppTheme.accentColor),
+              title: const Text('Annonces'),
+              subtitle: const Text('Diffuser une annonce à tous'),
+              trailing: const Icon(Icons.chevron_right,
+                  color: AppTheme.textSecondaryColor),
+              onTap: () => Navigator.of(context).pushNamed('/broadcast'),
+            ),
+          ],
+        ),
       ),
     );
   }
