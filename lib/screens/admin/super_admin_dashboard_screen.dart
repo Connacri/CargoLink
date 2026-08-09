@@ -151,6 +151,7 @@ class _SuperAdminDashboardScreenState
           AppTheme.spaceMd,
           AppTheme.spaceMd,
         ),
+        fillRemainingEmpty: false,
         emptyState: const _EmptyAccounts(),
         itemBuilder: (context, user, index) => StaggeredEntrance(
           delay: Duration(milliseconds: (index % 10) * 40),

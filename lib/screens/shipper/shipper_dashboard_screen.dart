@@ -201,7 +201,8 @@ class _ShipperDashboardScreenState
           slivers: [
             GradientSliverHeader(
               title: 'Tableau de bord',
-              subtitle: shipper.user?.fullName ?? 'Espace expéditeur',
+              subtitle:
+                  '${shipper.user?.fullName ?? 'Espace expéditeur'}  •  ★ ${shipper.ratingDisplay}',
               icon: Icons.local_shipping_rounded,
               trailing: IconButton(
                 tooltip: 'Publier une offre',
@@ -262,46 +263,74 @@ class _ShipperDashboardScreenState
     final earnings = ref.watch(shipperEarningsProvider(shipper.id));
 
     final revenue = earnings.valueOrNull ?? 0.0;
+    final totalOffers =
+        (stats.valueOrNull?['total_shipments'] as num?)?.toInt() ?? 0;
+    final totalBookings =
+        (stats.valueOrNull?['total_bookings'] as num?)?.toInt() ?? 0;
     final active =
         (stats.valueOrNull?['active_shipments'] as num?)?.toInt() ?? 0;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.spaceMd,
-        AppTheme.spaceMd,
-        AppTheme.spaceMd,
-        AppTheme.spaceSm,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _StatCard(
-              label: 'Chiffre d\'affaires',
-              value: _formatCompact(revenue),
-              icon: Icons.payments_outlined,
-              color: AppTheme.accentColor,
-            ),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.spaceMd,
+            AppTheme.spaceMd,
+            AppTheme.spaceMd,
+            AppTheme.spaceSm,
           ),
-          const SizedBox(width: AppTheme.spaceSm),
-          Expanded(
-            child: _StatCard(
-              label: 'Offres actives',
-              value: '$active',
-              icon: Icons.play_circle_outline_rounded,
-              color: AppTheme.primaryColor,
-            ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _StatCard(
+                  label: 'Chiffre d\'affaires',
+                  value: _formatCompact(revenue),
+                  icon: Icons.payments_outlined,
+                  color: AppTheme.accentColor,
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceSm),
+              Expanded(
+                child: _StatCard(
+                  label: 'Offres',
+                  value: '$totalOffers',
+                  icon: Icons.local_shipping_rounded,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: AppTheme.spaceSm),
-          Expanded(
-            child: _StatCard(
-              label: 'Note',
-              value: shipper.ratingDisplay,
-              icon: Icons.star_outline_rounded,
-              color: Colors.amber,
-            ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.spaceMd,
+            0,
+            AppTheme.spaceMd,
+            AppTheme.spaceSm,
           ),
-        ],
-      ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _StatCard(
+                  label: 'Commandes',
+                  value: '$totalBookings',
+                  icon: Icons.receipt_long_rounded,
+                  color: AppTheme.infoColor,
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceSm),
+              Expanded(
+                child: _StatCard(
+                  label: 'Offres actives',
+                  value: '$active',
+                  icon: Icons.play_circle_outline_rounded,
+                  color: Colors.amber,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -310,7 +339,7 @@ class _ShipperDashboardScreenState
       padding: const EdgeInsets.fromLTRB(
         AppTheme.spaceMd,
         AppTheme.spaceSm,
-        AppTheme.spaceSm,
+        AppTheme.spaceMd,
         0,
       ),
       child: Row(

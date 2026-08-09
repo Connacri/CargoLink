@@ -3,9 +3,10 @@ import '../theme/app_theme.dart';
 
 /// A large gradient header used as the top of a CustomScrollView.
 ///
-/// Wraps [SliverAppBar] with the brand gradient, rounded bottom corners and an
-/// optional subtle parallax on the title via [flexibleSpace]. Use inside a
-/// `CustomScrollView` (true lazy layout, no nested scrolling).
+/// Wraps [SliverAppBar] with the brand gradient and an optional icon/subtitle
+/// block. Use inside a `CustomScrollView` (true lazy layout, no nested
+/// scrolling). Square bottom edge on purpose so it scrolls flush with the
+/// content below (no white "bevel" artifacts from rounded corners).
 class GradientSliverHeader extends StatelessWidget {
   const GradientSliverHeader({
     super.key,
@@ -30,7 +31,6 @@ class GradientSliverHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliverAppBar(
       pinned: true,
-      stretch: true,
       elevation: 0,
       backgroundColor: Colors.transparent,
       expandedHeight: expandedHeight,
@@ -46,7 +46,6 @@ class GradientSliverHeader extends StatelessWidget {
       ),
       actions: trailing != null ? [trailing!] : null,
       flexibleSpace: FlexibleSpaceBar(
-        stretchModes: const [StretchMode.zoomBackground],
         background: _HeaderBackground(
           gradient: gradient,
           title: title,
@@ -77,9 +76,6 @@ class _HeaderBackground extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: gradient,
-        borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(AppTheme.radiusXl),
-        ),
       ),
       child: Stack(
         children: [

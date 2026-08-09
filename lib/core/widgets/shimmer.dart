@@ -4,7 +4,8 @@ import '../theme/app_theme.dart';
 /// A shimmer skeleton used as a lazy placeholder while lists load.
 ///
 /// Build shimmer blocks inside a `SliverList` / `SliverGrid` so the loading
-/// state itself stays lazy and cheap.
+/// state itself stays lazy and cheap. Uses an explicit fixed size + animated
+/// gradient alignment so it is safe inside unbounded sliver item constraints.
 class ShimmerBox extends StatefulWidget {
   const ShimmerBox({
     super.key,
@@ -34,10 +35,10 @@ class _ShimmerBoxState extends State<ShimmerBox>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
-    )..repeat(reverse: true);
+    )..repeat();
     _alignment = Tween<Alignment>(
-      begin: Alignment.centerLeft,
-      end: Alignment.centerRight,
+      begin: const Alignment(-1.5, 0),
+      end: const Alignment(1.5, 0),
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
@@ -52,23 +53,24 @@ class _ShimmerBoxState extends State<ShimmerBox>
     return AnimatedBuilder(
       animation: _alignment,
       builder: (context, _) {
-        return Align(
-          alignment: _alignment.value,
-          child: FractionallySizedBox(
-            widthFactor: 0.5,
-            heightFactor: 1,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(widget.radius),
-                shape: widget.shape,
-                gradient: LinearGradient(
-                  colors: [
-                    AppTheme.surfaceMuted,
-                    Colors.white,
-                    AppTheme.surfaceMuted,
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
+        final alignment = _alignment.value;
+        return SizedBox(
+          width: widget.width,
+          height: widget.height,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: widget.shape == BoxShape.rectangle
+                  ? BorderRadius.circular(widget.radius)
+                  : null,
+              shape: widget.shape,
+              gradient: LinearGradient(
+                begin: alignment,
+                end: Alignment(-alignment.x, -alignment.y),
+                colors: const [
+                  AppTheme.surfaceMuted,
+                  Colors.white,
+                  AppTheme.surfaceMuted,
+                ],
               ),
             ),
           ),
@@ -97,12 +99,14 @@ class ShimmerCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           ShimmerBox(width: double.infinity, height: imageHeight, radius: 0),
           Padding(
             padding: const EdgeInsets.all(AppTheme.spaceMd),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const ShimmerBox(width: 180, height: 18),
                 const SizedBox(height: AppTheme.spaceSm),

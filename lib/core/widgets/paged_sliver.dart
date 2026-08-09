@@ -19,6 +19,7 @@ class PagedSliverList<T> extends ConsumerWidget {
     this.padding = EdgeInsets.zero,
     this.emptyState,
     this.skeletonCount = 6,
+    this.fillRemainingEmpty = true,
   });
 
   final PaginatedList<T> paginatedList;
@@ -27,6 +28,12 @@ class PagedSliverList<T> extends ConsumerWidget {
   final EdgeInsets padding;
   final Widget? emptyState;
   final int skeletonCount;
+
+  /// When true (default) the empty state fills the remaining viewport height.
+  /// Set to false for empty states that live mid/late in a longer page (e.g.
+  /// the profile history) so they render compactly instead of taking the
+  /// whole screen.
+  final bool fillRemainingEmpty;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -56,10 +63,14 @@ class PagedSliverList<T> extends ConsumerWidget {
 
     // Empty
     if (list.items.isEmpty) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: emptyState ?? const _DefaultEmptyState(),
-      );
+      return fillRemainingEmpty
+          ? SliverFillRemaining(
+              hasScrollBody: false,
+              child: emptyState ?? const _DefaultEmptyState(),
+            )
+          : SliverToBoxAdapter(
+              child: emptyState ?? const _DefaultEmptyState(),
+            );
     }
 
     // Content + automatic infinite scroll trigger
@@ -101,6 +112,7 @@ class PagedSliverGrid<T> extends ConsumerWidget {
     this.padding = EdgeInsets.zero,
     this.emptyState,
     this.skeletonCount = 6,
+    this.fillRemainingEmpty = true,
   });
 
   final PaginatedList<T> paginatedList;
@@ -109,6 +121,11 @@ class PagedSliverGrid<T> extends ConsumerWidget {
   final EdgeInsets padding;
   final Widget? emptyState;
   final int skeletonCount;
+
+  /// When true (default) the empty state fills the remaining viewport height.
+  /// Set to false for empty states that live mid/late in a longer page so they
+  /// render compactly instead of taking the whole screen.
+  final bool fillRemainingEmpty;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -136,10 +153,14 @@ class PagedSliverGrid<T> extends ConsumerWidget {
     }
 
     if (list.items.isEmpty) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: emptyState ?? const _DefaultEmptyState(),
-      );
+      return fillRemainingEmpty
+          ? SliverFillRemaining(
+              hasScrollBody: false,
+              child: emptyState ?? const _DefaultEmptyState(),
+            )
+          : SliverToBoxAdapter(
+              child: emptyState ?? const _DefaultEmptyState(),
+            );
     }
 
     final itemCount = list.items.length + (list.hasMore ? 1 : 0);

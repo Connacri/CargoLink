@@ -117,9 +117,14 @@ final shipperShipmentsProvider = FutureProvider.family<List<Shipment>,
 });
 
 final searchShipmentsProvider =
-    FutureProvider.family<List<Shipment>, String>((ref, query) async {
+    FutureProvider.family<List<Shipment>, ({String query, int limit, int offset})>(
+        (ref, params) async {
   final shipmentService = ref.watch(shipmentServiceProvider);
-  return shipmentService.searchShipments(query: query);
+  return shipmentService.searchShipments(
+    query: params.query,
+    limit: params.limit,
+    offset: params.offset,
+  );
 });
 
 // ============================================================================

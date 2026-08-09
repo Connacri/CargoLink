@@ -705,6 +705,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           AppTheme.spaceMd,
           AppTheme.spaceMd,
         ),
+        fillRemainingEmpty: false,
         emptyState: const _HistoryEmpty(message: 'Aucune commande pour le moment.'),
         itemBuilder: (context, b, index) => StaggeredEntrance(
           delay: Duration(milliseconds: (index % 10) * 40),
@@ -751,6 +752,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               AppTheme.spaceMd,
               AppTheme.spaceMd,
             ),
+            fillRemainingEmpty: false,
             emptyState: const _HistoryEmpty(message: 'Aucune offre pour le moment.'),
             itemBuilder: (context, s, index) => StaggeredEntrance(
               delay: Duration(milliseconds: (index % 10) * 40),

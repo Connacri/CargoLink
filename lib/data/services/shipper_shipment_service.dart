@@ -454,10 +454,11 @@ class ShipmentService {
     return allocatedWeight;
   }
 
-  /// Search shipments
+  /// Search shipments (server-side, paginated)
   Future<List<Shipment>> searchShipments({
     required String query,
     int limit = 50,
+    int offset = 0,
   }) async {
     try {
       final response = await _supabase
@@ -467,7 +468,8 @@ class ShipmentService {
             'origin_country.ilike.%$query%,destination_city.ilike.%$query%',
           )
           .eq('status', 'active')
-          .limit(limit);
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
 
       return (response as List)
           .map((item) => Shipment.fromJson(item as Map<String, dynamic>))

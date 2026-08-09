@@ -26,6 +26,20 @@ final clientShipmentsPagerProvider = StateNotifierProvider.family<
   },
 );
 
+/// Lazy paged server-side search source, keyed by the search query.
+final clientSearchPagerProvider =
+    StateNotifierProvider.family<PaginatedListNotifier<Shipment>,
+        PaginatedList<Shipment>, String>((ref, query) {
+  return createPaginatedNotifier(
+    (limit, offset) => ref.read(shipmentServiceProvider).searchShipments(
+          query: query,
+          limit: limit,
+          offset: offset,
+        ),
+    pageSize: 15,
+  );
+});
+
 class ClientHomeScreen extends ConsumerStatefulWidget {
   const ClientHomeScreen({Key? key}) : super(key: key);
 
@@ -36,6 +50,7 @@ class ClientHomeScreen extends ConsumerStatefulWidget {
 class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   final _scrollController = ScrollController();
   String _lastFilterKey = '';
+  String _lastSearchKey = '';
 
   @override
   void initState() {
@@ -47,6 +62,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _syncPager();
+    _syncSearch();
   }
 
   /// (Re)load the first page whenever the filter combo changes.
@@ -63,6 +79,16 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     notifier.loadInitial();
   }
 
+  /// (Re)load server-side search results when the query changes.
+  void _syncSearch() {
+    final query = ref.read(searchQueryProvider).trim();
+    if (query.isEmpty) return;
+    if (query == _lastSearchKey) return;
+    _lastSearchKey = query;
+    final notifier = ref.read(clientSearchPagerProvider(query).notifier);
+    notifier.loadInitial();
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
@@ -72,97 +98,85 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     final pager = ref.watch(
       clientShipmentsPagerProvider((destination: destination, origin: origin)),
     );
+    final searchPager =
+        ref.watch(clientSearchPagerProvider(searchQuery.trim()));
 
-    final filtered = searchQuery.trim().isEmpty
-        ? null
-        : pager.items
-            .where((s) {
-              final q = searchQuery.trim().toLowerCase();
-              return s.originCountry.toLowerCase().contains(q) ||
-                  s.destinationCity.toLowerCase().contains(q) ||
-                  (s.description?.toLowerCase().contains(q) ?? false);
-            })
-            .toList();
+    final isSearching = searchQuery.trim().isNotEmpty;
 
     return Scaffold(
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          GradientSliverHeader(
-            title: 'CargoLink',
-            subtitle: 'Trouvez les meilleurs micro-importateurs',
-            icon: Icons.local_shipping_rounded,
-            trailing: GestureDetector(
-              onTap: () => _showNotificationsSheet(context),
-              child: const Padding(
-                padding: EdgeInsets.only(right: 16),
-                child: _UnreadBadge(),
-              ),
-            ),
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(1),
-              child: SizedBox.shrink(),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: _buildGreeting(currentUser),
-          ),
-          SliverToBoxAdapter(
-            child: _buildSearchBar(),
-          ),
-          SliverToBoxAdapter(
-            child: _buildFilters(),
-          ),
-          if (filtered == null)
-            PagedSliverList<Shipment>(
-              paginatedList: pager,
-              padding: const EdgeInsets.fromLTRB(
-                AppTheme.spaceMd,
-                AppTheme.spaceSm,
-                AppTheme.spaceMd,
-                AppTheme.spaceXxl,
-              ),
-              emptyState: const _EmptyShipments(),
-              itemBuilder: (context, shipment, index) => StaggeredEntrance(
-                delay: Duration(milliseconds: (index % 10) * 40),
-                child: _ShipmentCard(shipment: shipment),
-              ),
-            )
-          else if (filtered.isEmpty)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(AppTheme.spaceLg),
-                child: Column(
-                  children: [
-                    Icon(Icons.search_off_rounded,
-                        size: 56, color: AppTheme.textMutedColor),
-                    SizedBox(height: AppTheme.spaceSm),
-                    Text(
-                      'Aucun résultat pour cette recherche.',
-                      textAlign: TextAlign.center,
-                      style: AppTheme.bodySecondary,
-                    ),
-                  ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          if (isSearching) {
+            await ref
+                .read(clientSearchPagerProvider(searchQuery.trim()).notifier)
+                .refresh();
+            return;
+          }
+          await ref
+              .read(
+                clientShipmentsPagerProvider(
+                  (destination: destination, origin: origin),
+                ).notifier,
+              )
+              .refresh();
+        },
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            GradientSliverHeader(
+              title: 'CargoLink',
+              subtitle: 'Trouvez les meilleurs micro-importateurs pour vos commandes',
+              icon: Icons.local_shipping_rounded,
+              trailing: GestureDetector(
+                onTap: () => _showNotificationsSheet(context),
+                child: const Padding(
+                  padding: EdgeInsets.only(right: 16),
+                  child: _UnreadBadge(),
                 ),
               ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                AppTheme.spaceMd,
-                AppTheme.spaceSm,
-                AppTheme.spaceMd,
-                AppTheme.spaceXxl,
-              ),
-              sliver: SliverList.builder(
-                itemCount: filtered.length,
-                itemBuilder: (context, index) => StaggeredEntrance(
+            ),
+            SliverToBoxAdapter(
+              child: _buildGreeting(currentUser),
+            ),
+            SliverToBoxAdapter(
+              child: _buildSearchBar(),
+            ),
+            SliverToBoxAdapter(
+              child: _buildFilters(),
+            ),
+            if (!isSearching)
+              PagedSliverList<Shipment>(
+                paginatedList: pager,
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd,
+                  AppTheme.spaceSm,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceXxl,
+                ),
+                emptyState: const _EmptyShipments(),
+                itemBuilder: (context, shipment, index) => StaggeredEntrance(
                   delay: Duration(milliseconds: (index % 10) * 40),
-                  child: _ShipmentCard(shipment: filtered[index]),
+                  child: _ShipmentCard(shipment: shipment),
+                ),
+              )
+            else
+              PagedSliverList<Shipment>(
+                paginatedList: searchPager,
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd,
+                  AppTheme.spaceSm,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceXxl,
+                ),
+                emptyState: const _NoSearchResults(),
+                itemBuilder: (context, shipment, index) => StaggeredEntrance(
+                  delay: Duration(milliseconds: (index % 10) * 40),
+                  child: _ShipmentCard(shipment: shipment),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -171,24 +185,61 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     return currentUser.when(
       data: (user) {
         final name = user?.fullName ?? '';
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.fromLTRB(
             AppTheme.spaceMd,
             AppTheme.spaceMd,
             AppTheme.spaceMd,
-            0,
+            AppTheme.spaceSm,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.all(AppTheme.spaceMd),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppTheme.primaryColor, AppTheme.primaryDark],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            boxShadow: AppTheme.shadowMd,
+          ),
+          child: Row(
             children: [
-              Text(
-                name.isEmpty ? 'Bonjour 👋' : 'Bonjour $name 👋',
-                style: AppTheme.h2,
+              Container(
+                padding: const EdgeInsets.all(AppTheme.spaceSm + 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                ),
+                child: const Icon(
+                  Icons.local_shipping_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'Shipments disponibles près de vous',
-                style: AppTheme.bodySecondary,
+              const SizedBox(width: AppTheme.spaceMd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name.isEmpty ? 'Bonjour 👋' : 'Bonjour $name 👋',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Trouvez les meilleurs micro-importateurs pour vos commandes',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -551,6 +602,29 @@ class _EmptyShipments extends StatelessWidget {
         SizedBox(height: AppTheme.spaceSm),
         Text(
           'Reviens plus tard ou élargis tes filtres.',
+          style: AppTheme.bodySecondary,
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
+class _NoSearchResults extends StatelessWidget {
+  const _NoSearchResults();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.search_off_rounded,
+            size: 56, color: AppTheme.textMutedColor),
+        SizedBox(height: AppTheme.spaceMd),
+        Text('Aucun résultat pour cette recherche', style: AppTheme.h3),
+        SizedBox(height: AppTheme.spaceSm),
+        Text(
+          'Essaie une autre destination ou origine.',
           style: AppTheme.bodySecondary,
           textAlign: TextAlign.center,
         ),
