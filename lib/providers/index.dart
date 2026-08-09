@@ -52,8 +52,15 @@ final shipperByIdProvider =
   return shipperService.getShipperById(shipperId);
 });
 
+final shipperByUserIdProvider =
+    FutureProvider.family<Shipper?, String>((ref, userId) async {
+  final shipperService = ref.watch(shipperServiceProvider);
+  return shipperService.getShipperByUserId(userId);
+});
+
 final pendingShippersProvider =
-    FutureProvider.family<List<Shipper>, ({int limit, int offset})>((ref, params) async {
+    FutureProvider.family<List<Shipper>, ({int limit, int offset})>(
+        (ref, params) async {
   final shipperService = ref.watch(shipperServiceProvider);
   return shipperService.getPendingShippers(
     limit: params.limit,
@@ -61,7 +68,9 @@ final pendingShippersProvider =
   );
 });
 
-final shipperStatsProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, shipperId) async {
+final shipperStatsProvider =
+    FutureProvider.family<Map<String, dynamic>?, String>(
+        (ref, shipperId) async {
   final shipperService = ref.watch(shipperServiceProvider);
   return shipperService.getShipperStats(shipperId);
 });
@@ -97,8 +106,7 @@ final activeShipmentsProvider = FutureProvider.family<
   );
 });
 
-final shipperShipmentsProvider = FutureProvider.family<
-    List<Shipment>,
+final shipperShipmentsProvider = FutureProvider.family<List<Shipment>,
     ({String shipperId, int limit, int offset})>((ref, params) async {
   final shipmentService = ref.watch(shipmentServiceProvider);
   return shipmentService.getShipperShipments(
@@ -108,7 +116,8 @@ final shipperShipmentsProvider = FutureProvider.family<
   );
 });
 
-final searchShipmentsProvider = FutureProvider.family<List<Shipment>, String>((ref, query) async {
+final searchShipmentsProvider =
+    FutureProvider.family<List<Shipment>, String>((ref, query) async {
   final shipmentService = ref.watch(shipmentServiceProvider);
   return shipmentService.searchShipments(query: query);
 });
@@ -129,7 +138,12 @@ final bookingByIdProvider =
 
 final clientBookingsProvider = FutureProvider.family<
     List<Booking>,
-    ({String clientId, String? status, int limit, int offset})>((ref, params) async {
+    ({
+      String clientId,
+      String? status,
+      int limit,
+      int offset
+    })>((ref, params) async {
   final bookingService = ref.watch(bookingServiceProvider);
   return bookingService.getClientBookings(
     clientId: params.clientId,
@@ -139,8 +153,7 @@ final clientBookingsProvider = FutureProvider.family<
   );
 });
 
-final shipmentBookingsProvider = FutureProvider.family<
-    List<Booking>,
+final shipmentBookingsProvider = FutureProvider.family<List<Booking>,
     ({String shipmentId, int limit, int offset})>((ref, params) async {
   final bookingService = ref.watch(bookingServiceProvider);
   return bookingService.getShipmentBookings(
@@ -150,7 +163,8 @@ final shipmentBookingsProvider = FutureProvider.family<
   );
 });
 
-final bookingStatsProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, clientId) async {
+final bookingStatsProvider =
+    FutureProvider.family<Map<String, dynamic>?, String>((ref, clientId) async {
   final bookingService = ref.watch(bookingServiceProvider);
   return bookingService.getBookingStats(clientId);
 });
@@ -169,8 +183,7 @@ final paymentByBookingProvider =
   return paymentService.getPaymentByBookingId(bookingId);
 });
 
-final revenueStatsProvider = FutureProvider.family<
-    Map<String, dynamic>?,
+final revenueStatsProvider = FutureProvider.family<Map<String, dynamic>?,
     ({DateTime? startDate, DateTime? endDate})>((ref, params) async {
   final paymentService = ref.watch(paymentServiceProvider);
   return paymentService.getRevenueStats(
@@ -202,7 +215,8 @@ final trackingServiceProvider = Provider<TrackingService>((ref) {
 });
 
 final trackingHistoryProvider =
-    FutureProvider.family<List<ShipmentTracking>, String>((ref, bookingId) async {
+    FutureProvider.family<List<ShipmentTracking>, String>(
+        (ref, bookingId) async {
   final trackingService = ref.watch(trackingServiceProvider);
   return trackingService.getTrackingHistory(bookingId);
 });
@@ -240,7 +254,8 @@ final bookingDisputesProvider =
 });
 
 final openDisputesProvider =
-    FutureProvider.family<List<Dispute>, ({int limit, int offset})>((ref, params) async {
+    FutureProvider.family<List<Dispute>, ({int limit, int offset})>(
+        (ref, params) async {
   final disputeService = ref.watch(disputeServiceProvider);
   return disputeService.getOpenDisputes(
     limit: params.limit,
@@ -248,8 +263,8 @@ final openDisputesProvider =
   );
 });
 
-final disputeStatsProvider =
-    FutureProvider.family<Map<String, dynamic>?, ({DateTime? startDate, DateTime? endDate})>((ref, params) async {
+final disputeStatsProvider = FutureProvider.family<Map<String, dynamic>?,
+    ({DateTime? startDate, DateTime? endDate})>((ref, params) async {
   final disputeService = ref.watch(disputeServiceProvider);
   return disputeService.getDisputeStats(
     startDate: params.startDate,
@@ -267,7 +282,12 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
 
 final userNotificationsProvider = FutureProvider.family<
     List<Notification>,
-    ({String userId, bool unreadOnly, int limit, int offset})>((ref, params) async {
+    ({
+      String userId,
+      bool unreadOnly,
+      int limit,
+      int offset
+    })>((ref, params) async {
   final notificationService = ref.watch(notificationServiceProvider);
   return notificationService.getUserNotifications(
     userId: params.userId,
@@ -292,9 +312,54 @@ final allUsersProvider = FutureProvider<List<User>>((ref) async {
   return authService.getAllUsers();
 });
 
-final platformStatsProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
+final platformStatsProvider =
+    FutureProvider<Map<String, dynamic>?>((ref) async {
   final authService = ref.watch(authServiceProvider);
   return authService.getPlatformStats();
+});
+
+final allShipmentsProvider = FutureProvider<List<Shipment>>((ref) async {
+  final shipmentService = ref.watch(shipmentServiceProvider);
+  return shipmentService.getAllShipments(limit: 500);
+});
+
+final allBookingsProvider = FutureProvider<List<Booking>>((ref) async {
+  final bookingService = ref.watch(bookingServiceProvider);
+  return bookingService.getAllBookings(limit: 500);
+});
+
+final allPaymentsProvider = FutureProvider<List<Payment>>((ref) async {
+  final paymentService = ref.watch(paymentServiceProvider);
+  return paymentService.getAllPayments(limit: 500);
+});
+
+final allDisputesProvider = FutureProvider<List<Dispute>>((ref) async {
+  final disputeService = ref.watch(disputeServiceProvider);
+  return disputeService.getAllDisputes(limit: 500);
+});
+
+final userShipmentsProvider =
+    FutureProvider.family<List<Shipment>, String>((ref, shipperId) async {
+  final shipmentService = ref.watch(shipmentServiceProvider);
+  return shipmentService.getShipperShipments(shipperId: shipperId, limit: 200);
+});
+
+final userBookingsProvider =
+    FutureProvider.family<List<Booking>, String>((ref, clientId) async {
+  final bookingService = ref.watch(bookingServiceProvider);
+  return bookingService.getClientBookings(clientId: clientId, limit: 200);
+});
+
+final userPaymentsProvider =
+    FutureProvider.family<List<Payment>, String>((ref, userId) async {
+  final paymentService = ref.watch(paymentServiceProvider);
+  return paymentService.getUserPayments(userId);
+});
+
+final userDisputesProvider =
+    FutureProvider.family<List<Dispute>, String>((ref, userId) async {
+  final disputeService = ref.watch(disputeServiceProvider);
+  return disputeService.getUserDisputes(userId);
 });
 
 // ============================================================================

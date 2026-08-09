@@ -59,7 +59,8 @@ class TrackingService {
           .order('timestamp', ascending: true);
 
       return (response as List)
-          .map((item) => ShipmentTracking.fromJson(item as Map<String, dynamic>))
+          .map(
+              (item) => ShipmentTracking.fromJson(item as Map<String, dynamic>))
           .toList();
     } catch (e) {
       _logger.e('Error getting tracking history: $e');
@@ -172,7 +173,8 @@ class DisputeService {
             'status': 'open',
             'created_at': DateTime.now().toIso8601String(),
           })
-          .select('*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
+          .select(
+              '*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
           .single();
 
       _logger.i('Dispute created successfully');
@@ -188,7 +190,8 @@ class DisputeService {
     try {
       final response = await _supabase
           .from('disputes')
-          .select('*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
+          .select(
+              '*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
           .eq('id', disputeId)
           .single();
 
@@ -204,7 +207,8 @@ class DisputeService {
     try {
       final response = await _supabase
           .from('disputes')
-          .select('*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
+          .select(
+              '*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
           .eq('booking_id', bookingId)
           .order('created_at', ascending: false);
 
@@ -217,12 +221,33 @@ class DisputeService {
     }
   }
 
-  /// Get all open disputes (admin)
-  Future<List<Dispute>> getOpenDisputes({int limit = 50, int offset = 0}) async {
+  /// Get disputes reported by a specific user (admin drill-down).
+  Future<List<Dispute>> getUserDisputes(String userId) async {
     try {
       final response = await _supabase
           .from('disputes')
-          .select('*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
+          .select(
+              '*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
+          .eq('reported_by_user_id', userId)
+          .order('created_at', ascending: false);
+
+      return (response as List)
+          .map((item) => Dispute.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting user disputes: $e');
+      return [];
+    }
+  }
+
+  /// Get all open disputes (admin)
+  Future<List<Dispute>> getOpenDisputes(
+      {int limit = 50, int offset = 0}) async {
+    try {
+      final response = await _supabase
+          .from('disputes')
+          .select(
+              '*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
           .eq('status', 'open')
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
@@ -232,6 +257,26 @@ class DisputeService {
           .toList();
     } catch (e) {
       _logger.e('Error getting open disputes: $e');
+      return [];
+    }
+  }
+
+  /// Get all disputes (admin / super_admin only, enforced by RLS).
+  Future<List<Dispute>> getAllDisputes(
+      {int limit = 200, int offset = 0}) async {
+    try {
+      final response = await _supabase
+          .from('disputes')
+          .select(
+              '*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      return (response as List)
+          .map((item) => Dispute.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting all disputes: $e');
       return [];
     }
   }
@@ -259,7 +304,8 @@ class DisputeService {
           .from('disputes')
           .update(updateData)
           .eq('id', disputeId)
-          .select('*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
+          .select(
+              '*, bookings(*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*))')
           .single();
 
       _logger.i('Dispute status updated');
@@ -438,10 +484,8 @@ class NotificationService {
     int offset = 0,
   }) async {
     try {
-      var query = _supabase
-          .from('notifications')
-          .select()
-          .eq('user_id', userId);
+      var query =
+          _supabase.from('notifications').select().eq('user_id', userId);
 
       if (unreadOnly) {
         query = query.eq('is_read', false);
@@ -465,8 +509,7 @@ class NotificationService {
     try {
       await _supabase
           .from('notifications')
-          .update({'is_read': true})
-          .eq('id', notificationId);
+          .update({'is_read': true}).eq('id', notificationId);
 
       _logger.i('Notification marked as read');
     } catch (e) {
@@ -480,8 +523,7 @@ class NotificationService {
     try {
       await _supabase
           .from('notifications')
-          .update({'is_read': true})
-          .eq('user_id', userId);
+          .update({'is_read': true}).eq('user_id', userId);
 
       _logger.i('All notifications marked as read');
     } catch (e) {
@@ -499,7 +541,8 @@ class NotificationService {
           .eq('user_id', userId)
           .order('created_at')
           .map((data) => (data as List)
-              .map((item) => Notification.fromJson(item as Map<String, dynamic>))
+              .map(
+                  (item) => Notification.fromJson(item as Map<String, dynamic>))
               .toList());
     } catch (e) {
       _logger.e('Error listening to notifications: $e');
@@ -519,8 +562,7 @@ class NotificationService {
         userId: shipperId,
         type: 'booking_confirmed',
         title: 'Nouvelle commande confirmée',
-        message:
-            'Un client a réservé $allocatedWeight kg pour "$productName"',
+        message: 'Un client a réservé $allocatedWeight kg pour "$productName"',
         relatedBookingId: bookingId,
       );
     } catch (e) {

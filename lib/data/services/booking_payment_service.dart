@@ -29,7 +29,8 @@ class BookingService {
       _logger.i('Creating booking for shipment: $shipmentId');
 
       // Validate requested weight
-      if (requestedWeightKg <= 0 || requestedWeightKg > AppConstants.maxWeightKg) {
+      if (requestedWeightKg <= 0 ||
+          requestedWeightKg > AppConstants.maxWeightKg) {
         throw Exception('Invalid weight requested');
       }
 
@@ -49,11 +50,10 @@ class BookingService {
       }
 
       // Calculate allocated weight (with rounding)
-      final allocatedWeight =
-          _shipmentService.calculateAllocationWeight(
-            requestedWeightKg,
-            shipment.remainingWeightKg,
-          );
+      final allocatedWeight = _shipmentService.calculateAllocationWeight(
+        requestedWeightKg,
+        shipment.remainingWeightKg,
+      );
 
       // Calculate total price
       final totalPrice = allocatedWeight * shipment.pricePerKg;
@@ -76,7 +76,8 @@ class BookingService {
             'created_at': DateTime.now().toIso8601String(),
             'updated_at': DateTime.now().toIso8601String(),
           })
-          .select('*, shipments(*, shippers(*, users!shippers_user_id_fkey(*)))')
+          .select(
+              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*)))')
           .single();
 
       // Update shipment reserved weight
@@ -102,7 +103,8 @@ class BookingService {
     try {
       final response = await _supabase
           .from('bookings')
-          .select('*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
+          .select(
+              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
           .eq('id', bookingId)
           .single();
 
@@ -123,7 +125,8 @@ class BookingService {
     try {
       var query = _supabase
           .from('bookings')
-          .select('*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
+          .select(
+              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
           .eq('client_id', clientId);
 
       if (status != null) {
@@ -152,7 +155,8 @@ class BookingService {
     try {
       final response = await _supabase
           .from('bookings')
-          .select('*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
+          .select(
+              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
           .eq('shipment_id', shipmentId)
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
@@ -162,6 +166,26 @@ class BookingService {
           .toList();
     } catch (e) {
       _logger.e('Error getting shipment bookings: $e');
+      return [];
+    }
+  }
+
+  /// Get all bookings (admin / super_admin only, enforced by RLS).
+  Future<List<Booking>> getAllBookings(
+      {int limit = 200, int offset = 0}) async {
+    try {
+      final response = await _supabase
+          .from('bookings')
+          .select(
+              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      return (response as List)
+          .map((item) => Booking.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting all bookings: $e');
       return [];
     }
   }
@@ -179,7 +203,8 @@ class BookingService {
             'updated_at': DateTime.now().toIso8601String(),
           })
           .eq('id', bookingId)
-          .select('*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
+          .select(
+              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
           .single();
 
       _logger.i('Booking status updated to: $newStatus');
@@ -252,12 +277,12 @@ class BookingService {
   /// Get booking statistics
   Future<Map<String, dynamic>?> getBookingStats(String clientId) async {
     try {
-      final allBookings = await getClientBookings(clientId: clientId, limit: 1000);
+      final allBookings =
+          await getClientBookings(clientId: clientId, limit: 1000);
 
       final delivered =
           allBookings.where((b) => b.status == 'delivered').length;
-      final pending =
-          allBookings.where((b) => b.status == 'pending').length;
+      final pending = allBookings.where((b) => b.status == 'pending').length;
       final shipped = allBookings.where((b) => b.status == 'shipped').length;
       final cancelled =
           allBookings.where((b) => b.status == 'cancelled').length;
@@ -272,9 +297,8 @@ class BookingService {
         'shipped': shipped,
         'cancelled': cancelled,
         'total_spent': totalSpent,
-        'success_rate': allBookings.isEmpty
-            ? 0
-            : (delivered / allBookings.length) * 100,
+        'success_rate':
+            allBookings.isEmpty ? 0 : (delivered / allBookings.length) * 100,
       };
     } catch (e) {
       _logger.e('Error getting booking stats: $e');
@@ -381,8 +405,7 @@ class PaymentService {
       final payment = Payment.fromJson(response);
       await _supabase
           .from('bookings')
-          .update({'payment_status': 'paid'})
-          .eq('id', payment.bookingId);
+          .update({'payment_status': 'paid'}).eq('id', payment.bookingId);
 
       return payment;
     } catch (e) {
@@ -411,8 +434,7 @@ class PaymentService {
       // Update booking payment status
       await _supabase
           .from('bookings')
-          .update({'payment_status': 'refunded'})
-          .eq('id', bookingId);
+          .update({'payment_status': 'refunded'}).eq('id', bookingId);
 
       return Payment.fromJson(response);
     } catch (e) {
@@ -444,10 +466,8 @@ class PaymentService {
     DateTime? endDate,
   }) async {
     try {
-      var query = _supabase
-          .from('payments')
-          .select('amount')
-          .eq('status', 'completed');
+      var query =
+          _supabase.from('payments').select('amount').eq('status', 'completed');
 
       if (startDate != null) {
         query = query.gte('created_at', startDate.toIso8601String());
@@ -506,6 +526,43 @@ class PaymentService {
     } catch (e) {
       _logger.e('Error getting shipper earnings: $e');
       return 0.0;
+    }
+  }
+
+  /// Get all payments (admin / super_admin only, enforced by RLS).
+  Future<List<Payment>> getAllPayments(
+      {int limit = 200, int offset = 0}) async {
+    try {
+      final response = await _supabase
+          .from('payments')
+          .select()
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      return (response as List)
+          .map((item) => Payment.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting all payments: $e');
+      return [];
+    }
+  }
+
+  /// Get payments linked to a user's bookings (admin / super_admin drill-down).
+  Future<List<Payment>> getUserPayments(String userId) async {
+    try {
+      final response = await _supabase
+          .from('payments')
+          .select('*, bookings!bookings_client_id_fkey(client_id)')
+          .eq('bookings.client_id', userId)
+          .order('created_at', ascending: false);
+
+      return (response as List)
+          .map((item) => Payment.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting user payments: $e');
+      return [];
     }
   }
 }

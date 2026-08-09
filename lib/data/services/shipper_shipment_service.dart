@@ -18,7 +18,8 @@ class ShipperService {
     required String passportNumber,
     required String passportPhotoUrl,
     required String livePhotoUrl,
-  }) async {    try {
+  }) async {
+    try {
       _logger.i('Registering shipper: $userId');
 
       final response = await _supabase
@@ -61,7 +62,8 @@ class ShipperService {
         'verified_at': null,
       };
 
-      if (passportNumber != null) updateData['passport_number'] = passportNumber;
+      if (passportNumber != null)
+        updateData['passport_number'] = passportNumber;
       if (passportPhotoUrl != null) {
         updateData['passport_photo_url'] = passportPhotoUrl;
       }
@@ -115,7 +117,8 @@ class ShipperService {
   }
 
   /// Get all pending shippers (for admin verification)
-  Future<List<Shipper>> getPendingShippers({int limit = 50, int offset = 0}) async {
+  Future<List<Shipper>> getPendingShippers(
+      {int limit = 50, int offset = 0}) async {
     try {
       final response = await _supabase
           .from('shippers')
@@ -194,8 +197,7 @@ class ShipperService {
     try {
       await _supabase
           .from('shippers')
-          .update({'rating': newRating})
-          .eq('id', shipperId);
+          .update({'rating': newRating}).eq('id', shipperId);
 
       _logger.i('Shipper rating updated');
     } catch (e) {
@@ -213,9 +215,8 @@ class ShipperService {
           .eq('shipper_id', shipperId);
       final shipmentsList = shipments as List;
 
-      final completedShipments = shipmentsList
-          .where((s) => s['status'] == 'completed')
-          .length;
+      final completedShipments =
+          shipmentsList.where((s) => s['status'] == 'completed').length;
 
       var totalBookings = 0;
       if (shipmentsList.isNotEmpty) {
@@ -364,6 +365,25 @@ class ShipmentService {
     }
   }
 
+  /// Get all shipments (admin / super_admin only, enforced by RLS).
+  Future<List<Shipment>> getAllShipments(
+      {int limit = 200, int offset = 0}) async {
+    try {
+      final response = await _supabase
+          .from('shipments')
+          .select('*, shippers(*, users!shippers_user_id_fkey(*))')
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      return (response as List)
+          .map((item) => Shipment.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting all shipments: $e');
+      return [];
+    }
+  }
+
   /// Update shipment status
   Future<Shipment?> updateShipmentStatus(
     String shipmentId,
@@ -403,13 +423,10 @@ class ShipmentService {
         throw Exception('Not enough weight available');
       }
 
-      await _supabase
-          .from('shipments')
-          .update({
-            'reserved_weight_kg': newReservedWeight,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', shipmentId);
+      await _supabase.from('shipments').update({
+        'reserved_weight_kg': newReservedWeight,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', shipmentId);
 
       _logger.i('Reserved weight updated');
     } catch (e) {
@@ -431,9 +448,8 @@ class ShipmentService {
     // Don't allocate more than requested or available
     allocatedWeight =
         allocatedWeight > availableWeight ? availableWeight : allocatedWeight;
-    allocatedWeight = allocatedWeight > requestedWeight
-        ? requestedWeight
-        : allocatedWeight;
+    allocatedWeight =
+        allocatedWeight > requestedWeight ? requestedWeight : allocatedWeight;
 
     return allocatedWeight;
   }
