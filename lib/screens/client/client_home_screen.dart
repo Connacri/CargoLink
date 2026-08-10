@@ -103,6 +103,27 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
 
     final isSearching = searchQuery.trim().isNotEmpty;
 
+    // Live refresh: a newly published shipment appears in the feed without a
+    // manual pull-to-refresh.
+    ref.listen(
+      tableChangesProvider(('shipments', null, null)),
+      (previous, next) {
+        if (next.hasValue) {
+          if (isSearching) {
+            ref
+                .read(clientSearchPagerProvider(searchQuery.trim()).notifier)
+                .refresh();
+          } else {
+            ref
+                .read(clientShipmentsPagerProvider(
+                  (destination: destination, origin: origin),
+                ).notifier)
+                .refresh();
+          }
+        }
+      },
+    );
+
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {

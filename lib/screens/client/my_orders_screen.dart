@@ -139,6 +139,25 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
   @override
   Widget build(BuildContext context) {
     final userId = ref.watch(authServiceProvider).currentUserId;
+
+    // Live refresh: whenever this client's bookings change on the server
+    // (accept/confirm/ship/cancel by the shipper), reload the current page.
+    // Kept unconditional (before any early return) so the set of listened
+    // providers stays stable across rebuilds.
+    ref.listen(
+      tableChangesProvider(('bookings', 'client_id', userId ?? 'none')),
+      (previous, next) {
+        if (next.hasValue && userId != null) {
+          ref
+              .read(clientBookingsPagerProvider((
+                clientId: userId,
+                status: _statusFilter,
+              )).notifier)
+              .refresh();
+        }
+      },
+    );
+
     if (userId == null) {
       return Scaffold(
         body: Center(

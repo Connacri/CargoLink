@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../data/models/models.dart';
 import '../data/models/v2_models.dart';
 import '../data/services/auth_service.dart';
@@ -7,6 +8,7 @@ import '../data/services/shipper_shipment_service.dart';
 import '../data/services/booking_payment_service.dart';
 import '../data/services/tracking_dispute_service.dart';
 import '../data/services/storage_service.dart';
+import '../data/services/realtime_service.dart';
 import '../data/services/v2_service.dart';
 
 // ============================================================================
@@ -135,6 +137,27 @@ final searchShipmentsProvider =
 
 final bookingServiceProvider = Provider<BookingService>((ref) {
   return BookingService();
+});
+
+// ============================================================================
+// REALTIME PROVIDERS
+// ============================================================================
+
+final realtimeServiceProvider = Provider<RealtimeService>((ref) {
+  return RealtimeService();
+});
+
+/// Realtime row changes for a table, optionally filtered by one column.
+/// Family key: positional record (table, column, value) — column/value are
+/// null when the stream should not be filtered.
+final tableChangesProvider = StreamProvider.family<PostgresChangePayload,
+    (String, String?, Object?)>((ref, params) {
+  final realtimeService = ref.watch(realtimeServiceProvider);
+  return realtimeService.listenToTable(
+    table: params.$1,
+    column: params.$2,
+    value: params.$3,
+  );
 });
 
 final bookingByIdProvider =

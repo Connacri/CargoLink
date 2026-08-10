@@ -877,6 +877,18 @@ class _ActiveShipmentsScreenState extends ConsumerState<ActiveShipmentsScreen> {
   Widget _buildList(Shipper shipper) {
     final pager = ref.watch(shipperShipmentsPagerProvider(shipper.id));
 
+    // Live refresh: new/changed shipments for this shipper reload the list.
+    ref.listen(
+      tableChangesProvider(('shipments', 'shipper_id', shipper.id)),
+      (previous, next) {
+        if (next.hasValue) {
+          ref
+              .read(shipperShipmentsPagerProvider(shipper.id).notifier)
+              .refresh();
+        }
+      },
+    );
+
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () =>
@@ -962,6 +974,18 @@ class _ShipperShipmentDetailScreenState
   Widget build(BuildContext context) {
     final shipment = widget.shipment;
     final pager = ref.watch(shipperShipmentBookingsPagerProvider(shipment.id));
+
+    // Live refresh: new/changed bookings for this shipment reload the list.
+    ref.listen(
+      tableChangesProvider(('bookings', 'shipment_id', shipment.id)),
+      (previous, next) {
+        if (next.hasValue) {
+          ref
+              .read(shipperShipmentBookingsPagerProvider(shipment.id).notifier)
+              .refresh();
+        }
+      },
+    );
 
     return Scaffold(
       body: RefreshIndicator(
