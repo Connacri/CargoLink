@@ -72,6 +72,8 @@ class _AccountStatusScreenState extends ConsumerState<AccountStatusScreen> {
   Future<void> _signOut() async {
     try {
       await ref.read(authServiceProvider).signOut();
+      ref.invalidate(currentUserProvider);
+      ref.invalidate(currentShipperProvider);
     } catch (e) {
       if (mounted) {
         await showAppErrorDialog(context, message: 'Erreur: $e');

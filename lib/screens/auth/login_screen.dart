@@ -29,10 +29,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   /// After any successful sign-in, force the auth state + profile providers to
-  /// refresh so the router leaves the login screen without a restart.
+  /// refresh so the router leaves the login screen without a restart. The
+  /// shipper provider is invalidated too so a sign-out + re-auth with a
+  /// different account does not keep showing the previous account's shipper row
+  /// until the app is reloaded.
   void _afterSignIn() {
     ref.invalidate(authStateProvider);
     ref.invalidate(currentUserProvider);
+    ref.invalidate(currentShipperProvider);
   }
 
   Future<void> _handleLogin() async {

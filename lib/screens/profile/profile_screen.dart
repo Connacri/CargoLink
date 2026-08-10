@@ -208,6 +208,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (confirmed == true) {
       try {
         await ref.read(authServiceProvider).signOut();
+        // Clear the account-scoped caches so a re-auth with another account
+        // cannot surface the previous user's data.
+        ref.invalidate(currentUserProvider);
+        ref.invalidate(currentShipperProvider);
       } catch (e) {
         if (mounted) {
           await showAppErrorDialog(context, message: 'Erreur: $e');

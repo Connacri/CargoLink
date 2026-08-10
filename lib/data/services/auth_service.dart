@@ -265,8 +265,14 @@ class AuthService {
 
       if (kIsWeb) {
         _logger.i('Web: starting FirebaseAuth.signInWithPopup(GoogleAuthProvider)');
-        final userCredential =
-            await _auth.signInWithPopup(fbauth.GoogleAuthProvider());
+        // Force the account chooser on every sign-in. Without
+        // `prompt: select_account`, Google Identity Services silently reuses
+        // the last authenticated account, so after a sign-out a user trying to
+        // re-auth with a different Google account ends up back on the previous
+        // one.
+        final provider = fbauth.GoogleAuthProvider()
+          ..setCustomParameters({'prompt': 'select_account'});
+        final userCredential = await _auth.signInWithPopup(provider);
         _logger.i(
           'Web: popup returned uid=${userCredential.user?.uid} '
           'email=${userCredential.user?.email}',

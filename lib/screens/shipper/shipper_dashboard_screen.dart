@@ -972,23 +972,11 @@ class _ShipperShipmentDetailScreenState
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverAppBar(
-              pinned: true,
-              expandedHeight: 120,
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              iconTheme: const IconThemeData(color: Colors.white),
-              title: Text(
-                '${shipment.originCountry} → ${shipment.destinationCity}',
-                overflow: TextOverflow.ellipsis,
-              ),
-              flexibleSpace: const FlexibleSpaceBar(
-                background: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.primaryGradient,
-                  ),
-                ),
-              ),
+            GradientSliverHeader(
+              title: '${shipment.originCountry} → ${shipment.destinationCity}',
+              subtitle: 'Commandes reçues pour cette offre',
+              icon: Icons.local_shipping_rounded,
+              expandedHeight: 140,
             ),
             SliverToBoxAdapter(
               child: _buildSummary(shipment),

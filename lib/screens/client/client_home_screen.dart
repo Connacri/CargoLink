@@ -127,7 +127,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             GradientSliverHeader(
               title: 'CargoLink',
               subtitle: 'Trouvez les meilleurs micro-importateurs pour vos commandes',
-              icon: Icons.local_shipping_rounded,
+              icon: Icons.airplanemode_active,
               trailing: GestureDetector(
                 onTap: () => _showNotificationsSheet(context),
                 child: const Padding(

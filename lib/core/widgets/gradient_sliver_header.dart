@@ -29,31 +29,44 @@ class GradientSliverHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Le titre n'est rendu qu'une seule fois, dans FlexibleSpaceBar.title :
+    // étendu il scale à ~26px en bas du header, replié il devient le titre de
+    // la toolbar. Le `SliverAppBar.title` est volontairement absent, sinon le
+    // même texte s'afficherait deux fois et se superposerait.
+    final hasBack = Navigator.of(context).canPop();
+
     return SliverAppBar(
       pinned: true,
       elevation: 0,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.blue,
       expandedHeight: expandedHeight,
       automaticallyImplyLeading: true,
       iconTheme: const IconThemeData(color: Colors.white),
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
       actions: trailing != null ? [trailing!] : null,
+      bottom: bottom,
       flexibleSpace: FlexibleSpaceBar(
+        collapseMode: CollapseMode.parallax,
+        titlePadding: EdgeInsetsDirectional.only(
+          // Laisse la place au bouton retour quand on peut revenir en arrière.
+          start: hasBack ? 72 : AppTheme.spaceMd,
+          bottom: AppTheme.spaceMd,
+        ),
+        title: Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         background: _HeaderBackground(
           gradient: gradient,
-          title: title,
-          subtitle: subtitle,
           icon: icon,
+          subtitle: subtitle,
         ),
       ),
-      bottom: bottom,
     );
   }
 }
@@ -61,18 +74,18 @@ class GradientSliverHeader extends StatelessWidget {
 class _HeaderBackground extends StatelessWidget {
   const _HeaderBackground({
     required this.gradient,
-    required this.title,
     required this.subtitle,
     required this.icon,
   });
 
   final LinearGradient gradient;
-  final String title;
   final String? subtitle;
   final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
+    // L'icône et le sous-titre vivent ici, alignés au-dessus du titre qui est
+    // géré par FlexibleSpaceBar.title (pas de doublon, pas de superposition).
     return Container(
       decoration: BoxDecoration(
         gradient: gradient,
@@ -93,54 +106,53 @@ class _HeaderBackground extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppTheme.spaceMd,
-              kToolbarHeight + AppTheme.spaceSm,
+              0,
               AppTheme.spaceMd,
               AppTheme.spaceLg,
             ),
-            // Bottom-anchored and never overflows: long titles/subtitles
-            // (or small custom expandedHeights) are clipped instead of
-            // throwing a RenderFlex overflow.
-            child: SingleChildScrollView(
-              reverse: true,
-              physics: const NeverScrollableScrollPhysics(),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (icon != null) ...[
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.16),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
+            // Bottom-anchored and never overflows: long subtitles are clipped
+            // instead of throwing a RenderFlex overflow.
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: SingleChildScrollView(
+                reverse: true,
+                physics: const NeverScrollableScrollPhysics(),
+                child: Padding(
+
+                  padding: const EdgeInsets.only(top: 50),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (icon != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.16),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                            ),
+                          ),
+                          child: Icon(icon, color: Colors.white, size: 24),
                         ),
-                      ),
-                      child: Icon(icon, color: Colors.white, size: 24),
-                    ),
-                    const SizedBox(height: AppTheme.spaceSm),
-                  ],
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
+                        const SizedBox(height: AppTheme.spaceSm),
+                      ],
+                      if (subtitle != null)
+                        FittedBox(
+
+                          child: Text(
+                            subtitle!,
+
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.85),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle!,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ],
+                ),
               ),
             ),
           ),
