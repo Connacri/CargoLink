@@ -20,6 +20,15 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
   bool _isSending = false;
   String _currentRole = 'client';
   Broadcast? _editing;
+  final Set<String> _audience = {'all'};
+
+  static const _audienceOptions = [
+    (value: 'all', label: 'Tout le monde', icon: Icons.public_rounded),
+    (value: 'client', label: 'Clients', icon: Icons.shopping_bag_rounded),
+    (value: 'shipper', label: 'Transporteurs', icon: Icons.local_shipping_rounded),
+    (value: 'admin', label: 'Admins', icon: Icons.shield_outlined),
+    (value: 'super_admin', label: 'Fondateur', icon: Icons.admin_panel_settings_outlined),
+  ];
 
   @override
   void initState() {
@@ -47,6 +56,11 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
     super.dispose();
   }
 
+  String get _audienceParam {
+    if (_audience.contains('all')) return 'all';
+    return _audience.join(',');
+  }
+
   Future<void> _sendBroadcast() async {
     final title = _titleController.text.trim();
     final message = _messageController.text.trim();
@@ -72,16 +86,22 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
         await ref.read(broadcastServiceProvider).sendBroadcast(
               title: title,
               message: message,
+              audience: _audienceParam,
             );
       }
       _titleController.clear();
       _messageController.clear();
-      setState(() => _editing = null);
+      setState(() {
+        _editing = null;
+        _audience
+          ..clear()
+          ..add('all');
+      });
       ref.invalidate(broadcastsProvider);
       _snack(
         wasEditing
             ? 'Annonce mise à jour'
-            : 'Annonce envoyée à tous les utilisateurs',
+            : 'Annonce envoyée à ${_audienceLabel(_audienceParam)}',
         AppTheme.accentColor,
       );
     } catch (e) {
@@ -89,6 +109,15 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
+  }
+
+  String _audienceLabel(String param) {
+    if (param == 'all') return 'tout le monde';
+    final labels = param
+        .split(',')
+        .map((r) => _audienceOptions.firstWhere((o) => o.value == r).label)
+        .join(', ');
+    return labels;
   }
 
   void _startEdit(Broadcast broadcast) {
@@ -245,6 +274,46 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
     ];
   }
 
+  Widget _buildAudienceSelector(bool editing) {
+    if (editing) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Cibler', style: AppTheme.caption),
+        const SizedBox(height: AppTheme.spaceXs),
+        Wrap(
+          spacing: AppTheme.spaceSm,
+          runSpacing: AppTheme.spaceXs,
+          children: [
+            for (final option in _audienceOptions)
+              ChoiceChip(
+                avatar: Icon(option.icon, size: 18),
+                label: Text(option.label),
+                selected: _audience.contains(option.value),
+                onSelected: (_) {
+                  setState(() {
+                    if (option.value == 'all') {
+                      _audience
+                        ..clear()
+                        ..add('all');
+                    } else {
+                      _audience.remove('all');
+                      if (!_audience.add(option.value)) {
+                        _audience.remove(option.value);
+                      }
+                      if (_audience.isEmpty) _audience.add('all');
+                    }
+                  });
+                },
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildComposer() {
     final editing = _editing != null;
     return GlassCard(
@@ -265,8 +334,8 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
                   editing
                       ? 'Modifier l\'annonce'
                       : _currentRole == 'super_admin'
-                          ? 'Envoyer une annonce à tous (Fondateur)'
-                          : 'Envoyer une annonce à tous',
+                          ? 'Envoyer une annonce (Fondateur)'
+                          : 'Envoyer une annonce',
                   style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
@@ -292,6 +361,8 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
               prefixIcon: Icon(Icons.campaign_outlined),
             ),
           ),
+          const SizedBox(height: AppTheme.spaceMd),
+          _buildAudienceSelector(editing),
           const SizedBox(height: AppTheme.spaceMd),
           FilledButton.icon(
             onPressed: _isSending ? null : _sendBroadcast,

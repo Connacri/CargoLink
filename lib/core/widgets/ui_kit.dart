@@ -9,6 +9,7 @@ export 'animations.dart';
 export 'fade_in_scroll.dart';
 export 'glass_card.dart';
 export 'gradient_sliver_header.dart';
+export 'logout_button.dart';
 export 'paginated_list.dart';
 export 'paged_sliver.dart';
 export 'shimmer.dart';

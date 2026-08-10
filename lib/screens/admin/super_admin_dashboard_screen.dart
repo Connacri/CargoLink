@@ -65,10 +65,22 @@ class _SuperAdminDashboardScreenState
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            const GradientSliverHeader(
+            GradientSliverHeader(
               title: 'Fondateur',
               subtitle: 'Contrôle total de la plateforme',
               icon: Icons.admin_panel_settings_outlined,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'Annonces',
+                    icon: const Icon(Icons.campaign, color: Colors.white),
+                    onPressed: () =>
+                        Navigator.of(context).pushNamed('/broadcast'),
+                  ),
+                  const LogoutIconButton(),
+                ],
+              ),
             ),
             const SliverToBoxAdapter(child: _StatsOverview()),
             const SliverToBoxAdapter(

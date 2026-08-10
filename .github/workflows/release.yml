@@ -39,8 +39,14 @@ jobs:
           fi
           COUNT=${COUNT:-0}
           NEW_PATCH=$((PATC + COUNT))
+          # Android versionCode MUST strictly increase between releases or the
+          # update is rejected as a downgrade/same-version. Total commit count
+          # is monotonic (the per-release delta was 1 every time, so every APK
+          # shipped versionCode=1). Use total commits for `build`.
+          TOTAL=$(git rev-list --count HEAD 2>/dev/null)
+          TOTAL=${TOTAL:-0}
           echo "version=${MAJ}.${MIN}.${NEW_PATCH}" >> "$GITHUB_OUTPUT"
-          echo "build=${COUNT}" >> "$GITHUB_OUTPUT"
+          echo "build=${TOTAL}" >> "$GITHUB_OUTPUT"
 
   android:
     name: Android APK (signed)

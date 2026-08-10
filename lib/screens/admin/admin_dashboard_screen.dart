@@ -68,11 +68,17 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             title: 'Administration',
             subtitle: 'Vérification, litiges et revenus',
             icon: Icons.shield_outlined,
-            trailing: IconButton(
-              tooltip: 'Annonces',
-              icon: const Icon(Icons.campaign, color: Colors.white),
-              onPressed: () =>
-                  Navigator.of(context).pushNamed('/broadcast'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: 'Annonces',
+                  icon: const Icon(Icons.campaign, color: Colors.white),
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed('/broadcast'),
+                ),
+                const LogoutIconButton(),
+              ],
             ),
             bottom: TabBar(
               controller: _tabController,

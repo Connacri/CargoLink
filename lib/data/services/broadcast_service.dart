@@ -34,11 +34,26 @@ class BroadcastService {
   }
 
   /// Get the broadcast feed (in-app) for any authenticated user.
-  Future<List<Broadcast>> getBroadcasts({int limit = 50, int offset = 0}) async {
+  ///
+  /// [role] filters announcements to those targeting the caller's role
+  /// (`audience = 'all'` or a role list containing [role]). `admin` and
+  /// `super_admin` see every announcement so they can manage them.
+  Future<List<Broadcast>> getBroadcasts({
+    String? role,
+    int limit = 50,
+    int offset = 0,
+  }) async {
     try {
-      final response = await SupabaseConfig.client
-          .from('broadcasts')
-          .select()
+      var query = SupabaseConfig.client.from('broadcasts').select();
+
+      if (role != null &&
+          role != 'admin' &&
+          role != 'super_admin' &&
+          role != 'all') {
+        query = query.or('audience.eq.all,audience.ilike.%$role%');
+      }
+
+      final response = await query
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
 

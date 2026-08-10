@@ -149,12 +149,18 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               title: 'CargoLink',
               subtitle: 'Trouvez les meilleurs micro-importateurs pour vos commandes',
               icon: Icons.airplanemode_active,
-              trailing: GestureDetector(
-                onTap: () => _showNotificationsSheet(context),
-                child: const Padding(
-                  padding: EdgeInsets.only(right: 16),
-                  child: _UnreadBadge(),
-                ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () => _showNotificationsSheet(context),
+                    child: const Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: _UnreadBadge(),
+                    ),
+                  ),
+                  const LogoutIconButton(),
+                ],
               ),
             ),
             SliverToBoxAdapter(
@@ -706,6 +712,7 @@ class NotificationsSheet extends ConsumerWidget {
     }
 
     final notifications = ref.watch(notificationStreamProvider(userId));
+    final broadcasts = ref.watch(broadcastsProvider);
 
     return notifications.when(
       data: (notifs) {
@@ -732,35 +739,96 @@ class NotificationsSheet extends ConsumerWidget {
               ),
             ),
             Expanded(
-              child: notifs.isEmpty
-                  ? const Center(child: Text('Aucune notification'))
-                  : ListView.builder(
-                      itemCount: notifs.length,
-                      itemBuilder: (context, index) {
-                        final notif = notifs[index];
-                        return ListTile(
-                          title: Text(notif.title),
-                          subtitle: Text(notif.message),
-                          trailing: !notif.isRead
-                              ? CircleAvatar(
-                                  radius: 4,
-                                  backgroundColor: AppTheme.primaryColor,
-                                )
-                              : null,
-                          onTap: () {
-                            ref
-                                .read(notificationServiceProvider)
-                                .markAsRead(notif.id);
-                          },
-                        );
-                      },
+              child: ListView(
+                children: [
+                  _BroadcastFeedSection(broadcasts: broadcasts),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: Text(
+                      'Mes notifications',
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
+                  ),
+                  if (notifs.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(child: Text('Aucune notification')),
+                    )
+                  else
+                    for (final notif in notifs)
+                      ListTile(
+                        title: Text(notif.title),
+                        subtitle: Text(notif.message),
+                        trailing: !notif.isRead
+                            ? CircleAvatar(
+                                radius: 4,
+                                backgroundColor: AppTheme.primaryColor,
+                              )
+                            : null,
+                        onTap: () {
+                          ref
+                              .read(notificationServiceProvider)
+                              .markAsRead(notif.id);
+                        },
+                      ),
+                ],
+              ),
             ),
           ],
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(child: Text('Erreur: $error')),
+    );
+  }
+}
+
+/// Announcements targeted at the current role, shown at the top of the
+/// notifications sheet.
+class _BroadcastFeedSection extends ConsumerWidget {
+  const _BroadcastFeedSection({required this.broadcasts});
+
+  final AsyncValue<List<Broadcast>> broadcasts;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return broadcasts.when(
+      data: (items) {
+        if (items.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Row(
+                children: [
+                  Icon(Icons.campaign_rounded,
+                      size: 18, color: AppTheme.primaryColor),
+                  SizedBox(width: 8),
+                  Text(
+                    'Annonces',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+            for (final broadcast in items.take(5))
+              ListTile(
+                leading: const Icon(Icons.campaign_rounded,
+                    color: AppTheme.primaryColor),
+                title: Text(broadcast.title),
+                subtitle: Text(
+                  broadcast.message,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                isThreeLine: false,
+              ),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (e, s) => const SizedBox.shrink(),
     );
   }
 }

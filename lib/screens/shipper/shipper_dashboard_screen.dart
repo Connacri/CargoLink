@@ -204,10 +204,17 @@ class _ShipperDashboardScreenState
               subtitle:
                   '${shipper.user?.fullName ?? 'Espace expéditeur'}  •  ★ ${shipper.ratingDisplay}',
               icon: Icons.local_shipping_rounded,
-              trailing: IconButton(
-                tooltip: 'Publier une offre',
-                icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                onPressed: () => _showPublishDialog(shipper.id),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'Publier une offre',
+                    icon: const Icon(Icons.add_circle_outline,
+                        color: Colors.white),
+                    onPressed: () => _showPublishDialog(shipper.id),
+                  ),
+                  const LogoutIconButton(),
+                ],
               ),
             ),
             SliverToBoxAdapter(

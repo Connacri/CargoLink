@@ -402,7 +402,8 @@ final broadcastServiceProvider = Provider<BroadcastService>((ref) {
 
 final broadcastsProvider = FutureProvider<List<Broadcast>>((ref) async {
   final broadcastService = ref.watch(broadcastServiceProvider);
-  return broadcastService.getBroadcasts();
+  final user = await ref.watch(currentUserProvider.future);
+  return broadcastService.getBroadcasts(role: user?.role);
 });
 
 // ============================================================================
