@@ -24,9 +24,12 @@ class AccountGateScreen extends ConsumerWidget {
     return user.when(
       data: (userData) {
         if (userData == null) {
-          // Signed in (authState says so) but no profile row yet: this is a
-          // brand-new user (e.g. first Google sign-in) who must pick a role.
-          return const RoleSelectionScreen(firstTime: true);
+          // Signed in (authState says so) but the profile provider returned
+          // null. This can be a brand-new user (e.g. first Google sign-in) who
+          // must pick a role, OR a transient profile-fetch failure. Re-verify
+          // so a returning user who already has a role never lands on the role
+          // picker again.
+          return _GateRoleDecider(authService: ref.read(authServiceProvider));
         }
 
         // Pending permanent deletion.
@@ -53,6 +56,45 @@ class AccountGateScreen extends ConsumerWidget {
       loading: () => const _GateLoading(),
       error: (e, s) => _GateError(message: 'Erreur: $e'),
     );
+  }
+}
+
+/// Re-checks whether a profile really exists before showing the role picker.
+class _GateRoleDecider extends ConsumerStatefulWidget {
+  final AuthService authService;
+  const _GateRoleDecider({required this.authService});
+
+  @override
+  ConsumerState<_GateRoleDecider> createState() => _GateRoleDeciderState();
+}
+
+class _GateRoleDeciderState extends ConsumerState<_GateRoleDecider> {
+  bool _checked = false;
+  bool _hasProfile = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _verify();
+  }
+
+  Future<void> _verify() async {
+    final profile = await widget.authService.getCurrentUserProfile();
+    if (!mounted) return;
+    if (profile != null) {
+      // A profile exists but the provider failed transiently. Invalidate so
+      // the parent gate re-routes straight to home — never the role picker.
+      _hasProfile = true;
+      ref.invalidate(currentUserProvider);
+      ref.invalidate(currentShipperProvider);
+    }
+    setState(() => _checked = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_checked || _hasProfile) return const _GateLoading();
+    return const RoleSelectionScreen(firstTime: true);
   }
 }
 

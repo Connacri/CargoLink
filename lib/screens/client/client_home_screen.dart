@@ -5,6 +5,7 @@ import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../shipper/shipper_public_profile_screen.dart';
 
 /// Lazy paged source for active shipments, keyed by the active filters.
 final clientShipmentsPagerProvider = StateNotifierProvider.family<
@@ -521,6 +522,51 @@ class _ShipmentCard extends ConsumerWidget {
                 ),
             ],
           ),
+          const SizedBox(height: AppTheme.spaceMd),
+          if (shipment.shipper != null)
+            InkWell(
+              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ShipperPublicProfileScreen(
+                    shipperId: shipment.shipper!.id,
+                  ),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppTheme.spaceXs,
+                ),
+                child: Row(
+                  children: [
+                    GradientAvatar(
+                      initial: shipment.shipper!.user?.fullName,
+                      imageUrl: shipment.shipper!.user?.profilePictureUrl,
+                      radius: 18,
+                    ),
+                    const SizedBox(width: AppTheme.spaceSm),
+                    Expanded(
+                      child: Text(
+                        shipment.shipper!.user?.fullName ?? 'Expéditeur',
+                        style: AppTheme.body
+                            .copyWith(fontWeight: FontWeight.w700),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (shipment.shipper!.isVerified) ...[
+                      const SizedBox(width: 6),
+                      const VerifiedBadge(),
+                    ],
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: AppTheme.textMutedColor,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           const SizedBox(height: AppTheme.spaceMd),
           Row(
             children: [

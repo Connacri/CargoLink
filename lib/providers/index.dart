@@ -7,6 +7,7 @@ import '../data/services/broadcast_service.dart';
 import '../data/services/shipper_shipment_service.dart';
 import '../data/services/booking_payment_service.dart';
 import '../data/services/tracking_dispute_service.dart';
+import '../data/services/review_service.dart';
 import '../data/services/storage_service.dart';
 import '../data/services/realtime_service.dart';
 import '../data/services/v2_service.dart';
@@ -222,10 +223,58 @@ final revenueStatsProvider = FutureProvider.family<Map<String, dynamic>?,
   );
 });
 
+final allTransactionsProvider = FutureProvider<List<TransactionItem>>(
+    (ref) async {
+  final paymentService = ref.watch(paymentServiceProvider);
+  return paymentService.getAllTransactions();
+});
+
+final platformFeeSummaryProvider =
+    FutureProvider<Map<String, dynamic>?>((ref) async {
+  final paymentService = ref.watch(paymentServiceProvider);
+  return paymentService.getPlatformFeeSummary();
+});
+
+final shipperPlatformFeesProvider =
+    FutureProvider.family<List<PlatformFee>, String>((ref, shipperId) async {
+  final paymentService = ref.watch(paymentServiceProvider);
+  return paymentService.getShipperPlatformFees(shipperId);
+});
+
 final shipperEarningsProvider =
     FutureProvider.family<double, String>((ref, shipperId) async {
   final paymentService = ref.watch(paymentServiceProvider);
   return paymentService.getShipperEarnings(shipperId);
+});
+
+// ============================================================================
+// REVIEW PROVIDERS
+// ============================================================================
+
+final reviewServiceProvider = Provider<ReviewService>((ref) {
+  return ReviewService();
+});
+
+final hasReviewedProvider =
+    FutureProvider.family<bool, String>((ref, bookingId) async {
+  final reviewService = ref.watch(reviewServiceProvider);
+  return reviewService.hasReviewed(bookingId);
+});
+
+final shipperReviewsProvider =
+    FutureProvider.family<List<Review>, String>((ref, shipperId) async {
+  final reviewService = ref.watch(reviewServiceProvider);
+  return reviewService.getShipperReviews(shipperId: shipperId);
+});
+
+final shipperBookingsProvider = FutureProvider.family<List<Booking>,
+    ({String shipperId, int limit, int offset})>((ref, params) async {
+  final bookingService = ref.watch(bookingServiceProvider);
+  return bookingService.getShipperBookings(
+    shipperId: params.shipperId,
+    limit: params.limit,
+    offset: params.offset,
+  );
 });
 
 // ============================================================================

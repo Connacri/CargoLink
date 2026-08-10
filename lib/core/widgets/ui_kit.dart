@@ -12,4 +12,6 @@ export 'gradient_sliver_header.dart';
 export 'logout_button.dart';
 export 'paginated_list.dart';
 export 'paged_sliver.dart';
+export 'rate_shipper_sheet.dart';
 export 'shimmer.dart';
+export 'star_rating.dart';

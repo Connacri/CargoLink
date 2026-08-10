@@ -253,7 +253,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
 // BOOKING CARD
 // ============================================================================
 
-class _BookingCard extends StatelessWidget {
+class _BookingCard extends ConsumerWidget {
   final Booking booking;
   final VoidCallback onTrack;
   final VoidCallback? onCancel;
@@ -264,12 +264,55 @@ class _BookingCard extends StatelessWidget {
     this.onCancel,
   });
 
+  Future<void> _rateShipper(BuildContext context, WidgetRef ref) async {
+    final shipment = booking.shipment;
+    final shipperId = shipment?.shipperId;
+    if (shipment == null || shipperId == null) {
+      if (context.mounted) {
+        await showAppErrorDialog(
+          context,
+          message: 'Impossible de noter : expéditeur introuvable',
+        );
+      }
+      return;
+    }
+    final clientId = ref.read(authServiceProvider).currentUserId;
+    if (clientId == null) return;
+
+    final submitted = await showRateShipperSheet(
+      context,
+      shipperName: shipment.shipper?.user?.fullName ?? 'l\'expéditeur',
+      onSubmit: (rating, comment) async {
+        await ref.read(reviewServiceProvider).submitReview(
+              bookingId: booking.id,
+              shipmentId: booking.shipmentId,
+              shipperId: shipperId,
+              clientId: clientId,
+              rating: rating,
+              comment: comment,
+            );
+        ref.invalidate(hasReviewedProvider(booking.id));
+      },
+    );
+
+    if (submitted && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Merci pour votre avis !'),
+          backgroundColor: AppTheme.accentColor,
+        ),
+      );
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final status = BookingStatusExt.fromString(booking.status);
     final route = booking.shipment != null
         ? '${booking.shipment!.originCountry} → ${booking.shipment!.destinationCity}'
         : null;
+    final delivered = booking.status == 'delivered';
+    final rated = ref.watch(hasReviewedProvider(booking.id)).valueOrNull;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
@@ -359,6 +402,23 @@ class _BookingCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (delivered) ...[
+              const SizedBox(height: AppTheme.spaceMd),
+              FilledButton.icon(
+                onPressed: rated == true ? null : () => _rateShipper(context, ref),
+                icon: Icon(
+                  rated == true
+                      ? Icons.check_circle_outline_rounded
+                      : Icons.star_rounded,
+                  size: 18,
+                ),
+                label: Text(
+                  rated == true
+                      ? 'Expéditeur noté'
+                      : 'Noter l\'expéditeur',
+                ),
+              ),
+            ],
             const SizedBox(height: AppTheme.spaceMd),
             Row(
               children: [

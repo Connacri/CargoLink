@@ -7,6 +7,7 @@ import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
+import 'shipper_stats_detail_screen.dart';
 
 // ============================================================================
 // PAGINATED PROVIDERS (local to this file)
@@ -98,6 +99,18 @@ class _ShipperDashboardScreenState
   Widget build(BuildContext context) {
     final shipper = ref.watch(currentShipperProvider);
 
+    // Robust initial load: whenever the shipper identity resolves (e.g. right
+    // after a sign-in), (re)load the first page of the shipments pager. This
+    // covers the case where the FutureProvider is still loading when
+    // initState/didChangeDependencies run, so published offers always appear.
+    ref.listen(currentShipperProvider, (previous, next) {
+      final id = next.valueOrNull?.id;
+      if (id != null && id != _lastShipperId) {
+        _lastShipperId = id;
+        ref.read(shipperShipmentsPagerProvider(id).notifier).loadInitial();
+      }
+    });
+
     return shipper.when(
       data: (shipperData) {
         if (shipperData == null || !shipperData.isVerified) {
@@ -181,6 +194,22 @@ class _ShipperDashboardScreenState
 
   Widget _buildDashboard(Shipper shipper) {
     final pager = ref.watch(shipperShipmentsPagerProvider(shipper.id));
+
+    // Live refresh: whenever a shipment of this shipper changes on the server
+    // (e.g. a client books and consumes kg), reload the list and stats so the
+    // remaining weight updates instantly.
+    ref.listen(
+      tableChangesProvider(('shipments', 'shipper_id', shipper.id)),
+      (previous, next) {
+        if (next.hasValue) {
+          ref
+              .read(shipperShipmentsPagerProvider(shipper.id).notifier)
+              .refresh();
+          ref.invalidate(shipperStatsProvider(shipper.id));
+          ref.invalidate(shipperEarningsProvider(shipper.id));
+        }
+      },
+    );
 
     final filtered = _statusFilter == null
         ? null
@@ -277,6 +306,17 @@ class _ShipperDashboardScreenState
     final active =
         (stats.valueOrNull?['active_shipments'] as num?)?.toInt() ?? 0;
 
+    void open(ShipperStatsDetailType type) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ShipperStatsDetailScreen(
+            shipperId: shipper.id,
+            type: type,
+          ),
+        ),
+      );
+    }
+
     return Column(
       children: [
         Padding(
@@ -294,6 +334,7 @@ class _ShipperDashboardScreenState
                   value: _formatCompact(revenue),
                   icon: Icons.payments_outlined,
                   color: AppTheme.accentColor,
+                  onTap: () => open(ShipperStatsDetailType.revenue),
                 ),
               ),
               const SizedBox(width: AppTheme.spaceSm),
@@ -303,6 +344,7 @@ class _ShipperDashboardScreenState
                   value: '$totalOffers',
                   icon: Icons.local_shipping_rounded,
                   color: AppTheme.primaryColor,
+                  onTap: () => open(ShipperStatsDetailType.shipments),
                 ),
               ),
             ],
@@ -323,6 +365,7 @@ class _ShipperDashboardScreenState
                   value: '$totalBookings',
                   icon: Icons.receipt_long_rounded,
                   color: AppTheme.infoColor,
+                  onTap: () => open(ShipperStatsDetailType.bookings),
                 ),
               ),
               const SizedBox(width: AppTheme.spaceSm),
@@ -332,6 +375,7 @@ class _ShipperDashboardScreenState
                   value: '$active',
                   icon: Icons.play_circle_outline_rounded,
                   color: Colors.amber,
+                  onTap: () => open(ShipperStatsDetailType.active),
                 ),
               ),
             ],
@@ -635,16 +679,19 @@ class _StatCard extends StatelessWidget {
     required this.value,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
   final String label;
   final String value;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return GlassCard(
+      onTap: onTap,
       padding: const EdgeInsets.symmetric(
         vertical: AppTheme.spaceMd,
         horizontal: AppTheme.spaceSm,
@@ -857,6 +904,16 @@ class _ActiveShipmentsScreenState extends ConsumerState<ActiveShipmentsScreen> {
   Widget build(BuildContext context) {
     final shipper = ref.watch(currentShipperProvider);
 
+    // Robust initial load (see ShipperDashboardScreen) so offers always show
+    // after a fresh sign-in.
+    ref.listen(currentShipperProvider, (previous, next) {
+      final id = next.valueOrNull?.id;
+      if (id != null && id != _lastShipperId) {
+        _lastShipperId = id;
+        ref.read(shipperShipmentsPagerProvider(id).notifier).loadInitial();
+      }
+    });
+
     return shipper.when(
       data: (shipperData) {
         if (shipperData == null || !shipperData.isVerified) {
@@ -979,10 +1036,14 @@ class _ShipperShipmentDetailScreenState
 
   @override
   Widget build(BuildContext context) {
-    final shipment = widget.shipment;
+    // Watch the live shipment so kg values refresh instantly when a client
+    // books/reserves weight; falls back to the snapshot passed in.
+    final live = ref.watch(shipmentByIdProvider(widget.shipment.id)).valueOrNull;
+    final shipment = live ?? widget.shipment;
     final pager = ref.watch(shipperShipmentBookingsPagerProvider(shipment.id));
 
-    // Live refresh: new/changed bookings for this shipment reload the list.
+    // Live refresh: new/changed bookings for this shipment reload the list and
+    // invalidate the live shipment (kg/progress) too.
     ref.listen(
       tableChangesProvider(('bookings', 'shipment_id', shipment.id)),
       (previous, next) {
@@ -990,6 +1051,7 @@ class _ShipperShipmentDetailScreenState
           ref
               .read(shipperShipmentBookingsPagerProvider(shipment.id).notifier)
               .refresh();
+          ref.invalidate(shipmentByIdProvider(shipment.id));
         }
       },
     );

@@ -131,6 +131,18 @@ class TrackingScreen extends ConsumerWidget {
                   child: _buildHeader(bookingData),
                 ),
               ),
+              if (bookingData.status == 'delivered')
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      0,
+                    ),
+                    child: _RatePrompt(booking: bookingData),
+                  ),
+                ),
               ...tracking.when<List<Widget>>(
                 data: (events) => events.isEmpty
                     ? [SliverToBoxAdapter(child: _buildEmptyTimeline())]
@@ -474,6 +486,77 @@ class TrackingScreen extends ConsumerWidget {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+/// Prompts the client to rate the shipper once the parcel is delivered.
+class _RatePrompt extends ConsumerWidget {
+  final Booking booking;
+
+  const _RatePrompt({Key? key, required this.booking}) : super(key: key);
+
+  Future<void> _rate(BuildContext context, WidgetRef ref) async {
+    final shipment = booking.shipment;
+    final shipperId = shipment?.shipperId;
+    if (shipment == null || shipperId == null) return;
+    final clientId = ref.read(authServiceProvider).currentUserId;
+    if (clientId == null) return;
+
+    final submitted = await showRateShipperSheet(
+      context,
+      shipperName: shipment.shipper?.user?.fullName ?? 'l\'expéditeur',
+      onSubmit: (rating, comment) async {
+        await ref.read(reviewServiceProvider).submitReview(
+              bookingId: booking.id,
+              shipmentId: booking.shipmentId,
+              shipperId: shipperId,
+              clientId: clientId,
+              rating: rating,
+              comment: comment,
+            );
+        ref.invalidate(hasReviewedProvider(booking.id));
+      },
+    );
+
+    if (submitted && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Merci pour votre avis !'),
+          backgroundColor: AppTheme.accentColor,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rated = ref.watch(hasReviewedProvider(booking.id)).valueOrNull;
+
+    return GlassCard(
+      child: Row(
+        children: [
+          const AnimatedIconDot(
+            icon: Icons.star_rounded,
+            color: Colors.amber,
+          ),
+          const SizedBox(width: AppTheme.spaceSm + 4),
+          Expanded(
+            child: Text(
+              rated == true
+                  ? 'Expéditeur noté. Merci !'
+                  : 'Colis reçu ? Notez votre expéditeur.',
+              style: AppTheme.body.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+          const SizedBox(width: AppTheme.spaceSm),
+          FilledButton.icon(
+            onPressed: rated == true ? null : () => _rate(context, ref),
+            icon: const Icon(Icons.star_rounded, size: 18),
+            label: Text(rated == true ? 'Noté' : 'Noter'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -611,6 +611,94 @@ class Payment {
 }
 
 // ============================================================================
+// TRANSACTION ITEM MODEL (Paiement enrichi pour la comptabilité)
+// ============================================================================
+
+class TransactionItem {
+  final Payment payment;
+  final String? shipmentRoute;
+  final String? clientName;
+  final String? clientAvatar;
+  final String? shipperName;
+  final String? shipperAvatar;
+  final String? productName;
+
+  TransactionItem({
+    required this.payment,
+    this.shipmentRoute,
+    this.clientName,
+    this.clientAvatar,
+    this.shipperName,
+    this.shipperAvatar,
+    this.productName,
+  });
+
+  factory TransactionItem.fromJson(Map<String, dynamic> json) {
+    final booking = json['bookings'] as Map<String, dynamic>?;
+    final shipment = booking?['shipments'] as Map<String, dynamic>?;
+    final shipper = shipment?['shippers'] as Map<String, dynamic>?;
+    final shipperUser = shipper?['users'] as Map<String, dynamic>?;
+    final client = booking?['users'] as Map<String, dynamic>?;
+
+    return TransactionItem(
+      payment: Payment.fromJson(json),
+      shipmentRoute: (shipment?['origin_country'] != null &&
+              shipment?['destination_city'] != null)
+          ? '${shipment!['origin_country']} → ${shipment['destination_city']}'
+          : null,
+      clientName: client?['full_name'] as String?,
+      clientAvatar: client?['profile_picture_url'] as String?,
+      shipperName: shipperUser?['full_name'] as String?,
+      shipperAvatar: shipperUser?['profile_picture_url'] as String?,
+      productName: booking?['product_name'] as String?,
+    );
+  }
+}
+
+// ============================================================================
+// PLATFORM FEE MODEL (Commission plateforme / dette expéditeur)
+// ============================================================================
+
+class PlatformFee {
+  final String id;
+  final String bookingId;
+  final String shipmentId;
+  final String shipperId;
+  final double amount;
+  final String status; // pending, paid
+  final DateTime? paidAt;
+  final DateTime createdAt;
+
+  PlatformFee({
+    required this.id,
+    required this.bookingId,
+    required this.shipmentId,
+    required this.shipperId,
+    required this.amount,
+    required this.status,
+    this.paidAt,
+    required this.createdAt,
+  });
+
+  factory PlatformFee.fromJson(Map<String, dynamic> json) {
+    return PlatformFee(
+      id: json['id'] as String,
+      bookingId: json['booking_id'] as String,
+      shipmentId: json['shipment_id'] as String,
+      shipperId: json['shipper_id'] as String,
+      amount: (json['amount'] as num).toDouble(),
+      status: json['status'] as String,
+      paidAt: json['paid_at'] != null
+          ? DateTime.tryParse(json['paid_at'] as String)
+          : null,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+
+  bool get isPaid => status == 'paid';
+}
+
+// ============================================================================
 // BROADCAST MODEL (Annonce dépêchée à tous les utilisateurs)
 // ============================================================================
 
@@ -649,6 +737,58 @@ class Broadcast {
       'message': message,
       'audience': audience,
       'created_by': createdBy,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+}
+
+// ============================================================================
+// REVIEW MODEL (Notation étoile d'un client pour un expéditeur)
+// ============================================================================
+
+class Review {
+  final String id;
+  final String bookingId;
+  final String shipmentId;
+  final String shipperId;
+  final String clientId;
+  final int rating; // 1-5
+  final String? comment;
+  final DateTime createdAt;
+
+  Review({
+    required this.id,
+    required this.bookingId,
+    required this.shipmentId,
+    required this.shipperId,
+    required this.clientId,
+    required this.rating,
+    this.comment,
+    required this.createdAt,
+  });
+
+  factory Review.fromJson(Map<String, dynamic> json) {
+    return Review(
+      id: json['id'] as String,
+      bookingId: json['booking_id'] as String,
+      shipmentId: json['shipment_id'] as String,
+      shipperId: json['shipper_id'] as String,
+      clientId: json['client_id'] as String,
+      rating: (json['rating'] as num).toInt(),
+      comment: json['comment'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'booking_id': bookingId,
+      'shipment_id': shipmentId,
+      'shipper_id': shipperId,
+      'client_id': clientId,
+      'rating': rating,
+      'comment': comment,
       'created_at': createdAt.toIso8601String(),
     };
   }

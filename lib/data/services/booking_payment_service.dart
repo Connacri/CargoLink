@@ -170,6 +170,30 @@ class BookingService {
     }
   }
 
+  /// Get all bookings belonging to a shipper (across all their shipments).
+  Future<List<Booking>> getShipperBookings({
+    required String shipperId,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    try {
+      final response = await _supabase
+          .from('bookings')
+          .select(
+              '*, shipments!inner(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
+          .eq('shipments.shipper_id', shipperId)
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      return (response as List)
+          .map((item) => Booking.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting shipper bookings: $e');
+      return [];
+    }
+  }
+
   /// Get all bookings (admin / super_admin only, enforced by RLS).
   Future<List<Booking>> getAllBookings(
       {int limit = 200, int offset = 0}) async {
@@ -563,6 +587,86 @@ class PaymentService {
     } catch (e) {
       _logger.e('Error getting user payments: $e');
       return [];
+    }
+  }
+
+  /// All payments enriched with booking/client/shipper details for the
+  /// "Transactions" accounting screen (admin / super_admin only, RLS).
+  Future<List<TransactionItem>> getAllTransactions(
+      {int limit = 200, int offset = 0}) async {
+    try {
+      final response = await _supabase
+          .from('payments')
+          .select(
+              '*, bookings!inner(*, users!bookings_client_id_fkey(full_name, profile_picture_url), shipments(*, shippers(*, users!shippers_user_id_fkey(full_name, profile_picture_url))))')
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      return (response as List)
+          .map((item) => TransactionItem.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting all transactions: $e');
+      return [];
+    }
+  }
+
+  /// Platform fees (commission) for a given shipper.
+  Future<List<PlatformFee>> getShipperPlatformFees(String shipperId) async {
+    try {
+      final response = await _supabase
+          .from('platform_fees')
+          .select()
+          .eq('shipper_id', shipperId)
+          .order('created_at', ascending: false);
+
+      return (response as List)
+          .map((item) => PlatformFee.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting shipper platform fees: $e');
+      return [];
+    }
+  }
+
+  /// Global platform commission summary (admin): collected vs outstanding debt.
+  Future<Map<String, dynamic>?> getPlatformFeeSummary() async {
+    try {
+      final fees = await _supabase.from('platform_fees').select('amount,status');
+      final list = fees as List;
+      var collected = 0.0;
+      var pending = 0.0;
+      for (final f in list) {
+        final amount = (f['amount'] as num).toDouble();
+        if (f['status'] == 'paid') {
+          collected += amount;
+        } else {
+          pending += amount;
+        }
+      }
+      return {
+        'collected': collected,
+        'pending': pending,
+        'total': collected + pending,
+      };
+    } catch (e) {
+      _logger.e('Error getting platform fee summary: $e');
+      return null;
+    }
+  }
+
+  /// Mark a shipper's pending platform fees as paid ("payer mes dues").
+  Future<void> payPlatformFees(String shipperId) async {
+    try {
+      await _supabase
+          .from('platform_fees')
+          .update({'status': 'paid', 'paid_at': DateTime.now().toIso8601String()})
+          .eq('shipper_id', shipperId)
+          .eq('status', 'pending');
+      _logger.i('Platform fees paid for shipper: $shipperId');
+    } catch (e) {
+      _logger.e('Error paying platform fees: $e');
+      rethrow;
     }
   }
 }

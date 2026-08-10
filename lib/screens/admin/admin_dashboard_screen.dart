@@ -6,6 +6,8 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
+import 'transactions_screen.dart';
+import 'commission_screen.dart';
 
 // ============================================================================
 // PAGINATED PROVIDERS (local to this screen)
@@ -65,7 +67,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           GradientSliverHeader(
-            title: 'Administration',
+            title: '',//'Administration',
             subtitle: 'Vérification, litiges et revenus',
             icon: Icons.shield_outlined,
             trailing: Row(
@@ -446,7 +448,7 @@ class _DisputeCard extends ConsumerWidget {
                   child: FilledButton.icon(
                     onPressed: () => _resolveInFavorOfClient(context, ref),
                     icon: const Icon(Icons.thumb_up, size: 18),
-                    label: const Text('Rembourser'),
+                    label: FittedBox(child: const Text('Rembourser')),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppTheme.accentColor,
                       minimumSize: const Size(48, 48),
@@ -575,6 +577,11 @@ class _RevenueTab extends ConsumerWidget {
                   color: AppTheme.infoColor,
                   label: 'Transactions',
                   value: transactions.toString(),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const TransactionsScreen(),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -603,6 +610,11 @@ class _RevenueTab extends ConsumerWidget {
                   label:
                       'Commission plateforme (${AppConstants.platformCommissionPercent}%)',
                   value: '${commission.toStringAsFixed(0)} DZD',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const CommissionScreen(),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -661,18 +673,21 @@ class _RevenueRow extends StatelessWidget {
     required this.color,
     required this.label,
     required this.value,
+    this.onTap,
   });
 
   final IconData icon;
   final Color color;
   final String label;
   final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
       child: GlassCard(
+        onTap: onTap,
         child: Row(
           children: [
             AnimatedIconDot(icon: icon, color: color),
@@ -690,6 +705,14 @@ class _RevenueRow extends StatelessWidget {
                 color: color,
               ),
             ),
+            if (onTap != null) ...[
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: AppTheme.textMutedColor,
+              ),
+            ],
           ],
         ),
       ),
