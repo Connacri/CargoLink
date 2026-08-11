@@ -718,6 +718,28 @@ class AuthService {
     }
   }
 
+  /// Whether a profile row exists for the current Firebase user.
+  ///
+  /// Tri-state: `true` = a row exists, `false` = the row definitively does not
+  /// exist, `null` = the lookup failed (transient/network) and the caller must
+  /// not draw a conclusion. Used by the account gate to only offer the role
+  /// picker to genuinely new users (never on a transient error).
+  Future<bool?> hasProfile() async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) return null;
+      final response = await SupabaseConfig.client
+          .from('users')
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle();
+      return response != null;
+    } catch (e) {
+      _logger.e('Error checking profile existence: $e');
+      return null;
+    }
+  }
+
   /// Update user profile.
   Future<User?> updateUserProfile({
     required String userId,

@@ -80,9 +80,9 @@ class BookingService {
               '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*)))')
           .single();
 
-      // Update shipment reserved weight
-      await _shipmentService.updateReservedWeight(shipmentId, allocatedWeight);
-
+      // Reserved weight is accounted by the DB trigger
+      // (trg_bookings_sync_reserved_weight) so it also works for client
+      // sessions, which have no UPDATE policy on shipments.
       _logger.i('Booking created successfully');
 
       // Create payment record
@@ -258,12 +258,8 @@ class BookingService {
       final booking = await getBookingById(bookingId);
       if (booking == null) throw Exception('Booking not found');
 
-      // Reverse reserved weight
-      await _shipmentService.updateReservedWeight(
-        booking.shipmentId,
-        -booking.allocatedWeightKg,
-      );
-
+      // The DB trigger releases the reserved weight on cancellation
+      // (trg_bookings_sync_reserved_weight).
       // Refund payment
       await _paymentService.refundPayment(bookingId);
 

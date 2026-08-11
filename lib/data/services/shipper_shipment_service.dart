@@ -408,33 +408,6 @@ class ShipmentService {
     }
   }
 
-  /// Update reserved weight
-  Future<void> updateReservedWeight(
-    String shipmentId,
-    double weightToAdd,
-  ) async {
-    try {
-      final shipment = await getShipmentById(shipmentId);
-      if (shipment == null) throw Exception('Shipment not found');
-
-      final newReservedWeight = shipment.reservedWeightKg + weightToAdd;
-
-      if (newReservedWeight > shipment.availableWeightKg) {
-        throw Exception('Not enough weight available');
-      }
-
-      await _supabase.from('shipments').update({
-        'reserved_weight_kg': newReservedWeight,
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', shipmentId);
-
-      _logger.i('Reserved weight updated');
-    } catch (e) {
-      _logger.e('Error updating reserved weight: $e');
-      rethrow;
-    }
-  }
-
   /// Calculate allocation weight (rounding logic)
   double calculateAllocationWeight(
     double requestedWeight,

@@ -70,7 +70,8 @@ class _GateRoleDecider extends ConsumerStatefulWidget {
 
 class _GateRoleDeciderState extends ConsumerState<_GateRoleDecider> {
   bool _checked = false;
-  bool _hasProfile = false;
+  bool _showRolePicker = false;
+  int _retries = 0;
 
   @override
   void initState() {
@@ -79,21 +80,38 @@ class _GateRoleDeciderState extends ConsumerState<_GateRoleDecider> {
   }
 
   Future<void> _verify() async {
-    final profile = await widget.authService.getCurrentUserProfile();
+    // Tri-state: true = profile exists, false = definitively no row,
+    // null = transient failure. Only a definitive "no row" may open the role
+    // picker — a returning user who already picked a role must never see it
+    // again (even for a single frame while the provider refreshes).
+    final hasProfile = await widget.authService.hasProfile();
     if (!mounted) return;
-    if (profile != null) {
-      // A profile exists but the provider failed transiently. Invalidate so
-      // the parent gate re-routes straight to home — never the role picker.
-      _hasProfile = true;
+    if (hasProfile == true) {
+      // A profile exists but the provider returned null transiently. Invalidate
+      // so the parent gate re-routes straight to home — never the role picker.
       ref.invalidate(currentUserProvider);
       ref.invalidate(currentShipperProvider);
+      return;
+    }
+    if (hasProfile == false) {
+      setState(() {
+        _checked = true;
+        _showRolePicker = true;
+      });
+      return;
+    }
+    // Indeterminate: stay on the gate and retry instead of guessing.
+    if (_retries < 3) {
+      _retries++;
+      Future.delayed(const Duration(milliseconds: 500), _verify);
+      return;
     }
     setState(() => _checked = true);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_checked || _hasProfile) return const _GateLoading();
+    if (!_checked || !_showRolePicker) return const _GateLoading();
     return const RoleSelectionScreen(firstTime: true);
   }
 }
