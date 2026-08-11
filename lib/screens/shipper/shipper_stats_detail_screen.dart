@@ -565,10 +565,159 @@ class _BookingTile extends ConsumerWidget {
               booking.client?.fullName ?? 'Client',
               style: AppTheme.caption,
             ),
+            const SizedBox(height: AppTheme.spaceMd),
+            _buildActions(context, ref),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildActions(BuildContext context, WidgetRef ref) {
+    final actions = <Widget>[];
+
+    switch (booking.status) {
+      case 'pending':
+        actions.add(
+          FilledButton.icon(
+            onPressed: () => _confirm(context, ref),
+            icon: const Icon(Icons.check_rounded, size: 18),
+            label: const Text('Confirmer'),
+          ),
+        );
+        actions.add(
+          OutlinedButton.icon(
+            onPressed: () => _cancel(context, ref),
+            icon: const Icon(Icons.close_rounded, size: 18),
+            label: const Text('Refuser'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.errorColor,
+            ),
+          ),
+        );
+        break;
+      case 'confirmed':
+        actions.add(
+          FilledButton.icon(
+            onPressed: () => _markShipped(context, ref),
+            icon: const Icon(Icons.flight_takeoff_rounded, size: 18),
+            label: const Text('Marquer expédié'),
+          ),
+        );
+        actions.add(
+          OutlinedButton.icon(
+            onPressed: () => _cancel(context, ref),
+            icon: const Icon(Icons.close_rounded, size: 18),
+            label: const Text('Annuler'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.errorColor,
+            ),
+          ),
+        );
+        break;
+      case 'shipped':
+        actions.add(
+          FilledButton.icon(
+            onPressed: () => _markDelivered(context, ref),
+            icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+            label: const Text('Marquer livré'),
+          ),
+        );
+        break;
+    }
+
+    return Wrap(
+      spacing: AppTheme.spaceSm,
+      runSpacing: AppTheme.spaceSm,
+      children: actions,
+    );
+  }
+
+  Future<void> _runAction(
+    BuildContext context,
+    WidgetRef ref,
+    Future<void> Function() action,
+    String successMessage,
+  ) async {
+    try {
+      await action();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(successMessage)),
+        );
+      }
+      _refresh(ref);
+    } catch (e) {
+      if (context.mounted) {
+        await showAppErrorDialog(context, message: 'Erreur: $e');
+      }
+    }
+  }
+
+  void _confirm(BuildContext context, WidgetRef ref) =>
+      _runAction(context, ref,
+          () => ref.read(bookingServiceProvider).confirmBooking(booking.id),
+          'Commande confirmée');
+
+  void _markShipped(BuildContext context, WidgetRef ref) => _runAction(
+        context,
+        ref,
+        () async {
+          await ref.read(bookingServiceProvider).markAsShipped(booking.id);
+          await ref.read(trackingServiceProvider).addTrackingUpdate(
+                bookingId: booking.id,
+                status: 'departed_origin',
+                notes:
+                    'Colis expédié depuis ${booking.shipment?.originCountry}',
+                location: booking.shipment?.originCountry,
+              );
+          await ref
+              .read(notificationServiceProvider)
+              .notifyClientShipmentDispatched(
+                clientId: booking.clientId,
+                bookingId: booking.id,
+                destination:
+                    booking.shipment?.destinationCity ?? 'destination',
+              );
+        },
+        'Commande marquée comme expédiée',
+      );
+
+  void _markDelivered(BuildContext context, WidgetRef ref) => _runAction(
+        context,
+        ref,
+        () async {
+          await ref.read(bookingServiceProvider).markAsDelivered(booking.id);
+          await ref.read(trackingServiceProvider).addTrackingUpdate(
+                bookingId: booking.id,
+                status: 'delivered',
+                notes: 'Colis livré à ${booking.shipment?.destinationCity}',
+                location: booking.shipment?.destinationCity,
+              );
+          await ref
+              .read(notificationServiceProvider)
+              .notifyClientShipmentDelivered(
+                clientId: booking.clientId,
+                bookingId: booking.id,
+              );
+        },
+        'Commande marquée comme livrée',
+      );
+
+  void _cancel(BuildContext context, WidgetRef ref) => _runAction(
+        context,
+        ref,
+        () => ref.read(bookingServiceProvider).cancelBooking(booking.id),
+        'Commande annulée',
+      );
+
+  void _refresh(WidgetRef ref) {
+    final shipperId = booking.shipment?.shipperId ?? '';
+    if (shipperId.isEmpty) return;
+    ref.read(shipperBookingsPagerProvider(shipperId).notifier).refresh();
+    ref.read(shipperShipmentsPagerProvider(shipperId).notifier).refresh();
+    ref.invalidate(shipperStatsProvider(shipperId));
+    ref.invalidate(shipperEarningsProvider(shipperId));
   }
 }
 

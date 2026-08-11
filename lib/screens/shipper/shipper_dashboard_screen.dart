@@ -1342,6 +1342,7 @@ class _ManageBookingCard extends ConsumerWidget {
       await ref.read(bookingServiceProvider).confirmBooking(booking.id);
       _reload(context, ref);
       _notifyShipper(context, ref);
+      _showSuccess(context, 'Commande confirmée');
     } catch (e) {
       _showError(context, e);
     }
@@ -1362,6 +1363,7 @@ class _ManageBookingCard extends ConsumerWidget {
             destination: booking.shipment?.destinationCity ?? 'destination',
           );
       _reload(context, ref);
+      _showSuccess(context, 'Commande marquée comme expédiée');
     } catch (e) {
       _showError(context, e);
     }
@@ -1381,6 +1383,7 @@ class _ManageBookingCard extends ConsumerWidget {
             bookingId: booking.id,
           );
       _reload(context, ref);
+      _showSuccess(context, 'Commande marquée comme livrée');
     } catch (e) {
       _showError(context, e);
     }
@@ -1390,6 +1393,7 @@ class _ManageBookingCard extends ConsumerWidget {
     try {
       await ref.read(bookingServiceProvider).cancelBooking(booking.id);
       _reload(context, ref);
+      _showSuccess(context, 'Commande annulée');
     } catch (e) {
       _showError(context, e);
     }
@@ -1417,6 +1421,13 @@ class _ManageBookingCard extends ConsumerWidget {
   void _showError(BuildContext context, Object error) {
     if (!context.mounted) return;
     showAppErrorDialog(context, message: 'Erreur: $error');
+  }
+
+  void _showSuccess(BuildContext context, String message) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 }
 
