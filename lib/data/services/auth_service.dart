@@ -883,6 +883,41 @@ class AuthService {
     }
   }
 
+  /// Factory reset (super_admin only). Calls the `admin-reset` edge function.
+  ///
+  /// [mode] is one of:
+  ///   - 'tables'   : wipes all public tables + uploaded files (accounts kept)
+  ///   - 'accounts' : deletes every auth account (Firebase + Supabase Auth)
+  ///   - 'full'     : accounts first, then tables
+  Future<Map<String, dynamic>> resetPlatformData(String mode) async {
+    try {
+      _logger.i('=== Super admin factory reset (mode=$mode) ===');
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('Aucun utilisateur connecté');
+      final adminToken = await user.getIdToken(true);
+      final response = await http.post(
+        Uri.parse('${SupabaseConfig.supabaseUrl}/functions/v1/admin-reset'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'adminToken': adminToken, 'mode': mode}),
+      );
+      _logger.i('admin-reset: HTTP ${response.statusCode}');
+      final body = response.body.isNotEmpty
+          ? (jsonDecode(response.body) as Map<String, dynamic>)
+          : <String, dynamic>{};
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Échec de la réinitialisation (${response.statusCode}): '
+          '${body['error'] ?? response.body}',
+        );
+      }
+      _logger.i('Factory reset completed: $body');
+      return body;
+    } catch (e) {
+      _logger.e('Error resetting platform data: $e');
+      rethrow;
+    }
+  }
+
   /// Platform-wide stats for the founder dashboard.
   Future<Map<String, dynamic>?> getPlatformStats() async {
     try {

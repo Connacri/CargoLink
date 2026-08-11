@@ -93,6 +93,10 @@ class _SuperAdminDashboardScreenState
             ),
             const SliverToBoxAdapter(child: _AdminShortcuts()),
             const SliverToBoxAdapter(
+              child: _SectionTitle(title: 'Zone de danger'),
+            ),
+            const SliverToBoxAdapter(child: _DangerZone()),
+            const SliverToBoxAdapter(
               child: SizedBox(height: AppTheme.spaceXxl),
             ),
           ],
@@ -643,6 +647,177 @@ class _AdminShortcuts extends ConsumerWidget {
               trailing: const Icon(Icons.chevron_right,
                   color: AppTheme.textSecondaryColor),
               onTap: () => Navigator.of(context).pushNamed('/broadcast'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// DANGER ZONE (factory reset)
+// ============================================================================
+
+class _DangerZone extends ConsumerStatefulWidget {
+  const _DangerZone();
+
+  @override
+  ConsumerState<_DangerZone> createState() => _DangerZoneState();
+}
+
+class _DangerZoneState extends ConsumerState<_DangerZone> {
+  bool _busy = false;
+
+  Future<bool> _confirm({
+    required String title,
+    required String message,
+    required String confirmLabel,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: Text(confirmLabel),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
+  }
+
+  Future<void> _runReset(String mode, String title, String message) async {
+    final confirmed =
+        await _confirm(title: title, message: message, confirmLabel: 'Continuer');
+    if (confirmed != true) return;
+
+    setState(() => _busy = true);
+    try {
+      final result =
+          await ref.read(authServiceProvider).resetPlatformData(mode);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Réinitialisation terminée (mode $mode)\n'
+              'Comptes supprimés: ${result['accountsDeleted'] ?? 0}',
+            ),
+            backgroundColor: AppTheme.errorColor,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+      ref.invalidate(platformStatsProvider);
+      ref.invalidate(pagedUsersProvider((role: null)));
+    } catch (e) {
+      if (mounted) await showAppErrorDialog(context, message: 'Erreur: $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _resetTables() => _runReset(
+        'tables',
+        'Vider toutes les tables ?',
+        'Toutes les données de la plateforme seront supprimées : comptes '
+            'profils, expéditeurs, offres, commandes, paiements, avis, '
+            'commissions, notifications et fichiers uploadés.\n\n'
+            'Les comptes d\'authentification (Firebase + Supabase Auth) seront '
+            'conservés : au prochain login, chaque utilisateur devra recréer '
+            'son profil.\n\n'
+            'Cette action est irréversible. Continuer ?',
+      );
+
+  Future<void> _resetAccounts() => _runReset(
+        'accounts',
+        'Supprimer tous les comptes ?',
+        'Tous les comptes d\'authentification (Firebase et Supabase Auth) '
+            'seront définitivement supprimés, y compris le vôtre.\n\n'
+            'Vous serez déconnecté et devrez recréer un compte. Les données des '
+            'tables sont conservées.\n\n'
+            'Cette action est irréversible. Continuer ?',
+      );
+
+  Future<void> _resetFull() => _runReset(
+        'full',
+        'Réinitialisation totale ?',
+        'Tout sera supprimé : toutes les tables, tous les fichiers uploadés, '
+            'et tous les comptes d\'authentification (Firebase + Supabase Auth), '
+            'y compris le vôtre.\n\n'
+            'Après cette action, la plateforme est vide : il faudra recréer un '
+            'compte de zéro (le rôle Fondateur n\'est plus attribué).\n\n'
+            'Cette action est irréversible. Continuer ?',
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+      child: GlassCard(
+        padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            const ListTile(
+              leading: AnimatedIconDot(
+                icon: Icons.warning_amber_rounded,
+                color: AppTheme.errorColor,
+              ),
+              title: Text(
+                'Réinitialisation de la plateforme',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              subtitle: Text(
+                'Actions irréversibles — réservées au Fondateur',
+                style: AppTheme.caption,
+              ),
+            ),
+            const Divider(height: 1, indent: AppTheme.spaceXxl),
+            ListTile(
+              enabled: !_busy,
+              leading: const Icon(Icons.table_view_outlined,
+                  color: AppTheme.warningColor),
+              title: const Text('Vider toutes les tables'),
+              subtitle: const Text('Données + fichiers, comptes conservés'),
+              trailing: const Icon(Icons.chevron_right,
+                  color: AppTheme.textSecondaryColor),
+              onTap: _resetTables,
+            ),
+            const Divider(height: 1, indent: AppTheme.spaceXxl),
+            ListTile(
+              enabled: !_busy,
+              leading: const Icon(Icons.person_off_outlined,
+                  color: AppTheme.warningColor),
+              title: const Text('Supprimer tous les comptes'),
+              subtitle: const Text('Firebase Auth + Supabase Auth'),
+              trailing: const Icon(Icons.chevron_right,
+                  color: AppTheme.textSecondaryColor),
+              onTap: _resetAccounts,
+            ),
+            const Divider(height: 1, indent: AppTheme.spaceXxl),
+            ListTile(
+              enabled: !_busy,
+              leading: const Icon(Icons.delete_forever_outlined,
+                  color: AppTheme.errorColor),
+              title: const Text('Réinitialisation totale'),
+              subtitle: const Text('Tables + fichiers + tous les comptes'),
+              trailing: _busy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.chevron_right,
+                      color: AppTheme.textSecondaryColor),
+              onTap: _resetFull,
             ),
           ],
         ),
