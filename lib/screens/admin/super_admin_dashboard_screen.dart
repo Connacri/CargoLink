@@ -7,6 +7,7 @@ import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 import 'entity_list_screen.dart';
 import 'user_details_screen.dart';
+import 'platform_settings_screen.dart';
 
 /// Founder (super_admin) dashboard — accès total et contrôle de la plateforme :
 /// stats globales, gestion de tous les comptes (rôles, activation,
@@ -92,6 +93,10 @@ class _SuperAdminDashboardScreenState
               child: _SectionTitle(title: 'Modération'),
             ),
             const SliverToBoxAdapter(child: _AdminShortcuts()),
+            const SliverToBoxAdapter(
+              child: _SectionTitle(title: 'Paramètres plateforme'),
+            ),
+            const SliverToBoxAdapter(child: _PlatformSettingsShortcut()),
             const SliverToBoxAdapter(
               child: _SectionTitle(title: 'Zone de danger'),
             ),
@@ -649,6 +654,42 @@ class _AdminShortcuts extends ConsumerWidget {
               onTap: () => Navigator.of(context).pushNamed('/broadcast'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// PLATFORM SETTINGS SHORTCUT
+// ============================================================================
+
+class _PlatformSettingsShortcut extends StatelessWidget {
+  const _PlatformSettingsShortcut();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+      child: GlassCard(
+        padding: EdgeInsets.zero,
+        child: ListTile(
+          leading: const AnimatedIconDot(
+            icon: Icons.tune_rounded,
+            color: AppTheme.primaryColor,
+          ),
+          title: const Text('Frais & paramètres'),
+          subtitle: const Text(
+            'Commission, devise (DZD, EUR, USD, yuan), poids, prix',
+            style: AppTheme.caption,
+          ),
+          trailing:
+              const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const PlatformSettingsScreen(),
+            ),
+          ),
         ),
       ),
     );

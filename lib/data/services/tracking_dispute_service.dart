@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:math';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../../core/config/supabase_config.dart';
@@ -547,6 +549,91 @@ class NotificationService {
     } catch (e) {
       _logger.e('Error listening to notifications: $e');
       return Stream.value([]);
+    }
+  }
+
+  /// Fire a push notification to all devices of [userId] via the `send-push`
+  /// Edge Function (legacy FCM API). Best-effort: a failure never blocks the
+  /// booking flow.
+  Future<void> _sendPush({
+    required String userId,
+    required String title,
+    required String message,
+    Map<String, String> data = const {},
+  }) async {
+    try {
+      await http
+          .post(
+            Uri.parse(
+              '${SupabaseConfig.supabaseUrl}/functions/v1/send-push',
+            ),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'userId': userId,
+              'title': title,
+              'message': message,
+              'data': data,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+    } catch (e) {
+      _logger.e('Error sending push notification: $e');
+    }
+  }
+
+  /// Notify the shipper (by SUPABASE user id) that a new booking arrived on
+  /// one of their shipments, with an in-app notification AND a push so they
+  /// can review the details/photos before confirming.
+  Future<void> notifyShipperNewBooking({
+    required String shipperUserId,
+    required String bookingId,
+    required String productName,
+    required double weightKg,
+    required String route,
+  }) async {
+    try {
+      await createNotification(
+        userId: shipperUserId,
+        type: 'new_booking',
+        title: 'Nouvelle commande reçue',
+        message:
+            '$weightKg kg réservés pour "$productName" · $route. '
+            'Consultez les détails avant de confirmer.',
+        relatedBookingId: bookingId,
+      );
+      await _sendPush(
+        userId: shipperUserId,
+        title: 'Nouvelle commande reçue 🎁',
+        message: '$weightKg kg pour "$productName" · $route',
+        data: {'bookingId': bookingId, 'type': 'new_booking'},
+      );
+    } catch (e) {
+      _logger.e('Error notifying shipper of new booking: $e');
+    }
+  }
+
+  /// Notify the client that the shipper confirmed their booking.
+  Future<void> notifyClientBookingConfirmed({
+    required String clientId,
+    required String bookingId,
+    required String productName,
+  }) async {
+    try {
+      await createNotification(
+        userId: clientId,
+        type: 'booking_confirmed',
+        title: 'Commande confirmée',
+        message: 'Votre commande "$productName" a été confirmée par l\'expéditeur',
+        relatedBookingId: bookingId,
+      );
+      await _sendPush(
+        userId: clientId,
+        title: 'Commande confirmée ✅',
+        message: 'Votre commande "$productName" a été confirmée',
+        data: {'bookingId': bookingId, 'type': 'booking_confirmed'},
+      );
+    } catch (e) {
+      _logger.e('Error notifying client of confirmed booking: $e');
     }
   }
 

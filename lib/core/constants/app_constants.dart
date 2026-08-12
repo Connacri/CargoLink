@@ -22,6 +22,7 @@ class AppConstants {
   
   // Pricing
   static const String defaultCurrency = 'DZD';
+  static const List<String> supportedCurrencies = ['DZD', 'EUR', 'USD', 'CNY'];
   static const double platformCommissionPercent = 5.0;
   static const double minPricePerKg = 500.0; // DZD
   

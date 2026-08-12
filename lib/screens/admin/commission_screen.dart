@@ -12,24 +12,31 @@ class CommissionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summary = ref.watch(platformFeeSummaryProvider);
+    final settings = ref.watch(platformSettingsProvider);
+    final rate = settings.valueOrNull?.commissionPercent ??
+        AppConstants.platformCommissionPercent;
+    final currency =
+        settings.valueOrNull?.defaultCurrency ?? AppConstants.defaultCurrency;
 
     return Scaffold(
       body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(platformFeeSummaryProvider),
+        onRefresh: () async {
+          ref.invalidate(platformFeeSummaryProvider);
+          ref.invalidate(platformSettingsProvider);
+        },
         child: summary.when(
           data: (stats) {
             final collected = (stats?['collected'] as num?)?.toDouble() ?? 0;
             final pending = (stats?['pending'] as num?)?.toDouble() ?? 0;
             final total = (stats?['total'] as num?)?.toDouble() ?? 0;
-            final rate = AppConstants.platformCommissionPercent;
 
             return CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                const GradientSliverHeader(
+                GradientSliverHeader(
                   title: 'Commissions',
                   subtitle:
-                      'Commission plateforme (5%) · encaissées et dues',
+                      'Commission plateforme ($rate%) · encaissées et dues',
                   icon: Icons.percent_rounded,
                   expandedHeight: 140,
                 ),
@@ -41,12 +48,12 @@ class CommissionScreen extends ConsumerWidget {
                       child: Column(
                         children: [
                           Text(
-                            'Commission totale (${rate}%)',
+                            'Commission totale ($rate%)',
                             style: AppTheme.caption,
                           ),
                           const SizedBox(height: AppTheme.spaceXs),
                           Text(
-                            '${total.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+                            '${total.toStringAsFixed(0)} $currency',
                             style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.w800,
@@ -67,7 +74,7 @@ class CommissionScreen extends ConsumerWidget {
                       icon: Icons.check_circle_rounded,
                       color: AppTheme.accentColor,
                       label: 'Encaissé (payé)',
-                      value: '${collected.toStringAsFixed(0)} DZD',
+                      value: '${collected.toStringAsFixed(0)} $currency',
                     ),
                   ),
                 ),
@@ -79,7 +86,7 @@ class CommissionScreen extends ConsumerWidget {
                       icon: Icons.pending_actions_rounded,
                       color: AppTheme.warningColor,
                       label: 'Dettes (non payées)',
-                      value: '${pending.toStringAsFixed(0)} DZD',
+                      value: '${pending.toStringAsFixed(0)} $currency',
                     ),
                   ),
                 ),

@@ -547,6 +547,11 @@ class _RevenueTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final revenue =
         ref.watch(revenueStatsProvider((startDate: null, endDate: null)));
+    final settings = ref.watch(platformSettingsProvider);
+    final rate = settings.valueOrNull?.commissionPercent ??
+        AppConstants.platformCommissionPercent;
+    final currency = settings.valueOrNull?.defaultCurrency ??
+        AppConstants.defaultCurrency;
 
     return revenue.when(
       data: (stats) {
@@ -555,8 +560,7 @@ class _RevenueTab extends ConsumerWidget {
             (stats?['total_transactions'] as num?)?.toInt() ?? 0;
         final average =
             (stats?['average_transaction'] as num?)?.toDouble() ?? 0;
-        final commission =
-            total * AppConstants.platformCommissionPercent / 100;
+        final commission = total * rate / 100;
 
         return CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -564,7 +568,7 @@ class _RevenueTab extends ConsumerWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(AppTheme.spaceMd),
-                child: _RevenueHero(total: total),
+                child: _RevenueHero(total: total, currency: currency),
               ),
             ),
             SliverToBoxAdapter(
@@ -593,7 +597,7 @@ class _RevenueTab extends ConsumerWidget {
                   icon: Icons.calculate_outlined,
                   color: AppTheme.primaryColor,
                   label: 'Panier moyen',
-                  value: '${average.toStringAsFixed(0)} DZD',
+                  value: '${average.toStringAsFixed(0)} $currency',
                 ),
               ),
             ),
@@ -607,9 +611,8 @@ class _RevenueTab extends ConsumerWidget {
                 child: _RevenueRow(
                   icon: Icons.percent_rounded,
                   color: AppTheme.warningColor,
-                  label:
-                      'Commission plateforme (${AppConstants.platformCommissionPercent}%)',
-                  value: '${commission.toStringAsFixed(0)} DZD',
+                  label: 'Commission plateforme ($rate%)',
+                  value: '${commission.toStringAsFixed(0)} $currency',
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => const CommissionScreen(),
@@ -630,9 +633,10 @@ class _RevenueTab extends ConsumerWidget {
 }
 
 class _RevenueHero extends StatelessWidget {
-  const _RevenueHero({required this.total});
+  const _RevenueHero({required this.total, required this.currency});
 
   final double total;
+  final String currency;
 
   @override
   Widget build(BuildContext context) {
@@ -649,7 +653,7 @@ class _RevenueHero extends StatelessWidget {
               color: Colors.white, size: 40),
           const SizedBox(height: AppTheme.spaceSm),
           Text(
-            '${total.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+            '${total.toStringAsFixed(0)} $currency',
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w800,

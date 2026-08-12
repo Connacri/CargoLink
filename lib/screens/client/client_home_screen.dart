@@ -5,6 +5,7 @@ import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/notification_widgets.dart';
 import '../shipper/shipper_public_profile_screen.dart';
 
 /// Lazy paged source for active shipments, keyed by the active filters.
@@ -157,7 +158,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                     onTap: () => _showNotificationsSheet(context),
                     child: const Padding(
                       padding: EdgeInsets.only(right: 8),
-                      child: _UnreadBadge(),
+                      child: UnreadNotificationBadge(),
                     ),
                   ),
                   const LogoutIconButton(),
@@ -707,174 +708,5 @@ class _NoSearchResults extends StatelessWidget {
 }
 
 // ============================================================================
-// NOTIFICATIONS BADGE
+// NOTIFICATIONS BADGE  (shared widgets now live in core/widgets/notification_widgets.dart)
 // ============================================================================
-
-class _UnreadBadge extends ConsumerWidget {
-  const _UnreadBadge();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final userId = ref.read(authServiceProvider).currentUserId;
-    if (userId == null) {
-      return const Icon(Icons.notifications_outlined, color: Colors.white);
-    }
-
-    final notifs = ref.watch(notificationStreamProvider(userId));
-
-    return notifs.when(
-      data: (list) {
-        final count = list.where((n) => !n.isRead).length;
-        if (count == 0) {
-          return const Icon(Icons.notifications_outlined, color: Colors.white);
-        }
-        return Badge.count(
-          count: count > 99 ? 99 : count,
-          child: const Icon(Icons.notifications_outlined, color: Colors.white),
-        );
-      },
-      loading: () =>
-          const Icon(Icons.notifications_outlined, color: Colors.white),
-      error: (error, stack) =>
-          const Icon(Icons.notifications_outlined, color: Colors.white),
-    );
-  }
-}
-
-// ============================================================================
-// NOTIFICATIONS SHEET
-// ============================================================================
-
-class NotificationsSheet extends ConsumerWidget {
-  const NotificationsSheet({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authService = ref.watch(authServiceProvider);
-    final userId = authService.currentUserId;
-
-    if (userId == null) {
-      return const Center(child: Text('Utilisateur non identifié'));
-    }
-
-    final notifications = ref.watch(notificationStreamProvider(userId));
-    final broadcasts = ref.watch(broadcastsProvider);
-
-    return notifications.when(
-      data: (notifs) {
-        return Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Notifications',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      ref
-                          .read(notificationServiceProvider)
-                          .markAllAsRead(userId);
-                    },
-                    child: const Text('Marquer tout comme lu'),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                children: [
-                  _BroadcastFeedSection(broadcasts: broadcasts),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    child: Text(
-                      'Mes notifications',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  if (notifs.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Center(child: Text('Aucune notification')),
-                    )
-                  else
-                    for (final notif in notifs)
-                      ListTile(
-                        title: Text(notif.title),
-                        subtitle: Text(notif.message),
-                        trailing: !notif.isRead
-                            ? CircleAvatar(
-                                radius: 4,
-                                backgroundColor: AppTheme.primaryColor,
-                              )
-                            : null,
-                        onTap: () {
-                          ref
-                              .read(notificationServiceProvider)
-                              .markAsRead(notif.id);
-                        },
-                      ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Erreur: $error')),
-    );
-  }
-}
-
-/// Announcements targeted at the current role, shown at the top of the
-/// notifications sheet.
-class _BroadcastFeedSection extends ConsumerWidget {
-  const _BroadcastFeedSection({required this.broadcasts});
-
-  final AsyncValue<List<Broadcast>> broadcasts;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return broadcasts.when(
-      data: (items) {
-        if (items.isEmpty) return const SizedBox.shrink();
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Row(
-                children: [
-                  Icon(Icons.campaign_rounded,
-                      size: 18, color: AppTheme.primaryColor),
-                  SizedBox(width: 8),
-                  Text(
-                    'Annonces',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-            ),
-            for (final broadcast in items.take(5))
-              ListTile(
-                leading: const Icon(Icons.campaign_rounded,
-                    color: AppTheme.primaryColor),
-                title: Text(broadcast.title),
-                subtitle: Text(
-                  broadcast.message,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                isThreeLine: false,
-              ),
-          ],
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (e, s) => const SizedBox.shrink(),
-    );
-  }
-}

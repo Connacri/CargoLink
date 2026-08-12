@@ -10,6 +10,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/signup_screen.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
 import '../screens/admin/broadcast_screen.dart';
+import '../screens/admin/platform_settings_screen.dart';
 import '../screens/client/booking_screen.dart';
 import '../screens/client/my_orders_screen.dart';
 import '../screens/client/payment_screen.dart';
@@ -69,6 +70,7 @@ class CargoLinkApp extends ConsumerWidget {
             const ShipperRegistrationScreen(),
         '/admin-dashboard': (context) => const AdminDashboardScreen(),
         '/broadcast': (context) => const BroadcastScreen(),
+        '/platform-settings': (context) => const PlatformSettingsScreen(),
       },
       debugShowCheckedModeBanner: false,
     );

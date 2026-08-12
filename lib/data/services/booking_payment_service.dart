@@ -3,6 +3,7 @@ import '../models/models.dart';
 import '../../core/config/supabase_config.dart';
 import '../../core/constants/app_constants.dart';
 import './shipper_shipment_service.dart';
+import './tracking_dispute_service.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
 
@@ -91,10 +92,40 @@ class BookingService {
         amount: totalPrice,
       );
 
+      // Notify the shipper of the new order (in-app + push) so they can review
+      // the details and photos before confirming.
+      _notifyShipperOfNewBooking(response);
+
       return Booking.fromJson(response);
     } catch (e) {
       _logger.e('Error creating booking: $e');
       rethrow;
+    }
+  }
+
+  /// Best-effort notification to the seller of a new booking. The response
+  /// embeds shipment → shippers → users (the shipper's SUPABASE user id).
+  void _notifyShipperOfNewBooking(Map<String, dynamic> bookingRow) {
+    try {
+      final shipment = bookingRow['shipments'] as Map<String, dynamic>?;
+      if (shipment == null) return;
+      final shipper = shipment['shippers'] as Map<String, dynamic>?;
+      if (shipper == null) return;
+      final user = shipper['users'] as Map<String, dynamic>?;
+      final shipperUserId = user?['id'] as String?;
+      if (shipperUserId == null) return;
+      final route =
+          '${shipment['origin_country'] ?? '?'} → '
+          '${shipment['destination_city'] ?? '?'}';
+      NotificationService().notifyShipperNewBooking(
+        shipperUserId: shipperUserId,
+        bookingId: bookingRow['id'] as String,
+        productName: bookingRow['product_name'] as String? ?? 'commande',
+        weightKg: (bookingRow['allocated_weight_kg'] as num?)?.toDouble() ?? 0,
+        route: route,
+      );
+    } catch (e) {
+      _logger.e('Error notifying shipper of new booking: $e');
     }
   }
 

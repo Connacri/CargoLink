@@ -7,7 +7,9 @@ import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/notification_widgets.dart';
 import 'shipper_stats_detail_screen.dart';
+import 'shipper_booking_detail_screen.dart';
 
 // ============================================================================
 // PAGINATED PROVIDERS (local to this file)
@@ -88,11 +90,33 @@ class _ShipperDashboardScreenState
     if (shipperId == null || shipperId == _lastShipperId) return;
     _lastShipperId = shipperId;
     ref.read(shipperShipmentsPagerProvider(shipperId).notifier).loadInitial();
+    ref.read(shipperBookingsPagerProvider(shipperId).notifier).loadInitial();
   }
 
   void _onStatusSelected(String? status) {
     if (status == _statusFilter) return;
     setState(() => _statusFilter = status);
+  }
+
+  void _showNotificationsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => FractionallySizedBox(
+        heightFactor: 0.85,
+        child: NotificationsSheet(
+          onBookingTap: (bookingId) => _openBooking(context, bookingId),
+        ),
+      ),
+    );
+  }
+
+  void _openBooking(BuildContext context, String bookingId) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ShipperBookingDetailScreen(bookingId: bookingId),
+      ),
+    );
   }
 
   @override
@@ -108,6 +132,7 @@ class _ShipperDashboardScreenState
       if (id != null && id != _lastShipperId) {
         _lastShipperId = id;
         ref.read(shipperShipmentsPagerProvider(id).notifier).loadInitial();
+        ref.read(shipperBookingsPagerProvider(id).notifier).loadInitial();
       }
     });
 
@@ -236,6 +261,13 @@ class _ShipperDashboardScreenState
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  GestureDetector(
+                    onTap: () => _showNotificationsSheet(context),
+                    child: const Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: UnreadNotificationBadge(),
+                    ),
+                  ),
                   IconButton(
                     tooltip: 'Publier une offre',
                     icon: const Icon(Icons.add_circle_outline,
@@ -249,6 +281,10 @@ class _ShipperDashboardScreenState
             SliverToBoxAdapter(
               child: _buildStats(shipper),
             ),
+            SliverToBoxAdapter(
+              child: _buildBookingsHeader(shipper.id),
+            ),
+            ..._buildBookingsList(shipper.id),
             SliverToBoxAdapter(
               child: _buildSectionHeader(shipper.id),
             ),
@@ -406,6 +442,158 @@ class _ShipperDashboardScreenState
         ],
       ),
     );
+  }
+
+  // --------------------------------------------------------------------------
+  // COMMANDES REÇUES — the received-orders feed on the dashboard. Shows every
+  // booking (confirmed and not yet) with client + details, clickable to the
+  // ShipperBookingDetailScreen. Live-updates when a client books or the
+  // booking status changes.
+  // --------------------------------------------------------------------------
+
+  Widget _buildBookingsHeader(String shipperId) {
+    final pager = ref.watch(shipperBookingsPagerProvider(shipperId));
+    final pending = pager.items.where((b) => b.status == 'pending').length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: Row(
+        children: [
+          const Expanded(
+            child: Text('Commandes reçues', style: AppTheme.h2),
+          ),
+          if (pending > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 2,
+              ),
+              decoration: BoxDecoration(
+                color: AppTheme.warningColor,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                '$pending en attente',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          TextButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ShipperStatsDetailScreen(
+                  shipperId: shipperId,
+                  type: ShipperStatsDetailType.bookings,
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.chevron_right_rounded, size: 18),
+            label: const Text('Historique'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildBookingsList(String shipperId) {
+    final pager = ref.watch(shipperBookingsPagerProvider(shipperId));
+
+    // Live refresh: a new booking or a status change by the client/shpper
+    // immediately reloads the received-orders feed.
+    ref.listen(
+      tableChangesProvider(('bookings', null, null)),
+      (previous, next) {
+        if (next.hasValue) {
+          ref.read(shipperBookingsPagerProvider(shipperId).notifier).refresh();
+          ref.invalidate(shipperStatsProvider(shipperId));
+          ref.invalidate(shipperEarningsProvider(shipperId));
+        }
+      },
+    );
+
+    // Show the most recent bookings (loaded pages) on the dashboard.
+    final items = pager.items;
+    if (pager.initialLoading) {
+      return const [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spaceLg),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        ),
+      ];
+    }
+    if (items.isEmpty) {
+      return const [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.spaceMd,
+              AppTheme.spaceSm,
+              AppTheme.spaceMd,
+              AppTheme.spaceSm,
+            ),
+            child: GlassCard(
+              child: Padding(
+                padding: EdgeInsets.all(AppTheme.spaceLg),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.receipt_long_outlined,
+                      size: 48,
+                      color: AppTheme.textMutedColor,
+                    ),
+                    SizedBox(height: AppTheme.spaceMd),
+                    Text(
+                      'Aucune commande reçue',
+                      style: AppTheme.h3,
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: AppTheme.spaceXs),
+                    Text(
+                      'Les commandes des clients apparaîtront ici dès '
+                      'qu\'elles arrivent, pour que vous puissiez les '
+                      'consulter et les confirmer.',
+                      style: AppTheme.bodySecondary,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ];
+    }
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.spaceMd,
+          AppTheme.spaceSm,
+          AppTheme.spaceMd,
+          AppTheme.spaceSm,
+        ),
+        sliver: SliverList.builder(
+          itemCount: items.length,
+          itemBuilder: (context, index) => StaggeredEntrance(
+            delay: Duration(milliseconds: (index % 10) * 40),
+            child: _DashboardBookingCard(
+              booking: items[index],
+              onTap: () => _openBooking(context, items[index].id),
+            ),
+          ),
+        ),
+      ),
+    ];
   }
 
   Widget _buildStatusFilters() {
@@ -1193,6 +1381,93 @@ class _SummaryRow extends StatelessWidget {
 // BOOKING MANAGEMENT CARD
 // ============================================================================
 
+class _DashboardBookingCard extends ConsumerWidget {
+  final Booking booking;
+  final VoidCallback onTap;
+
+  const _DashboardBookingCard({
+    required this.booking,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = BookingStatusExt.fromString(booking.status);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
+      child: GlassCard(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AnimatedIconDot(
+                  icon: Icons.inventory_2_outlined,
+                  color: status.color,
+                ),
+                const SizedBox(width: AppTheme.spaceMd),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              booking.productName,
+                              style: AppTheme.h3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: AppTheme.spaceSm),
+                          GradientBadge(
+                            label: status.displayName,
+                            gradient: _bookingStatusGradient(booking.status),
+                            compact: true,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppTheme.spaceXs),
+                      Text(
+                        '${booking.client?.fullName ?? 'Client'} • '
+                        '${booking.allocatedWeightKg.toStringAsFixed(1)} kg '
+                        '• ${booking.shipment?.originCountry ?? ''} → '
+                        '${booking.shipment?.destinationCity ?? ''}',
+                        style: AppTheme.caption,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            Row(
+              children: [
+                Expanded(
+                  child: _InfoTile(
+                    icon: Icons.monitor_weight_outlined,
+                    label: 'Poids',
+                    value:
+                        '${booking.requestedWeightKg.toStringAsFixed(1)} / '
+                        '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppTheme.textSecondaryColor,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ManageBookingCard extends ConsumerWidget {
   final Booking booking;
 
@@ -1205,6 +1480,12 @@ class _ManageBookingCard extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
       child: GlassCard(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) =>
+                ShipperBookingDetailScreen(bookingId: booking.id),
+          ),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1341,7 +1622,7 @@ class _ManageBookingCard extends ConsumerWidget {
     try {
       await ref.read(bookingServiceProvider).confirmBooking(booking.id);
       _reload(context, ref);
-      _notifyShipper(context, ref);
+      _notifyClient(context, ref);
       _showSuccess(context, 'Commande confirmée');
     } catch (e) {
       _showError(context, e);
@@ -1409,12 +1690,11 @@ class _ManageBookingCard extends ConsumerWidget {
     }
   }
 
-  void _notifyShipper(BuildContext context, WidgetRef ref) {
-    ref.read(notificationServiceProvider).notifyShipperBookingConfirmed(
-          shipperId: booking.shipment?.shipperId ?? '',
+  void _notifyClient(BuildContext context, WidgetRef ref) {
+    ref.read(notificationServiceProvider).notifyClientBookingConfirmed(
+          clientId: booking.clientId,
           bookingId: booking.id,
           productName: booking.productName,
-          allocatedWeight: booking.allocatedWeightKg,
         );
   }
 

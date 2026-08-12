@@ -10,6 +10,7 @@ import '../data/services/tracking_dispute_service.dart';
 import '../data/services/review_service.dart';
 import '../data/services/storage_service.dart';
 import '../data/services/realtime_service.dart';
+import '../data/services/settings_service.dart';
 import '../data/services/v2_service.dart';
 
 // ============================================================================
@@ -439,6 +440,19 @@ final userDisputesProvider =
     FutureProvider.family<List<Dispute>, String>((ref, userId) async {
   final disputeService = ref.watch(disputeServiceProvider);
   return disputeService.getUserDisputes(userId);
+});
+
+// ============================================================================
+// PLATFORM SETTINGS PROVIDERS (Fondateur)
+// ============================================================================
+
+final settingsServiceProvider = Provider<SettingsService>((ref) {
+  return SettingsService();
+});
+
+final platformSettingsProvider = FutureProvider<PlatformSettings>((ref) async {
+  final settingsService = ref.watch(settingsServiceProvider);
+  return settingsService.getSettings();
 });
 
 // ============================================================================

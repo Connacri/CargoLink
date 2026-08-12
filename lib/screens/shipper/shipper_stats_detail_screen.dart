@@ -8,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 import 'shipper_dashboard_screen.dart';
+import 'shipper_booking_detail_screen.dart';
 
 /// Paginated list of all bookings belonging to a shipper (across shipments).
 final shipperBookingsPagerProvider = StateNotifierProvider.family<
@@ -197,6 +198,9 @@ class _ShipperStatsDetailScreenState
 
   Widget _buildRevenueHeader(AsyncValue<Shipper?> shipper) {
     final earnings = ref.watch(shipperEarningsProvider(widget.shipperId));
+    final settings = ref.watch(platformSettingsProvider);
+    final currency = settings.valueOrNull?.defaultCurrency ??
+        AppConstants.defaultCurrency;
     final revenue = earnings.valueOrNull ?? 0.0;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -212,7 +216,7 @@ class _ShipperStatsDetailScreenState
             const Text('Revenus totaux', style: AppTheme.caption),
             const SizedBox(height: AppTheme.spaceXs),
             Text(
-              '${revenue.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+              '${revenue.toStringAsFixed(0)} $currency',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w800,
@@ -227,6 +231,11 @@ class _ShipperStatsDetailScreenState
 
   Widget _buildCommissionCard() {
     final fees = ref.watch(shipperPlatformFeesProvider(widget.shipperId));
+    final settings = ref.watch(platformSettingsProvider);
+    final rate = settings.valueOrNull?.commissionPercent ??
+        AppConstants.platformCommissionPercent;
+    final currency = settings.valueOrNull?.defaultCurrency ??
+        AppConstants.defaultCurrency;
     final list = fees.valueOrNull ?? const <PlatformFee>[];
     final total = list.fold<double>(0, (s, f) => s + f.amount);
     final paid = list
@@ -246,8 +255,8 @@ class _ShipperStatsDetailScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Commission plateforme (${AppConstants.platformCommissionPercent}%)',
+            Text(
+              'Commission plateforme ($rate%)',
               style: AppTheme.h3,
             ),
             const SizedBox(height: AppTheme.spaceSm),
@@ -258,7 +267,7 @@ class _ShipperStatsDetailScreenState
                     icon: Icons.check_circle_rounded,
                     color: AppTheme.accentColor,
                     label: 'Payé',
-                    value: '${paid.toStringAsFixed(0)} DZD',
+                    value: '$paid.toStringAsFixed(0) $currency',
                   ),
                 ),
                 const SizedBox(width: AppTheme.spaceSm),
@@ -269,7 +278,7 @@ class _ShipperStatsDetailScreenState
                         ? AppTheme.warningColor
                         : AppTheme.accentColor,
                     label: 'Dette',
-                    value: '${due.toStringAsFixed(0)} DZD',
+                    value: '$due.toStringAsFixed(0) $currency',
                   ),
                 ),
               ],
@@ -293,7 +302,7 @@ class _ShipperStatsDetailScreenState
                 label: Text(
                   _submittingPay
                       ? 'Paiement...'
-                      : 'Payer mes dues (${due.toStringAsFixed(0)} DZD)',
+                      : 'Payer mes dues (${due.toStringAsFixed(0)} $currency)',
                 ),
               ),
             ] else ...[
@@ -514,6 +523,12 @@ class _BookingTile extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
       child: GlassCard(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) =>
+                ShipperBookingDetailScreen(bookingId: booking.id),
+          ),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -561,9 +576,23 @@ class _BookingTile extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: AppTheme.spaceSm),
-            Text(
-              booking.client?.fullName ?? 'Client',
-              style: AppTheme.caption,
+            Row(
+              children: [
+                GradientAvatar(
+                  initial: booking.client?.fullName,
+                  imageUrl: booking.client?.profilePictureUrl,
+                  radius: 12,
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                Expanded(
+                  child: Text(
+                    '${booking.client?.fullName ?? 'Client'}'
+                    '${booking.client?.phone.isNotEmpty ?? false ? ' · ${booking.client!.phone}' : ''}',
+                    style: AppTheme.caption,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: AppTheme.spaceMd),
             _buildActions(context, ref),
