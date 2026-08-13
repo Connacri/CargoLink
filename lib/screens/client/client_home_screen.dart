@@ -6,7 +6,13 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/notification_widgets.dart';
+import '../../components/shipper_card.dart';
 import '../shipper/shipper_public_profile_screen.dart';
+
+/// Smart sort applied to the (server-side filtered) search feed.
+enum ClientSort { none, price, fastest, topRated }
+
+final clientSortProvider = StateProvider<ClientSort>((ref) => ClientSort.none);
 
 /// Lazy paged source for active shipments, keyed by the active filters.
 final clientShipmentsPagerProvider = StateNotifierProvider.family<
@@ -15,9 +21,7 @@ final clientShipmentsPagerProvider = StateNotifierProvider.family<
     ({String? destination, String? origin})>(
   (ref, params) {
     return createPaginatedNotifier(
-      (limit, offset) => ref
-          .read(shipmentServiceProvider)
-          .getActiveShipments(
+      (limit, offset) => ref.read(shipmentServiceProvider).getActiveShipments(
             destinationCity: params.destination,
             originCountry: params.origin,
             limit: limit,
@@ -29,9 +33,10 @@ final clientShipmentsPagerProvider = StateNotifierProvider.family<
 );
 
 /// Lazy paged server-side search source, keyed by the search query.
-final clientSearchPagerProvider =
-    StateNotifierProvider.family<PaginatedListNotifier<Shipment>,
-        PaginatedList<Shipment>, String>((ref, query) {
+final clientSearchPagerProvider = StateNotifierProvider.family<
+    PaginatedListNotifier<Shipment>,
+    PaginatedList<Shipment>,
+    String>((ref, query) {
   return createPaginatedNotifier(
     (limit, offset) => ref.read(shipmentServiceProvider).searchShipments(
           query: query,
@@ -104,6 +109,14 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         ref.watch(clientSearchPagerProvider(searchQuery.trim()));
 
     final isSearching = searchQuery.trim().isNotEmpty;
+    final sort = ref.watch(clientSortProvider);
+
+    // Smart sort applied locally on top of the server-side filters. Keeping
+    // the same PaginatedList (via copyWith) preserves infinite scrolling and
+    // pull-to-refresh callbacks.
+    final sortedFeed = pager.copyWith(items: _applySort(pager.items, sort));
+    final sortedSearch =
+        searchPager.copyWith(items: _applySort(searchPager.items, sort));
 
     // Live refresh: a newly published shipment appears in the feed without a
     // manual pull-to-refresh.
@@ -149,7 +162,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
           slivers: [
             GradientSliverHeader(
               title: 'CargoLink',
-              subtitle: 'Trouvez les meilleurs micro-importateurs pour vos commandes',
+              subtitle:
+                  'Trouvez les meilleurs micro-importateurs pour vos commandes',
               icon: Icons.airplanemode_active,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -174,9 +188,12 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             SliverToBoxAdapter(
               child: _buildFilters(),
             ),
+            SliverToBoxAdapter(
+              child: _buildSmartFilters(sort),
+            ),
             if (!isSearching)
               PagedSliverList<Shipment>(
-                paginatedList: pager,
+                paginatedList: sortedFeed,
                 padding: const EdgeInsets.fromLTRB(
                   AppTheme.spaceMd,
                   AppTheme.spaceSm,
@@ -186,12 +203,12 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 emptyState: const _EmptyShipments(),
                 itemBuilder: (context, shipment, index) => StaggeredEntrance(
                   delay: Duration(milliseconds: (index % 10) * 40),
-                  child: _ShipmentCard(shipment: shipment),
+                  child: _buildShipmentCard(shipment),
                 ),
               )
             else
               PagedSliverList<Shipment>(
-                paginatedList: searchPager,
+                paginatedList: sortedSearch,
                 padding: const EdgeInsets.fromLTRB(
                   AppTheme.spaceMd,
                   AppTheme.spaceSm,
@@ -201,7 +218,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 emptyState: const _NoSearchResults(),
                 itemBuilder: (context, shipment, index) => StaggeredEntrance(
                   delay: Duration(milliseconds: (index % 10) * 40),
-                  child: _ShipmentCard(shipment: shipment),
+                  child: _buildShipmentCard(shipment),
                 ),
               ),
           ],
@@ -406,6 +423,120 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       ),
     );
   }
+
+  // --------------------------------------------------------------------------
+  // SMART SORTING + SHIPPER CARD
+  // --------------------------------------------------------------------------
+
+  Widget _buildSmartFilters(ClientSort current) {
+    const options = [
+      (sort: ClientSort.none, label: 'Toutes', icon: Icons.tune_rounded),
+      (sort: ClientSort.price, label: '💰 Meilleur prix', icon: null),
+      (sort: ClientSort.fastest, label: '⚡ Plus rapide', icon: null),
+      (sort: ClientSort.topRated, label: '⭐ Top avis', icon: null),
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceXs,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: Row(
+        children: [
+          for (final option in options) ...[
+            ChoiceChip(
+              label: Text(option.label),
+              selected: current == option.sort,
+              onSelected: (_) {
+                ref.read(clientSortProvider.notifier).state = option.sort;
+              },
+              showCheckmark: false,
+              avatar: _sortAvatar(
+                icon: option.icon,
+                selected: current == option.sort,
+              ),
+            ),
+            const SizedBox(width: AppTheme.spaceSm),
+          ],
+        ],
+      ),
+    );
+  }
+
+  List<Shipment> _applySort(List<Shipment> items, ClientSort sort) {
+    final list = List<Shipment>.from(items);
+    switch (sort) {
+      case ClientSort.price:
+        list.sort((a, b) {
+          final byPrice = a.pricePerKg.compareTo(b.pricePerKg);
+          if (byPrice != 0) return byPrice;
+          return (b.shipper?.rating ?? 0).compareTo(a.shipper?.rating ?? 0);
+        });
+        break;
+      case ClientSort.fastest:
+        list.sort(
+          (a, b) => a.arrivalDate.compareTo(b.arrivalDate),
+        );
+        break;
+      case ClientSort.topRated:
+        list.sort((a, b) {
+          final byRating =
+              (b.shipper?.rating ?? 0).compareTo(a.shipper?.rating ?? 0);
+          if (byRating != 0) return byRating;
+          return a.pricePerKg.compareTo(b.pricePerKg);
+        });
+        break;
+      case ClientSort.none:
+        break;
+    }
+    return list;
+  }
+
+  Widget _sortAvatar({
+    required IconData? icon,
+    required bool selected,
+  }) {
+    if (icon == null) return const SizedBox.shrink();
+    return Icon(icon, size: 18, color: selected ? AppTheme.primaryColor : null);
+  }
+
+  Widget _buildShipmentCard(Shipment shipment) {
+    final shipper = shipment.shipper;
+    return ShipperCard(
+      shipperId: shipper?.id ?? shipment.shipperId,
+      name: shipper?.user?.fullName ?? 'Expéditeur',
+      avatarUrl: shipper?.user?.profilePictureUrl,
+      rating: shipper?.rating ?? 0,
+      shipmentsCount: shipper?.totalShipments,
+      isVerified: shipper?.isVerified ?? false,
+      origin: shipment.originCountry,
+      destination: shipment.destinationCity,
+      flightNumber: shipment.flightNumber,
+      availableKg: shipment.remainingWeightKg,
+      totalKg: shipment.availableWeightKg,
+      pricePerKg: shipment.pricePerKg,
+      arrivalDate: shipment.arrivalDate,
+      isAvailable: shipment.isActive && !shipment.isFull,
+      onTap:
+          shipper?.id != null ? () => _openShipperProfile(shipper!.id) : null,
+      onBook: () => Navigator.of(context).pushNamed(
+        '/booking-wizard',
+        arguments: shipment.id,
+      ),
+      onChat: null,
+    );
+  }
+
+  void _openShipperProfile(String shipperId) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ShipperPublicProfileScreen(shipperId: shipperId),
+      ),
+    );
+  }
 }
 
 class _FilterChip extends StatelessWidget {
@@ -435,231 +566,8 @@ class _FilterChip extends StatelessWidget {
 // ============================================================================
 // SHIPMENT CARD WIDGET
 // ============================================================================
-
-class _ShipmentCard extends ConsumerWidget {
-  final Shipment shipment;
-
-  const _ShipmentCard({required this.shipment});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final full = shipment.isFull;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
-      child: GlassCard(
-        onTap: () => _navigateToBooking(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            shipment.originCountry,
-                            style: AppTheme.h3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const Icon(Icons.arrow_forward_rounded,
-                            size: 18, color: AppTheme.textMutedColor),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            shipment.destinationCity,
-                            style: AppTheme.h3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.event_rounded,
-                            size: 14, color: AppTheme.textMutedColor),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Arrivée ${_formatDate(shipment.arrivalDate)}',
-                          style: AppTheme.caption,
-                        ),
-                        if (shipment.flightNumber != null) ...[
-                          const SizedBox(width: 8),
-                          Text('• Vol ${shipment.flightNumber}',
-                              style: AppTheme.caption),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              if (shipment.shipper != null)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.star_rounded,
-                          color: Colors.amber, size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        shipment.shipper!.ratingDisplay,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spaceMd),
-          if (shipment.shipper != null)
-            InkWell(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ShipperPublicProfileScreen(
-                    shipperId: shipment.shipper!.id,
-                  ),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppTheme.spaceXs,
-                ),
-                child: Row(
-                  children: [
-                    GradientAvatar(
-                      initial: shipment.shipper!.user?.fullName,
-                      imageUrl: shipment.shipper!.user?.profilePictureUrl,
-                      radius: 18,
-                    ),
-                    const SizedBox(width: AppTheme.spaceSm),
-                    Expanded(
-                      child: Text(
-                        shipment.shipper!.user?.fullName ?? 'Expéditeur',
-                        style: AppTheme.body
-                            .copyWith(fontWeight: FontWeight.w700),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (shipment.shipper!.isVerified) ...[
-                      const SizedBox(width: 6),
-                      const VerifiedBadge(),
-                    ],
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      size: 20,
-                      color: AppTheme.textMutedColor,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          const SizedBox(height: AppTheme.spaceMd),
-          Row(
-            children: [
-              Expanded(
-                child: _InfoTile(
-                  icon: Icons.monitor_weight_outlined,
-                  label: 'Disponible',
-                  value: '${shipment.remainingWeightKg.toStringAsFixed(1)} kg',
-                ),
-              ),
-              Expanded(
-                child: _InfoTile(
-                  icon: Icons.payments_outlined,
-                  label: 'Prix / kg',
-                  value: '${shipment.pricePerKg.toStringAsFixed(0)} DZD',
-                  valueColor: AppTheme.primaryColor,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spaceMd),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: (shipment.utilizationPercent / 100).clamp(0, 1),
-              minHeight: 6,
-              backgroundColor: AppTheme.surfaceMuted,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                full ? AppTheme.errorColor : AppTheme.accentColor,
-              ),
-            ),
-          ),
-          const SizedBox(height: AppTheme.spaceMd),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: full ? null : () => _navigateToBooking(context),
-              icon: Icon(full ? Icons.block_rounded : Icons.assignment_turned_in_outlined),
-              label: Text(full ? 'Complet' : 'Réserver'),
-            ),
-          ),
-        ],
-        ),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime d) =>
-      '${d.day}/${d.month}/${d.year}';
-
-  void _navigateToBooking(BuildContext context) {
-    Navigator.of(context).pushNamed('/booking', arguments: shipment.id);
-  }
-}
-
-class _InfoTile extends StatelessWidget {
-  const _InfoTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color? valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        AnimatedIconDot(icon: icon, color: AppTheme.primaryColor),
-        const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: AppTheme.caption),
-            Text(
-              value,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-                color: valueColor ?? AppTheme.textPrimaryColor,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
+// The search feed now renders the reusable ShipperCard
+// (lib/components/shipper_card.dart) instead of a screen-private card.
 
 class _EmptyShipments extends StatelessWidget {
   const _EmptyShipments();

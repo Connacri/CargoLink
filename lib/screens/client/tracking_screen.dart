@@ -5,6 +5,7 @@ import '../../providers/index.dart';
 import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../components/tracking_timeline.dart';
 
 class TrackingScreen extends ConsumerWidget {
   final String bookingId;
@@ -67,29 +68,6 @@ class TrackingScreen extends ConsumerWidget {
         return Icons.check_circle_outline;
       default:
         return Icons.circle_outlined;
-    }
-  }
-
-  static Color statusColor(String status) {
-    switch (status) {
-      case 'order_processed':
-        return AppTheme.textSecondaryColor;
-      case 'collected':
-        return AppTheme.warningColor;
-      case 'departed_origin':
-        return AppTheme.primaryColor;
-      case 'in_transit':
-        return AppTheme.primaryColor;
-      case 'arrived_destination':
-        return AppTheme.primaryColor;
-      case 'customs_cleared':
-        return AppTheme.warningColor;
-      case 'out_for_delivery':
-        return AppTheme.accentColor;
-      case 'delivered':
-        return AppTheme.accentColor;
-      default:
-        return AppTheme.textSecondaryColor;
     }
   }
 
@@ -167,16 +145,13 @@ class TrackingScreen extends ConsumerWidget {
                             AppTheme.spaceMd,
                             AppTheme.spaceXxl,
                           ),
-                          sliver: SliverList.builder(
-                            itemCount: events.length,
-                            itemBuilder: (context, index) {
-                              final event = events[events.length - 1 - index];
-                              return StaggeredEntrance(
-                                delay:
-                                    Duration(milliseconds: (index % 10) * 40),
-                                child: _buildTimelineItem(event, index == 0),
-                              );
-                            },
+                          sliver: SliverToBoxAdapter(
+                            child: TrackingTimeline(
+                              events: _toTimelineEvents(
+                                events,
+                                delivered: bookingData.status == 'delivered',
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -387,79 +362,6 @@ class TrackingScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTimelineItem(ShipmentTracking event, bool isLatest) {
-    final color = statusColor(event.status);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
-      child: GlassCard(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AnimatedIconDot(
-              icon: statusIcon(event.status),
-              color: isLatest ? AppTheme.accentColor : color,
-              size: 20,
-            ),
-            const SizedBox(width: AppTheme.spaceMd),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          statusLabel(event.status),
-                          style: AppTheme.body
-                              .copyWith(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      Text(
-                        _formatDate(event.timestamp),
-                        style: AppTheme.caption,
-                      ),
-                    ],
-                  ),
-                  if (isLatest) ...[
-                    const SizedBox(height: AppTheme.spaceSm),
-                    const GradientBadge(
-                      label: 'Dernière mise à jour',
-                      gradient: AppTheme.successGradient,
-                      compact: true,
-                    ),
-                  ],
-                  if (event.location != null && event.location!.isNotEmpty) ...[
-                    const SizedBox(height: AppTheme.spaceSm),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          size: 14,
-                          color: AppTheme.textSecondaryColor,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            event.location!,
-                            style: AppTheme.caption,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  if (event.notes != null && event.notes!.isNotEmpty) ...[
-                    const SizedBox(height: AppTheme.spaceSm),
-                    Text(event.notes!, style: AppTheme.bodySecondary),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildEmptyTimeline() {
     return const Padding(
       padding: EdgeInsets.all(AppTheme.spaceXl),
@@ -484,8 +386,35 @@ class TrackingScreen extends ConsumerWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  /// Maps raw tracking rows (chronological) to the reusable
+  /// [TrackingEvent] model consumed by [TrackingTimeline].
+  List<TrackingEvent> _toTimelineEvents(
+    List<ShipmentTracking> events, {
+    required bool delivered,
+  }) {
+    final mapped = <TrackingEvent>[];
+    for (var i = events.length - 1; i >= 0; i--) {
+      final event = events[i];
+      final isLatest = i == events.length - 1;
+      final description = <String>[
+        if (event.location != null && event.location!.isNotEmpty)
+          '${event.location}',
+        if (event.notes != null && event.notes!.isNotEmpty) '${event.notes}',
+      ].join(' • ');
+      mapped.add(
+        TrackingEvent(
+          title: statusLabel(event.status),
+          timestamp: event.timestamp,
+          status: isLatest
+              ? (delivered
+                  ? TrackingStatus.completed
+                  : TrackingStatus.inProgress)
+              : TrackingStatus.completed,
+          description: description.isEmpty ? null : description,
+        ),
+      );
+    }
+    return mapped;
   }
 }
 

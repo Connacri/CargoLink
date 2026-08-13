@@ -12,6 +12,7 @@ import '../screens/admin/admin_dashboard_screen.dart';
 import '../screens/admin/broadcast_screen.dart';
 import '../screens/admin/platform_settings_screen.dart';
 import '../screens/client/booking_screen.dart';
+import '../screens/client/booking_wizard_screen.dart';
 import '../screens/client/my_orders_screen.dart';
 import '../screens/client/payment_screen.dart';
 import '../screens/client/tracking_screen.dart';
@@ -30,7 +31,7 @@ class CargoLinkApp extends ConsumerWidget {
     return MaterialApp(
       title: 'CargoLink',
       theme: AppTheme.darkTheme,
-        home: authState.when(
+      home: authState.when(
         data: (authData) {
           if (authData.isSignedIn) {
             if (!authData.emailVerified) {
@@ -54,6 +55,11 @@ class CargoLinkApp extends ConsumerWidget {
               ModalRoute.of(context)?.settings.arguments as String;
           return BookingScreen(shipmentId: shipmentId);
         },
+        '/booking-wizard': (context) {
+          final shipmentId =
+              ModalRoute.of(context)?.settings.arguments as String;
+          return BookingWizardScreen(shipmentId: shipmentId);
+        },
         '/payment': (context) {
           final bookingId =
               ModalRoute.of(context)?.settings.arguments as String;
@@ -66,8 +72,7 @@ class CargoLinkApp extends ConsumerWidget {
         },
         '/my-orders': (context) => const MyOrdersScreen(),
         '/profile': (context) => const ProfileScreen(),
-        '/shipper-registration': (context) =>
-            const ShipperRegistrationScreen(),
+        '/shipper-registration': (context) => const ShipperRegistrationScreen(),
         '/admin-dashboard': (context) => const AdminDashboardScreen(),
         '/broadcast': (context) => const BroadcastScreen(),
         '/platform-settings': (context) => const PlatformSettingsScreen(),

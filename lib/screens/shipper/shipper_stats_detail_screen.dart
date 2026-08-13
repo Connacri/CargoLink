@@ -7,6 +7,7 @@ import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../components/revenue_bar_chart.dart';
 import 'shipper_dashboard_screen.dart';
 import 'shipper_booking_detail_screen.dart';
 
@@ -16,13 +17,11 @@ final shipperBookingsPagerProvider = StateNotifierProvider.family<
     PaginatedList<Booking>,
     String>((ref, shipperId) {
   return createPaginatedNotifier(
-    (limit, offset) => ref
-        .read(shipperBookingsProvider((
-          shipperId: shipperId,
-          limit: limit,
-          offset: offset,
-        ))
-            .future),
+    (limit, offset) => ref.read(shipperBookingsProvider((
+      shipperId: shipperId,
+      limit: limit,
+      offset: offset,
+    )).future),
     pageSize: 15,
   );
 });
@@ -148,8 +147,8 @@ class _ShipperStatsDetailScreenState
           final notifier = isBookings
               ? ref
                   .read(shipperBookingsPagerProvider(widget.shipperId).notifier)
-              : ref
-                  .read(shipperShipmentsPagerProvider(widget.shipperId).notifier);
+              : ref.read(
+                  shipperShipmentsPagerProvider(widget.shipperId).notifier);
           await notifier.refresh();
         },
         child: CustomScrollView(
@@ -169,6 +168,10 @@ class _ShipperStatsDetailScreenState
             if (widget.type == ShipperStatsDetailType.revenue)
               SliverToBoxAdapter(
                 child: _buildCommissionCard(),
+              ),
+            if (widget.type == ShipperStatsDetailType.revenue)
+              SliverToBoxAdapter(
+                child: _buildRevenueChart(),
               ),
             if (widget.type == ShipperStatsDetailType.revenue) ...[
               const SliverToBoxAdapter(
@@ -199,8 +202,8 @@ class _ShipperStatsDetailScreenState
   Widget _buildRevenueHeader(AsyncValue<Shipper?> shipper) {
     final earnings = ref.watch(shipperEarningsProvider(widget.shipperId));
     final settings = ref.watch(platformSettingsProvider);
-    final currency = settings.valueOrNull?.defaultCurrency ??
-        AppConstants.defaultCurrency;
+    final currency =
+        settings.valueOrNull?.defaultCurrency ?? AppConstants.defaultCurrency;
     final revenue = earnings.valueOrNull ?? 0.0;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -234,13 +237,12 @@ class _ShipperStatsDetailScreenState
     final settings = ref.watch(platformSettingsProvider);
     final rate = settings.valueOrNull?.commissionPercent ??
         AppConstants.platformCommissionPercent;
-    final currency = settings.valueOrNull?.defaultCurrency ??
-        AppConstants.defaultCurrency;
+    final currency =
+        settings.valueOrNull?.defaultCurrency ?? AppConstants.defaultCurrency;
     final list = fees.valueOrNull ?? const <PlatformFee>[];
     final total = list.fold<double>(0, (s, f) => s + f.amount);
-    final paid = list
-        .where((f) => f.isPaid)
-        .fold<double>(0, (s, f) => s + f.amount);
+    final paid =
+        list.where((f) => f.isPaid).fold<double>(0, (s, f) => s + f.amount);
     final due = total - paid;
 
     return Padding(
@@ -274,9 +276,8 @@ class _ShipperStatsDetailScreenState
                 Expanded(
                   child: _CommissionStat(
                     icon: Icons.pending_actions_rounded,
-                    color: due > 0
-                        ? AppTheme.warningColor
-                        : AppTheme.accentColor,
+                    color:
+                        due > 0 ? AppTheme.warningColor : AppTheme.accentColor,
                     label: 'Dette',
                     value: '$due.toStringAsFixed(0) $currency',
                   ),
@@ -286,9 +287,7 @@ class _ShipperStatsDetailScreenState
             if (due > 0) ...[
               const SizedBox(height: AppTheme.spaceMd),
               FilledButton.icon(
-                onPressed: _submittingPay
-                    ? null
-                    : () => _payDues(),
+                onPressed: _submittingPay ? null : () => _payDues(),
                 icon: _submittingPay
                     ? const SizedBox(
                         width: 18,
@@ -356,6 +355,64 @@ class _ShipperStatsDetailScreenState
     }
   }
 
+  /// Monthly revenue bar chart fed by the loaded bookings.
+  Widget _buildRevenueChart() {
+    const months = [
+      'J',
+      'F',
+      'M',
+      'A',
+      'M',
+      'J',
+      'J',
+      'A',
+      'S',
+      'O',
+      'N',
+      'D',
+    ];
+    final pager = ref.watch(shipperBookingsPagerProvider(widget.shipperId));
+    final byMonth = <int, double>{};
+    for (final booking in pager.items) {
+      final month = booking.createdAt.month;
+      byMonth[month] = (byMonth[month] ?? 0) + booking.totalPrice;
+    }
+    final data = <RevenueBar>[
+      for (var m = 1; m <= 12; m++)
+        RevenueBar(label: months[m - 1], value: byMonth[m] ?? 0),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceXs,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: GlassCard(
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Chiffre d\'affaires par mois', style: AppTheme.h3),
+            const SizedBox(height: AppTheme.spaceXs),
+            Text(
+              'Basé sur les commandes chargées (${pager.items.length})',
+              style: AppTheme.caption,
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            RevenueBarChart(
+              data: data,
+              valueFormatter: (v) => v >= 1000
+                  ? '${(v / 1000).toStringAsFixed(1)}k'
+                  : v.toStringAsFixed(0),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildInventorySection() {
     final pager = ref.watch(shipperShipmentsPagerProvider(widget.shipperId));
     final items = pager.items;
@@ -409,9 +466,8 @@ class _ShipperStatsDetailScreenState
     final pager = ref.watch(shipperShipmentsPagerProvider(widget.shipperId));
     final activeOnly = widget.type == ShipperStatsDetailType.active;
 
-    final filtered = activeOnly
-        ? pager.items.where((s) => s.isActive).toList()
-        : null;
+    final filtered =
+        activeOnly ? pager.items.where((s) => s.isActive).toList() : null;
 
     if (activeOnly && filtered != null && filtered.isEmpty) {
       return const SliverToBoxAdapter(
@@ -491,7 +547,8 @@ class _ShipmentTile extends ConsumerWidget {
                   child: _InfoTile(
                     icon: Icons.monitor_weight_outlined,
                     label: 'Restant',
-                    value: '${shipment.remainingWeightKg.toStringAsFixed(1)} kg',
+                    value:
+                        '${shipment.remainingWeightKg.toStringAsFixed(1)} kg',
                   ),
                 ),
                 Expanded(
@@ -525,8 +582,7 @@ class _BookingTile extends ConsumerWidget {
       child: GlassCard(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) =>
-                ShipperBookingDetailScreen(bookingId: booking.id),
+            builder: (_) => ShipperBookingDetailScreen(bookingId: booking.id),
           ),
         ),
         child: Column(
@@ -683,10 +739,11 @@ class _BookingTile extends ConsumerWidget {
     }
   }
 
-  void _confirm(BuildContext context, WidgetRef ref) =>
-      _runAction(context, ref,
-          () => ref.read(bookingServiceProvider).confirmBooking(booking.id),
-          'Commande confirmée');
+  void _confirm(BuildContext context, WidgetRef ref) => _runAction(
+      context,
+      ref,
+      () => ref.read(bookingServiceProvider).confirmBooking(booking.id),
+      'Commande confirmée');
 
   void _markShipped(BuildContext context, WidgetRef ref) => _runAction(
         context,
@@ -705,8 +762,7 @@ class _BookingTile extends ConsumerWidget {
               .notifyClientShipmentDispatched(
                 clientId: booking.clientId,
                 bookingId: booking.id,
-                destination:
-                    booking.shipment?.destinationCity ?? 'destination',
+                destination: booking.shipment?.destinationCity ?? 'destination',
               );
         },
         'Commande marquée comme expédiée',
@@ -876,9 +932,7 @@ class _InventoryTile extends StatelessWidget {
                 minHeight: 8,
                 backgroundColor: AppTheme.surfaceMuted,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  shipment.isFull
-                      ? AppTheme.errorColor
-                      : AppTheme.accentColor,
+                  shipment.isFull ? AppTheme.errorColor : AppTheme.accentColor,
                 ),
               ),
             ),
