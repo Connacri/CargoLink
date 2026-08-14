@@ -102,10 +102,13 @@ class _ShipperDashboardScreenState
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => FractionallySizedBox(
-        heightFactor: 0.85,
-        child: NotificationsSheet(
-          onBookingTap: (bookingId) => _openBooking(context, bookingId),
+      builder: (context) => SafeArea(
+        top: false,
+        child: FractionallySizedBox(
+          heightFactor: 0.85,
+          child: NotificationsSheet(
+            onBookingTap: (bookingId) => _openBooking(context, bookingId),
+          ),
         ),
       ),
     );
@@ -644,210 +647,219 @@ class _ShipperDashboardScreenState
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, setSheetState) => Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
-          ),
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Publier une offre de transport',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    initialValue: originCountry,
-                    decoration: const InputDecoration(labelText: 'Origine'),
-                    items: AppConstants.populateOrigins
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                    onChanged: (v) =>
-                        setSheetState(() => originCountry = v ?? originCountry),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: destinationCity,
-                    decoration: const InputDecoration(labelText: 'Destination'),
-                    items: AppConstants.majorCities
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                    onChanged: (v) => setSheetState(
-                        () => destinationCity = v ?? destinationCity),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: weightController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(
-                      labelText: 'Poids disponible (kg)',
-                      prefixIcon: Icon(Icons.scale),
-                    ),
-                    validator: (v) {
-                      final w = double.tryParse(v ?? '');
-                      if (w == null || w <= AppConstants.minWeightKg) {
-                        return 'Poids invalide';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: priceController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(
-                      labelText: 'Prix par kg (DZD)',
-                      prefixIcon: Icon(Icons.attach_money),
-                    ),
-                    validator: (v) {
-                      final p = double.tryParse(v ?? '');
-                      if (p == null || p < AppConstants.minPricePerKg) {
-                        return 'Minimum ${AppConstants.minPricePerKg} DZD/kg';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: flightController,
-                    decoration: const InputDecoration(
-                      labelText: 'Numéro de vol (optionnel)',
-                      prefixIcon: Icon(Icons.flight),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: descriptionController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Description (optionnel)',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            final date = await showDatePicker(
-                              context: sheetContext,
-                              initialDate: departure,
-                              firstDate: DateTime.now(),
-                              lastDate:
-                                  DateTime.now().add(const Duration(days: 365)),
-                            );
-                            if (date != null) {
-                              setSheetState(() => departure = date);
-                            }
-                          },
-                          icon: const Icon(Icons.flight_takeoff, size: 18),
-                          label: Text(
-                              'Départ ${departure.day}/${departure.month}'),
-                        ),
+        builder: (sheetContext, setSheetState) => SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
+            ),
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Publier une offre de transport',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimaryColor,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            final date = await showDatePicker(
-                              context: sheetContext,
-                              initialDate: arrival,
-                              firstDate: departure,
-                              lastDate:
-                                  DateTime.now().add(const Duration(days: 365)),
-                            );
-                            if (date != null) {
-                              setSheetState(() => arrival = date);
-                            }
-                          },
-                          icon: const Icon(Icons.flight_land, size: 18),
-                          label:
-                              Text('Arrivée ${arrival.day}/${arrival.month}'),
-                        ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      initialValue: originCountry,
+                      decoration: const InputDecoration(labelText: 'Origine'),
+                      items: AppConstants.populateOrigins
+                          .map(
+                              (c) => DropdownMenuItem(value: c, child: Text(c)))
+                          .toList(),
+                      onChanged: (v) => setSheetState(
+                          () => originCountry = v ?? originCountry),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: destinationCity,
+                      decoration:
+                          const InputDecoration(labelText: 'Destination'),
+                      items: AppConstants.majorCities
+                          .map(
+                              (c) => DropdownMenuItem(value: c, child: Text(c)))
+                          .toList(),
+                      onChanged: (v) => setSheetState(
+                          () => destinationCity = v ?? destinationCity),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: weightController,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: 'Poids disponible (kg)',
+                        prefixIcon: Icon(Icons.scale),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: submitting
-                        ? null
-                        : () async {
-                            if (!formKey.currentState!.validate()) return;
-                            setSheetState(() => submitting = true);
-                            try {
-                              await ref
-                                  .read(shipmentServiceProvider)
-                                  .publishShipment(
-                                    shipperId: shipperId,
-                                    originCountry: originCountry,
-                                    destinationCity: destinationCity,
-                                    availableWeightKg:
-                                        double.parse(weightController.text),
-                                    pricePerKg:
-                                        double.parse(priceController.text),
-                                    departureDate: departure,
-                                    arrivalDate: arrival,
-                                    flightNumber: flightController.text.isEmpty
-                                        ? null
-                                        : flightController.text,
-                                    description:
-                                        descriptionController.text.isEmpty
-                                            ? null
-                                            : descriptionController.text,
+                      validator: (v) {
+                        final w = double.tryParse(v ?? '');
+                        if (w == null || w <= AppConstants.minWeightKg) {
+                          return 'Poids invalide';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: priceController,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: 'Prix par kg (DZD)',
+                        prefixIcon: Icon(Icons.attach_money),
+                      ),
+                      validator: (v) {
+                        final p = double.tryParse(v ?? '');
+                        if (p == null || p < AppConstants.minPricePerKg) {
+                          return 'Minimum ${AppConstants.minPricePerKg} DZD/kg';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: flightController,
+                      decoration: const InputDecoration(
+                        labelText: 'Numéro de vol (optionnel)',
+                        prefixIcon: Icon(Icons.flight),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: descriptionController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Description (optionnel)',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final date = await showDatePicker(
+                                context: sheetContext,
+                                initialDate: departure,
+                                firstDate: DateTime.now(),
+                                lastDate: DateTime.now()
+                                    .add(const Duration(days: 365)),
+                              );
+                              if (date != null) {
+                                setSheetState(() => departure = date);
+                              }
+                            },
+                            icon: const Icon(Icons.flight_takeoff, size: 18),
+                            label: Text(
+                                'Départ ${departure.day}/${departure.month}'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final date = await showDatePicker(
+                                context: sheetContext,
+                                initialDate: arrival,
+                                firstDate: departure,
+                                lastDate: DateTime.now()
+                                    .add(const Duration(days: 365)),
+                              );
+                              if (date != null) {
+                                setSheetState(() => arrival = date);
+                              }
+                            },
+                            icon: const Icon(Icons.flight_land, size: 18),
+                            label:
+                                Text('Arrivée ${arrival.day}/${arrival.month}'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: submitting
+                          ? null
+                          : () async {
+                              if (!formKey.currentState!.validate()) return;
+                              setSheetState(() => submitting = true);
+                              try {
+                                await ref
+                                    .read(shipmentServiceProvider)
+                                    .publishShipment(
+                                      shipperId: shipperId,
+                                      originCountry: originCountry,
+                                      destinationCity: destinationCity,
+                                      availableWeightKg:
+                                          double.parse(weightController.text),
+                                      pricePerKg:
+                                          double.parse(priceController.text),
+                                      departureDate: departure,
+                                      arrivalDate: arrival,
+                                      flightNumber:
+                                          flightController.text.isEmpty
+                                              ? null
+                                              : flightController.text,
+                                      description:
+                                          descriptionController.text.isEmpty
+                                              ? null
+                                              : descriptionController.text,
+                                    );
+                                await ref
+                                    .read(
+                                        shipperShipmentsPagerProvider(shipperId)
+                                            .notifier)
+                                    .refresh();
+                                ref.invalidate(shipperStatsProvider(shipperId));
+                                ref.invalidate(
+                                    shipperEarningsProvider(shipperId));
+                                if (sheetContext.mounted) {
+                                  Navigator.pop(sheetContext);
+                                }
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content:
+                                          Text('Offre publiée avec succès'),
+                                      backgroundColor: AppTheme.accentColor,
+                                    ),
                                   );
-                              await ref
-                                  .read(shipperShipmentsPagerProvider(shipperId)
-                                      .notifier)
-                                  .refresh();
-                              ref.invalidate(shipperStatsProvider(shipperId));
-                              ref.invalidate(
-                                  shipperEarningsProvider(shipperId));
-                              if (sheetContext.mounted) {
-                                Navigator.pop(sheetContext);
+                                }
+                              } catch (e) {
+                                if (sheetContext.mounted) {
+                                  setSheetState(() => submitting = false);
+                                  await showAppErrorDialog(
+                                    sheetContext,
+                                    message: 'Erreur: $e',
+                                  );
+                                }
                               }
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Offre publiée avec succès'),
-                                    backgroundColor: AppTheme.accentColor,
-                                  ),
-                                );
-                              }
-                            } catch (e) {
-                              if (sheetContext.mounted) {
-                                setSheetState(() => submitting = false);
-                                await showAppErrorDialog(
-                                  sheetContext,
-                                  message: 'Erreur: $e',
-                                );
-                              }
-                            }
-                          },
-                    child: submitting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Publier'),
-                  ),
-                ],
+                            },
+                      child: submitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Publier'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

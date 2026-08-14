@@ -60,72 +60,74 @@ class _RateShipperSheetState extends State<_RateShipperSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-        left: AppTheme.spaceMd,
-        right: AppTheme.spaceMd,
-        top: AppTheme.spaceMd,
-        bottom: MediaQuery.of(context).viewInsets.bottom + AppTheme.spaceLg,
-      ),
-      decoration: const BoxDecoration(
-        color: AppTheme.backgroundColor,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppTheme.dividerColor,
-                borderRadius: BorderRadius.circular(2),
+    return SafeArea(
+      child: Container(
+        padding: EdgeInsets.only(
+          left: AppTheme.spaceMd,
+          right: AppTheme.spaceMd,
+          top: AppTheme.spaceMd,
+          bottom: MediaQuery.of(context).viewInsets.bottom + AppTheme.spaceLg,
+        ),
+        decoration: const BoxDecoration(
+          color: AppTheme.backgroundColor,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.dividerColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: AppTheme.spaceMd),
-          Text(
-            'Noter ${widget.shipperName}',
-            textAlign: TextAlign.center,
-            style: AppTheme.h2,
-          ),
-          const SizedBox(height: AppTheme.spaceSm),
-          const Text(
-            'Comment s\'est passée la livraison ?',
-            textAlign: TextAlign.center,
-            style: AppTheme.bodySecondary,
-          ),
-          const SizedBox(height: AppTheme.spaceMd),
-          StarPicker(
-            value: _rating,
-            onChanged: (v) => setState(() => _rating = v),
-          ),
-          const SizedBox(height: AppTheme.spaceMd),
-          TextField(
-            controller: _commentController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Commentaire (optionnel)',
+            const SizedBox(height: AppTheme.spaceMd),
+            Text(
+              'Noter ${widget.shipperName}',
+              textAlign: TextAlign.center,
+              style: AppTheme.h2,
             ),
-          ),
-          const SizedBox(height: AppTheme.spaceLg),
-          FilledButton.icon(
-            onPressed: _submitting ? null : _submit,
-            icon: _submitting
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.star_rounded),
-            label: Text(_submitting ? 'Envoi...' : 'Envoyer mon avis'),
-          ),
-        ],
+            const SizedBox(height: AppTheme.spaceSm),
+            const Text(
+              'Comment s\'est passée la livraison ?',
+              textAlign: TextAlign.center,
+              style: AppTheme.bodySecondary,
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            StarPicker(
+              value: _rating,
+              onChanged: (v) => setState(() => _rating = v),
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            TextField(
+              controller: _commentController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Commentaire (optionnel)',
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceLg),
+            FilledButton.icon(
+              onPressed: _submitting ? null : _submit,
+              icon: _submitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.star_rounded),
+              label: Text(_submitting ? 'Envoi...' : 'Envoyer mon avis'),
+            ),
+          ],
+        ),
       ),
     );
   }

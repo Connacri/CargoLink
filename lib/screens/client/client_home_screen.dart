@@ -420,9 +420,12 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => const FractionallySizedBox(
-        heightFactor: 0.85,
-        child: NotificationsSheet(),
+      builder: (context) => SafeArea(
+        top: false,
+        child: FractionallySizedBox(
+          heightFactor: 0.85,
+          child: NotificationsSheet(),
+        ),
       ),
     );
   }
