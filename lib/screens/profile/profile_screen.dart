@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
@@ -601,6 +602,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 icon: Icons.phone_outlined,
                 label: 'Téléphone',
                 value: userData.phone,
+                fieldType: _ContactFieldType.phone,
               ),
               const SizedBox(height: AppTheme.spaceSm + 4),
               _ReadonlyField(
@@ -699,36 +701,42 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 icon: Icons.chat,
                 label: 'WhatsApp',
                 value: userData.whatsapp,
+                fieldType: _ContactFieldType.whatsapp,
               ),
               const SizedBox(height: AppTheme.spaceSm + 4),
               _ReadonlyField(
                 icon: Icons.wechat,
                 label: 'WeChat',
                 value: userData.wechat,
+                fieldType: _ContactFieldType.chat,
               ),
               const SizedBox(height: AppTheme.spaceSm + 4),
               _ReadonlyField(
                 icon: Icons.send,
                 label: 'Telegram',
                 value: userData.telegram,
+                fieldType: _ContactFieldType.telegram,
               ),
               const SizedBox(height: AppTheme.spaceSm + 4),
               _ReadonlyField(
                 icon: Icons.facebook,
                 label: 'Facebook',
                 value: userData.facebook,
+                fieldType: _ContactFieldType.facebook,
               ),
               const SizedBox(height: AppTheme.spaceSm + 4),
               _ReadonlyField(
                 icon: Icons.camera_alt_outlined,
                 label: 'Instagram',
                 value: userData.instagram,
+                fieldType: _ContactFieldType.instagram,
               ),
               const SizedBox(height: AppTheme.spaceSm + 4),
               _ReadonlyField(
                 icon: Icons.music_note_outlined,
                 label: 'TikTok',
                 value: userData.tiktok,
+                fieldType: _ContactFieldType.tiktok,
               ),
             ],
           ],
@@ -1067,19 +1075,74 @@ class _HistoryEmpty extends StatelessWidget {
 // READ-ONLY FIELD (display mode of the profile)
 // ============================================================================
 
+enum _ContactFieldType {
+  plain,
+  phone,
+  whatsapp,
+  chat,
+  telegram,
+  facebook,
+  instagram,
+  tiktok,
+}
+
 class _ReadonlyField extends StatelessWidget {
   const _ReadonlyField({
     required this.icon,
     required this.label,
     required this.value,
+    this.fieldType = _ContactFieldType.plain,
   });
 
   final IconData icon;
   final String label;
   final String? value;
+  final _ContactFieldType fieldType;
+
+  /// Empty attributes are hidden entirely so the profile stays uncluttered.
+  bool get _isEmpty => value == null || value!.trim().isEmpty;
+
+  String? get _launchUri {
+    final raw = value!.trim();
+    switch (fieldType) {
+      case _ContactFieldType.phone:
+        return 'tel:$raw';
+      case _ContactFieldType.whatsapp:
+        final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+        return digits.isEmpty ? null : 'https://wa.me/$digits';
+      case _ContactFieldType.chat:
+        // WeChat a besoin d'une invitation/scan, on ne peut pas lancer
+        // l'app directement avec un identifiant.
+        return null;
+      case _ContactFieldType.telegram:
+        return 'https://t.me/${raw.replaceFirst('@', '')}';
+      case _ContactFieldType.facebook:
+        return 'https://facebook.com/$raw';
+      case _ContactFieldType.instagram:
+        return 'https://instagram.com/${raw.replaceFirst('@', '')}';
+      case _ContactFieldType.tiktok:
+        return 'https://tiktok.com/@${raw.replaceFirst('@', '')}';
+      case _ContactFieldType.plain:
+        return null;
+    }
+  }
+
+  Future<void> _open(BuildContext context) async {
+    final uri = _launchUri;
+    if (uri == null) return;
+    final ok = await launchUrl(
+      Uri.parse(uri),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!ok && context.mounted) {
+      showAppErrorDialog(context, message: 'Impossible d\'ouvrir le lien');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isEmpty) return const SizedBox.shrink();
+    final uri = _launchUri;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1089,16 +1152,29 @@ class _ReadonlyField extends StatelessWidget {
         ),
         const SizedBox(width: AppTheme.spaceSm + 4),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: AppTheme.caption),
-              const SizedBox(height: 2),
-              Text(
-                value == null || value!.isEmpty ? '—' : value!,
-                style: AppTheme.body,
+          child: InkWell(
+            onTap: uri != null ? () => _open(context) : null,
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: AppTheme.caption),
+                  const SizedBox(height: 2),
+                  Text(
+                    value!,
+                    style: AppTheme.body.copyWith(
+                      color: uri != null
+                          ? AppTheme.primaryColor
+                          : AppTheme.textPrimaryColor,
+                      fontWeight:
+                          uri != null ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ],
