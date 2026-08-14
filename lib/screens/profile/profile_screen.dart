@@ -1020,36 +1020,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         return Padding(
           padding: const EdgeInsets.fromLTRB(
               AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceMd, 0),
-          child: Material(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-            child: InkWell(
-              onTap: () => Navigator.of(context)
-                  .pushNamed('/shipper-registration'),
+          child: Container(
+            padding: const EdgeInsets.all(AppTheme.spaceSm + 4),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-              child: Container(
-                padding: const EdgeInsets.all(AppTheme.spaceSm + 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-                  border: Border.all(color: color.withValues(alpha: 0.3)),
+              border: Border.all(color: color.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                AnimatedIconDot(
+                  icon: Icons.verified_user_rounded,
+                  color: color,
+                  size: 18,
                 ),
-                child: Row(
-                  children: [
-                    AnimatedIconDot(
-                      icon: Icons.verified_user_rounded,
-                      color: color,
-                      size: 18,
-                    ),
-                    const SizedBox(width: AppTheme.spaceSm + 4),
-                    Expanded(
-                      child: Text(text, style: TextStyle(color: color)),
-                    ),
-                    const SizedBox(width: AppTheme.spaceSm + 4),
-                    Icon(Icons.edit_outlined,
-                        size: 18, color: color.withValues(alpha: 0.7)),
-                  ],
-                ),
-              ),
+                const SizedBox(width: AppTheme.spaceSm + 4),
+                Expanded(child: Text(text, style: TextStyle(color: color))),
+              ],
             ),
           ),
         );
