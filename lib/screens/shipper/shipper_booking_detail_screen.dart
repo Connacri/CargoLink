@@ -104,6 +104,10 @@ class _ShipperBookingDetailScreenState
                 SliverToBoxAdapter(
                   child: _buildActionsSection(data),
                 ),
+                if (data.status == 'delivered')
+                  SliverToBoxAdapter(
+                    child: _buildSection('Preuves de livraison', _buildProofs(data)),
+                  ),
                 const SliverToBoxAdapter(
                   child: SizedBox(height: AppTheme.spaceXxl),
                 ),
@@ -245,6 +249,73 @@ class _ShipperBookingDetailScreenState
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildProofs(Booking booking) {
+    final deliveryPhoto = booking.deliveryPhotoUrl;
+    final receiptPhoto = booking.receiptPhotoUrl;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (deliveryPhoto != null && deliveryPhoto.isNotEmpty) ...[
+          const Text('Votre preuve de livraison', style: AppTheme.label),
+          const SizedBox(height: AppTheme.spaceSm),
+          GestureDetector(
+            onTap: () => showFullScreenImage(
+              context,
+              imageUrl: deliveryPhoto,
+              title: 'Preuve de livraison',
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+              child: Image.network(
+                deliveryPhoto,
+                height: 160,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                errorBuilder: (_, __, ___) => Container(
+                  height: 160,
+                  color: AppTheme.surfaceMuted,
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.image_not_supported_outlined,
+                      color: AppTheme.textSecondaryColor),
+                ),
+              ),
+            ),
+          ),
+        ],
+        if (booking.receiptConfirmedAt != null) ...[
+          if (deliveryPhoto != null && deliveryPhoto.isNotEmpty)
+            const SizedBox(height: AppTheme.spaceMd),
+          const Text('Confirmation du client', style: AppTheme.label),
+          const SizedBox(height: AppTheme.spaceSm),
+          Row(
+            children: [
+              const Icon(Icons.verified_rounded,
+                  color: AppTheme.accentColor, size: 18),
+              const SizedBox(width: AppTheme.spaceXs),
+              Expanded(
+                child: Text(
+                  'Réception confirmée le '
+                  '${booking.receiptConfirmedAt!.day}/${booking.receiptConfirmedAt!.month}/${booking.receiptConfirmedAt!.year}',
+                  style: AppTheme.body.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+              if (receiptPhoto != null && receiptPhoto.isNotEmpty)
+                IconButton(
+                  onPressed: () => showFullScreenImage(
+                    context,
+                    imageUrl: receiptPhoto,
+                    title: 'Photo de réception',
+                  ),
+                  icon: const Icon(Icons.photo_rounded),
+                  tooltip: 'Voir la photo du client',
+                ),
+            ],
+          ),
+        ],
+      ],
     );
   }
 
@@ -552,21 +623,37 @@ class _ShipperBookingDetailScreenState
             );
       }, 'Commande marquée comme expédiée');
 
-  Future<void> _markDelivered(Booking booking) => _run(() async {
-        await ref.read(bookingServiceProvider).markAsDelivered(booking.id);
-        await ref.read(trackingServiceProvider).addTrackingUpdate(
-              bookingId: booking.id,
-              status: 'delivered',
-              notes: 'Colis livré à ${booking.shipment?.destinationCity}',
-              location: booking.shipment?.destinationCity,
-            );
-        await ref
-            .read(notificationServiceProvider)
-            .notifyClientShipmentDelivered(
-              clientId: booking.clientId,
-              bookingId: booking.id,
-            );
-      }, 'Commande marquée comme livrée');
+  Future<void> _markDelivered(Booking booking) async {
+    final photo = await pickProofPhoto(
+      context,
+      title: 'Preuve de livraison',
+    );
+    if (photo == null) return;
+    await _run(() async {
+      final url = await ref
+          .read(storageServiceProvider)
+          .uploadBookingProofPhoto(
+            file: photo,
+            bookingId: booking.id,
+            type: 'delivery',
+          );
+      await ref
+          .read(bookingServiceProvider)
+          .markAsDelivered(booking.id, deliveryPhotoUrl: url);
+      await ref.read(trackingServiceProvider).addTrackingUpdate(
+            bookingId: booking.id,
+            status: 'delivered',
+            notes: 'Colis livré à ${booking.shipment?.destinationCity}',
+            location: booking.shipment?.destinationCity,
+          );
+      await ref
+          .read(notificationServiceProvider)
+          .notifyClientShipmentDelivered(
+            clientId: booking.clientId,
+            bookingId: booking.id,
+          );
+    }, 'Commande marquée comme livrée');
+  }
 
   Future<void> _cancel(Booking booking) => _run(
       () => ref.read(bookingServiceProvider).cancelBooking(booking.id),

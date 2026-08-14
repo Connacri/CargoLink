@@ -5,6 +5,7 @@ import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../chat/chat_screen.dart';
 
 // ============================================================================
 // PAGINATED PROVIDERS (local to this screen)
@@ -38,7 +39,7 @@ final userBookingsPagerProvider = StateNotifierProvider.family<
   },
 );
 
-enum _AdminAction { toggleActive, delete }
+enum _AdminAction { toggleActive, delete, chat }
 
 /// Full dossier of a single user for the founder dashboard: profile,
 /// shipper record (if any), shipments, bookings, payments and disputes.
@@ -79,6 +80,23 @@ class _UserDetailsScreenState extends ConsumerState<UserDetailsScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _openChat() async {
+    final myId = ref.read(authServiceProvider).currentUserId;
+    if (myId == null) return;
+    final user = widget.user;
+    if (user.id == myId) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          counterpartUserId: user.id,
+          counterpartName: user.fullName,
+          counterpartAvatarUrl: user.profilePictureUrl,
+        ),
+      ),
+    );
   }
 
   Future<void> _toggleActive() async {
@@ -160,6 +178,9 @@ class _UserDetailsScreenState extends ConsumerState<UserDetailsScreen>
               icon: const Icon(Icons.more_vert, color: Colors.white),
               onSelected: (action) async {
                 switch (action) {
+                  case _AdminAction.chat:
+                    await _openChat();
+                    break;
                   case _AdminAction.toggleActive:
                     await _toggleActive();
                     break;
@@ -169,6 +190,17 @@ class _UserDetailsScreenState extends ConsumerState<UserDetailsScreen>
                 }
               },
               itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: _AdminAction.chat,
+                  child: Row(
+                    children: [
+                      Icon(Icons.chat_bubble_outline_rounded,
+                          color: AppTheme.infoColor),
+                      SizedBox(width: 8),
+                      Text('Contacter'),
+                    ],
+                  ),
+                ),
                 PopupMenuItem(
                   value: _AdminAction.toggleActive,
                   child: Text(

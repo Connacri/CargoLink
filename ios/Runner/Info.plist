@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Cargolink utilise la caméra pour capturer votre selfie lors de la vérification d'identité.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Cargolink peut utiliser le microphone pour l'enregistrement vidéo.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

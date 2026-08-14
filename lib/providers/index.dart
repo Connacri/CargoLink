@@ -13,6 +13,7 @@ import '../data/services/storage_service.dart';
 import '../data/services/realtime_service.dart';
 import '../data/services/settings_service.dart';
 import '../data/services/v2_service.dart';
+import '../data/services/feedback_service.dart';
 
 // ============================================================================
 // AUTH PROVIDERS
@@ -73,6 +74,13 @@ final pendingShippersProvider =
     limit: params.limit,
     offset: params.offset,
   );
+});
+
+/// Count of shippers awaiting verification — powers the founder dashboard
+/// notification badge.
+final pendingShippersCountProvider = FutureProvider<int>((ref) async {
+  final shipperService = ref.watch(shipperServiceProvider);
+  return shipperService.countPendingShippers();
 });
 
 final shipperStatsProvider =
@@ -546,7 +554,7 @@ final broadcastServiceProvider = Provider<BroadcastService>((ref) {
 final broadcastsProvider = FutureProvider<List<Broadcast>>((ref) async {
   final broadcastService = ref.watch(broadcastServiceProvider);
   final user = await ref.watch(currentUserProvider.future);
-  return broadcastService.getBroadcasts(role: user?.role);
+  return broadcastService.getBroadcasts(role: user?.role, userId: user?.id);
 });
 
 // ============================================================================
@@ -732,3 +740,21 @@ final priceFilterProvider = StateProvider<({double min, double max})?>(
 
 final searchQueryProvider = StateProvider<String>((ref) => '');
 final isSearchingProvider = StateProvider<bool>((ref) => false);
+
+// ============================================================================
+// FEEDBACK (screenshot + text → founder)
+// ============================================================================
+
+final feedbackServiceProvider = Provider<FeedbackService>((ref) {
+  return FeedbackService();
+});
+
+final feedbackListProvider = FutureProvider<List<FeedbackItem>>((ref) async {
+  final service = ref.watch(feedbackServiceProvider);
+  return service.getAll();
+});
+
+final unreadFeedbackCountProvider = FutureProvider<int>((ref) async {
+  final service = ref.watch(feedbackServiceProvider);
+  return service.countUnread();
+});

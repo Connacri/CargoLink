@@ -5,9 +5,11 @@ import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/chat_widgets.dart';
 import 'entity_list_screen.dart';
 import 'user_details_screen.dart';
 import 'platform_settings_screen.dart';
+import 'verification_center_screen.dart';
 
 /// Founder (super_admin) dashboard — accès total et contrôle de la plateforme :
 /// stats globales, gestion de tous les comptes (rôles, activation,
@@ -55,6 +57,8 @@ class _SuperAdminDashboardScreenState
 
   Future<void> _refreshAll() async {
     ref.invalidate(platformStatsProvider);
+    ref.invalidate(pendingShippersCountProvider);
+    ref.invalidate(unreadFeedbackCountProvider);
     await _refreshUsers();
   }
 
@@ -73,17 +77,22 @@ class _SuperAdminDashboardScreenState
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  const _PendingVerificationBadge(),
                   IconButton(
                     tooltip: 'Annonces',
                     icon: const Icon(Icons.campaign, color: Colors.white),
                     onPressed: () =>
                         Navigator.of(context).pushNamed('/broadcast'),
                   ),
+                  const _FeedbackBadge(),
+                  const ChatInboxBadge(),
                   const LogoutIconButton(),
                 ],
               ),
             ),
             const SliverToBoxAdapter(child: _StatsOverview()),
+            const SliverToBoxAdapter(child: _PendingVerificationSection()),
+            const SliverToBoxAdapter(child: _FeedbackSection()),
             const SliverToBoxAdapter(
               child: _SectionTitle(title: 'Gestion des comptes'),
             ),
@@ -205,6 +214,251 @@ class _SectionTitle extends StatelessWidget {
         AppTheme.spaceSm,
       ),
       child: Text(title, style: AppTheme.h2),
+    );
+  }
+}
+
+// ============================================================================
+// PENDING VERIFICATION (Fondateur notification)
+// ============================================================================
+
+/// Bell icon with the count of shippers awaiting KYC verification. Tapping it
+/// opens the full-screen verification center (photos at full size).
+class _PendingVerificationBadge extends ConsumerWidget {
+  const _PendingVerificationBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(pendingShippersCountProvider);
+
+    final badge = count.when(
+      data: (n) => n > 0
+          ? n > 99
+              ? '99+'
+              : '$n'
+          : '',
+      loading: () => '',
+      error: (_, __) => '',
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 4),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          IconButton(
+            tooltip: 'Vérifications en attente',
+            icon: const Icon(Icons.notifications_none, color: Colors.white),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const VerificationCenterScreen(),
+              ),
+            ),
+          ),
+          if (badge.isNotEmpty)
+            Positioned(
+              right: 6,
+              top: 6,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.errorColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                constraints: const BoxConstraints(minWidth: 18),
+                child: Text(
+                  badge,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Compact "comptes en attente" summary card linking to the verification center.
+class _PendingVerificationSection extends ConsumerWidget {
+  const _PendingVerificationSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(pendingShippersCountProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        0,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: GlassCard(
+        padding: EdgeInsets.zero,
+        child: ListTile(
+          leading: const AnimatedIconDot(
+            icon: Icons.fact_check_outlined,
+            color: AppTheme.warningColor,
+          ),
+          title: const Text('Comptes en attente de vérification'),
+          subtitle: count.when(
+            data: (n) => Text(
+              n == 0
+                  ? 'Tous les expéditeurs sont vérifiés'
+                  : '$n dossier(s) KYC à examiner',
+              style: AppTheme.caption,
+            ),
+            loading: () => const Text('Chargement…', style: AppTheme.caption),
+            error: (_, __) =>
+                const Text('Vérification indisponible', style: AppTheme.caption),
+          ),
+          trailing: count.when(
+            data: (n) => n > 0
+                ? Text(
+                    '$n',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.errorColor,
+                    ),
+                  )
+                : const Icon(Icons.check_circle_rounded,
+                    color: AppTheme.accentColor),
+            loading: () => const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            error: (_, __) => const Icon(Icons.help_outline,
+                color: AppTheme.textMutedColor),
+          ),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const VerificationCenterScreen(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Header bell with unread count linking to the feedback inbox.
+class _FeedbackBadge extends ConsumerWidget {
+  const _FeedbackBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(unreadFeedbackCountProvider);
+
+    final badge = count.when(
+      data: (n) => n > 0 ? (n > 99 ? '99+' : '$n') : '',
+      loading: () => '',
+      error: (_, __) => '',
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 4),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          IconButton(
+            tooltip: 'Feedback des utilisateurs',
+            icon: const Icon(Icons.feedback_outlined, color: Colors.white),
+            onPressed: () => Navigator.of(context).pushNamed('/feedback-inbox'),
+          ),
+          if (badge.isNotEmpty)
+            Positioned(
+              right: 6,
+              top: 6,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.errorColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                constraints: const BoxConstraints(minWidth: 18),
+                child: Text(
+                  badge,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Compact summary card linking to the feedback inbox.
+class _FeedbackSection extends ConsumerWidget {
+  const _FeedbackSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(unreadFeedbackCountProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        0,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: GlassCard(
+        padding: EdgeInsets.zero,
+        child: ListTile(
+          leading: const AnimatedIconDot(
+            icon: Icons.feedback_rounded,
+            color: AppTheme.infoColor,
+          ),
+          title: const Text('Feedback des utilisateurs'),
+          subtitle: count.when(
+            data: (n) => Text(
+              n == 0
+                  ? 'Aucun nouveau feedback'
+                  : '$n nouveau(x) message(s) à consulter',
+              style: AppTheme.caption,
+            ),
+            loading: () => const Text('Chargement…', style: AppTheme.caption),
+            error: (_, __) =>
+                const Text('Feedback indisponible', style: AppTheme.caption),
+          ),
+          trailing: count.when(
+            data: (n) => n > 0
+                ? Text(
+                    '$n',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.errorColor,
+                    ),
+                  )
+                : const Icon(Icons.thumb_up_alt_rounded,
+                    color: AppTheme.accentColor),
+            loading: () => const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            error: (_, __) => const Icon(Icons.help_outline,
+                color: AppTheme.textMutedColor),
+          ),
+          onTap: () => Navigator.of(context).pushNamed('/feedback-inbox'),
+        ),
+      ),
     );
   }
 }
@@ -621,6 +875,19 @@ class _AdminShortcuts extends ConsumerWidget {
         padding: EdgeInsets.zero,
         child: Column(
           children: [
+            ListTile(
+              leading: const AnimatedIconDot(
+                  icon: Icons.insights_rounded, color: AppTheme.infoColor),
+              title: const Text('Analytics fondateur'),
+              subtitle: const Text(
+                'Revenus, profit, répartition par rôle et destination',
+                style: AppTheme.caption,
+              ),
+              trailing: const Icon(Icons.chevron_right,
+                  color: AppTheme.textSecondaryColor),
+              onTap: () => Navigator.of(context).pushNamed('/founder-analytics'),
+            ),
+            const Divider(height: 1, indent: AppTheme.spaceXxl),
             ListTile(
               leading:
                   const AnimatedIconDot(

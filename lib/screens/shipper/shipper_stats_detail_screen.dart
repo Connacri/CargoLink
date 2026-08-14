@@ -768,26 +768,39 @@ class _BookingTile extends ConsumerWidget {
         'Commande marquée comme expédiée',
       );
 
-  void _markDelivered(BuildContext context, WidgetRef ref) => _runAction(
-        context,
-        ref,
-        () async {
-          await ref.read(bookingServiceProvider).markAsDelivered(booking.id);
-          await ref.read(trackingServiceProvider).addTrackingUpdate(
-                bookingId: booking.id,
-                status: 'delivered',
-                notes: 'Colis livré à ${booking.shipment?.destinationCity}',
-                location: booking.shipment?.destinationCity,
-              );
-          await ref
-              .read(notificationServiceProvider)
-              .notifyClientShipmentDelivered(
-                clientId: booking.clientId,
-                bookingId: booking.id,
-              );
-        },
-        'Commande marquée comme livrée',
-      );
+  Future<void> _markDelivered(BuildContext context, WidgetRef ref) async {
+    final photo = await pickProofPhoto(context, title: 'Preuve de livraison');
+    if (photo == null) return;
+    await _runAction(
+      context,
+      ref,
+      () async {
+        final url = await ref
+            .read(storageServiceProvider)
+            .uploadBookingProofPhoto(
+              file: photo,
+              bookingId: booking.id,
+              type: 'delivery',
+            );
+        await ref
+            .read(bookingServiceProvider)
+            .markAsDelivered(booking.id, deliveryPhotoUrl: url);
+        await ref.read(trackingServiceProvider).addTrackingUpdate(
+              bookingId: booking.id,
+              status: 'delivered',
+              notes: 'Colis livré à ${booking.shipment?.destinationCity}',
+              location: booking.shipment?.destinationCity,
+            );
+        await ref
+            .read(notificationServiceProvider)
+            .notifyClientShipmentDelivered(
+              clientId: booking.clientId,
+              bookingId: booking.id,
+            );
+      },
+      'Commande marquée comme livrée',
+    );
+  }
 
   void _cancel(BuildContext context, WidgetRef ref) => _runAction(
         context,

@@ -643,6 +643,13 @@ class _ShipperDashboardScreenState
     DateTime arrival = DateTime.now().add(const Duration(days: 7));
     bool submitting = false;
 
+    final settings = ref.read(platformSettingsProvider).valueOrNull;
+    final minWeight = settings?.minWeightKg ?? AppConstants.minWeightKg;
+    final maxWeight = settings?.maxWeightKg ?? AppConstants.maxWeightKg;
+    final minPrice = settings?.minPricePerKg ?? AppConstants.minPricePerKg;
+    final currency =
+        settings?.defaultCurrency ?? AppConstants.defaultCurrency;
+
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -705,8 +712,11 @@ class _ShipperDashboardScreenState
                       ),
                       validator: (v) {
                         final w = double.tryParse(v ?? '');
-                        if (w == null || w <= AppConstants.minWeightKg) {
+                        if (w == null || w <= minWeight) {
                           return 'Poids invalide';
+                        }
+                        if (w > maxWeight) {
+                          return 'Maximum $maxWeight kg';
                         }
                         return null;
                       },
@@ -722,8 +732,8 @@ class _ShipperDashboardScreenState
                       ),
                       validator: (v) {
                         final p = double.tryParse(v ?? '');
-                        if (p == null || p < AppConstants.minPricePerKg) {
-                          return 'Minimum ${AppConstants.minPricePerKg} DZD/kg';
+                        if (p == null || p < minPrice) {
+                          return 'Minimum $minPrice $currency/kg';
                         }
                         return null;
                       },
@@ -1666,8 +1676,19 @@ class _ManageBookingCard extends ConsumerWidget {
   }
 
   Future<void> _markDelivered(BuildContext context, WidgetRef ref) async {
+    final photo = await pickProofPhoto(context, title: 'Preuve de livraison');
+    if (photo == null) return;
     try {
-      await ref.read(bookingServiceProvider).markAsDelivered(booking.id);
+      final url = await ref
+          .read(storageServiceProvider)
+          .uploadBookingProofPhoto(
+            file: photo,
+            bookingId: booking.id,
+            type: 'delivery',
+          );
+      await ref
+          .read(bookingServiceProvider)
+          .markAsDelivered(booking.id, deliveryPhotoUrl: url);
       await ref.read(trackingServiceProvider).addTrackingUpdate(
             bookingId: booking.id,
             status: 'delivered',

@@ -50,11 +50,29 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
 
   double get _requestedWeight => double.tryParse(_weightCtrl.text) ?? 0;
 
+  int get _roundingPrecision => ref
+          .watch(platformSettingsProvider)
+          .valueOrNull
+          ?.roundingPrecision ??
+      AppConstants.roundingPrecision;
+
+  double get _commissionPercent => ref
+          .watch(platformSettingsProvider)
+          .valueOrNull
+          ?.commissionPercent ??
+      AppConstants.platformCommissionPercent;
+
+  String get _currency => ref
+          .watch(platformSettingsProvider)
+          .valueOrNull
+          ?.defaultCurrency ??
+      AppConstants.defaultCurrency;
+
   double _allocatedWeight(double available) {
     if (_requestedWeight <= 0) return 0;
     final allocated =
-        (_requestedWeight / AppConstants.roundingPrecision).ceil() *
-            AppConstants.roundingPrecision.toDouble();
+        (_requestedWeight / _roundingPrecision).ceil() *
+            _roundingPrecision.toDouble();
     return allocated > available ? available : allocated;
   }
 
@@ -258,7 +276,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
                       icon: Icons.payments_outlined,
                       label: 'Prix / kg',
                       value:
-                          '${shipment.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+                          '${shipment.pricePerKg.toStringAsFixed(0)} $_currency',
                       valueColor: AppTheme.primaryColor,
                     ),
                   ),
@@ -405,7 +423,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
     final available = shipment.remainingWeightKg;
     final allocated = _allocatedWeight(available);
     final subtotal = allocated * shipment.pricePerKg;
-    final commission = subtotal * AppConstants.platformCommissionPercent / 100;
+    final commission = subtotal * _commissionPercent / 100;
 
     return ListView(
       padding: const EdgeInsets.all(AppTheme.spaceMd),
@@ -427,20 +445,20 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
               _SummaryRow(
                 label: 'Prix / kg',
                 value: '${shipment.pricePerKg.toStringAsFixed(0)} '
-                    '${AppConstants.defaultCurrency}',
+                    '$_currency',
               ),
               const Divider(),
               _SummaryRow(
                 label: 'Sous-total',
                 value: '$subtotal.toStringAsFixed(0) '
-                    '${AppConstants.defaultCurrency}',
+                    '$_currency',
                 bold: true,
               ),
               _SummaryRow(
                 label:
-                    'Commission plateforme (${AppConstants.platformCommissionPercent.toStringAsFixed(0)}%)',
+                    'Commission plateforme (${_commissionPercent.toStringAsFixed(0)}%)',
                 value: '$commission.toStringAsFixed(0) '
-                    '${AppConstants.defaultCurrency}',
+                    '$_currency',
                 subtle: true,
               ),
               const SizedBox(height: AppTheme.spaceSm),
@@ -449,7 +467,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
               _SummaryRow(
                 label: 'Total à payer',
                 value: '$subtotal.toStringAsFixed(0) '
-                    '${AppConstants.defaultCurrency}',
+                    '$_currency',
                 total: true,
               ),
               const SizedBox(height: AppTheme.spaceSm),

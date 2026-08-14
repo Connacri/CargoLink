@@ -133,6 +133,35 @@ class StorageService {
     }
   }
 
+  /// Upload a delivery / receipt proof photo linked to a booking.
+  Future<String> uploadBookingProofPhoto({
+    required File file,
+    required String bookingId,
+    required String type, // 'delivery' or 'receipt'
+  }) async {
+    try {
+      _logger.i('Uploading $type proof photo for booking $bookingId');
+
+      final fileName = '${type}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final fullPath = 'proofs/$bookingId/$fileName';
+
+      await _supabase.storage.from(bookingsBucket).uploadBinary(
+            fullPath,
+            await file.readAsBytes(),
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+          );
+
+      final url =
+          _supabase.storage.from(bookingsBucket).getPublicUrl(fullPath);
+
+      _logger.i('Proof photo uploaded');
+      return url;
+    } catch (e) {
+      _logger.e('Error uploading proof photo: $e');
+      rethrow;
+    }
+  }
+
   // ============================================================================
   // DELETE METHODS
   // ============================================================================

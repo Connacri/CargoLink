@@ -21,6 +21,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
   String _currentRole = 'client';
   Broadcast? _editing;
   final Set<String> _audience = {'all'};
+  final List<User> _targetUsers = [];
 
   static const _audienceOptions = [
     (value: 'all', label: 'Tout le monde', icon: Icons.public_rounded),
@@ -87,6 +88,9 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
               title: title,
               message: message,
               audience: _audienceParam,
+              targetUserIds: _targetUsers.isEmpty
+                  ? null
+                  : _targetUsers.map((u) => u.id).toList(),
             );
       }
       _titleController.clear();
@@ -96,12 +100,15 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
         _audience
           ..clear()
           ..add('all');
+        _targetUsers.clear();
       });
       ref.invalidate(broadcastsProvider);
       _snack(
         wasEditing
             ? 'Annonce mise à jour'
-            : 'Annonce envoyée à ${_audienceLabel(_audienceParam)}',
+            : _targetUsers.isNotEmpty
+                ? 'Annonce envoyée à ${_targetUsers.length} utilisateur(s) ciblé(s)'
+                : 'Annonce envoyée à ${_audienceLabel(_audienceParam)}',
         AppTheme.accentColor,
       );
     } catch (e) {
@@ -118,6 +125,33 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
         .map((r) => _audienceOptions.firstWhere((o) => o.value == r).label)
         .join(', ');
     return labels;
+  }
+
+  Future<void> _pickTargetUsers() async {
+    final users = ref.read(allUsersProvider).value ?? [];
+    if (users.isEmpty) {
+      _snack('Impossible de charger la liste des utilisateurs',
+          AppTheme.warningColor);
+      return;
+    }
+
+    final result = await showModalBottomSheet<Set<String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _UserPickerSheet(
+        users: users,
+        initial: _targetUsers.map((u) => u.id).toSet(),
+      ),
+    );
+
+    if (result == null || !mounted) return;
+
+    setState(() {
+      _targetUsers
+        ..clear()
+        ..addAll(users.where((u) => result.contains(u.id)));
+    });
   }
 
   void _startEdit(Broadcast broadcast) {
@@ -281,7 +315,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Cibler', style: AppTheme.caption),
+        const Text('Cibler par rôle', style: AppTheme.caption),
         const SizedBox(height: AppTheme.spaceXs),
         Wrap(
           spacing: AppTheme.spaceSm,
@@ -310,6 +344,46 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
               ),
           ],
         ),
+        const SizedBox(height: AppTheme.spaceMd),
+        Row(
+          children: [
+            Expanded(
+              child: const Text(
+                'Ou cibler des utilisateurs précis',
+                style: AppTheme.caption,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: _pickTargetUsers,
+              icon: const Icon(Icons.person_search_rounded, size: 18),
+              label: Text(
+                _targetUsers.isEmpty
+                    ? 'Sélectionner'
+                    : '${_targetUsers.length} sélectionné(s)',
+              ),
+            ),
+          ],
+        ),
+        if (_targetUsers.isNotEmpty) ...[
+          const SizedBox(height: AppTheme.spaceXs),
+          Wrap(
+            spacing: AppTheme.spaceSm,
+            runSpacing: AppTheme.spaceXs,
+            children: [
+              for (final user in _targetUsers)
+                Chip(
+                  avatar: GradientAvatar(
+                    initial: user.fullName,
+                    imageUrl: user.profilePictureUrl,
+                    radius: 12,
+                  ),
+                  label: Text(user.fullName, overflow: TextOverflow.ellipsis),
+                  deleteIconColor: AppTheme.textSecondaryColor,
+                  onDeleted: () => setState(() => _targetUsers.remove(user)),
+                ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -503,5 +577,142 @@ class _BroadcastCard extends StatelessWidget {
   String _formatDate(DateTime dt) {
     return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} '
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+class _UserPickerSheet extends StatefulWidget {
+  const _UserPickerSheet({required this.users, required this.initial});
+
+  final List<User> users;
+  final Set<String> initial;
+
+  @override
+  State<_UserPickerSheet> createState() => _UserPickerSheetState();
+}
+
+class _UserPickerSheetState extends State<_UserPickerSheet> {
+  late final Set<String> _selected = {...widget.initial};
+  final _query = TextEditingController();
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  List<User> get _filtered {
+    final q = _query.text.trim().toLowerCase();
+    if (q.isEmpty) return widget.users;
+    return widget.users
+        .where((u) =>
+            u.fullName.toLowerCase().contains(q) ||
+            u.email.toLowerCase().contains(q))
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = _filtered;
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.7,
+      decoration: const BoxDecoration(
+        color: AppTheme.backgroundColor,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLg)),
+      ),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceLg,
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppTheme.textMutedColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceMd),
+          Row(
+            children: [
+              Expanded(
+                child: const Text(
+                  'Cibler des utilisateurs',
+                  style: AppTheme.h3,
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(_selected),
+                child: const Text('Terminé'),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
+          TextField(
+            controller: _query,
+            decoration: const InputDecoration(
+              hintText: 'Rechercher par nom ou email...',
+              prefixIcon: Icon(Icons.search_rounded),
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
+          Expanded(
+            child: filtered.isEmpty
+                ? const Center(
+                    child: Text('Aucun utilisateur',
+                        style: AppTheme.bodySecondary),
+                  )
+                : ListView.builder(
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final user = filtered[index];
+                      final isSelected = _selected.contains(user.id);
+                      return CheckboxListTile(
+                        value: isSelected,
+                        onChanged: (v) => setState(() {
+                          if (v == true) {
+                            _selected.add(user.id);
+                          } else {
+                            _selected.remove(user.id);
+                          }
+                        }),
+                        secondary: GradientAvatar(
+                          initial: user.fullName,
+                          imageUrl: user.profilePictureUrl,
+                          radius: 20,
+                        ),
+                        title: Text(user.fullName),
+                        subtitle: Text(
+                          '${_roleLabel(user.role)} · ${user.email}',
+                          style: AppTheme.caption,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _roleLabel(String role) {
+    switch (role) {
+      case 'client':
+        return 'Client';
+      case 'shipper':
+        return 'Transporteur';
+      case 'admin':
+        return 'Admin';
+      case 'super_admin':
+        return 'Fondateur';
+      default:
+        return role;
+    }
   }
 }

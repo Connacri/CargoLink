@@ -5,6 +5,7 @@ import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
 import 'user_details_screen.dart';
+import 'entity_detail_screen.dart';
 
 enum EntityListType { users, shipments, bookings, payments, disputes }
 
@@ -432,6 +433,9 @@ class _ShipmentCard extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
       child: GlassCard(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => EntityDetailScreen(shipment: s)),
+        ),
         child: Row(
           children: [
             const AnimatedIconDot(
@@ -527,6 +531,9 @@ class _BookingCard extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
       child: GlassCard(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => EntityDetailScreen(booking: b)),
+        ),
         child: Row(
           children: [
             const AnimatedIconDot(

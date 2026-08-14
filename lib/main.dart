@@ -1,3 +1,4 @@
+import 'package:feedback/feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,5 +15,14 @@ Future<void> main() async {
   // Wire Firebase Cloud Messaging
   await FcmService.instance.init();
 
-  runApp(const ProviderScope(child: CargoLinkApp()));
+  runApp(
+    const ProviderScope(
+      child: BetterFeedback(
+        localeOverride: Locale('fr'),
+        themeMode: ThemeMode.dark,
+        mode: FeedbackMode.draw,
+        child: CargoLinkApp(),
+      ),
+    ),
+  );
 }

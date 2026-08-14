@@ -136,6 +136,20 @@ class ShipperService {
     }
   }
 
+  /// Count shippers awaiting verification (founder notification badge).
+  Future<int> countPendingShippers() async {
+    try {
+      final response = await _supabase
+          .from('shippers')
+          .select('id')
+          .eq('verification_status', 'pending');
+      return (response as List).length;
+    } catch (e) {
+      _logger.e('Error counting pending shippers: $e');
+      return 0;
+    }
+  }
+
   /// Verify shipper (admin only)
   Future<Shipper?> verifyShipper({
     required String shipperId,
@@ -411,12 +425,13 @@ class ShipmentService {
   /// Calculate allocation weight (rounding logic)
   double calculateAllocationWeight(
     double requestedWeight,
-    double availableWeight,
-  ) {
-    // Round up to nearest AppConstants.roundingPrecision
+    double availableWeight, {
+    int roundingPrecision = AppConstants.roundingPrecision,
+  }) {
+    // Round up to nearest configured rounding precision (kg)
     double allocatedWeight =
-        (requestedWeight / AppConstants.roundingPrecision).ceil() *
-            AppConstants.roundingPrecision.toDouble();
+        (requestedWeight / roundingPrecision).ceil() *
+            roundingPrecision.toDouble();
 
     // Don't allocate more than requested or available
     allocatedWeight =

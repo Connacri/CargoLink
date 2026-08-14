@@ -312,6 +312,9 @@ class Booking {
   final String status; // pending, confirmed, shipped, delivered, cancelled
   final String paymentStatus; // pending, paid, refunded
   final String? trackingNumber;
+  final String? deliveryPhotoUrl;
+  final String? receiptPhotoUrl;
+  final DateTime? receiptConfirmedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
   final Shipment? shipment;
@@ -330,6 +333,9 @@ class Booking {
     required this.status,
     required this.paymentStatus,
     this.trackingNumber,
+    this.deliveryPhotoUrl,
+    this.receiptPhotoUrl,
+    this.receiptConfirmedAt,
     required this.createdAt,
     required this.updatedAt,
     this.shipment,
@@ -352,6 +358,11 @@ class Booking {
       status: json['status'] as String,
       paymentStatus: json['payment_status'] as String,
       trackingNumber: json['tracking_number'] as String?,
+      deliveryPhotoUrl: json['delivery_photo_url'] as String?,
+      receiptPhotoUrl: json['receipt_photo_url'] as String?,
+      receiptConfirmedAt: json['receipt_confirmed_at'] != null
+          ? DateTime.parse(json['receipt_confirmed_at'] as String)
+          : null,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       shipment: json['shipments'] != null
@@ -375,6 +386,9 @@ class Booking {
       'status': status,
       'payment_status': paymentStatus,
       'tracking_number': trackingNumber,
+      'delivery_photo_url': deliveryPhotoUrl,
+      'receipt_photo_url': receiptPhotoUrl,
+      'receipt_confirmed_at': receiptConfirmedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -712,6 +726,7 @@ class Broadcast {
   final String title;
   final String message;
   final String audience;
+  final List<String>? targetUserIds;
   final String createdBy;
   final DateTime createdAt;
 
@@ -720,6 +735,7 @@ class Broadcast {
     required this.title,
     required this.message,
     required this.audience,
+    this.targetUserIds,
     required this.createdBy,
     required this.createdAt,
   });
@@ -730,6 +746,9 @@ class Broadcast {
       title: json['title'] as String,
       message: json['message'] as String,
       audience: json['audience'] as String? ?? 'all',
+      targetUserIds: (json['target_user_ids'] as List?)
+          ?.map((e) => e as String)
+          .toList(),
       createdBy: json['created_by'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
@@ -741,6 +760,7 @@ class Broadcast {
       'title': title,
       'message': message,
       'audience': audience,
+      'target_user_ids': targetUserIds,
       'created_by': createdBy,
       'created_at': createdAt.toIso8601String(),
     };

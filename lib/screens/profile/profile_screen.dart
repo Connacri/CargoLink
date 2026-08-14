@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
@@ -11,6 +12,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../auth/role_selection_screen.dart';
+import '../shipper/live_selfie_screen.dart';
 
 // ============================================================================
 // PAGINATED PROVIDERS (local to this screen — history lists)
@@ -122,9 +124,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _pickAndUploadPicture(String userId) async {
     try {
-      final result = await FilePicker.platform.pickFiles(type: FileType.image);
-      if (result == null || result.files.isEmpty) return;
-      final file = File(result.files.first.path!);
+      final source = await _showSourceSheet();
+      if (source == null) return;
+      if (!mounted) return;
+
+      File? picked;
+      switch (source) {
+        case _AvatarSource.gallery:
+          final xfile = await ImagePicker().pickImage(
+            source: ImageSource.gallery,
+            maxWidth: 2048,
+            maxHeight: 2048,
+            imageQuality: 92,
+          );
+          if (xfile == null) return;
+          picked = File(xfile.path);
+        case _AvatarSource.camera:
+          final path = await LiveSelfieScreen.capture(context);
+          if (path == null) return;
+          picked = File(path);
+      }
+
+      final cropped = await _cropAvatar(picked);
+      final file = cropped != null ? File(cropped.path) : picked;
+      if (!mounted) return;
 
       setState(() => _pendingPicture = file);
 
@@ -154,6 +177,79 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         await showAppErrorDialog(context, message: 'Erreur: $e');
       }
     }
+  }
+
+  Future<_AvatarSource?> _showSourceSheet() {
+    return showModalBottomSheet<_AvatarSource>(
+      context: context,
+      backgroundColor: AppTheme.backgroundColor,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: AppTheme.spaceMd),
+            const Text('Photo de profil', style: AppTheme.h2),
+            const SizedBox(height: AppTheme.spaceSm),
+            const Text(
+              'Prendre un selfie ou choisir depuis la galerie.\n'
+              'Vous pourrez cadrer la photo avant l\'envoi.',
+              textAlign: TextAlign.center,
+              style: AppTheme.caption,
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_rounded,
+                  color: AppTheme.accentColor),
+              title: const Text('Appareil photo (selfie)'),
+              subtitle: const Text('Cadre visage automatique',
+                  style: AppTheme.caption),
+              onTap: () => Navigator.of(context).pop(_AvatarSource.camera),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppTheme.spaceLg),
+              child: Divider(color: AppTheme.dividerColor),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded,
+                  color: AppTheme.accentColor),
+              title: const Text('Galerie'),
+              subtitle: const Text('Choisir une image existante',
+                  style: AppTheme.caption),
+              onTap: () => Navigator.of(context).pop(_AvatarSource.gallery),
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<CroppedFile?> _cropAvatar(File file) async {
+    return ImageCropper().cropImage(
+      sourcePath: file.path,
+      compressFormat: ImageCompressFormat.jpg,
+      compressQuality: 92,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Cadrer votre photo',
+          toolbarColor: AppTheme.primaryColor,
+          toolbarWidgetColor: Colors.white,
+          initAspectRatio: CropAspectRatioPreset.square,
+          lockAspectRatio: true,
+          cropStyle: CropStyle.circle,
+          aspectRatioPresets: const [
+            CropAspectRatioPreset.square,
+          ],
+          showCropGrid: true,
+        ),
+        IOSUiSettings(
+          title: 'Cadrer votre photo',
+          aspectRatioLockEnabled: true,
+          aspectRatioPickerButtonHidden: true,
+          cropStyle: CropStyle.circle,
+        ),
+      ],
+    );
   }
 
   Future<void> _saveProfile(User user) async {
@@ -373,7 +469,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: LinearProgressIndicator()),
       error: (e, s) => Center(child: Text('Erreur: $e')),
     );
   }
@@ -618,6 +714,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildSocialSection(User userData) {
+    if (!_isEditing && !_hasSocialData(userData)) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.spaceMd,
@@ -743,6 +840,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  bool _hasSocialData(User userData) {
+    return [
+      userData.whatsapp,
+      userData.wechat,
+      userData.telegram,
+      userData.facebook,
+      userData.instagram,
+      userData.tiktok,
+    ].any((value) => value != null && value.trim().isNotEmpty);
   }
 
   Widget _buildSaveButton(User userData) {
@@ -952,6 +1060,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           children: [
             ListTile(
               leading: const AnimatedIconDot(
+                  icon: Icons.feedback_rounded, color: AppTheme.infoColor),
+              title: const Text('Envoyer un feedback'),
+              subtitle: const Text('Signaler un problème ou suggérer une amélioration'),
+              trailing: const Icon(Icons.chevron_right,
+                  color: AppTheme.textSecondaryColor),
+              onTap: () => launchAppFeedback(context, ref),
+            ),
+            const Divider(height: 1, indent: AppTheme.spaceXxl),
+            ListTile(
+              leading: const AnimatedIconDot(
                   icon: Icons.logout_rounded, color: AppTheme.accentColor),
               title: const Text('Se déconnecter'),
               trailing: const Icon(Icons.chevron_right,
@@ -1074,6 +1192,8 @@ class _HistoryEmpty extends StatelessWidget {
 // ============================================================================
 // READ-ONLY FIELD (display mode of the profile)
 // ============================================================================
+
+enum _AvatarSource { gallery, camera }
 
 enum _ContactFieldType {
   plain,

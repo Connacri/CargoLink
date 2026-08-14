@@ -38,6 +38,8 @@ dependencies:
   camera: ^0.10.5
   file_picker: ^8.0.0
   image: ^4.0.0
+  google_mlkit_face_detection: ^0.13.0
+  google_mlkit_commons: ^0.11.0
 
   # Storage
   path_provider: ^2.1.0
@@ -61,6 +63,9 @@ dependencies:
   modal_bottom_sheet: ^2.1.0
   pull_to_refresh: ^2.0.0
 
+  # User feedback (annotated screenshot + text) — sent to the founder
+  feedback: ^3.2.0
+
   # Forms & Validation
 
   # Utils
@@ -75,6 +80,8 @@ dependencies:
   firebase_messaging: ^16.5.0
   cloud_firestore: ^6.8.0
   firebase_storage: ^13.4.6
+  image_picker: ^1.2.3
+  image_cropper: ^12.2.1
 
 dev_dependencies:
   flutter_test:

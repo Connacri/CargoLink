@@ -118,6 +118,18 @@ class TrackingScreen extends ConsumerWidget {
                       AppTheme.spaceMd,
                       0,
                     ),
+                    child: _DeliveryProofSection(booking: bookingData),
+                  ),
+                ),
+              if (bookingData.status == 'delivered')
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      0,
+                    ),
                     child: _RatePrompt(booking: bookingData),
                   ),
                 ),
@@ -415,6 +427,140 @@ class TrackingScreen extends ConsumerWidget {
       );
     }
     return mapped;
+  }
+}
+
+/// Shows the shipper's delivery proof photo and lets the client confirm
+/// receipt by taking a photo of their own.
+class _DeliveryProofSection extends ConsumerWidget {
+  final Booking booking;
+
+  const _DeliveryProofSection({Key? key, required this.booking})
+      : super(key: key);
+
+  Future<void> _confirmReceipt(BuildContext context, WidgetRef ref) async {
+    final photo = await pickProofPhoto(context, title: 'Confirmation de réception');
+    if (photo == null) return;
+    try {
+      final url = await ref
+          .read(storageServiceProvider)
+          .uploadBookingProofPhoto(
+            file: photo,
+            bookingId: booking.id,
+            type: 'receipt',
+          );
+      await ref.read(bookingServiceProvider).confirmReceipt(
+            booking.id,
+            receiptPhotoUrl: url,
+          );
+      final shipperId = booking.shipment?.shipperId;
+      if (shipperId != null) {
+        await ref.read(notificationServiceProvider).notifyShipperReceiptConfirmed(
+              shipperId: shipperId,
+              bookingId: booking.id,
+            );
+      }
+      ref.invalidate(bookingByIdProvider(booking.id));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Réception confirmée. Merci !'),
+            backgroundColor: AppTheme.accentColor,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final deliveryPhoto = booking.deliveryPhotoUrl;
+    final receiptPhoto = booking.receiptPhotoUrl;
+    final receiptConfirmed = booking.receiptConfirmedAt != null;
+
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Preuve de livraison',
+            style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
+          if (deliveryPhoto != null && deliveryPhoto.isNotEmpty) ...[
+            GestureDetector(
+              onTap: () =>
+                  showFullScreenImage(context, imageUrl: deliveryPhoto),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                child: Image.network(
+                  deliveryPhoto,
+                  height: 160,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  errorBuilder: (_, __, ___) => Container(
+                    height: 160,
+                    color: AppTheme.surfaceMuted,
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.image_not_supported_outlined,
+                        color: AppTheme.textSecondaryColor),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            const Text(
+              'Photo prise par l\'expéditeur à la livraison. '
+              'Touchez pour agrandir.',
+              style: AppTheme.caption,
+            ),
+          ] else
+            const Text(
+              'Aucune preuve photo fournie par l\'expéditeur.',
+              style: AppTheme.caption,
+            ),
+          if (!receiptConfirmed) ...[
+            const SizedBox(height: AppTheme.spaceMd),
+            FilledButton.icon(
+              onPressed: () => _confirmReceipt(context, ref),
+              icon: const Icon(Icons.verified_rounded, size: 18),
+              label: const Text('Confirmer la réception'),
+            ),
+          ] else ...[
+            const SizedBox(height: AppTheme.spaceMd),
+            Row(
+              children: [
+                const Icon(Icons.check_circle_rounded,
+                    color: AppTheme.accentColor, size: 18),
+                const SizedBox(width: AppTheme.spaceXs),
+                Expanded(
+                  child: Text(
+                    'Réception confirmée le '
+                    '${booking.receiptConfirmedAt!.day}/${booking.receiptConfirmedAt!.month}/${booking.receiptConfirmedAt!.year}',
+                    style: AppTheme.body.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (receiptPhoto != null && receiptPhoto.isNotEmpty)
+                  IconButton(
+                    onPressed: () =>
+                        showFullScreenImage(context, imageUrl: receiptPhoto),
+                    icon: const Icon(Icons.photo_rounded),
+                    tooltip: 'Voir ma confirmation',
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

@@ -29,6 +29,18 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   List<File> _productImages = [];
   bool _isLoading = false;
 
+  int get _roundingPrecision => ref
+          .watch(platformSettingsProvider)
+          .valueOrNull
+          ?.roundingPrecision ??
+      AppConstants.roundingPrecision;
+
+  String get _currency => ref
+          .watch(platformSettingsProvider)
+          .valueOrNull
+          ?.defaultCurrency ??
+      AppConstants.defaultCurrency;
+
   @override
   void dispose() {
     _productNameController.dispose();
@@ -193,7 +205,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                   icon: Icons.payments_outlined,
                   label: 'Prix / kg',
                   value:
-                      '${shipment.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+                      '${shipment.pricePerKg.toStringAsFixed(0)} $_currency',
                   valueColor: AppTheme.primaryColor,
                 ),
               ),
@@ -390,13 +402,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           _PriceRow(
             label: 'Prix par kg',
             value:
-                '${shipment.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+                '${shipment.pricePerKg.toStringAsFixed(0)} $_currency',
           ),
           const SizedBox(height: AppTheme.spaceSm),
           _PriceRow(
             label: 'Prix total',
             value:
-                '${totalPrice.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+                '${totalPrice.toStringAsFixed(0)} $_currency',
             highlight: true,
             color: AppTheme.accentColor,
           ),
@@ -448,8 +460,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   }
 
   double _calculateAllocation(double requested, double available) {
-    double allocated = (requested / AppConstants.roundingPrecision).ceil() *
-        AppConstants.roundingPrecision.toDouble();
+    double allocated = (requested / _roundingPrecision).ceil() *
+        _roundingPrecision.toDouble();
     return allocated > available ? available : allocated;
   }
 

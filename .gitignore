@@ -48,6 +48,9 @@ app.*.map.json
 /cargolink_keystore.txt
 /keystore_b64.txt
 
+# Android Studio IDE cache (session caches created on first open)
+android/.kotlin/
+
 /supabase/secrets.env
 
 # Firebase Admin SDK service account (contains private key)

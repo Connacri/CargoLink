@@ -693,4 +693,22 @@ class NotificationService {
       _logger.e('Error notifying client: $e');
     }
   }
+
+  /// Notify the shipper that the client confirmed receipt of the parcel.
+  Future<void> notifyShipperReceiptConfirmed({
+    required String shipperId,
+    required String bookingId,
+  }) async {
+    try {
+      await createNotification(
+        userId: shipperId,
+        type: 'receipt_confirmed',
+        title: 'Réception confirmée',
+        message: 'Le client a confirmé la réception du colis.',
+        relatedBookingId: bookingId,
+      );
+    } catch (e) {
+      _logger.e('Error notifying shipper of receipt: $e');
+    }
+  }
 }

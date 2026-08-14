@@ -8,6 +8,7 @@ import '../../data/services/storage_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
+import 'live_selfie_screen.dart';
 
 class ShipperRegistrationScreen extends ConsumerStatefulWidget {
   const ShipperRegistrationScreen({Key? key}) : super(key: key);
@@ -27,6 +28,7 @@ class _ShipperRegistrationScreenState
   String? _existingPassportUrl;
   String? _existingLiveUrl;
   bool _isSubmitting = false;
+  bool _submitted = false;
 
   @override
   void dispose() {
@@ -42,9 +44,9 @@ class _ShipperRegistrationScreenState
   }
 
   Future<void> _pickLivePhoto() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
-    if (result != null && result.files.isNotEmpty) {
-      setState(() => _livePhoto = File(result.files.first.path!));
+    final path = await LiveSelfieScreen.capture(context);
+    if (path != null) {
+      setState(() => _livePhoto = File(path));
     }
   }
 
@@ -108,15 +110,17 @@ class _ShipperRegistrationScreenState
       ref.invalidate(currentShipperProvider);
 
       if (mounted) {
+        setState(() => _submitted = true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Dossier soumis pour vérification par l\'administration',
+              hasExisting
+                  ? 'Dossier mis à jour et renvoyé pour vérification'
+                  : 'Dossier soumis pour vérification par l\'administration',
             ),
             backgroundColor: AppTheme.accentColor,
           ),
         );
-        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
       if (mounted) {
@@ -147,6 +151,9 @@ class _ShipperRegistrationScreenState
     return Scaffold(
       body: shipper.when(
         data: (existing) {
+          if (_submitted) {
+            return _buildSubmitted();
+          }
           if (existing != null && existing.isVerified) {
             return _buildAlreadyVerified();
           }
@@ -155,6 +162,48 @@ class _ShipperRegistrationScreenState
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, s) => _buildForm(null),
       ),
+    );
+  }
+
+  Widget _buildSubmitted() {
+    return const CustomScrollView(
+      slivers: [
+        GradientSliverHeader(
+          title: 'Inscription Expéditeur',
+          subtitle: 'Dossier envoyé',
+          icon: Icons.mark_email_read_outlined,
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spaceXl),
+            child: GlassCard(
+              child: Column(
+                children: [
+                  AnimatedIconDot(
+                    icon: Icons.check_circle_rounded,
+                    color: AppTheme.accentColor,
+                    size: 32,
+                  ),
+                  SizedBox(height: AppTheme.spaceMd),
+                  Text(
+                    'Dossier envoyé',
+                    textAlign: TextAlign.center,
+                    style: AppTheme.h3,
+                  ),
+                  SizedBox(height: AppTheme.spaceSm),
+                  Text(
+                    'Votre dossier est en attente de vérification par '
+                    'l\'administration. Vous pourrez publier des offres '
+                    'dès qu\'il sera validé.',
+                    textAlign: TextAlign.center,
+                    style: AppTheme.bodySecondary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -251,10 +300,10 @@ class _ShipperRegistrationScreenState
                     _buildUploadTile(
                       title: 'Photo en direct (selfie)',
                       subtitle: _livePhoto != null
-                          ? _livePhoto!.path.split('/').last
+                          ? 'Selfie pris ✓'
                           : (_existingLiveUrl != null
-                              ? 'Image actuelle — toucher pour changer'
-                              : 'Prendre une photo'),
+                              ? 'Image actuelle — toucher pour reprendre'
+                              : 'Ouvrir la caméra'),
                       icon: Icons.camera_alt_outlined,
                       hasFile: _livePhoto != null,
                       previewFile: _livePhoto,

@@ -1,9 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../../core/config/supabase_config.dart';
-import '../../core/constants/app_constants.dart';
 import './shipper_shipment_service.dart';
 import './tracking_dispute_service.dart';
+import './settings_service.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
 
@@ -29,9 +29,12 @@ class BookingService {
     try {
       _logger.i('Creating booking for shipment: $shipmentId');
 
+      // Load founder-configured platform rules (fallback to defaults).
+      final settings = await SettingsService().getSettings();
+
       // Validate requested weight
       if (requestedWeightKg <= 0 ||
-          requestedWeightKg > AppConstants.maxWeightKg) {
+          requestedWeightKg > settings.maxWeightKg) {
         throw Exception('Invalid weight requested');
       }
 
@@ -50,10 +53,11 @@ class BookingService {
         throw Exception('No weight available on this shipment');
       }
 
-      // Calculate allocated weight (with rounding)
+      // Calculate allocated weight (with founder-configured rounding)
       final allocatedWeight = _shipmentService.calculateAllocationWeight(
         requestedWeightKg,
         shipment.remainingWeightKg,
+        roundingPrecision: settings.roundingPrecision,
       );
 
       // Calculate total price
@@ -248,15 +252,25 @@ class BookingService {
   /// Update booking status
   Future<Booking?> updateBookingStatus(
     String bookingId,
-    String newStatus,
-  ) async {
+    String newStatus, {
+    String? deliveryPhotoUrl,
+    String? receiptPhotoUrl,
+  }) async {
     try {
+      final payload = <String, dynamic>{
+        'status': newStatus,
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      if (deliveryPhotoUrl != null) {
+        payload['delivery_photo_url'] = deliveryPhotoUrl;
+      }
+      if (receiptPhotoUrl != null) {
+        payload['receipt_photo_url'] = receiptPhotoUrl;
+        payload['receipt_confirmed_at'] = DateTime.now().toIso8601String();
+      }
       final response = await _supabase
           .from('bookings')
-          .update({
-            'status': newStatus,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
+          .update(payload)
           .eq('id', bookingId)
           .select(
               '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
@@ -315,12 +329,32 @@ class BookingService {
     }
   }
 
-  /// Mark booking as delivered
-  Future<Booking?> markAsDelivered(String bookingId) async {
+  /// Mark booking as delivered (optionally with a proof photo)
+  Future<Booking?> markAsDelivered(String bookingId,
+      {String? deliveryPhotoUrl}) async {
     try {
-      return await updateBookingStatus(bookingId, 'delivered');
+      return await updateBookingStatus(
+        bookingId,
+        'delivered',
+        deliveryPhotoUrl: deliveryPhotoUrl,
+      );
     } catch (e) {
       _logger.e('Error marking booking as delivered: $e');
+      rethrow;
+    }
+  }
+
+  /// Client confirms receipt of the parcel with a proof photo.
+  Future<Booking?> confirmReceipt(String bookingId,
+      {required String receiptPhotoUrl}) async {
+    try {
+      return await updateBookingStatus(
+        bookingId,
+        'delivered',
+        receiptPhotoUrl: receiptPhotoUrl,
+      );
+    } catch (e) {
+      _logger.e('Error confirming receipt: $e');
       rethrow;
     }
   }
@@ -555,9 +589,10 @@ class PaymentService {
     }
   }
 
-  /// Calculate platform commission
-  double calculateCommission(double amount) {
-    return (amount * AppConstants.platformCommissionPercent) / 100;
+  /// Calculate platform commission using the founder-configured rate.
+  Future<double> calculateCommission(double amount) async {
+    final settings = await SettingsService().getSettings();
+    return (amount * settings.commissionPercent) / 100;
   }
 
   /// Get shipper earnings
