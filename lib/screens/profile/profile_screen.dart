@@ -60,6 +60,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _instagramController = TextEditingController();
   final _tiktokController = TextEditingController();
   bool _isSaving = false;
+  bool _isEditing = false;
   File? _pendingPicture;
   String? _lastClientHistoryKey;
   String? _lastShipperHistoryKey;
@@ -67,7 +68,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _initHistoryFromCache());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _initHistoryFromCache());
   }
 
   @override
@@ -119,8 +121,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _pickAndUploadPicture(String userId) async {
     try {
-      final result =
-          await FilePicker.platform.pickFiles(type: FileType.image);
+      final result = await FilePicker.platform.pickFiles(type: FileType.image);
       if (result == null || result.files.isEmpty) return;
       final file = File(result.files.first.path!);
 
@@ -315,7 +316,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         if (userData == null) {
           return const Center(child: Text('Utilisateur non identifié'));
         }
-        _fillControllers(userData);
 
         return Scaffold(
           body: RefreshIndicator(
@@ -330,6 +330,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   title: 'Mon profil',
                   subtitle: userData.fullName,
                   icon: Icons.person_rounded,
+                  trailing: IconButton(
+                    tooltip: _isEditing ? 'Terminer' : 'Modifier',
+                    onPressed: () => setState(() {
+                      if (!_isEditing) _fillControllers(userData);
+                      _isEditing = !_isEditing;
+                    }),
+                    icon: Icon(
+                      _isEditing ? Icons.check_rounded : Icons.edit_outlined,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
                 SliverToBoxAdapter(
                   child: _buildProfileHeader(userData),
@@ -338,7 +349,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   SliverToBoxAdapter(child: _buildShipperStatus()),
                 SliverToBoxAdapter(child: _buildRoleSettings(userData)),
                 SliverToBoxAdapter(child: _buildPersonalInfo(userData)),
-                SliverToBoxAdapter(child: _buildSocialSection()),
+                SliverToBoxAdapter(child: _buildSocialSection(userData)),
                 SliverToBoxAdapter(child: _buildSaveButton(userData)),
                 const SliverToBoxAdapter(
                   child: Padding(
@@ -405,22 +416,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           Stack(
             children: [
               _avatar(userData),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: InkResponse(
-                  onTap: () => _pickAndUploadPicture(userData.id),
-                  child: const CircleAvatar(
-                    radius: 16,
-                    backgroundColor: AppTheme.primaryDark,
-                    child: Icon(
-                      Icons.camera_alt,
-                      size: 18,
-                      color: Colors.white,
+              if (_isEditing)
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: InkResponse(
+                    onTap: () => _pickAndUploadPicture(userData.id),
+                    child: const CircleAvatar(
+                      radius: 16,
+                      backgroundColor: AppTheme.primaryDark,
+                      child: Icon(
+                        Icons.camera_alt,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: AppTheme.spaceSm + 4),
@@ -460,7 +472,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       initial: userData.fullName,
       imageUrl: userData.profilePictureUrl,
       radius: 48,
-      onTap: () => _pickAndUploadPicture(userData.id),
+      onTap: _isEditing ? () => _pickAndUploadPicture(userData.id) : null,
     );
   }
 
@@ -552,38 +564,58 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: AppTheme.spaceSm + 4),
-            TextField(
-              controller: _fullNameController,
-              decoration: const InputDecoration(
-                labelText: 'Nom complet',
-                prefixIcon: Icon(Icons.person_outline),
+            if (_isEditing) ...[
+              TextField(
+                controller: _fullNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nom complet',
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
               ),
-            ),
-            const SizedBox(height: AppTheme.spaceSm + 4),
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Téléphone',
-                prefixIcon: Icon(Icons.phone_outlined),
+              const SizedBox(height: AppTheme.spaceSm + 4),
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Téléphone',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                ),
               ),
-            ),
-            const SizedBox(height: AppTheme.spaceSm + 4),
-            TextFormField(
-              initialValue: userData.email,
-              enabled: false,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email_outlined),
+              const SizedBox(height: AppTheme.spaceSm + 4),
+              TextFormField(
+                initialValue: userData.email,
+                enabled: false,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
               ),
-            ),
+            ] else ...[
+              _ReadonlyField(
+                icon: Icons.person_outline,
+                label: 'Nom complet',
+                value: userData.fullName,
+              ),
+              const SizedBox(height: AppTheme.spaceSm + 4),
+              _ReadonlyField(
+                icon: Icons.phone_outlined,
+                label: 'Téléphone',
+                value: userData.phone,
+              ),
+              const SizedBox(height: AppTheme.spaceSm + 4),
+              _ReadonlyField(
+                icon: Icons.email_outlined,
+                label: 'Email',
+                value: userData.email,
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSocialSection() {
+  Widget _buildSocialSection(User userData) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.spaceMd,
@@ -607,60 +639,98 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               style: AppTheme.caption,
             ),
             const SizedBox(height: AppTheme.spaceSm + 4),
-            TextField(
-              controller: _whatsappController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'WhatsApp',
-                hintText: '+213 6 00 00 00 00',
-                prefixIcon: Icon(Icons.chat),
+            if (_isEditing) ...[
+              TextField(
+                controller: _whatsappController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'WhatsApp',
+                  hintText: '+213 6 00 00 00 00',
+                  prefixIcon: Icon(Icons.chat),
+                ),
               ),
-            ),
-            const SizedBox(height: AppTheme.spaceSm + 4),
-            TextField(
-              controller: _wechatController,
-              decoration: const InputDecoration(
-                labelText: 'WeChat',
-                hintText: 'Votre identifiant WeChat',
-                prefixIcon: Icon(Icons.wechat),
+              const SizedBox(height: AppTheme.spaceSm + 4),
+              TextField(
+                controller: _wechatController,
+                decoration: const InputDecoration(
+                  labelText: 'WeChat',
+                  hintText: 'Votre identifiant WeChat',
+                  prefixIcon: Icon(Icons.wechat),
+                ),
               ),
-            ),
-            const SizedBox(height: AppTheme.spaceSm + 4),
-            TextField(
-              controller: _telegramController,
-              decoration: const InputDecoration(
-                labelText: 'Telegram',
-                hintText: '@votrecompte',
-                prefixIcon: Icon(Icons.send),
+              const SizedBox(height: AppTheme.spaceSm + 4),
+              TextField(
+                controller: _telegramController,
+                decoration: const InputDecoration(
+                  labelText: 'Telegram',
+                  hintText: '@votrecompte',
+                  prefixIcon: Icon(Icons.send),
+                ),
               ),
-            ),
-            const SizedBox(height: AppTheme.spaceSm + 4),
-            TextField(
-              controller: _facebookController,
-              decoration: const InputDecoration(
-                labelText: 'Facebook',
-                hintText: 'Votre profil Facebook',
-                prefixIcon: Icon(Icons.facebook),
+              const SizedBox(height: AppTheme.spaceSm + 4),
+              TextField(
+                controller: _facebookController,
+                decoration: const InputDecoration(
+                  labelText: 'Facebook',
+                  hintText: 'Votre profil Facebook',
+                  prefixIcon: Icon(Icons.facebook),
+                ),
               ),
-            ),
-            const SizedBox(height: AppTheme.spaceSm + 4),
-            TextField(
-              controller: _instagramController,
-              decoration: const InputDecoration(
-                labelText: 'Instagram',
-                hintText: '@votrecompte',
-                prefixIcon: Icon(Icons.camera_alt_outlined),
+              const SizedBox(height: AppTheme.spaceSm + 4),
+              TextField(
+                controller: _instagramController,
+                decoration: const InputDecoration(
+                  labelText: 'Instagram',
+                  hintText: '@votrecompte',
+                  prefixIcon: Icon(Icons.camera_alt_outlined),
+                ),
               ),
-            ),
-            const SizedBox(height: AppTheme.spaceSm + 4),
-            TextField(
-              controller: _tiktokController,
-              decoration: const InputDecoration(
-                labelText: 'TikTok',
-                hintText: '@votrecompte',
-                prefixIcon: Icon(Icons.music_note_outlined),
+              const SizedBox(height: AppTheme.spaceSm + 4),
+              TextField(
+                controller: _tiktokController,
+                decoration: const InputDecoration(
+                  labelText: 'TikTok',
+                  hintText: '@votrecompte',
+                  prefixIcon: Icon(Icons.music_note_outlined),
+                ),
               ),
-            ),
+            ] else ...[
+              _ReadonlyField(
+                icon: Icons.chat,
+                label: 'WhatsApp',
+                value: userData.whatsapp,
+              ),
+              const SizedBox(height: AppTheme.spaceSm + 4),
+              _ReadonlyField(
+                icon: Icons.wechat,
+                label: 'WeChat',
+                value: userData.wechat,
+              ),
+              const SizedBox(height: AppTheme.spaceSm + 4),
+              _ReadonlyField(
+                icon: Icons.send,
+                label: 'Telegram',
+                value: userData.telegram,
+              ),
+              const SizedBox(height: AppTheme.spaceSm + 4),
+              _ReadonlyField(
+                icon: Icons.facebook,
+                label: 'Facebook',
+                value: userData.facebook,
+              ),
+              const SizedBox(height: AppTheme.spaceSm + 4),
+              _ReadonlyField(
+                icon: Icons.camera_alt_outlined,
+                label: 'Instagram',
+                value: userData.instagram,
+              ),
+              const SizedBox(height: AppTheme.spaceSm + 4),
+              _ReadonlyField(
+                icon: Icons.music_note_outlined,
+                label: 'TikTok',
+                value: userData.tiktok,
+              ),
+            ],
           ],
         ),
       ),
@@ -668,6 +738,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildSaveButton(User userData) {
+    if (!_isEditing) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.spaceMd,
@@ -710,7 +781,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           AppTheme.spaceMd,
         ),
         fillRemainingEmpty: false,
-        emptyState: const _HistoryEmpty(message: 'Aucune commande pour le moment.'),
+        emptyState:
+            const _HistoryEmpty(message: 'Aucune commande pour le moment.'),
         itemBuilder: (context, b, index) => StaggeredEntrance(
           delay: Duration(milliseconds: (index % 10) * 40),
           child: _HistoryRow(
@@ -719,8 +791,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             subtitle: '${b.allocatedWeightKg.toStringAsFixed(1)} kg • '
                 '${b.totalPrice.toStringAsFixed(0)} ${AppConstants.defaultCurrency} • '
                 '${BookingStatusExt.fromString(b.status).displayName}',
-            onTap: () => Navigator.of(context)
-                .pushNamed('/tracking', arguments: b.id),
+            onTap: () =>
+                Navigator.of(context).pushNamed('/tracking', arguments: b.id),
           ),
         ),
       ),
@@ -757,7 +829,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               AppTheme.spaceMd,
             ),
             fillRemainingEmpty: false,
-            emptyState: const _HistoryEmpty(message: 'Aucune offre pour le moment.'),
+            emptyState:
+                const _HistoryEmpty(message: 'Aucune offre pour le moment.'),
             itemBuilder: (context, s, index) => StaggeredEntrance(
               delay: Duration(milliseconds: (index % 10) * 40),
               child: _HistoryRow(
@@ -984,6 +1057,49 @@ class _HistoryEmpty extends StatelessWidget {
           message,
           textAlign: TextAlign.center,
           style: AppTheme.bodySecondary,
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================================
+// READ-ONLY FIELD (display mode of the profile)
+// ============================================================================
+
+class _ReadonlyField extends StatelessWidget {
+  const _ReadonlyField({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Icon(icon, size: 20, color: AppTheme.primaryColor),
+        ),
+        const SizedBox(width: AppTheme.spaceSm + 4),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: AppTheme.caption),
+              const SizedBox(height: 2),
+              Text(
+                value == null || value!.isEmpty ? '—' : value!,
+                style: AppTheme.body,
+              ),
+            ],
+          ),
         ),
       ],
     );
