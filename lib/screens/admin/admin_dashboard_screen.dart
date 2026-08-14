@@ -6,6 +6,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/chat_widgets.dart';
 import 'transactions_screen.dart';
 import 'commission_screen.dart';
 
@@ -73,6 +74,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                const ChatInboxBadge(),
                 IconButton(
                   tooltip: 'Annonces',
                   icon: const Icon(Icons.campaign, color: Colors.white),

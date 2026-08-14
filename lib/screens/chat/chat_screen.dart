@@ -88,7 +88,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         _loading = false;
       });
 
-      // Mark incoming messages as read + subscribe to live updates.
+      // Mark incoming messages as delivered then read + subscribe to live
+      // updates, so the sender sees the WhatsApp-style tick progression.
+      await ref
+          .read(chatServiceProvider)
+          .markConversationDelivered(
+              conversationId: conversation.id, userId: myId);
       await ref
           .read(chatServiceProvider)
           .markConversationRead(conversationId: conversation.id, userId: myId);
@@ -102,6 +107,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         final hadLast = _history.isNotEmpty;
         setState(() => _history = _mergeMessages(_history, messages));
         _maybeScrollToBottom(force: !hadLast);
+        ref.read(chatServiceProvider).markConversationDelivered(
+            conversationId: conversation.id, userId: myId);
         ref.read(chatServiceProvider).markConversationRead(
             conversationId: conversation.id, userId: myId);
       });
@@ -169,12 +176,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         _maybeScrollToBottom(force: true);
       }
 
-      // Heads-up for the receiver via an in-app notification.
+      // Heads-up for the receiver via an in-app notification + FCM push.
+      final senderName =
+          ref.read(currentUserProvider).valueOrNull?.fullName ?? 'Contact';
       await ref.read(chatServiceProvider).notifyMessage(
             recipientUserId: widget.counterpartUserId,
-            counterpartName: widget.counterpartName,
+            senderName: senderName,
             body: body,
             bookingId: widget.bookingId,
+            conversationId: conversationId,
           );
     } catch (e) {
       if (!mounted) return;
@@ -291,9 +301,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         return _MessageBubble(
           message: message,
           isMine: message.senderId == myId,
-          showRead: message.senderId == myId &&
-              message.isRead &&
-              message != _history.last,
         );
       },
     );
@@ -354,12 +361,10 @@ class _MessageBubble extends StatelessWidget {
   const _MessageBubble({
     required this.message,
     required this.isMine,
-    this.showRead = false,
   });
 
   final ChatMessage message;
   final bool isMine;
-  final bool showRead;
 
   String get _time {
     final t = message.createdAt.toLocal();
@@ -368,8 +373,34 @@ class _MessageBubble extends StatelessWidget {
     return '$h:$m';
   }
 
+  /// WhatsApp-style tick for my own messages:
+  /// single check = sent, double check = delivered, blue double check = read.
+  Widget? _buildStatus() {
+    if (!isMine) return null;
+    if (message.isRead) {
+      return const Icon(
+        Icons.done_all_rounded,
+        size: 13,
+        color: AppTheme.infoColor,
+      );
+    }
+    if (message.isDelivered) {
+      return const Icon(
+        Icons.done_all_rounded,
+        size: 13,
+        color: Colors.white70,
+      );
+    }
+    return const Icon(
+      Icons.done_rounded,
+      size: 13,
+      color: Colors.white54,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final status = _buildStatus();
     return Align(
       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -415,13 +446,9 @@ class _MessageBubble extends StatelessWidget {
                         : AppTheme.textMutedColor,
                   ),
                 ),
-                if (showRead) ...[
+                if (status != null) ...[
                   const SizedBox(width: 4),
-                  const Icon(
-                    Icons.done_all_rounded,
-                    size: 13,
-                    color: Colors.white70,
-                  ),
+                  status,
                 ],
               ],
             ),

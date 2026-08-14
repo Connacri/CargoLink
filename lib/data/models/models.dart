@@ -872,6 +872,7 @@ class ChatMessage {
   final String conversationId;
   final String senderId;
   final String body;
+  final DateTime? deliveredAt;
   final DateTime? readAt;
   final DateTime createdAt;
 
@@ -880,6 +881,7 @@ class ChatMessage {
     required this.conversationId,
     required this.senderId,
     required this.body,
+    this.deliveredAt,
     this.readAt,
     required this.createdAt,
   });
@@ -890,6 +892,9 @@ class ChatMessage {
       conversationId: json['conversation_id'] as String,
       senderId: json['sender_id'] as String,
       body: json['body'] as String,
+      deliveredAt: json['delivered_at'] != null
+          ? DateTime.tryParse(json['delivered_at'] as String)
+          : null,
       readAt: json['read_at'] != null
           ? DateTime.tryParse(json['read_at'] as String)
           : null,
@@ -903,12 +908,14 @@ class ChatMessage {
       'conversation_id': conversationId,
       'sender_id': senderId,
       'body': body,
+      'delivered_at': deliveredAt?.toIso8601String(),
       'read_at': readAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
     };
   }
 
   bool isFrom(String userId) => senderId == userId;
+  bool get isDelivered => deliveredAt != null;
   bool get isRead => readAt != null;
 }
 

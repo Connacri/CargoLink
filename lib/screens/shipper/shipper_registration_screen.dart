@@ -29,6 +29,7 @@ class _ShipperRegistrationScreenState
   String? _existingLiveUrl;
   bool _isSubmitting = false;
   bool _submitted = false;
+  bool _editingVerified = false;
 
   @override
   void dispose() {
@@ -154,7 +155,7 @@ class _ShipperRegistrationScreenState
           if (_submitted) {
             return _buildSubmitted();
           }
-          if (existing != null && existing.isVerified) {
+          if (existing != null && existing.isVerified && !_editingVerified) {
             return _buildAlreadyVerified();
           }
           return _buildForm(existing);
@@ -208,35 +209,50 @@ class _ShipperRegistrationScreenState
   }
 
   Widget _buildAlreadyVerified() {
-    return const CustomScrollView(
+    return CustomScrollView(
       slivers: [
-        GradientSliverHeader(
+        const GradientSliverHeader(
           title: 'Inscription Expéditeur',
           subtitle: 'Profil vérifié',
           icon: Icons.verified_user_rounded,
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.all(AppTheme.spaceXl),
+            padding: const EdgeInsets.all(AppTheme.spaceXl),
             child: GlassCard(
+              padding: const EdgeInsets.all(AppTheme.spaceLg),
               child: Column(
                 children: [
-                  AnimatedIconDot(
+                  const AnimatedIconDot(
                     icon: Icons.check_circle_rounded,
                     color: AppTheme.accentColor,
                     size: 32,
                   ),
-                  SizedBox(height: AppTheme.spaceMd),
-                  Text(
+                  const SizedBox(height: AppTheme.spaceMd),
+                  const Text(
                     'Vous êtes déjà vérifié comme expéditeur',
                     textAlign: TextAlign.center,
                     style: AppTheme.h3,
                   ),
-                  SizedBox(height: AppTheme.spaceSm),
-                  Text(
+                  const SizedBox(height: AppTheme.spaceSm),
+                  const Text(
                     'Votre identité a été validée par l\'administration.',
                     textAlign: TextAlign.center,
                     style: AppTheme.bodySecondary,
+                  ),
+                  const SizedBox(height: AppTheme.spaceSm),
+                  const Text(
+                    'Vous pouvez mettre à jour votre selfie et votre '
+                    'passeport à tout moment : le dossier sera soumis à une '
+                    'nouvelle vérification.',
+                    textAlign: TextAlign.center,
+                    style: AppTheme.caption,
+                  ),
+                  const SizedBox(height: AppTheme.spaceLg),
+                  FilledButton.icon(
+                    onPressed: () => setState(() => _editingVerified = true),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Modifier mes documents'),
                   ),
                 ],
               ),
