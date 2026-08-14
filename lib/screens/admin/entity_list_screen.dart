@@ -136,13 +136,10 @@ class _EntityListScreenState extends ConsumerState<EntityListScreen> {
   @override
   void initState() {
     super.initState();
+    // Defer to the first idle frame so we never touch a pager provider while
+    // the widget tree is building (would throw in Riverpod and leave the list
+    // stuck on its shimmer skeleton — seen on desktop/Windows).
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _syncPager();
   }
 
   void _syncPager() {

@@ -137,7 +137,15 @@ class PagedSliverGrid<T> extends ConsumerWidget {
         sliver: SliverGrid.builder(
           gridDelegate: gridDelegate,
           itemCount: skeletonCount,
-          itemBuilder: (_, i) => const ShimmerCard(imageHeight: 90, lines: 2),
+          // A full-cell shimmer box: cell heights vary with window/width so a
+          // fixed-size card skeleton would overflow on narrow desktop windows.
+          itemBuilder: (_, i) => const Padding(
+            padding: EdgeInsets.all(AppTheme.spaceXs),
+            child: ShimmerBox(
+              height: double.infinity,
+              radius: AppTheme.radiusMd,
+            ),
+          ),
         ),
       );
     }

@@ -32,6 +32,16 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
   bool _initialized = false;
 
   @override
+  void initState() {
+    super.initState();
+    _commissionController = TextEditingController();
+    _minPriceController = TextEditingController();
+    _maxWeightController = TextEditingController();
+    _minWeightController = TextEditingController();
+    _precisionController = TextEditingController();
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     _commissionController.dispose();
