@@ -142,6 +142,15 @@ class _EntityListScreenState extends ConsumerState<EntityListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Redundant safety net for desktop: schedule again after the frame, so a
+    // provider is never modified during build. _syncPager's key guard makes
+    // this a no-op once the initial load has been kicked off.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
+  }
+
   void _syncPager() {
     final key = '${widget.type}|${widget.roleFilter}';
     if (key == _lastKey) return;
