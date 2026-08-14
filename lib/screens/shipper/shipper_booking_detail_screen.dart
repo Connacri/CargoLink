@@ -7,6 +7,7 @@ import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../chat/chat_screen.dart';
 
 // ============================================================================
 // SHIPPER BOOKING DETAIL — reviews the order (photos, description, client)
@@ -85,13 +86,15 @@ class _ShipperBookingDetailScreenState
                 ),
                 SliverToBoxAdapter(child: _buildPhotos(data)),
                 SliverToBoxAdapter(
-                  child: _buildSection('Détails du produit', _buildProduct(data)),
+                  child:
+                      _buildSection('Détails du produit', _buildProduct(data)),
                 ),
                 SliverToBoxAdapter(
                   child: _buildSection('Le client', _buildClient(data)),
                 ),
                 SliverToBoxAdapter(
-                  child: _buildSection('Résumé de la commande', _buildSummary(data)),
+                  child: _buildSection(
+                      'Résumé de la commande', _buildSummary(data)),
                 ),
                 if (data.shipment != null)
                   SliverToBoxAdapter(
@@ -265,6 +268,7 @@ class _ShipperBookingDetailScreenState
 
   Widget _buildClient(Booking booking) {
     final client = booking.client;
+    final shipperUserId = ref.read(currentUserProvider).valueOrNull?.id;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -294,6 +298,21 @@ class _ShipperBookingDetailScreenState
                 ],
               ),
             ),
+            if (client?.id != null && shipperUserId != null)
+              IconButton.filledTonal(
+                tooltip: 'Discuter',
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChatScreen(
+                      counterpartUserId: client!.id,
+                      counterpartName: client.fullName,
+                      counterpartAvatarUrl: client.profilePictureUrl,
+                      bookingId: booking.id,
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.chat_rounded),
+              ),
           ],
         ),
         const SizedBox(height: AppTheme.spaceSm),
@@ -512,9 +531,9 @@ class _ShipperBookingDetailScreenState
     }
   }
 
-  Future<void> _confirm(Booking booking) =>
-      _run(() => ref.read(bookingServiceProvider).confirmBooking(booking.id),
-          'Commande confirmée');
+  Future<void> _confirm(Booking booking) => _run(
+      () => ref.read(bookingServiceProvider).confirmBooking(booking.id),
+      'Commande confirmée');
 
   Future<void> _markShipped(Booking booking) => _run(() async {
         await ref.read(bookingServiceProvider).markAsShipped(booking.id);
@@ -549,9 +568,9 @@ class _ShipperBookingDetailScreenState
             );
       }, 'Commande marquée comme livrée');
 
-  Future<void> _cancel(Booking booking) =>
-      _run(() => ref.read(bookingServiceProvider).cancelBooking(booking.id),
-          'Commande annulée');
+  Future<void> _cancel(Booking booking) => _run(
+      () => ref.read(bookingServiceProvider).cancelBooking(booking.id),
+      'Commande annulée');
 
   String _formatDate(DateTime d) => '${d.day}/${d.month}/${d.year}';
 }

@@ -7,6 +7,7 @@ import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../chat/chat_screen.dart';
 
 /// Lazy paged source for the current client's bookings, keyed by status filter.
 final clientBookingsPagerProvider = StateNotifierProvider.family<
@@ -215,10 +216,31 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
                           booking.paymentStatus == 'pending')
                       ? () => _cancelBooking(booking.id)
                       : null,
+                  onChat: _canChat(booking) ? () => _openChat(booking) : null,
                 ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  bool _canChat(Booking booking) {
+    final shipment = booking.shipment;
+    return shipment?.shipper?.user?.id != null;
+  }
+
+  void _openChat(Booking booking) {
+    final shipperUser = booking.shipment?.shipper?.user;
+    if (shipperUser == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          counterpartUserId: shipperUser.id,
+          counterpartName: shipperUser.fullName,
+          counterpartAvatarUrl: shipperUser.profilePictureUrl,
+          bookingId: booking.id,
         ),
       ),
     );
@@ -257,11 +279,13 @@ class _BookingCard extends ConsumerWidget {
   final Booking booking;
   final VoidCallback onTrack;
   final VoidCallback? onCancel;
+  final VoidCallback? onChat;
 
   const _BookingCard({
     required this.booking,
     required this.onTrack,
     this.onCancel,
+    this.onChat,
   });
 
   Future<void> _rateShipper(BuildContext context, WidgetRef ref) async {
@@ -405,7 +429,8 @@ class _BookingCard extends ConsumerWidget {
             if (delivered) ...[
               const SizedBox(height: AppTheme.spaceMd),
               FilledButton.icon(
-                onPressed: rated == true ? null : () => _rateShipper(context, ref),
+                onPressed:
+                    rated == true ? null : () => _rateShipper(context, ref),
                 icon: Icon(
                   rated == true
                       ? Icons.check_circle_outline_rounded
@@ -413,9 +438,7 @@ class _BookingCard extends ConsumerWidget {
                   size: 18,
                 ),
                 label: Text(
-                  rated == true
-                      ? 'Expéditeur noté'
-                      : 'Noter l\'expéditeur',
+                  rated == true ? 'Expéditeur noté' : 'Noter l\'expéditeur',
                 ),
               ),
             ],
@@ -429,6 +452,16 @@ class _BookingCard extends ConsumerWidget {
                     label: const Text('Suivre'),
                   ),
                 ),
+                if (onChat != null) ...[
+                  const SizedBox(width: AppTheme.spaceSm),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onChat,
+                      icon: const Icon(Icons.chat_rounded, size: 18),
+                      label: const Text('Discuter'),
+                    ),
+                  ),
+                ],
                 if (onCancel != null) ...[
                   const SizedBox(width: AppTheme.spaceSm),
                   Expanded(

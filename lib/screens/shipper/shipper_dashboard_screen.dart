@@ -8,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/notification_widgets.dart';
+import '../../core/widgets/chat_widgets.dart';
 import 'shipper_stats_detail_screen.dart';
 import 'shipper_booking_detail_screen.dart';
 
@@ -19,9 +20,8 @@ final shipperShipmentsPagerProvider = StateNotifierProvider.family<
     PaginatedListNotifier<Shipment>, PaginatedList<Shipment>, String>(
   (ref, shipperId) {
     return createPaginatedNotifier(
-      (limit, offset) => ref
-          .read(shipmentServiceProvider)
-          .getShipperShipments(shipperId: shipperId, limit: limit, offset: offset),
+      (limit, offset) => ref.read(shipmentServiceProvider).getShipperShipments(
+          shipperId: shipperId, limit: limit, offset: offset),
       pageSize: 15,
     );
   },
@@ -151,8 +151,7 @@ class _ShipperDashboardScreenState
 
   Widget _buildNotVerified(Shipper? shipper) {
     final isRejected = shipper?.isRejected ?? false;
-    final title =
-        isRejected ? 'Dossier rejeté' : 'Vérification en attente';
+    final title = isRejected ? 'Dossier rejeté' : 'Vérification en attente';
     final message = isRejected
         ? shipper?.rejectionReason ??
             'Veuillez soumettre à nouveau vos documents.'
@@ -202,9 +201,7 @@ class _ShipperDashboardScreenState
                             : Icons.assignment_rounded,
                       ),
                       label: Text(
-                        isRejected
-                            ? 'Soumettre à nouveau'
-                            : 'Voir mon dossier',
+                        isRejected ? 'Soumettre à nouveau' : 'Voir mon dossier',
                       ),
                     ),
                   ],
@@ -261,6 +258,7 @@ class _ShipperDashboardScreenState
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  const ChatInboxBadge(),
                   GestureDetector(
                     onTap: () => _showNotificationsSheet(context),
                     child: const Padding(
@@ -756,7 +754,8 @@ class _ShipperDashboardScreenState
                             }
                           },
                           icon: const Icon(Icons.flight_takeoff, size: 18),
-                          label: Text('Départ ${departure.day}/${departure.month}'),
+                          label: Text(
+                              'Départ ${departure.day}/${departure.month}'),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -775,7 +774,8 @@ class _ShipperDashboardScreenState
                             }
                           },
                           icon: const Icon(Icons.flight_land, size: 18),
-                          label: Text('Arrivée ${arrival.day}/${arrival.month}'),
+                          label:
+                              Text('Arrivée ${arrival.day}/${arrival.month}'),
                         ),
                       ),
                     ],
@@ -1010,7 +1010,8 @@ class _ShipmentMiniCard extends ConsumerWidget {
                   child: _InfoTile(
                     icon: Icons.monitor_weight_outlined,
                     label: 'Restant',
-                    value: '${shipment.remainingWeightKg.toStringAsFixed(1)} kg',
+                    value:
+                        '${shipment.remainingWeightKg.toStringAsFixed(1)} kg',
                   ),
                 ),
                 Expanded(
@@ -1143,8 +1144,9 @@ class _ActiveShipmentsScreenState extends ConsumerState<ActiveShipmentsScreen> {
 
     return Scaffold(
       body: RefreshIndicator(
-        onRefresh: () =>
-            ref.read(shipperShipmentsPagerProvider(shipper.id).notifier).refresh(),
+        onRefresh: () => ref
+            .read(shipperShipmentsPagerProvider(shipper.id).notifier)
+            .refresh(),
         child: CustomScrollView(
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
@@ -1226,7 +1228,8 @@ class _ShipperShipmentDetailScreenState
   Widget build(BuildContext context) {
     // Watch the live shipment so kg values refresh instantly when a client
     // books/reserves weight; falls back to the snapshot passed in.
-    final live = ref.watch(shipmentByIdProvider(widget.shipment.id)).valueOrNull;
+    final live =
+        ref.watch(shipmentByIdProvider(widget.shipment.id)).valueOrNull;
     final shipment = live ?? widget.shipment;
     final pager = ref.watch(shipperShipmentBookingsPagerProvider(shipment.id));
 
@@ -1450,8 +1453,7 @@ class _DashboardBookingCard extends ConsumerWidget {
                   child: _InfoTile(
                     icon: Icons.monitor_weight_outlined,
                     label: 'Poids',
-                    value:
-                        '${booking.requestedWeightKg.toStringAsFixed(1)} / '
+                    value: '${booking.requestedWeightKg.toStringAsFixed(1)} / '
                         '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
                   ),
                 ),
@@ -1482,8 +1484,7 @@ class _ManageBookingCard extends ConsumerWidget {
       child: GlassCard(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) =>
-                ShipperBookingDetailScreen(bookingId: booking.id),
+            builder: (_) => ShipperBookingDetailScreen(bookingId: booking.id),
           ),
         ),
         child: Column(
@@ -1638,7 +1639,9 @@ class _ManageBookingCard extends ConsumerWidget {
             notes: 'Colis expédié depuis ${booking.shipment?.originCountry}',
             location: booking.shipment?.originCountry,
           );
-      await ref.read(notificationServiceProvider).notifyClientShipmentDispatched(
+      await ref
+          .read(notificationServiceProvider)
+          .notifyClientShipmentDispatched(
             clientId: booking.clientId,
             bookingId: booking.id,
             destination: booking.shipment?.destinationCity ?? 'destination',

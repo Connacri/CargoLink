@@ -6,8 +6,10 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/notification_widgets.dart';
+import '../../core/widgets/chat_widgets.dart';
 import '../../components/shipper_card.dart';
 import '../shipper/shipper_public_profile_screen.dart';
+import '../chat/chat_screen.dart';
 
 /// Smart sort applied to the (server-side filtered) search feed.
 enum ClientSort { none, price, fastest, topRated }
@@ -168,6 +170,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  const ChatInboxBadge(),
                   GestureDetector(
                     onTap: () => _showNotificationsSheet(context),
                     child: const Padding(
@@ -526,7 +529,18 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         '/booking-wizard',
         arguments: shipment.id,
       ),
-      onChat: null,
+      onChat: shipper?.user?.id != null
+          ? () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ChatScreen(
+                    counterpartUserId: shipper!.user!.id,
+                    counterpartName: shipper.user?.fullName ?? 'Expéditeur',
+                    counterpartAvatarUrl: shipper.user?.profilePictureUrl,
+                    bookingId: null,
+                  ),
+                ),
+              )
+          : null,
     );
   }
 

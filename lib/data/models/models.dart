@@ -231,10 +231,10 @@ class Shipment {
   final Shipper? shipper; // Related shipper object
 
   double get remainingWeightKg => availableWeightKg - reservedWeightKg;
-  double get utilizationPercent =>
-      (reservedWeightKg / availableWeightKg) * 100;
+  double get utilizationPercent => (reservedWeightKg / availableWeightKg) * 100;
   bool get isFull => remainingWeightKg <= 0;
-  bool get isActive => status == 'active' && arrivalDate.isAfter(DateTime.now());
+  bool get isActive =>
+      status == 'active' && arrivalDate.isAfter(DateTime.now());
 
   Shipment({
     required this.id,
@@ -270,7 +270,8 @@ class Shipment {
       description: json['description'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
-      shipper: json['shippers'] != null ? Shipper.fromJson(json['shippers']) : null,
+      shipper:
+          json['shippers'] != null ? Shipper.fromJson(json['shippers']) : null,
     );
   }
 
@@ -353,7 +354,9 @@ class Booking {
       trackingNumber: json['tracking_number'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
-      shipment: json['shipments'] != null ? Shipment.fromJson(json['shipments']) : null,
+      shipment: json['shipments'] != null
+          ? Shipment.fromJson(json['shipments'])
+          : null,
       client: json['users'] != null ? User.fromJson(json['users']) : null,
     );
   }
@@ -390,7 +393,8 @@ class ShipmentTracking {
   final String bookingId;
   final double? latitude;
   final double? longitude;
-  final String status; // order_processed, collected, departed_origin, in_transit, arrived_destination, customs_cleared, out_for_delivery, delivered
+  final String
+      status; // order_processed, collected, departed_origin, in_transit, arrived_destination, customs_cleared, out_for_delivery, delivered
   final DateTime timestamp;
   final String? notes;
   final String? location;
@@ -480,7 +484,8 @@ class Dispute {
       resolvedAt: json['resolved_at'] != null
           ? DateTime.parse(json['resolved_at'] as String)
           : null,
-      booking: json['bookings'] != null ? Booking.fromJson(json['bookings']) : null,
+      booking:
+          json['bookings'] != null ? Booking.fromJson(json['bookings']) : null,
     );
   }
 
@@ -740,6 +745,151 @@ class Broadcast {
       'created_at': createdAt.toIso8601String(),
     };
   }
+}
+
+// ============================================================================
+// CONVERSATION MODEL (Chat expéditeur ↔ client)
+// ============================================================================
+
+class Conversation {
+  final String id;
+  final String? bookingId;
+  final String shipperUserId;
+  final String clientUserId;
+  final String? lastMessage;
+  final DateTime? lastMessageAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  /// Resolved counterpart display payloads (filled in by the service via joins).
+  final User? shipperUser;
+  final User? clientUser;
+
+  Conversation({
+    required this.id,
+    this.bookingId,
+    required this.shipperUserId,
+    required this.clientUserId,
+    this.lastMessage,
+    this.lastMessageAt,
+    required this.createdAt,
+    required this.updatedAt,
+    this.shipperUser,
+    this.clientUser,
+  });
+
+  factory Conversation.fromJson(Map<String, dynamic> json) {
+    return Conversation(
+      id: json['id'] as String,
+      bookingId: json['booking_id'] as String?,
+      shipperUserId: json['shipper_user_id'] as String,
+      clientUserId: json['client_user_id'] as String,
+      lastMessage: json['last_message'] as String?,
+      lastMessageAt: json['last_message_at'] != null
+          ? DateTime.tryParse(json['last_message_at'] as String)
+          : null,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+      shipperUser:
+          json['shippers'] != null ? User.fromJson(json['shippers']) : null,
+      clientUser:
+          json['clients'] != null ? User.fromJson(json['clients']) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'booking_id': bookingId,
+      'shipper_user_id': shipperUserId,
+      'client_user_id': clientUserId,
+      'last_message': lastMessage,
+      'last_message_at': lastMessageAt?.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+
+  Conversation copyWith({
+    String? id,
+    String? bookingId,
+    String? shipperUserId,
+    String? clientUserId,
+    String? lastMessage,
+    DateTime? lastMessageAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    User? shipperUser,
+    User? clientUser,
+  }) {
+    return Conversation(
+      id: id ?? this.id,
+      bookingId: bookingId ?? this.bookingId,
+      shipperUserId: shipperUserId ?? this.shipperUserId,
+      clientUserId: clientUserId ?? this.clientUserId,
+      lastMessage: lastMessage ?? this.lastMessage,
+      lastMessageAt: lastMessageAt ?? this.lastMessageAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      shipperUser: shipperUser ?? this.shipperUser,
+      clientUser: clientUser ?? this.clientUser,
+    );
+  }
+
+  bool get hasUnreadMessagesForMe {
+    // A conversation preview "unread" state is derived from the last
+    // message sender + read state; computed by the service per message.
+    return lastMessageAt != null;
+  }
+}
+
+// ============================================================================
+// CHAT MESSAGE MODEL
+// ============================================================================
+
+class ChatMessage {
+  final String id;
+  final String conversationId;
+  final String senderId;
+  final String body;
+  final DateTime? readAt;
+  final DateTime createdAt;
+
+  ChatMessage({
+    required this.id,
+    required this.conversationId,
+    required this.senderId,
+    required this.body,
+    this.readAt,
+    required this.createdAt,
+  });
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    return ChatMessage(
+      id: json['id'] as String,
+      conversationId: json['conversation_id'] as String,
+      senderId: json['sender_id'] as String,
+      body: json['body'] as String,
+      readAt: json['read_at'] != null
+          ? DateTime.tryParse(json['read_at'] as String)
+          : null,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'conversation_id': conversationId,
+      'sender_id': senderId,
+      'body': body,
+      'read_at': readAt?.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+
+  bool isFrom(String userId) => senderId == userId;
+  bool get isRead => readAt != null;
 }
 
 // ============================================================================

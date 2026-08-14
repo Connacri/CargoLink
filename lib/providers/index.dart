@@ -8,6 +8,7 @@ import '../data/services/shipper_shipment_service.dart';
 import '../data/services/booking_payment_service.dart';
 import '../data/services/tracking_dispute_service.dart';
 import '../data/services/review_service.dart';
+import '../data/services/chat_service.dart';
 import '../data/services/storage_service.dart';
 import '../data/services/realtime_service.dart';
 import '../data/services/settings_service.dart';
@@ -122,9 +123,8 @@ final shipperShipmentsProvider = FutureProvider.family<List<Shipment>,
   );
 });
 
-final searchShipmentsProvider =
-    FutureProvider.family<List<Shipment>, ({String query, int limit, int offset})>(
-        (ref, params) async {
+final searchShipmentsProvider = FutureProvider.family<List<Shipment>,
+    ({String query, int limit, int offset})>((ref, params) async {
   final shipmentService = ref.watch(shipmentServiceProvider);
   return shipmentService.searchShipments(
     query: params.query,
@@ -152,8 +152,9 @@ final realtimeServiceProvider = Provider<RealtimeService>((ref) {
 /// Realtime row changes for a table, optionally filtered by one column.
 /// Family key: positional record (table, column, value) — column/value are
 /// null when the stream should not be filtered.
-final tableChangesProvider = StreamProvider.family<PostgresChangePayload,
-    (String, String?, Object?)>((ref, params) {
+final tableChangesProvider =
+    StreamProvider.family<PostgresChangePayload, (String, String?, Object?)>(
+        (ref, params) {
   final realtimeService = ref.watch(realtimeServiceProvider);
   return realtimeService.listenToTable(
     table: params.$1,
@@ -224,8 +225,8 @@ final revenueStatsProvider = FutureProvider.family<Map<String, dynamic>?,
   );
 });
 
-final allTransactionsProvider = FutureProvider<List<TransactionItem>>(
-    (ref) async {
+final allTransactionsProvider =
+    FutureProvider<List<TransactionItem>>((ref) async {
   final paymentService = ref.watch(paymentServiceProvider);
   return paymentService.getAllTransactions();
 });
@@ -276,6 +277,85 @@ final shipperBookingsProvider = FutureProvider.family<List<Booking>,
     limit: params.limit,
     offset: params.offset,
   );
+});
+
+// ============================================================================
+// CHAT PROVIDERS (expéditeur ↔ client)
+// ============================================================================
+
+final chatServiceProvider = Provider<ChatService>((ref) {
+  return ChatService();
+});
+
+/// Resolve-or-create a conversation. Family key: positional record
+/// (shipperUserId, clientUserId, bookingId).
+final conversationProvider =
+    FutureProvider.family<Conversation?, (String, String, String?)>(
+        (ref, params) async {
+  final chatService = ref.watch(chatServiceProvider);
+  return chatService.getOrCreateConversation(
+    shipperUserId: params.$1,
+    clientUserId: params.$2,
+    bookingId: params.$3,
+  );
+});
+
+/// Recent conversations for the current user.
+final myConversationsProvider = FutureProvider<List<Conversation>>((ref) async {
+  final chatService = ref.watch(chatServiceProvider);
+  final userId = ref.watch(authServiceProvider).currentUserId;
+  if (userId == null) return [];
+  return chatService.getMyConversations(userId);
+});
+
+/// Live conversations list for the current user (list screen + badges).
+final conversationsStreamProvider =
+    StreamProvider<List<Conversation>>((ref) async* {
+  final chatService = ref.watch(chatServiceProvider);
+  final userId = ref.watch(authServiceProvider).currentUserId;
+  if (userId == null) {
+    yield [];
+    return;
+  }
+  yield* chatService.listenToMyConversations(userId);
+});
+
+/// Live messages stream for one conversation.
+final messagesStreamProvider =
+    StreamProvider.family<List<ChatMessage>, String>((ref, conversationId) {
+  final chatService = ref.watch(chatServiceProvider);
+  return chatService.listenToMessages(conversationId);
+});
+
+/// Initial (paged) message history for one conversation.
+final conversationMessagesProvider =
+    FutureProvider.family<List<ChatMessage>, String>(
+        (ref, conversationId) async {
+  final chatService = ref.watch(chatServiceProvider);
+  return chatService.getMessages(conversationId);
+});
+
+/// Unread incoming message counts keyed by conversation id for the current user.
+final unreadMessageCountsProvider =
+    FutureProvider<Map<String, int>>((ref) async {
+  final chatService = ref.watch(chatServiceProvider);
+  final userId = ref.watch(authServiceProvider).currentUserId;
+  if (userId == null) return {};
+  final conversations = await ref.watch(myConversationsProvider.future);
+  return chatService.getUnreadCounts(
+    userId,
+    conversations.map((c) => c.id).toList(),
+  );
+});
+
+/// Total number of unread chat messages across the user's conversations.
+final unreadChatTotalProvider = FutureProvider<int>((ref) async {
+  final counts = await ref.watch(unreadMessageCountsProvider.future);
+  var total = 0;
+  for (final n in counts.values) {
+    total += n;
+  }
+  return total;
 });
 
 // ============================================================================
@@ -479,9 +559,14 @@ final v2ServiceProvider = Provider<V2Service>((ref) {
 
 // --- Trips ---
 
-final activeTripsProvider = FutureProvider.family<List<Trip>,
-    ({String? destination, String? origin, int limit, int offset})>(
-    (ref, params) async {
+final activeTripsProvider = FutureProvider.family<
+    List<Trip>,
+    ({
+      String? destination,
+      String? origin,
+      int limit,
+      int offset
+    })>((ref, params) async {
   final v2 = ref.watch(v2ServiceProvider);
   return v2.getActiveTrips(
     destination: params.destination,
@@ -504,13 +589,15 @@ final shipperTripsProvider = FutureProvider.family<List<Trip>,
 // --- Packages ---
 
 final shipmentPackagesProvider =
-    FutureProvider.family<List<ShipmentPackage>, String>((ref, shipmentId) async {
+    FutureProvider.family<List<ShipmentPackage>, String>(
+        (ref, shipmentId) async {
   final v2 = ref.watch(v2ServiceProvider);
   return v2.getShipmentPackages(shipmentId);
 });
 
 final custodyPackagesProvider =
-    FutureProvider.family<List<ShipmentPackage>, String>((ref, custodianId) async {
+    FutureProvider.family<List<ShipmentPackage>, String>(
+        (ref, custodianId) async {
   final v2 = ref.watch(v2ServiceProvider);
   return v2.getPackagesInCustody(custodianId);
 });
@@ -540,7 +627,8 @@ final shipmentEventsProvider = FutureProvider.family<List<ShipmentEvent>,
 // --- Custody transfers ---
 
 final shipmentTransfersProvider =
-    FutureProvider.family<List<CustodyTransfer>, String>((ref, shipmentId) async {
+    FutureProvider.family<List<CustodyTransfer>, String>(
+        (ref, shipmentId) async {
   final v2 = ref.watch(v2ServiceProvider);
   return v2.getShipmentTransfers(shipmentId);
 });
@@ -570,13 +658,15 @@ final shipmentTrackingPointsProvider =
 // --- Allocations / payouts ---
 
 final shipmentAllocationsProvider =
-    FutureProvider.family<List<PaymentAllocation>, String>((ref, shipmentId) async {
+    FutureProvider.family<List<PaymentAllocation>, String>(
+        (ref, shipmentId) async {
   final v2 = ref.watch(v2ServiceProvider);
   return v2.getShipmentAllocations(shipmentId);
 });
 
 final shipperAllocationsProvider =
-    FutureProvider.family<List<PaymentAllocation>, String>((ref, shipperId) async {
+    FutureProvider.family<List<PaymentAllocation>, String>(
+        (ref, shipperId) async {
   final v2 = ref.watch(v2ServiceProvider);
   return v2.getShipperAllocations(shipperId);
 });
@@ -616,7 +706,8 @@ final openClaimsProvider = FutureProvider<List<Claim>>((ref) async {
 final chainIntegrityProvider = FutureProvider.family<List<CustodyTransfer>,
     ({String shipmentId, String? packageId})>((ref, params) async {
   final v2 = ref.watch(v2ServiceProvider);
-  return v2.verifyChainIntegrity(params.shipmentId, packageId: params.packageId);
+  return v2.verifyChainIntegrity(params.shipmentId,
+      packageId: params.packageId);
 });
 
 // ============================================================================
