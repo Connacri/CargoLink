@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Immutable paginated list state.
@@ -72,38 +73,57 @@ class PaginatedListNotifier<T> extends StateNotifier<PaginatedList<T>> {
     state = state.copyWith(onReload: loadInitial, onLoadMore: loadMore);
   }
 
-  /// First load. Safe to call from initState / didChangeDependencies.
+  /// Guards the first-page load against re-entrancy. Not backed by
+  /// `state.loading` on purpose: a failed assignment can leave `loading=true`
+  /// (see [_markLoading]) and would otherwise block every future retry.
+  bool _initialInFlight = false;
+
+  /// First load. Call from a post-frame callback or an event handler — never
+  /// synchronously during build (Riverpod forbids mutating a provider while
+  /// the widget tree is building).
   Future<void> loadInitial() async {
-    if (state.loading) return; // already in-flight
-    state = state.copyWith(
-      loading: true,
-      initialLoading: true,
-      items: const [],
-      hasMore: true,
-      clearError: true,
-    );
+    if (_initialInFlight) return; // already in-flight
+    _initialInFlight = true;
     try {
-      final page = await state.loader(state.pageSize, 0);
-      state = state.copyWith(
-        items: page,
-        hasMore: page.length >= state.pageSize,
-        loading: false,
-        initialLoading: false,
-        clearError: true,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        error: e,
-        loading: false,
-        initialLoading: false,
-      );
+      if (!_markLoading(
+        state.copyWith(
+          loading: true,
+          initialLoading: true,
+          items: const [],
+          hasMore: true,
+          clearError: true,
+        ),
+        retry: loadInitial,
+      )) {
+        return; // a listener threw mid-build; rollback + retry are scheduled
+      }
+      try {
+        final page = await state.loader(state.pageSize, 0);
+        state = state.copyWith(
+          items: page,
+          hasMore: page.length >= state.pageSize,
+          loading: false,
+          initialLoading: false,
+          clearError: true,
+        );
+      } catch (e) {
+        state = state.copyWith(
+          error: e,
+          loading: false,
+          initialLoading: false,
+        );
+      }
+    } finally {
+      _initialInFlight = false;
     }
   }
 
   /// Load the next page. Returns false when there is nothing more to load.
   Future<bool> loadMore() async {
     if (state.loading || !state.hasMore) return false;
-    state = state.copyWith(loading: true);
+    if (!_markLoading(state.copyWith(loading: true), retry: loadMore)) {
+      return false;
+    }
     try {
       final page = await state.loader(state.pageSize, state.items.length);
       state = state.copyWith(
@@ -122,6 +142,35 @@ class PaginatedListNotifier<T> extends StateNotifier<PaginatedList<T>> {
   /// Force a fresh reload of the first page.
   Future<void> refresh() async {
     await loadInitial();
+  }
+
+  /// Assigns [next] to [state]. A `StateNotifier.state=` setter stores the new
+  /// value BEFORE notifying listeners, so when Riverpod's debug guard throws
+  /// (provider mutated while the widget tree is building) the notifier is left
+  /// with `loading: true` and no load in-flight — permanently stuck on its
+  /// shimmer skeleton and immune to retries. This rolls the notifier back to a
+  /// fresh idle state right after the frame and re-runs [retry], so the list
+  /// self-heals instead.
+  bool _markLoading(
+    PaginatedList<T> next, {
+    required Future<void> Function() retry,
+  }) {
+    try {
+      state = next;
+      return true;
+    } catch (_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        state = PaginatedList<T>(
+          loader: state.loader,
+          pageSize: state.pageSize,
+          onReload: state.onReload,
+          onLoadMore: state.onLoadMore,
+        );
+        retry();
+      });
+      return false;
+    }
   }
 }
 

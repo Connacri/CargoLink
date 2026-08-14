@@ -70,8 +70,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _syncPager();
-    _syncSearch();
+    // Never touch a pager provider while the widget tree is building.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncSearch());
   }
 
   /// (Re)load the first page whenever the filter combo changes.

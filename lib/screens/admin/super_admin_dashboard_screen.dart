@@ -37,7 +37,12 @@ class _SuperAdminDashboardScreenState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _syncPager();
+    // Defer to the first idle frame so we never touch a pager provider while
+    // the widget tree is building. Calling loadInitial synchronously here
+    // poisons the shared pagedUsersProvider((role: null)) instance (loading
+    // stays true forever) and leaves the list stuck on its shimmer skeleton —
+    // seen on desktop/Windows.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
   }
 
   void _syncPager() {

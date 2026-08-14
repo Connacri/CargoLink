@@ -57,7 +57,8 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _syncPager();
+    // Never touch a pager provider while the widget tree is building.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
   }
 
   @override

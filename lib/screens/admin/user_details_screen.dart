@@ -66,7 +66,8 @@ class _UserDetailsScreenState extends ConsumerState<UserDetailsScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _syncBookingsPager();
+    // Never touch a pager provider while the widget tree is building.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncBookingsPager());
   }
 
   void _syncBookingsPager() {
@@ -478,7 +479,8 @@ class _ShipmentsTabState extends ConsumerState<_ShipmentsTab> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _sync();
+    // Never touch a pager provider while the widget tree is building.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _sync());
   }
 
   void _sync() {

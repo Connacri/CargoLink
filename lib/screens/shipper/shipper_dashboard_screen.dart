@@ -75,7 +75,9 @@ class _ShipperDashboardScreenState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _syncPager();
+    // Never touch a pager provider while the widget tree is building
+    // (Riverpod throws and leaves the pager stuck loading). Run post-frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
   }
 
   @override
@@ -1095,7 +1097,8 @@ class _ActiveShipmentsScreenState extends ConsumerState<ActiveShipmentsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _syncPager();
+    // Never touch a pager provider while the widget tree is building.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
   }
 
   @override
@@ -1228,7 +1231,8 @@ class _ShipperShipmentDetailScreenState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _syncPager();
+    // Never touch a pager provider while the widget tree is building.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
   }
 
   @override
