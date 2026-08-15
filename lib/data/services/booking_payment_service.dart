@@ -634,13 +634,23 @@ class PaymentService {
     }
   }
 
-  /// Get payments linked to a user's bookings (admin / super_admin drill-down).
+  /// Get payments linked to a user — either as a **client** (booking's
+  /// client_id) or as a **shipper** (booking's shipment belongs to the shipper
+  /// account of this user). Used by the admin / super_admin "Finance" tab of a
+  /// user details page.
+  ///
+  /// The `bookings!payments_booking_id_fkey(...)` hint selects the correct FK
+  /// (payments.booking_id → bookings.id) — the previous `bookings_client_id_fkey`
+  /// hint pointed to the wrong constraint and made this query fail (empty list).
   Future<List<Payment>> getUserPayments(String userId) async {
     try {
       final response = await _supabase
           .from('payments')
-          .select('*, bookings!bookings_client_id_fkey(client_id)')
-          .eq('bookings.client_id', userId)
+          .select(
+              '*, bookings!payments_booking_id_fkey(client_id, shipments(shipper_id, shippers(user_id)))')
+          .or(
+              'bookings.client_id.eq.$userId,'
+              'bookings.shipments.shippers.user_id.eq.$userId')
           .order('created_at', ascending: false);
 
       return (response as List)

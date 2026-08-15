@@ -33,7 +33,14 @@ class GradientSliverHeader extends StatelessWidget {
     // étendu il scale à ~26px en bas du header, replié il devient le titre de
     // la toolbar. Le `SliverAppBar.title` est volontairement absent, sinon le
     // même texte s'afficherait deux fois et se superposerait.
-    final hasBack = Navigator.of(context).canPop();
+    //
+    // Le `titlePadding` est volontairement LAISSÉ À SA VALEUR PAR DÉFAUT :
+    // FlexibleSpaceBar l'aligne automatiquement sur la présence du bouton
+    // retour (start 72px avec leading, 16px sinon, bottom 16px — voir
+    // https://api.flutter.dev/flutter/material/FlexibleSpaceBar/titlePadding.html).
+    // Un padding codé en dur (ex: 50px) est plus étroit que le leading (56px)
+    // et fait chevaucher le titre sous la flèche / le fait "sauter" après
+    // expansion et repli.
 
     return SliverAppBar(
       pinned: true,
@@ -46,11 +53,6 @@ class GradientSliverHeader extends StatelessWidget {
       bottom: bottom,
       flexibleSpace: FlexibleSpaceBar(
         collapseMode: CollapseMode.parallax,
-        titlePadding: EdgeInsetsDirectional.only(
-          // Laisse la place au bouton retour quand on peut revenir en arrière.
-          start: hasBack ? 72 : AppTheme.spaceMd,
-          bottom: AppTheme.spaceMd,
-        ),
         title: Text(
           title,
           maxLines: 1,
@@ -86,6 +88,7 @@ class _HeaderBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     // L'icône et le sous-titre vivent ici, alignés au-dessus du titre qui est
     // géré par FlexibleSpaceBar.title (pas de doublon, pas de superposition).
+
     return Container(
       decoration: BoxDecoration(
         gradient: gradient,
@@ -118,7 +121,6 @@ class _HeaderBackground extends StatelessWidget {
                 reverse: true,
                 physics: const NeverScrollableScrollPhysics(),
                 child: Padding(
-
                   padding: const EdgeInsets.only(top: 50),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -129,7 +131,8 @@ class _HeaderBackground extends StatelessWidget {
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusMd),
                             border: Border.all(
                               color: Colors.white.withValues(alpha: 0.2),
                             ),
@@ -140,10 +143,8 @@ class _HeaderBackground extends StatelessWidget {
                       ],
                       if (subtitle != null)
                         FittedBox(
-
                           child: Text(
                             subtitle!,
-
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.85),
                               fontSize: 14,

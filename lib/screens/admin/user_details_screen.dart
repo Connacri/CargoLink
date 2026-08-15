@@ -609,14 +609,38 @@ class _FinanceTab extends ConsumerWidget {
 
     return payments.when(
       data: (items) {
-        final total = items.fold<double>(0, (sum, p) => sum + p.amount);
+        final completed = items.where((p) => p.isCompleted).toList();
+        final totalPaid =
+            completed.fold<double>(0, (sum, p) => sum + p.amount);
+        final totalAll = items.fold<double>(0, (sum, p) => sum + p.amount);
+        final pending = items.where((p) => p.status == 'pending').length;
+        final refunded = items.where((p) => p.status == 'refunded').length;
+        final failed = items.where((p) => p.status == 'failed').length;
+
         return CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(AppTheme.spaceMd),
-                child: _TotalCard(total: total),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _FinanceStats(
+                      totalPaid: totalPaid,
+                      totalAll: totalAll,
+                      count: items.length,
+                      pending: pending,
+                      refunded: refunded,
+                      failed: failed,
+                    ),
+                    const SizedBox(height: AppTheme.spaceLg),
+                    Text(
+                      'Transactions (${items.length})',
+                      style: AppTheme.h3,
+                    ),
+                  ],
+                ),
               ),
             ),
             if (items.isEmpty)
@@ -649,37 +673,162 @@ class _FinanceTab extends ConsumerWidget {
   }
 }
 
-class _TotalCard extends StatelessWidget {
-  const _TotalCard({required this.total});
+/// Statistics block for the "Finance" tab: totals and status breakdown for the
+/// selected user (client payments + shipper earnings combined).
+class _FinanceStats extends StatelessWidget {
+  const _FinanceStats({
+    required this.totalPaid,
+    required this.totalAll,
+    required this.count,
+    required this.pending,
+    required this.refunded,
+    required this.failed,
+  });
 
-  final double total;
+  final double totalPaid;
+  final double totalAll;
+  final int count;
+  final int pending;
+  final int refunded;
+  final int failed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppTheme.spaceLg),
+          decoration: BoxDecoration(
+            gradient: AppTheme.successGradient,
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+            boxShadow: AppTheme.shadowLg,
+          ),
+          child: Column(
+            children: [
+              const Icon(Icons.account_balance_wallet_rounded,
+                  color: Colors.white, size: 32),
+              const SizedBox(height: AppTheme.spaceSm),
+              Text(
+                '${totalPaid.toStringAsFixed(0)} DZD',
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                'Total payé (réglé)',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.85)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppTheme.spaceMd),
+        Row(
+          children: [
+            Expanded(
+              child: _StatTile(
+                icon: Icons.receipt_long_rounded,
+                label: 'Transactions',
+                value: '$count',
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(width: AppTheme.spaceSm),
+            Expanded(
+              child: _StatTile(
+                icon: Icons.payments_rounded,
+                label: 'Total global',
+                value: totalAll.toStringAsFixed(0),
+                color: AppTheme.accentColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppTheme.spaceSm),
+        Row(
+          children: [
+            Expanded(
+              child: _StatTile(
+                icon: Icons.schedule_rounded,
+                label: 'En attente',
+                value: '$pending',
+                color: AppTheme.warningColor,
+              ),
+            ),
+            const SizedBox(width: AppTheme.spaceSm),
+            Expanded(
+              child: _StatTile(
+                icon: Icons.replay_rounded,
+                label: 'Remboursés',
+                value: '$refunded',
+                color: AppTheme.infoColor,
+              ),
+            ),
+            const SizedBox(width: AppTheme.spaceSm),
+            Expanded(
+              child: _StatTile(
+                icon: Icons.error_rounded,
+                label: 'Échoués',
+                value: '$failed',
+                color: AppTheme.errorColor,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  const _StatTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
       padding: const EdgeInsets.all(AppTheme.spaceMd),
       decoration: BoxDecoration(
-        gradient: AppTheme.successGradient,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        boxShadow: AppTheme.shadowLg,
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.account_balance_wallet_rounded,
-              color: Colors.white, size: 32),
-          const SizedBox(height: AppTheme.spaceSm),
-          Text(
-            '${total.toStringAsFixed(0)} DZD',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-            ),
+          Row(
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  style: AppTheme.caption,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: AppTheme.spaceXs),
           Text(
-            'Total payé',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.85)),
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
           ),
         ],
       ),
