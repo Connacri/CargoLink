@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:uuid/uuid.dart';
 import '../models/models.dart';
 import '../../core/config/supabase_config.dart';
@@ -261,6 +261,10 @@ class ChatService {
   /// Live stream of the user's conversations (for list updates + badges).
   /// RLS already limits the row set to conversations the user participates in;
   /// the extra local filter keeps the widget from rebuilding on other threads.
+  ///
+  /// Realtime payloads only carry `conversations` columns (no embedded user
+  /// profiles), so the emitted rows are enriched with the counterpart's profile
+  /// so screens can render real names instead of falling back to "Contact".
   Stream<List<Conversation>> listenToMyConversations(String userId) {
     try {
       return _supabase
@@ -273,10 +277,57 @@ class ChatService {
                   row['client_user_id'] == userId)
               .map(
                   (item) => Conversation.fromJson(item as Map<String, dynamic>))
-              .toList());
+              .toList())
+          .asyncMap((rows) => _resolveProfiles(userId, rows));
     } catch (e) {
       _logger.e('Error listening to conversations: $e');
       return Stream.value([]);
+    }
+  }
+
+  /// Fill in missing participant profiles (from realtime rows) in one round
+  /// trip, reusing any profiles the server already embedded.
+  Future<List<Conversation>> _resolveProfiles(
+      String userId, List<Conversation> rows) async {
+    if (rows.isEmpty) return rows;
+    final missingIds = <String>{
+      for (final c in rows)
+        if (c.shipperUserId != userId && c.shipperUser == null)
+          c.shipperUserId,
+      for (final c in rows)
+        if (c.clientUserId != userId && c.clientUser == null) c.clientUserId,
+    };
+    if (missingIds.isEmpty) return rows;
+
+    try {
+      final response = await _supabase
+          .from('users')
+          .select(
+              'id, email, phone, full_name, profile_picture_url, role, '
+              'wechat, whatsapp, telegram, facebook, instagram, tiktok, '
+              'is_active, deactivated_at, deletion_requested_at, '
+              'created_at, updated_at')
+          .inFilter('id', missingIds.toList());
+
+      final byId = <String, Map<String, dynamic>>{
+        for (final row in response as List)
+          (row as Map<String, dynamic>)['id'] as String: row,
+      };
+
+      return rows.map((c) {
+        final shipper = c.shipperUser ??
+            (byId[c.shipperUserId] != null
+                ? User.fromJson(byId[c.shipperUserId]!)
+                : null);
+        final client = c.clientUser ??
+            (byId[c.clientUserId] != null
+                ? User.fromJson(byId[c.clientUserId]!)
+                : null);
+        return c.copyWith(shipperUser: shipper, clientUser: client);
+      }).toList();
+    } catch (e) {
+      _logger.e('Error resolving conversation profiles: $e');
+      return rows;
     }
   }
 

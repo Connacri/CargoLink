@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
@@ -8,24 +9,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../chat/chat_screen.dart';
-
-/// Lazy paged source for the current client's bookings, keyed by status filter.
-final clientBookingsPagerProvider = StateNotifierProvider.family<
-    PaginatedListNotifier<Booking>,
-    PaginatedList<Booking>,
-    ({String clientId, String? status})>(
-  (ref, params) {
-    return createPaginatedNotifier(
-      (limit, offset) => ref.read(clientBookingsProvider((
-        clientId: params.clientId,
-        status: params.status,
-        limit: limit,
-        offset: offset,
-      )).future),
-      pageSize: 15,
-    );
-  },
-);
+import '../shipper/shipper_public_profile_screen.dart';
 
 class MyOrdersScreen extends ConsumerStatefulWidget {
   const MyOrdersScreen({super.key});
@@ -88,6 +72,46 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
     _syncPager();
   }
 
+  /// True when [booking] still belongs in the active status filter.
+  bool _matchesStatusFilter(Booking booking) {
+    if (_statusFilter == null) return true;
+    return booking.status == _statusFilter;
+  }
+
+  /// Realtime change on this client's bookings: refetch the touched row (the
+  /// payload carries raw columns without the embedded shipment/shipper) and
+  /// patch just that tile. Rows that no longer match the active filter are
+  /// removed instead of reloading the whole page.
+  void _applyBookingEvent(PostgresChangePayload event) {
+    final userId = ref.read(authServiceProvider).currentUserId;
+    if (userId == null) return;
+    final id = (event.newRecord['id'] ?? event.oldRecord['id']) as String?;
+    if (id == null) return;
+
+    final notifier = ref
+        .read(clientBookingsPagerProvider((
+          clientId: userId,
+          status: _statusFilter,
+        )).notifier);
+
+    if (event.eventType == PostgresChangeEvent.delete) {
+      notifier.removeItem(id);
+      return;
+    }
+
+    ref.read(bookingServiceProvider).getBookingById(id).then((booking) {
+      if (booking == null) {
+        notifier.removeItem(id);
+        return;
+      }
+      if (!_matchesStatusFilter(booking)) {
+        notifier.removeItem(id);
+        return;
+      }
+      notifier.upsertItem(booking);
+    });
+  }
+
   Future<void> _cancelBooking(String bookingId) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -113,16 +137,27 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
     if (confirmed == true) {
       try {
         await ref.read(bookingServiceProvider).cancelBooking(bookingId);
-        final userId = ref.read(authServiceProvider).currentUserId;
-        if (userId != null && mounted) {
-          await ref
-              .read(clientBookingsPagerProvider((
-                clientId: userId,
-                status: _statusFilter,
-              )).notifier)
-              .refresh();
-        }
         if (mounted) {
+          final userId = ref.read(authServiceProvider).currentUserId;
+          if (userId != null) {
+            // Patch the cancelled booking in place instead of a full reload.
+            ref.read(bookingServiceProvider).getBookingById(bookingId).then(
+              (booking) {
+                if (!mounted) return;
+                final notifier = ref.read(
+                  clientBookingsPagerProvider((
+                    clientId: userId,
+                    status: _statusFilter,
+                  )).notifier,
+                );
+                if (booking == null || !_matchesStatusFilter(booking)) {
+                  notifier.removeItem(bookingId);
+                } else {
+                  notifier.upsertItem(booking);
+                }
+              },
+            );
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Commande annulée et remboursée'),
@@ -143,19 +178,14 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
     final userId = ref.watch(authServiceProvider).currentUserId;
 
     // Live refresh: whenever this client's bookings change on the server
-    // (accept/confirm/ship/cancel by the shipper), reload the current page.
+    // (accept/confirm/ship/cancel by the shipper), patch the affected tile.
     // Kept unconditional (before any early return) so the set of listened
     // providers stays stable across rebuilds.
     ref.listen(
       tableChangesProvider(('bookings', 'client_id', userId ?? 'none')),
       (previous, next) {
-        if (next.hasValue && userId != null) {
-          ref
-              .read(clientBookingsPagerProvider((
-                clientId: userId,
-                status: _statusFilter,
-              )).notifier)
-              .refresh();
+        if (next.hasValue) {
+          _applyBookingEvent(next.requireValue);
         }
       },
     );
@@ -289,6 +319,14 @@ class _BookingCard extends ConsumerWidget {
     this.onChat,
   });
 
+  void _openShipperProfile(BuildContext context, String shipperId) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ShipperPublicProfileScreen(shipperId: shipperId),
+      ),
+    );
+  }
+
   Future<void> _rateShipper(BuildContext context, WidgetRef ref) async {
     final shipment = booking.shipment;
     final shipperId = shipment?.shipperId;
@@ -339,6 +377,12 @@ class _BookingCard extends ConsumerWidget {
     final delivered = booking.status == 'delivered';
     final rated = ref.watch(hasReviewedProvider(booking.id)).valueOrNull;
 
+    final shipper = booking.shipment?.shipper;
+    final shipperUser = shipper?.user;
+    final shipperConfirmed = booking.status == 'confirmed' ||
+        booking.status == 'shipped' ||
+        booking.status == 'delivered';
+
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
       child: GlassCard(
@@ -383,6 +427,48 @@ class _BookingCard extends ConsumerWidget {
                 ),
               ],
             ),
+            if (shipperUser != null && shipper?.id != null) ...[
+              const SizedBox(height: AppTheme.spaceMd),
+              InkWell(
+                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                onTap: () => _openShipperProfile(context, shipper.id),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: AppTheme.spaceSm),
+                  child: Row(
+                    children: [
+                      GradientAvatar(
+                        initial: shipperUser.fullName,
+                        imageUrl: shipperUser.profilePictureUrl,
+                        radius: 18,
+                      ),
+                      const SizedBox(width: AppTheme.spaceSm),
+                      Expanded(
+                        child: Text(
+                          shipperUser.fullName,
+                          style: AppTheme.body
+                              .copyWith(fontWeight: FontWeight.w700),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (shipper!.isVerified) ...[
+                        const SizedBox(width: AppTheme.spaceXs),
+                        const Icon(
+                          Icons.verified_rounded,
+                          size: 16,
+                          color: AppTheme.infoColor,
+                        ),
+                      ],
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: AppTheme.textMutedColor,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: AppTheme.spaceMd),
             Row(
               children: [
@@ -405,25 +491,28 @@ class _BookingCard extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: AppTheme.spaceSm),
-            Row(
+            Wrap(
+              spacing: AppTheme.spaceSm,
+              runSpacing: AppTheme.spaceSm,
               children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  size: 14,
-                  color: booking.isPaid
+                _StatusChip(
+                  icon: shipperConfirmed
+                      ? Icons.task_alt_rounded
+                      : Icons.pending_actions_rounded,
+                  label: shipperConfirmed
+                      ? 'Expéditeur a confirmé'
+                      : 'En attente de confirmation',
+                  color: shipperConfirmed
                       ? AppTheme.accentColor
                       : AppTheme.warningColor,
                 ),
-                const SizedBox(width: AppTheme.spaceXs),
-                Text(
-                  'Paiement: ${booking.isPaid ? 'Payé' : 'En attente'}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: booking.isPaid
-                        ? AppTheme.accentColor
-                        : AppTheme.warningColor,
-                  ),
+                _StatusChip(
+                  icon: booking.isPaid
+                      ? Icons.paid_rounded
+                      : Icons.schedule_rounded,
+                  label: booking.isPaid ? 'Paiement reçu' : 'Paiement en attente',
+                  color:
+                      booking.isPaid ? AppTheme.accentColor : AppTheme.warningColor,
                 ),
               ],
             ),
@@ -538,6 +627,47 @@ class _InfoTile extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceSm,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

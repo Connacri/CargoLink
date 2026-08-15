@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
+import '../core/widgets/paginated_list.dart';
 import '../data/models/models.dart';
 import '../data/models/v2_models.dart';
 import '../data/services/auth_service.dart';
@@ -176,6 +177,25 @@ final bookingByIdProvider =
   final bookingService = ref.watch(bookingServiceProvider);
   return bookingService.getBookingById(bookingId);
 });
+
+/// Lazy paged source for a client's bookings, keyed by (clientId, status filter).
+final clientBookingsPagerProvider = StateNotifierProvider.family<
+    PaginatedListNotifier<Booking>,
+    PaginatedList<Booking>,
+    ({String clientId, String? status})>(
+  (ref, params) {
+    return createPaginatedNotifier(
+      (limit, offset) => ref.read(clientBookingsProvider((
+        clientId: params.clientId,
+        status: params.status,
+        limit: limit,
+        offset: offset,
+      )).future),
+      pageSize: 15,
+      idOf: (booking) => booking.id,
+    );
+  },
+);
 
 final clientBookingsProvider = FutureProvider.family<
     List<Booking>,

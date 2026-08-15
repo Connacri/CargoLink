@@ -82,6 +82,8 @@ dependencies:
   firebase_storage: ^13.4.6
   image_picker: ^1.2.3
   image_cropper: ^12.2.1
+  qr_flutter: ^4.1.0
+  gal: ^2.3.3
 
 dev_dependencies:
   flutter_test:

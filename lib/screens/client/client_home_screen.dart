@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
@@ -30,6 +31,7 @@ final clientShipmentsPagerProvider = StateNotifierProvider.family<
             offset: offset,
           ),
       pageSize: 15,
+      idOf: (shipment) => shipment.id,
     );
   },
 );
@@ -46,6 +48,7 @@ final clientSearchPagerProvider = StateNotifierProvider.family<
           offset: offset,
         ),
     pageSize: 15,
+    idOf: (shipment) => shipment.id,
   );
 });
 
@@ -89,6 +92,75 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     notifier.loadInitial();
   }
 
+  /// True when [shipment] still qualifies for the current feed filters.
+  bool _matchesFeedFilters(Shipment shipment) {
+    final destination = ref.read(destinationFilterProvider);
+    final origin = ref.read(originFilterProvider);
+    if (destination != null &&
+        !shipment.destinationCity.toLowerCase().contains(destination.toLowerCase())) {
+      return false;
+    }
+    if (origin != null &&
+        !shipment.originCountry.toLowerCase().contains(origin.toLowerCase())) {
+      return false;
+    }
+    return true;
+  }
+
+  /// Realtime INSERT/UPDATE/DELETE on `shipments`: refetch the touched row
+  /// (the payload only carries raw columns, without the embedded shipper) and
+  /// patch just that tile instead of reloading the whole feed.
+  void _applyShipmentEvent(PostgresChangePayload event) {
+    final id = (event.newRecord['id'] ?? event.oldRecord['id']) as String?;
+    if (id == null) return;
+
+    final feedNotifier = ref.read(
+      clientShipmentsPagerProvider(
+        (
+          destination: ref.read(destinationFilterProvider),
+          origin: ref.read(originFilterProvider),
+        ),
+      ).notifier,
+    );
+
+    if (event.eventType == PostgresChangeEvent.delete) {
+      feedNotifier.removeItem(id);
+      _removeFromSearch(id);
+      return;
+    }
+
+    ref.read(shipmentServiceProvider).getShipmentById(id).then((shipment) {
+      if (shipment == null ||
+          !shipment.isActive ||
+          shipment.isFull ||
+          !_matchesFeedFilters(shipment)) {
+        feedNotifier.removeItem(id);
+      } else {
+        feedNotifier.upsertItem(shipment);
+      }
+
+      final searchQuery = ref.read(searchQueryProvider).trim().toLowerCase();
+      if (searchQuery.isEmpty || shipment == null) return;
+      final matchesQuery =
+          shipment.originCountry.toLowerCase().contains(searchQuery) ||
+              shipment.destinationCity.toLowerCase().contains(searchQuery);
+      if (matchesQuery) {
+        ref
+            .read(clientSearchPagerProvider(ref.read(searchQueryProvider).trim())
+                .notifier)
+            .upsertItem(shipment);
+      } else {
+        _removeFromSearch(id);
+      }
+    });
+  }
+
+  void _removeFromSearch(String id) {
+    final searchQuery = ref.read(searchQueryProvider).trim();
+    if (searchQuery.isEmpty) return;
+    ref.read(clientSearchPagerProvider(searchQuery).notifier).removeItem(id);
+  }
+
   /// (Re)load server-side search results when the query changes.
   void _syncSearch() {
     final query = ref.read(searchQueryProvider).trim();
@@ -122,25 +194,25 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         searchPager.copyWith(items: _applySort(searchPager.items, sort));
 
     // Live refresh: a newly published shipment appears in the feed without a
-    // manual pull-to-refresh.
+    // manual pull-to-refresh. Only the touched tile is patched in place.
     ref.listen(
       tableChangesProvider(('shipments', null, null)),
       (previous, next) {
         if (next.hasValue) {
-          if (isSearching) {
-            ref
-                .read(clientSearchPagerProvider(searchQuery.trim()).notifier)
-                .refresh();
-          } else {
-            ref
-                .read(clientShipmentsPagerProvider(
-                  (destination: destination, origin: origin),
-                ).notifier)
-                .refresh();
-          }
+          _applyShipmentEvent(next.requireValue);
         }
       },
     );
+
+    // Re-sync the pager when the origin/destination chips change. (Provider
+    // changes rebuild the widget but do NOT trigger didChangeDependencies, so
+    // the pager used to keep showing the previous filter's results.)
+    ref.listen(destinationFilterProvider, (_, __) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
+    });
+    ref.listen(originFilterProvider, (_, __) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
+    });
 
     return Scaffold(
       body: RefreshIndicator(
@@ -172,6 +244,12 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const ChatInboxBadge(),
+                  IconButton(
+                    onPressed: () =>
+                        ref.read(navigationIndexProvider.notifier).state = 1,
+                    tooltip: 'Mes colis',
+                    icon: const Icon(Icons.route_rounded),
+                  ),
                   GestureDetector(
                     onTap: () => _showNotificationsSheet(context),
                     child: const Padding(

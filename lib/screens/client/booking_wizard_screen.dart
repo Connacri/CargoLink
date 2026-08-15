@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:gal/gal.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
@@ -28,17 +32,19 @@ class BookingWizardScreen extends ConsumerStatefulWidget {
 }
 
 class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
-  static const _stepLabels = ['Produit', 'Photos', 'Paiement', 'Confirm'];
+  static const _stepLabels = ['Produit', 'Photos', 'Paiement', 'Terminé'];
 
   int _currentStep = 0;
   bool _submitting = false;
   String? _createdBookingId;
+  bool _savingTicket = false;
+  final _ticketKey = GlobalKey();
 
   final _productNameCtrl = TextEditingController();
   final _productDescCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
   final List<File> _productImages = [];
-  String _paymentMethod = 'Chardly';
+  String _paymentMethod = 'cash';
 
   @override
   void dispose() {
@@ -450,15 +456,13 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
               const Divider(),
               _SummaryRow(
                 label: 'Sous-total',
-                value: '$subtotal.toStringAsFixed(0) '
-                    '$_currency',
+                value: '${subtotal.toStringAsFixed(0)} $_currency',
                 bold: true,
               ),
               _SummaryRow(
                 label:
                     'Commission plateforme (${_commissionPercent.toStringAsFixed(0)}%)',
-                value: '$commission.toStringAsFixed(0) '
-                    '$_currency',
+                value: '${commission.toStringAsFixed(0)} $_currency',
                 subtle: true,
               ),
               const SizedBox(height: AppTheme.spaceSm),
@@ -466,8 +470,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
               const SizedBox(height: AppTheme.spaceSm),
               _SummaryRow(
                 label: 'Total à payer',
-                value: '$subtotal.toStringAsFixed(0) '
-                    '$_currency',
+                value: '${subtotal.toStringAsFixed(0)} $_currency',
                 total: true,
               ),
               const SizedBox(height: AppTheme.spaceSm),
@@ -482,8 +485,26 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
         const Text('Méthode de paiement', style: AppTheme.h3),
         const SizedBox(height: AppTheme.spaceMd),
         _buildPaymentOption(
-          'Chardly',
-          'Instantané',
+          'cash',
+          'Espèces à la livraison',
+          Icons.payments_outlined,
+          AppTheme.primaryColor,
+        ),
+        _buildPaymentOption(
+          'bank',
+          'Virement bancaire',
+          Icons.account_balance_outlined,
+          AppTheme.accentColor,
+        ),
+        _buildPaymentOption(
+          'ccp',
+          'CCP / CIB',
+          Icons.credit_card_outlined,
+          AppTheme.infoColor,
+        ),
+        _buildPaymentOption(
+          'Chargily',
+          'Paiement en ligne (EDAHABIA / carte)',
           Icons.bolt_rounded,
           AppTheme.warningColor,
         ),
@@ -551,6 +572,10 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
 
   Widget _buildStepConfirmation(Shipment shipment) {
     final bookingId = _createdBookingId;
+    final refCode = bookingId != null
+        ? bookingId.substring(0, bookingId.length > 10 ? 10 : bookingId.length)
+            .toUpperCase()
+        : 'RES-PENDING';
     return Center(
       child: ListView(
         padding: const EdgeInsets.all(AppTheme.spaceLg),
@@ -562,18 +587,10 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
             color: AppTheme.accentColor,
           ),
           const SizedBox(height: AppTheme.spaceMd),
-          Text(
-            'Réservation Confirmée !',
+          const Text(
+            'Réservation Terminée !',
             textAlign: TextAlign.center,
-            style: AppTheme.h2.copyWith(color: AppTheme.accentColor),
-          ),
-          const SizedBox(height: AppTheme.spaceSm),
-          Text(
-            bookingId != null
-                ? 'Réf : ${bookingId.substring(0, bookingId.length > 10 ? 10 : bookingId.length).toUpperCase()}'
-                : '#RES-PENDING',
-            textAlign: TextAlign.center,
-            style: AppTheme.bodySecondary,
+            style: AppTheme.h2,
           ),
           const SizedBox(height: AppTheme.spaceSm),
           Text(
@@ -582,6 +599,76 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
             style: AppTheme.caption,
           ),
           const SizedBox(height: AppTheme.spaceLg),
+          RepaintBoundary(
+            key: _ticketKey,
+            child: Container(
+              padding: const EdgeInsets.all(AppTheme.spaceLg),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceColor,
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                border: Border.all(color: AppTheme.dividerColor),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (bookingId != null)
+                    QrImageView(
+                      data: bookingId,
+                      version: QrVersions.auto,
+                      size: 160,
+                      backgroundColor: Colors.white,
+                      eyeStyle: const QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
+                        color: AppTheme.textPrimaryColor,
+                      ),
+                      dataModuleStyle: const QrDataModuleStyle(
+                        dataModuleShape: QrDataModuleShape.square,
+                        color: AppTheme.textPrimaryColor,
+                      ),
+                    )
+                  else
+                    const SizedBox(
+                      width: 160,
+                      height: 160,
+                      child: Icon(
+                        Icons.qr_code_2_rounded,
+                        size: 120,
+                        color: AppTheme.textMutedColor,
+                      ),
+                    ),
+                  const SizedBox(height: AppTheme.spaceMd),
+                  Text(
+                    'Réf : $refCode',
+                    style: AppTheme.h3,
+                  ),
+                  const SizedBox(height: AppTheme.spaceXs),
+                  Text(
+                    '${_productNameCtrl.text.trim()} · '
+                    '${_requestedWeight.toStringAsFixed(1)} kg',
+                    style: AppTheme.caption,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceLg),
+          FilledButton.icon(
+            onPressed: _savingTicket ? null : _saveTicketToGallery,
+            icon: _savingTicket
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.download_rounded, size: 18),
+            label: Text(
+                _savingTicket ? 'Enregistrement…' : 'Enregistrer la confirmation'),
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
           FilledButton.icon(
             onPressed: () => _goToPayment(shipment),
             icon: const Icon(Icons.lock_rounded, size: 18),
@@ -599,6 +686,43 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _saveTicketToGallery() async {
+    final bookingId = _createdBookingId;
+    if (bookingId == null) return;
+    final boundary = _ticketKey.currentContext?.findRenderObject();
+    if (boundary is! RenderRepaintBoundary) return;
+    setState(() => _savingTicket = true);
+    try {
+      if (!await Gal.hasAccess()) {
+        await Gal.requestAccess();
+      }
+      if (!mounted) return;
+      final image = await boundary.toImage(pixelRatio: 3);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) throw Exception('Impossible de générer l\'image');
+      await Gal.putImageBytes(
+        byteData.buffer.asUint8List(),
+        name: 'cargolink-reservation-$bookingId',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Confirmation enregistrée dans vos photos.'),
+            backgroundColor: AppTheme.accentColor,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Échec de l\'enregistrement: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _savingTicket = false);
+    }
   }
 
   void _goToPayment(Shipment shipment) {
@@ -752,6 +876,16 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
 
       if (!mounted) return;
       if (booking != null) {
+        // Make sure the client's order lists pick up the new booking even if
+        // realtime is slow — the pager providers refresh on next build.
+        final userId = authService.currentUserId;
+        if (userId != null) {
+          ref.invalidate(clientBookingsPagerProvider((
+            clientId: userId,
+            status: null,
+          )));
+        }
+        ref.invalidate(bookingByIdProvider(booking.id));
         setState(() {
           _createdBookingId = booking.id;
           _currentStep = 3;

@@ -6,6 +6,7 @@
 import 'dart:typed_data';
 import 'package:logger/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../../core/config/supabase_config.dart';
 
 class FeedbackItem {
@@ -81,19 +82,20 @@ class FeedbackService {
             _supabase.storage.from(bucket).getPublicUrl(fullPath);
       }
 
-      final response = await _supabase
-          .from('feedbacks')
-          .insert({
-            'user_id': userId,
-            'role': role,
-            'message': message,
-            'screenshot_url': screenshotUrl,
-          })
-          .select('id')
-          .single();
+      final id = const Uuid().v4();
+      // NOTE: the INSERT policy only allows clients to add rows; there is no
+      // SELECT policy for non-admin roles, so `.select()`/RETURNING would fail
+      // with an RLS violation. Insert without returning instead.
+      await _supabase.from('feedbacks').insert({
+        'id': id,
+        'user_id': userId,
+        'role': role,
+        'message': message,
+        'screenshot_url': screenshotUrl,
+      });
 
-      _logger.i('Feedback submitted (${response['id']})');
-      return response['id'] as String;
+      _logger.i('Feedback submitted ($id)');
+      return id;
     } catch (e) {
       _logger.e('Error submitting feedback: $e');
       rethrow;

@@ -6,6 +6,8 @@ import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../components/tracking_timeline.dart';
+import '../chat/chat_screen.dart';
+import '../shipper/shipper_public_profile_screen.dart';
 
 class TrackingScreen extends ConsumerWidget {
   final String bookingId;
@@ -91,6 +93,14 @@ class TrackingScreen extends ConsumerWidget {
           );
         }
         return Scaffold(
+          floatingActionButton: bookingData.shipment?.shipper?.user != null
+              ? FloatingActionButton.extended(
+                  heroTag: 'tracking_chat',
+                  onPressed: () => _openShipperChat(context, bookingData),
+                  icon: const Icon(Icons.chat_bubble_rounded, size: 18),
+                  label: const Text('Discuter'),
+                )
+              : null,
           body: CustomScrollView(
             slivers: [
               GradientSliverHeader(
@@ -109,6 +119,18 @@ class TrackingScreen extends ConsumerWidget {
                   child: _buildHeader(bookingData),
                 ),
               ),
+              if (bookingData.shipment?.shipper?.user != null)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      0,
+                    ),
+                    child: _buildShipperCard(context, bookingData),
+                  ),
+                ),
               if (bookingData.status == 'delivered')
                 SliverToBoxAdapter(
                   child: Padding(
@@ -282,6 +304,118 @@ class TrackingScreen extends ConsumerWidget {
       default:
         return status;
     }
+  }
+
+  void _openShipperChat(BuildContext context, Booking booking) {
+    final shipperUser = booking.shipment?.shipper?.user;
+    if (shipperUser == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          counterpartUserId: shipperUser.id,
+          counterpartName: shipperUser.fullName,
+          counterpartAvatarUrl: shipperUser.profilePictureUrl,
+          bookingId: booking.id,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShipperCard(BuildContext context, Booking booking) {
+    final shipper = booking.shipment?.shipper;
+    final shipperUser = shipper?.user;
+    if (shipperUser == null) return const SizedBox.shrink();
+
+    final isVerified = shipper?.verificationStatus == 'verified';
+    return GlassCard(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        onTap: () {
+          if (shipper?.id != null) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    ShipperPublicProfileScreen(shipperId: shipper!.id),
+              ),
+            );
+          }
+        },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppTheme.spaceXs,
+                    ),
+          child: Row(
+            children: [
+              GradientAvatar(
+                initial: shipperUser.fullName,
+                imageUrl: shipperUser.profilePictureUrl,
+                radius: 22,
+              ),
+              const SizedBox(width: AppTheme.spaceMd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Expéditeur',
+                      style: AppTheme.caption,
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            shipperUser.fullName,
+                            style: AppTheme.body
+                                .copyWith(fontWeight: FontWeight.w700),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isVerified) ...[
+                          const SizedBox(width: AppTheme.spaceXs),
+                          const Icon(
+                            Icons.verified_rounded,
+                            size: 16,
+                            color: AppTheme.infoColor,
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 14,
+                          color: Colors.amber,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          shipper?.rating != null
+                              ? shipper!.rating.toStringAsFixed(1)
+                              : '—',
+                          style: AppTheme.caption,
+                        ),
+                        const SizedBox(width: AppTheme.spaceSm),
+                        Text(
+                          '${shipper?.totalShipments ?? 0} envois',
+                          style: AppTheme.caption,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: AppTheme.textMutedColor,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildHeader(Booking booking) {

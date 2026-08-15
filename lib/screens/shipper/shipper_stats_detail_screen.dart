@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
@@ -23,6 +24,7 @@ final shipperBookingsPagerProvider = StateNotifierProvider.family<
       offset: offset,
     )).future),
     pageSize: 15,
+    idOf: (booking) => booking.id,
   );
 });
 
@@ -130,10 +132,32 @@ class _ShipperStatsDetailScreenState
     ref.listen(
       tableChangesProvider(('bookings', null, null)),
       (previous, next) {
-        if (next.hasValue && isBookings) {
-          ref
-              .read(shipperBookingsPagerProvider(widget.shipperId).notifier)
-              .refresh();
+        final event = next.valueOrNull;
+        if (event == null || !isBookings) return;
+        final notifier =
+            ref.read(shipperBookingsPagerProvider(widget.shipperId).notifier);
+        final id = event.eventType == PostgresChangeEvent.delete
+            ? event.oldRecord['id']
+            : event.newRecord['id'];
+        if (id is String) {
+          if (event.eventType == PostgresChangeEvent.delete) {
+            notifier.removeItem(id);
+          } else {
+            ref
+                .read(bookingServiceProvider)
+                .getBookingById(id)
+                .then((booking) {
+                  if (booking == null ||
+                      booking.shipment?.shipperId != widget.shipperId) {
+                    notifier.removeItem(id);
+                  } else {
+                    notifier.upsertItem(booking);
+                  }
+                })
+                .catchError((Object e) {
+                  notifier.removeItem(id);
+                });
+          }
         }
       },
     );

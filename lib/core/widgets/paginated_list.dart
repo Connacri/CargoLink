@@ -69,9 +69,17 @@ class PaginatedListNotifier<T> extends StateNotifier<PaginatedList<T>> {
   PaginatedListNotifier({
     required Future<List<T>> Function(int limit, int offset) loader,
     int pageSize = 20,
+    this.idOf,
   }) : super(PaginatedList<T>(loader: loader, pageSize: pageSize)) {
     state = state.copyWith(onReload: loadInitial, onLoadMore: loadMore);
   }
+
+  /// Extracts a stable identity for [T] so realtime rows can be patched in
+  /// place (changed-tile-only rebuilds). When null, upsert/remove are no-ops.
+  final String Function(T item)? idOf;
+
+  /// True when the realtime patch methods can operate on this list.
+  bool get supportsPatch => idOf != null;
 
   /// Guards the first-page load against re-entrancy. Not backed by
   /// `state.loading` on purpose: a failed assignment can leave `loading=true`
@@ -144,6 +152,52 @@ class PaginatedListNotifier<T> extends StateNotifier<PaginatedList<T>> {
     await loadInitial();
   }
 
+  // ---------------------------------------------------------------------------
+  // REAL-TIME PATCHING
+  // ---------------------------------------------------------------------------
+
+  /// Replace an item in place (by id), or insert it at the top of the first
+  /// page when it is not present yet. Used by realtime updates so only the
+  /// affected tile rebuilds instead of the whole list.
+  void upsertItem(T item) {
+    final id = idOf?.call(item);
+    if (id == null) return;
+    final items = [...state.items];
+    final index = _indexOf(items, id);
+    if (index >= 0) {
+      items[index] = item;
+    } else {
+      items.insert(0, item);
+    }
+    state = state.copyWith(items: items);
+  }
+
+  /// Remove an item by id (e.g. a cancelled booking or a deleted shipment).
+  void removeItem(String id) {
+    if (idOf == null) return;
+    final items = [...state.items];
+    final index = _indexOf(items, id);
+    if (index < 0) return;
+    items.removeAt(index);
+    state = state.copyWith(items: items);
+  }
+
+  /// Apply [update] to the item with [id] (e.g. bump a live quantity).
+  void patchItem(String id, T Function(T item) update) {
+    if (idOf == null) return;
+    final items = [...state.items];
+    final index = _indexOf(items, id);
+    if (index < 0) return;
+    items[index] = update(items[index]);
+    state = state.copyWith(items: items);
+  }
+
+  int _indexOf(List<T> items, String id) {
+    final indexOf = idOf;
+    if (indexOf == null) return -1;
+    return items.indexWhere((item) => indexOf(item) == id);
+  }
+
   /// Assigns [next] to [state]. A `StateNotifier.state=` setter stores the new
   /// value BEFORE notifying listeners, so when Riverpod's debug guard throws
   /// (provider mutated while the widget tree is building) the notifier is left
@@ -178,6 +232,11 @@ class PaginatedListNotifier<T> extends StateNotifier<PaginatedList<T>> {
 PaginatedListNotifier<T> createPaginatedNotifier<T>(
   Future<List<T>> Function(int limit, int offset) loader, {
   int pageSize = 20,
+  String Function(T item)? idOf,
 }) {
-  return PaginatedListNotifier<T>(loader: loader, pageSize: pageSize);
+  return PaginatedListNotifier<T>(
+    loader: loader,
+    pageSize: pageSize,
+    idOf: idOf,
+  );
 }

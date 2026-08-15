@@ -79,10 +79,11 @@ class NotificationsSheet extends ConsumerWidget {
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   TextButton(
-                    onPressed: () {
-                      ref
+                    onPressed: () async {
+                      await ref
                           .read(notificationServiceProvider)
                           .markAllAsRead(userId);
+                      ref.invalidate(notificationStreamProvider(userId));
                     },
                     child: const Text('Marquer tout comme lu'),
                   ),
@@ -116,10 +117,11 @@ class NotificationsSheet extends ConsumerWidget {
                                 backgroundColor: AppTheme.primaryColor,
                               )
                             : null,
-                        onTap: () {
-                          ref
+                        onTap: () async {
+                          await ref
                               .read(notificationServiceProvider)
                               .markAsRead(notif.id);
+                          ref.invalidate(notificationStreamProvider(userId));
                           final bookingId = notif.relatedBookingId;
                           if (onBookingTap != null &&
                               bookingId != null &&

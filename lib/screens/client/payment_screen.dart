@@ -273,6 +273,22 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             groupValue: _paymentMethod,
             onChanged: (v) => setState(() => _paymentMethod = v),
           ),
+          const SizedBox(height: AppTheme.spaceSm),
+          _MethodTile(
+            value: 'Chargily',
+            label: 'Chargily (EDAHABIA / carte)',
+            icon: Icons.bolt_rounded,
+            groupValue: _paymentMethod,
+            onChanged: (v) => setState(() => _paymentMethod = v),
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
+          _MethodTile(
+            value: 'Stripe',
+            label: 'Stripe (International)',
+            icon: Icons.public_rounded,
+            groupValue: _paymentMethod,
+            onChanged: (v) => setState(() => _paymentMethod = v),
+          ),
         ],
       ),
     );

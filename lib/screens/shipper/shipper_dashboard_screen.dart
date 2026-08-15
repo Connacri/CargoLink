@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
@@ -510,15 +511,38 @@ class _ShipperDashboardScreenState
     final pager = ref.watch(shipperBookingsPagerProvider(shipperId));
 
     // Live refresh: a new booking or a status change by the client/shpper
-    // immediately reloads the received-orders feed.
+    // immediately updates the received-orders feed in place.
     ref.listen(
       tableChangesProvider(('bookings', null, null)),
       (previous, next) {
-        if (next.hasValue) {
-          ref.read(shipperBookingsPagerProvider(shipperId).notifier).refresh();
-          ref.invalidate(shipperStatsProvider(shipperId));
-          ref.invalidate(shipperEarningsProvider(shipperId));
+        final event = next.valueOrNull;
+        if (event == null) return;
+        final notifier = ref.read(shipperBookingsPagerProvider(shipperId).notifier);
+        final id = event.eventType == PostgresChangeEvent.delete
+            ? event.oldRecord['id']
+            : event.newRecord['id'];
+        if (id is String) {
+          if (event.eventType == PostgresChangeEvent.delete) {
+            notifier.removeItem(id);
+          } else {
+            ref
+                .read(bookingServiceProvider)
+                .getBookingById(id)
+                .then((booking) {
+                  if (booking == null ||
+                      booking.shipment?.shipperId != shipperId) {
+                    notifier.removeItem(id);
+                  } else {
+                    notifier.upsertItem(booking);
+                  }
+                })
+                .catchError((Object e) {
+                  notifier.removeItem(id);
+                });
+          }
         }
+        ref.invalidate(shipperStatsProvider(shipperId));
+        ref.invalidate(shipperEarningsProvider(shipperId));
       },
     );
 
@@ -1488,8 +1512,77 @@ class _DashboardBookingCard extends ConsumerWidget {
                 ),
               ],
             ),
+            const SizedBox(height: AppTheme.spaceSm),
+            Row(
+              children: [
+                _DashboardStatusChip(
+                  icon: booking.isPaid
+                      ? Icons.paid_rounded
+                      : Icons.schedule_rounded,
+                  label: booking.isPaid
+                      ? 'Paiement reçu'
+                      : 'Paiement en attente',
+                  color: booking.isPaid
+                      ? AppTheme.accentColor
+                      : AppTheme.warningColor,
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                _DashboardStatusChip(
+                  icon: booking.status == 'confirmed'
+                      ? Icons.task_alt_rounded
+                      : Icons.pending_actions_rounded,
+                  label: booking.status == 'confirmed'
+                      ? 'Commande confirmée'
+                      : 'En attente de confirmation',
+                  color: booking.status == 'confirmed'
+                      ? AppTheme.infoColor
+                      : AppTheme.warningColor,
+                ),
+              ],
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DashboardStatusChip extends StatelessWidget {
+  const _DashboardStatusChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceSm,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }
