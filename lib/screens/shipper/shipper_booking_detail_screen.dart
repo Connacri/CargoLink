@@ -10,7 +10,7 @@ import '../../core/widgets/ui_kit.dart';
 import '../chat/chat_screen.dart';
 
 // ============================================================================
-// SHIPPER BOOKING DETAIL — reviews the order (photos, description, client)
+// SHIPPER BOOKING DETAIL â€” reviews the order (photos, description, client)
 // before confirming, then confirms/refuses/ships/delivers with instant UI.
 // ============================================================================
 
@@ -87,14 +87,14 @@ class _ShipperBookingDetailScreenState
                 SliverToBoxAdapter(child: _buildPhotos(data)),
                 SliverToBoxAdapter(
                   child:
-                      _buildSection('Détails du produit', _buildProduct(data)),
+                      _buildSection('DÃ©tails du produit', _buildProduct(data)),
                 ),
                 SliverToBoxAdapter(
                   child: _buildSection('Le client', _buildClient(data)),
                 ),
                 SliverToBoxAdapter(
                   child: _buildSection(
-                      'Résumé de la commande', _buildSummary(data)),
+                      'RÃ©sumÃ© de la commande', _buildSummary(data)),
                 ),
                 if (data.shipment != null)
                   SliverToBoxAdapter(
@@ -181,7 +181,7 @@ class _ShipperBookingDetailScreenState
                   Text('Aucune photo', style: AppTheme.bodySecondary),
                   SizedBox(height: AppTheme.spaceSm),
                   Text(
-                    'Le client n\'a pas joint de photo à cette commande.',
+                    'Le client n\'a pas joint de photo Ã  cette commande.',
                     style: AppTheme.caption,
                     textAlign: TextAlign.center,
                   ),
@@ -297,7 +297,7 @@ class _ShipperBookingDetailScreenState
               const SizedBox(width: AppTheme.spaceXs),
               Expanded(
                 child: Text(
-                  'Réception confirmée le '
+                  'RÃ©ception confirmÃ©e le '
                   '${booking.receiptConfirmedAt!.day}/${booking.receiptConfirmedAt!.month}/${booking.receiptConfirmedAt!.year}',
                   style: AppTheme.body.copyWith(fontWeight: FontWeight.w600),
                 ),
@@ -307,7 +307,7 @@ class _ShipperBookingDetailScreenState
                   onPressed: () => showFullScreenImage(
                     context,
                     imageUrl: receiptPhoto,
-                    title: 'Photo de réception',
+                    title: 'Photo de rÃ©ception',
                   ),
                   icon: const Icon(Icons.photo_rounded),
                   tooltip: 'Voir la photo du client',
@@ -388,7 +388,7 @@ class _ShipperBookingDetailScreenState
         ),
         const SizedBox(height: AppTheme.spaceSm),
         Text(
-          'Téléphone: ${client?.phone ?? '—'}',
+          'TÃ©lÃ©phone: ${client?.phone ?? 'â€”'}',
           style: AppTheme.bodySecondary,
         ),
         if (_socials(client).isNotEmpty) ...[
@@ -424,12 +424,12 @@ class _ShipperBookingDetailScreenState
     return Column(
       children: [
         _SummaryRow(
-          label: 'Poids demandé',
+          label: 'Poids demandÃ©',
           value: '${booking.requestedWeightKg.toStringAsFixed(1)} kg',
         ),
         const SizedBox(height: AppTheme.spaceSm),
         _SummaryRow(
-          label: 'Poids alloué',
+          label: 'Poids allouÃ©',
           value: '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
         ),
         const SizedBox(height: AppTheme.spaceSm),
@@ -445,7 +445,7 @@ class _ShipperBookingDetailScreenState
           children: [
             const Text('Paiement', style: AppTheme.bodySecondary),
             Text(
-              booking.isPaid ? 'Payé' : 'En attente',
+              booking.isPaid ? 'PayÃ©' : 'En attente',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: booking.isPaid
@@ -466,14 +466,14 @@ class _ShipperBookingDetailScreenState
         Row(
           children: [
             const Icon(
-              Icons.route_rounded,
+              Icons.connecting_airports_rounded,
               size: 16,
               color: AppTheme.primaryColor,
             ),
             const SizedBox(width: AppTheme.spaceSm),
             Expanded(
               child: Text(
-                '${shipment.originCountry} → ${shipment.destinationCity}',
+                '${shipment.originCountry} â†’ ${shipment.destinationCity}',
                 style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
@@ -481,12 +481,12 @@ class _ShipperBookingDetailScreenState
         ),
         const SizedBox(height: AppTheme.spaceSm),
         _SummaryRow(
-          label: 'Départ',
+          label: 'DÃ©part',
           value: _formatDate(shipment.departureDate),
         ),
         const SizedBox(height: AppTheme.spaceSm),
         _SummaryRow(
-          label: 'Arrivée',
+          label: 'ArrivÃ©e',
           value: _formatDate(shipment.arrivalDate),
         ),
         if (shipment.flightNumber != null) ...[
@@ -548,7 +548,7 @@ class _ShipperBookingDetailScreenState
           FilledButton.icon(
             onPressed: disabled ? null : () => _markShipped(booking),
             icon: const Icon(Icons.flight_takeoff_rounded, size: 18),
-            label: const Text('Marquer expédié'),
+            label: const Text('Marquer expÃ©diÃ©'),
           ),
         );
         actions.add(
@@ -567,7 +567,7 @@ class _ShipperBookingDetailScreenState
           FilledButton.icon(
             onPressed: disabled ? null : () => _markDelivered(booking),
             icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-            label: const Text('Marquer livré'),
+            label: const Text('Marquer livrÃ©'),
           ),
         );
         break;
@@ -604,14 +604,14 @@ class _ShipperBookingDetailScreenState
 
   Future<void> _confirm(Booking booking) => _run(
       () => ref.read(bookingServiceProvider).confirmBooking(booking.id),
-      'Commande confirmée');
+      'Commande confirmÃ©e');
 
   Future<void> _markShipped(Booking booking) => _run(() async {
         await ref.read(bookingServiceProvider).markAsShipped(booking.id);
         await ref.read(trackingServiceProvider).addTrackingUpdate(
               bookingId: booking.id,
               status: 'departed_origin',
-              notes: 'Colis expédié depuis ${booking.shipment?.originCountry}',
+              notes: 'Colis expÃ©diÃ© depuis ${booking.shipment?.originCountry}',
               location: booking.shipment?.originCountry,
             );
         await ref
@@ -621,7 +621,7 @@ class _ShipperBookingDetailScreenState
               bookingId: booking.id,
               destination: booking.shipment?.destinationCity ?? 'destination',
             );
-      }, 'Commande marquée comme expédiée');
+      }, 'Commande marquÃ©e comme expÃ©diÃ©e');
 
   Future<void> _markDelivered(Booking booking) async {
     final photo = await pickProofPhoto(
@@ -643,7 +643,7 @@ class _ShipperBookingDetailScreenState
       await ref.read(trackingServiceProvider).addTrackingUpdate(
             bookingId: booking.id,
             status: 'delivered',
-            notes: 'Colis livré à ${booking.shipment?.destinationCity}',
+            notes: 'Colis livrÃ© Ã  ${booking.shipment?.destinationCity}',
             location: booking.shipment?.destinationCity,
           );
       await ref
@@ -652,12 +652,12 @@ class _ShipperBookingDetailScreenState
             clientId: booking.clientId,
             bookingId: booking.id,
           );
-    }, 'Commande marquée comme livrée');
+    }, 'Commande marquÃ©e comme livrÃ©e');
   }
 
   Future<void> _cancel(Booking booking) => _run(
       () => ref.read(bookingServiceProvider).cancelBooking(booking.id),
-      'Commande annulée');
+      'Commande annulÃ©e');
 
   String _formatDate(DateTime d) => '${d.day}/${d.month}/${d.year}';
 }

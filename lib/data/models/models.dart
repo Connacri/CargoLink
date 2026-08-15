@@ -684,9 +684,10 @@ class PlatformFee {
   final String shipmentId;
   final String shipperId;
   final double amount;
-  final String status; // pending, paid
+  final String status; // pending, awaiting_confirmation, paid
   final DateTime? paidAt;
   final DateTime createdAt;
+  final Shipment? shipment; // Related shipment (route + shipper) for admin lists
 
   PlatformFee({
     required this.id,
@@ -697,6 +698,7 @@ class PlatformFee {
     required this.status,
     this.paidAt,
     required this.createdAt,
+    this.shipment,
   });
 
   factory PlatformFee.fromJson(Map<String, dynamic> json) {
@@ -711,10 +713,15 @@ class PlatformFee {
           ? DateTime.tryParse(json['paid_at'] as String)
           : null,
       createdAt: DateTime.parse(json['created_at'] as String),
+      shipment: json['shipments'] != null
+          ? Shipment.fromJson(json['shipments'])
+          : null,
     );
   }
 
   bool get isPaid => status == 'paid';
+
+  bool get isAwaitingConfirmation => status == 'awaiting_confirmation';
 }
 
 // ============================================================================

@@ -45,8 +45,19 @@ class SupabaseConfig {
 
   /// Point the app's Supabase client at the (Firebase-minted) token, so every
   /// CRUD is authorized as the authenticated (RLS: auth.uid()) user.
+  ///
+  /// Also forwards the new JWT to the realtime socket. Without this, an
+  /// existing channel keeps its now-stale token and the server closes the
+  /// socket (close code 1002) once the previous token expires — which is the
+  /// source of the "RealtimeSubscribeException(channelError)" surfaced in the
+  /// notifications bottom sheet. Best-effort: never blocks the auth flow.
   static void setAccessToken(String jwt) {
     _supabaseJwt = jwt;
+    try {
+      _client.realtime.setAuth(jwt);
+    } catch (e) {
+      // ignore: best-effort realtime re-auth
+    }
   }
 
   /// Reset to the public (anon) client — used on sign-out so that no

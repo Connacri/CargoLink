@@ -499,29 +499,23 @@ class PaymentService {
     }
   }
 
-  /// Refund payment
+  /// Refund payment. Uses the SECURITY DEFINER RPC so the booking's client,
+  /// an admin/super_admin or the shipper who owns the shipment can all trigger
+  /// a refund — the direct RLS path only allowed clients/admins (a shipper
+  /// refusing a booking previously hit "Payment not found"). Tolerant by
+  /// design: cancelling a booking that has no real payment never throws.
   Future<Payment?> refundPayment(String bookingId) async {
     try {
       _logger.i('Refunding payment for booking: $bookingId');
 
-      final payment = await getPaymentByBookingId(bookingId);
-      if (payment == null) throw Exception('Payment not found');
-
-      final response = await _supabase
-          .from('payments')
-          .update({'status': 'refunded'})
-          .eq('id', payment.id)
-          .select()
-          .single();
-
-      _logger.i('Payment refunded');
-
-      // Update booking payment status
       await _supabase
-          .from('bookings')
-          .update({'payment_status': 'refunded'}).eq('id', bookingId);
+          .rpc('refund_booking_payment', params: {'p_booking_id': bookingId});
 
-      return Payment.fromJson(response);
+      // Best-effort refresh of the payment row (may be null when there was
+      // nothing to refund, or the caller has no SELECT access).
+      final payment = await getPaymentByBookingId(bookingId);
+      _logger.i('Payment refunded');
+      return payment;
     } catch (e) {
       _logger.e('Error refunding payment: $e');
       rethrow;
@@ -701,6 +695,72 @@ class PaymentService {
     }
   }
 
+  /// Full finance summary for a shipper: revenue (paid bookings), receivable
+  /// (bookings not yet paid), platform commission (cost) and the resulting net
+  /// profit. Also returns the monthly revenue breakdown for the chart.
+  Future<Map<String, dynamic>?> getShipperFinanceSummary(String shipperId) async {
+    try {
+      final bookings = await _supabase
+          .from('bookings')
+          .select('total_price, status, payment_status, created_at')
+          .eq('shipments.shipper_id', shipperId);
+      final bookingList = bookings as List;
+
+      var revenue = 0.0;
+      var receivable = 0.0;
+      final byMonth = <int, double>{};
+      for (final b in bookingList) {
+        final price = (b['total_price'] as num).toDouble();
+        final status = b['status'] as String? ?? '';
+        final payment = b['payment_status'] as String? ?? '';
+        if (status == 'cancelled') continue;
+        if (payment == 'paid') {
+          revenue += price;
+          final created = DateTime.tryParse(b['created_at'] as String? ?? '');
+          if (created != null) {
+            final month = created.month;
+            byMonth[month] = (byMonth[month] ?? 0) + price;
+          }
+        } else {
+          receivable += price;
+        }
+      }
+
+      final fees = await _supabase
+          .from('platform_fees')
+          .select('amount,status')
+          .eq('shipper_id', shipperId);
+      var feesPaid = 0.0;
+      var feesAwaiting = 0.0;
+      var feesPending = 0.0;
+      for (final f in fees as List) {
+        final amount = (f['amount'] as num).toDouble();
+        switch (f['status']) {
+          case 'paid':
+            feesPaid += amount;
+          case 'awaiting_confirmation':
+            feesAwaiting += amount;
+          default:
+            feesPending += amount;
+        }
+      }
+
+      return {
+        'revenue': revenue,
+        'receivable': receivable,
+        'fees_paid': feesPaid,
+        'fees_awaiting': feesAwaiting,
+        'fees_pending': feesPending,
+        'fees_total': feesPaid + feesAwaiting + feesPending,
+        'profit': revenue - feesPaid,
+        'monthly': byMonth,
+      };
+    } catch (e) {
+      _logger.e('Error getting shipper finance summary: $e');
+      return null;
+    }
+  }
+
   /// Global platform commission summary (admin): collected vs outstanding debt.
   Future<Map<String, dynamic>?> getPlatformFeeSummary() async {
     try {
@@ -727,17 +787,68 @@ class PaymentService {
     }
   }
 
-  /// Mark a shipper's pending platform fees as paid ("payer mes dues").
+  /// Fees awaiting admin confirmation, with the shipper's public info for the
+  /// founder dashboard list (admin / super_admin only).
+  Future<List<PlatformFee>> getAwaitingConfirmationFees() async {
+    try {
+      final response = await _supabase
+          .from('platform_fees')
+          .select(
+            '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*)))',
+          )
+          .eq('status', 'awaiting_confirmation')
+          .order('created_at', ascending: false)
+          .limit(100);
+      return (response as List)
+          .map((item) => PlatformFee.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting awaiting confirmation fees: $e');
+      return [];
+    }
+  }
+
+  /// Number of commission fees awaiting admin confirmation.
+  Future<int> countAwaitingConfirmationFees() async {
+    try {
+      final response = await _supabase
+          .from('platform_fees')
+          .select('id')
+          .eq('status', 'awaiting_confirmation');
+      return (response as List).length;
+    } catch (e) {
+      _logger.e('Error counting awaiting confirmation fees: $e');
+      return 0;
+    }
+  }
+
+  /// Shipper requests payment of their pending platform dues. The fees move to
+  /// `awaiting_confirmation`; only an admin/super_admin can then confirm them.
   Future<void> payPlatformFees(String shipperId) async {
     try {
       await _supabase
           .from('platform_fees')
-          .update({'status': 'paid', 'paid_at': DateTime.now().toIso8601String()})
+          .update({'status': 'awaiting_confirmation'})
           .eq('shipper_id', shipperId)
           .eq('status', 'pending');
-      _logger.i('Platform fees paid for shipper: $shipperId');
+      _logger.i('Platform fee payment requested for shipper: $shipperId');
     } catch (e) {
-      _logger.e('Error paying platform fees: $e');
+      _logger.e('Error requesting platform fee payment: $e');
+      rethrow;
+    }
+  }
+
+  /// Admin/super_admin confirms that a commission payment was received
+  /// (`awaiting_confirmation` -> `paid`).
+  Future<void> confirmPlatformFee(String feeId) async {
+    try {
+      await _supabase.from('platform_fees').update({
+        'status': 'paid',
+        'paid_at': DateTime.now().toIso8601String(),
+      }).eq('id', feeId).eq('status', 'awaiting_confirmation');
+      _logger.i('Platform fee confirmed: $feeId');
+    } catch (e) {
+      _logger.e('Error confirming platform fee: $e');
       rethrow;
     }
   }

@@ -15,7 +15,7 @@ import '../auth/role_selection_screen.dart';
 import '../shipper/live_selfie_screen.dart';
 
 // ============================================================================
-// PAGINATED PROVIDERS (local to this screen — history lists)
+// PAGINATED PROVIDERS (local to this screen â€” history lists)
 // ============================================================================
 
 final clientHistoryPagerProvider = StateNotifierProvider.family<
@@ -166,7 +166,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() => _pendingPicture = null);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Photo de profil mise à jour'),
+            content: Text('Photo de profil mise Ã  jour'),
             backgroundColor: AppTheme.accentColor,
           ),
         );
@@ -268,9 +268,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           );
       ref.invalidate(currentUserProvider);
       if (mounted) {
+        setState(() => _isEditing = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Profil mis à jour'),
+            content: Text('Profil mis Ã  jour'),
             backgroundColor: AppTheme.accentColor,
           ),
         );
@@ -288,8 +289,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Déconnexion'),
-        content: const Text('Voulez-vous vous déconnecter ?'),
+        title: const Text('DÃ©connexion'),
+        content: const Text('Voulez-vous vous dÃ©connecter ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -322,10 +323,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Désactiver le compte'),
+        title: const Text('DÃ©sactiver le compte'),
         content: const Text(
-          'Votre compte sera désactivé : il sera masqué et inaccessible, '
-          'mais rien ne sera supprimé. Vous pourrez le réactiver à tout '
+          'Votre compte sera dÃ©sactivÃ© : il sera masquÃ© et inaccessible, '
+          'mais rien ne sera supprimÃ©. Vous pourrez le rÃ©activer Ã  tout '
           'moment en vous reconnectant.',
         ),
         actions: [
@@ -335,7 +336,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Désactiver'),
+            child: const Text('DÃ©sactiver'),
           ),
         ],
       ),
@@ -356,12 +357,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Supprimer définitivement le compte'),
+        title: const Text('Supprimer dÃ©finitivement le compte'),
         content: const Text(
-          'Votre compte et toutes vos données seront définitivement supprimés '
-          'après une période d\'attente de 30 jours. Pendant ce délai, vous '
+          'Votre compte et toutes vos donnÃ©es seront dÃ©finitivement supprimÃ©s '
+          'aprÃ¨s une pÃ©riode d\'attente de 30 jours. Pendant ce dÃ©lai, vous '
           'pouvez annuler la suppression en vous reconnectant.\n\n'
-          'Êtes-vous sûr de vouloir continuer ?',
+          'ÃŠtes-vous sÃ»r de vouloir continuer ?',
         ),
         actions: [
           TextButton(
@@ -411,7 +412,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return user.when(
       data: (userData) {
         if (userData == null) {
-          return const Center(child: Text('Utilisateur non identifié'));
+          return const Center(child: Text('Utilisateur non identifiÃ©'));
         }
 
         return Scaffold(
@@ -429,10 +430,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   icon: Icons.person_rounded,
                   trailing: IconButton(
                     tooltip: _isEditing ? 'Terminer' : 'Modifier',
-                    onPressed: () => setState(() {
-                      if (!_isEditing) _fillControllers(userData);
-                      _isEditing = !_isEditing;
-                    }),
+                    onPressed: () {
+                      if (!_isEditing) {
+                        setState(() {
+                          _fillControllers(userData);
+                          _isEditing = true;
+                        });
+                      } else {
+                        _saveProfile(userData);
+                      }
+                    },
                     icon: Icon(
                       _isEditing ? Icons.check_rounded : Icons.edit_outlined,
                       color: Colors.white,
@@ -477,7 +484,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _roleLabel(String role) {
     switch (role) {
       case 'shipper':
-        return 'Expéditeur';
+        return 'ExpÃ©diteur';
       case 'admin':
         return 'Administrateur';
       case 'super_admin':
@@ -588,16 +595,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Mon rôle',
+              'Mon rÃ´le',
               style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             Text(
               isShipper
-                  ? 'Vous êtes expéditeur : vous transportez des colis '
+                  ? 'Vous Ãªtes expÃ©diteur : vous transportez des colis '
                       'pour les clients.'
-                  : 'Vous êtes client : vous envoyez vos colis avec des '
-                      'expéditeurs.',
+                  : 'Vous Ãªtes client : vous envoyez vos colis avec des '
+                      'expÃ©diteurs.',
               style: AppTheme.caption,
             ),
             const SizedBox(height: AppTheme.spaceSm + 4),
@@ -605,14 +612,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 AnimatedIconDot(
                   icon: isShipper
-                      ? Icons.local_shipping_rounded
+                      ? Icons.flight_takeoff_rounded
                       : Icons.shopping_bag_rounded,
                   color: AppTheme.primaryColor,
                 ),
                 const SizedBox(width: AppTheme.spaceSm + 4),
                 const Expanded(
                   child: Text(
-                    'Changer de rôle',
+                    'Changer de rÃ´le',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimaryColor,
@@ -674,7 +681,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
-                  labelText: 'Téléphone',
+                  labelText: 'TÃ©lÃ©phone',
                   prefixIcon: Icon(Icons.phone_outlined),
                 ),
               ),
@@ -687,26 +694,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   prefixIcon: Icon(Icons.email_outlined),
                 ),
               ),
-            ] else ...[
-              _ReadonlyField(
-                icon: Icons.person_outline,
-                label: 'Nom complet',
-                value: userData.fullName,
-              ),
-              const SizedBox(height: AppTheme.spaceSm + 4),
-              _ReadonlyField(
-                icon: Icons.phone_outlined,
-                label: 'Téléphone',
-                value: userData.phone,
-                fieldType: _ContactFieldType.phone,
-              ),
-              const SizedBox(height: AppTheme.spaceSm + 4),
-              _ReadonlyField(
-                icon: Icons.email_outlined,
-                label: 'Email',
-                value: userData.email,
-              ),
-            ],
+            ] else
+              ..._buildReadonlyRows([
+                (
+                  icon: Icons.person_outline,
+                  label: 'Nom complet',
+                  value: userData.fullName,
+                  type: _ContactFieldType.plain,
+                ),
+                (
+                  icon: Icons.phone_outlined,
+                  label: 'TÃ©lÃ©phone',
+                  value: userData.phone,
+                  type: _ContactFieldType.phone,
+                ),
+                (
+                  icon: Icons.email_outlined,
+                  label: 'Email',
+                  value: userData.email,
+                  type: _ContactFieldType.plain,
+                ),
+              ]),
           ],
         ),
       ),
@@ -728,12 +736,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Réseaux sociaux & contacts',
+              'RÃ©seaux sociaux & contacts',
               style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             const Text(
-              'Partagez vos identifiants pour que clients et expéditeurs '
+              'Partagez vos identifiants pour que clients et expÃ©diteurs '
               'puissent vous contacter facilement.',
               style: AppTheme.caption,
             ),
@@ -793,49 +801,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   prefixIcon: Icon(Icons.music_note_outlined),
                 ),
               ),
-            ] else ...[
-              _ReadonlyField(
-                icon: Icons.chat,
-                label: 'WhatsApp',
-                value: userData.whatsapp,
-                fieldType: _ContactFieldType.whatsapp,
-              ),
-              const SizedBox(height: AppTheme.spaceSm + 4),
-              _ReadonlyField(
-                icon: Icons.wechat,
-                label: 'WeChat',
-                value: userData.wechat,
-                fieldType: _ContactFieldType.chat,
-              ),
-              const SizedBox(height: AppTheme.spaceSm + 4),
-              _ReadonlyField(
-                icon: Icons.send,
-                label: 'Telegram',
-                value: userData.telegram,
-                fieldType: _ContactFieldType.telegram,
-              ),
-              const SizedBox(height: AppTheme.spaceSm + 4),
-              _ReadonlyField(
-                icon: Icons.facebook,
-                label: 'Facebook',
-                value: userData.facebook,
-                fieldType: _ContactFieldType.facebook,
-              ),
-              const SizedBox(height: AppTheme.spaceSm + 4),
-              _ReadonlyField(
-                icon: Icons.camera_alt_outlined,
-                label: 'Instagram',
-                value: userData.instagram,
-                fieldType: _ContactFieldType.instagram,
-              ),
-              const SizedBox(height: AppTheme.spaceSm + 4),
-              _ReadonlyField(
-                icon: Icons.music_note_outlined,
-                label: 'TikTok',
-                value: userData.tiktok,
-                fieldType: _ContactFieldType.tiktok,
-              ),
-            ],
+            ] else
+              ..._buildReadonlyRows([
+                (
+                  icon: Icons.chat,
+                  label: 'WhatsApp',
+                  value: userData.whatsapp,
+                  type: _ContactFieldType.whatsapp,
+                ),
+                (
+                  icon: Icons.wechat,
+                  label: 'WeChat',
+                  value: userData.wechat,
+                  type: _ContactFieldType.chat,
+                ),
+                (
+                  icon: Icons.send,
+                  label: 'Telegram',
+                  value: userData.telegram,
+                  type: _ContactFieldType.telegram,
+                ),
+                (
+                  icon: Icons.facebook,
+                  label: 'Facebook',
+                  value: userData.facebook,
+                  type: _ContactFieldType.facebook,
+                ),
+                (
+                  icon: Icons.camera_alt_outlined,
+                  label: 'Instagram',
+                  value: userData.instagram,
+                  type: _ContactFieldType.instagram,
+                ),
+                (
+                  icon: Icons.music_note_outlined,
+                  label: 'TikTok',
+                  value: userData.tiktok,
+                  type: _ContactFieldType.tiktok,
+                ),
+              ]),
           ],
         ),
       ),
@@ -851,6 +855,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       userData.instagram,
       userData.tiktok,
     ].any((value) => value != null && value.trim().isNotEmpty);
+  }
+
+  /// Read-mode rows for personal info / social networks: only the fields that
+  /// actually carry a value are rendered (no blank placeholders or leftover
+  /// spacers), so the profile only ever shows filled attributes.
+  List<Widget> _buildReadonlyRows(
+    List<({
+      IconData icon,
+      String label,
+      String? value,
+      _ContactFieldType type,
+    })> entries,
+  ) {
+    final rows = <Widget>[];
+    for (final entry in entries) {
+      final value = entry.value;
+      if (value == null || value.trim().isEmpty) continue;
+      if (rows.isNotEmpty) {
+        rows.add(const SizedBox(height: AppTheme.spaceSm + 4));
+      }
+      rows.add(
+        _ReadonlyField(
+          icon: entry.icon,
+          label: entry.label,
+          value: value,
+          fieldType: entry.type,
+        ),
+      );
+    }
+    return rows;
   }
 
   Widget _buildSaveButton(User userData) {
@@ -904,8 +938,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: _HistoryRow(
             color: BookingStatusExt.fromString(b.status).color,
             title: b.productName,
-            subtitle: '${b.allocatedWeightKg.toStringAsFixed(1)} kg • '
-                '${b.totalPrice.toStringAsFixed(0)} ${AppConstants.defaultCurrency} • '
+            subtitle: '${b.allocatedWeightKg.toStringAsFixed(1)} kg â€¢ '
+                '${b.totalPrice.toStringAsFixed(0)} ${AppConstants.defaultCurrency} â€¢ '
                 '${BookingStatusExt.fromString(b.status).displayName}',
             onTap: () =>
                 Navigator.of(context).pushNamed('/tracking', arguments: b.id),
@@ -926,8 +960,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 padding: EdgeInsets.fromLTRB(
                     AppTheme.spaceMd, 0, AppTheme.spaceMd, AppTheme.spaceSm),
                 child: Text(
-                  'Historique indisponible tant que votre dossier expéditeur '
-                  'n\'est pas validé.',
+                  'Historique indisponible tant que votre dossier expÃ©diteur '
+                  'n\'est pas validÃ©.',
                   style: AppTheme.bodySecondary,
                 ),
               ),
@@ -951,10 +985,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               delay: Duration(milliseconds: (index % 10) * 40),
               child: _HistoryRow(
                 color: AppTheme.primaryColor,
-                title: 'Vol ${s.flightNumber ?? '—'}',
-                subtitle: '${s.originCountry} → ${s.destinationCity} • '
-                    '${s.availableWeightKg.toStringAsFixed(0)} kg • '
-                    '${s.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}/kg • '
+                title: 'Vol ${s.flightNumber ?? 'â€”'}',
+                subtitle: '${s.originCountry} â†’ ${s.destinationCity} â€¢ '
+                    '${s.availableWeightKg.toStringAsFixed(0)} kg â€¢ '
+                    '${s.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}/kg â€¢ '
                     '${s.isActive ? 'Actif' : s.status}',
                 onTap: null,
               ),
@@ -991,7 +1025,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   SizedBox(width: AppTheme.spaceSm + 4),
                   Expanded(
                     child: Text(
-                      'Expéditeur non enregistré. Complétez votre dossier '
+                      'ExpÃ©diteur non enregistrÃ©. ComplÃ©tez votre dossier '
                       'dans le tableau de bord.',
                       style: TextStyle(color: AppTheme.primaryDark),
                     ),
@@ -1005,16 +1039,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         Color color;
         switch (shipperData.verificationStatus) {
           case 'verified':
-            text = 'Expéditeur vérifié';
+            text = 'ExpÃ©diteur vÃ©rifiÃ©';
             color = AppTheme.accentColor;
             break;
           case 'rejected':
             text =
-                'Dossier rejeté: ${shipperData.rejectionReason ?? 'Veuillez réessayer'}';
+                'Dossier rejetÃ©: ${shipperData.rejectionReason ?? 'Veuillez rÃ©essayer'}';
             color = AppTheme.errorColor;
             break;
           default:
-            text = 'Dossier en attente de vérification';
+            text = 'Dossier en attente de vÃ©rification';
             color = AppTheme.warningColor;
         }
         return Padding(
@@ -1062,7 +1096,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               leading: const AnimatedIconDot(
                   icon: Icons.feedback_rounded, color: AppTheme.infoColor),
               title: const Text('Envoyer un feedback'),
-              subtitle: const Text('Signaler un problème ou suggérer une amélioration'),
+              subtitle: const Text('Signaler un problÃ¨me ou suggÃ©rer une amÃ©lioration'),
               trailing: const Icon(Icons.chevron_right,
                   color: AppTheme.textSecondaryColor),
               onTap: () => launchAppFeedback(context, ref),
@@ -1071,7 +1105,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ListTile(
               leading: const AnimatedIconDot(
                   icon: Icons.logout_rounded, color: AppTheme.accentColor),
-              title: const Text('Se déconnecter'),
+              title: const Text('Se dÃ©connecter'),
               trailing: const Icon(Icons.chevron_right,
                   color: AppTheme.textSecondaryColor),
               onTap: _signOut,
@@ -1081,7 +1115,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               leading: const AnimatedIconDot(
                   icon: Icons.pause_circle_rounded,
                   color: AppTheme.warningColor),
-              title: const Text('Désactiver le compte'),
+              title: const Text('DÃ©sactiver le compte'),
               subtitle: const Text('Masquer temporairement votre compte'),
               trailing: const Icon(Icons.chevron_right,
                   color: AppTheme.textSecondaryColor),
@@ -1093,10 +1127,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   icon: Icons.delete_forever_rounded,
                   color: AppTheme.errorColor),
               title: const Text(
-                'Supprimer définitivement le compte',
+                'Supprimer dÃ©finitivement le compte',
                 style: TextStyle(color: AppTheme.errorColor),
               ),
-              subtitle: const Text('30 jours avant suppression définitive'),
+              subtitle: const Text('30 jours avant suppression dÃ©finitive'),
               trailing: const Icon(Icons.chevron_right,
                   color: AppTheme.textSecondaryColor),
               onTap: _requestDeletion,

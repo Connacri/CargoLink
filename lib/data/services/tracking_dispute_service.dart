@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
@@ -534,22 +535,142 @@ class NotificationService {
     }
   }
 
-  /// Listen to real-time notifications
+  /// Listen to real-time notifications.
+  ///
+  /// Resilient to transient socket/channel failures (e.g. close code 1002
+  /// after a token refresh): instead of the terminal `.stream()` builder —
+  /// which emits a raw [RealtimeSubscribeException] on `channelError` and never
+  /// recovers — this maintains a local list fed by an initial PostgREST fetch
+  /// plus a retrying realtime channel. The stream never errors, so the
+  /// notifications sheet can't show a raw "Erreur: RealtimeSubscribeException".
   Stream<List<Notification>> listenToNotifications(String userId) {
-    try {
-      return _supabase
-          .from('notifications')
-          .stream(primaryKey: ['id'])
-          .eq('user_id', userId)
-          .order('created_at')
-          .map((data) => (data as List)
-              .map(
-                  (item) => Notification.fromJson(item as Map<String, dynamic>))
-              .toList());
-    } catch (e) {
-      _logger.e('Error listening to notifications: $e');
-      return Stream.value([]);
+    final controller = StreamController<List<Notification>>.broadcast();
+    var list = <Notification>[];
+    var retries = 0;
+    var disposed = false;
+    Timer? retryTimer;
+    RealtimeChannel? channel;
+    final logger = _logger;
+
+    void sortAndEmit() {
+      if (controller.isClosed) return;
+      list.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      controller.add(List.unmodifiable(list));
     }
+
+    Future<void> loadInitial() async {
+      try {
+        final response = await _supabase
+            .from('notifications')
+            .select()
+            .eq('user_id', userId)
+            .order('created_at');
+        list = (response as List)
+            .map((item) =>
+                Notification.fromJson(item as Map<String, dynamic>))
+            .toList();
+        sortAndEmit();
+      } catch (e) {
+        logger.e('NotificationService: initial load failed: $e');
+      }
+    }
+
+    void cleanupChannel() {
+      retryTimer?.cancel();
+      if (channel != null) {
+        try {
+          _supabase.removeChannel(channel!);
+        } catch (e) {
+          logger.w('NotificationService: error removing channel: $e');
+        }
+      }
+    }
+
+    void subscribe() {
+      if (disposed || controller.isClosed) return;
+      try {
+        channel = _supabase.channel('notifications:$userId');
+      } catch (e) {
+        logger.e('NotificationService: unable to create channel: $e');
+        controller.close();
+        return;
+      }
+
+      channel!
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'notifications',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: userId,
+            ),
+            callback: (payload) {
+              switch (payload.eventType) {
+                case PostgresChangeEvent.insert:
+                  list.add(Notification.fromJson(payload.newRecord));
+                  sortAndEmit();
+                case PostgresChangeEvent.update:
+                  final updated = Notification.fromJson(payload.newRecord);
+                  final idx = list.indexWhere((n) => n.id == updated.id);
+                  if (idx >= 0) {
+                    list[idx] = updated;
+                  } else {
+                    list.add(updated);
+                  }
+                  sortAndEmit();
+                case PostgresChangeEvent.delete:
+                  final removedId = payload.oldRecord['id'];
+                  list.removeWhere((n) => n.id == removedId);
+                  sortAndEmit();
+                case PostgresChangeEvent.all:
+                  break;
+              }
+            },
+          )
+          .subscribe((status, error) {
+            if (disposed || controller.isClosed) return;
+            if (status == RealtimeSubscribeStatus.subscribed) {
+              retries = 0;
+              return;
+            }
+            if (status == RealtimeSubscribeStatus.closed) return;
+
+            // channelError / timedOut → tear down, reload and re-subscribe with
+            // backoff so a dropped realtime connection never silences the feed.
+            logger.w(
+              'NotificationService: channel ${status.name} '
+              '(${error ?? 'no detail'}), resubscribing',
+            );
+            cleanupChannel();
+            retryTimer = Timer(Duration(milliseconds: _notificationBackoff(retries)), () {
+              retries++;
+              if (retries > 6) {
+                logger.e('NotificationService: giving up after 6 retries');
+                controller.close();
+                return;
+              }
+              loadInitial();
+              subscribe();
+            });
+          });
+    }
+
+    loadInitial();
+    subscribe();
+
+    controller.onCancel = () {
+      disposed = true;
+      cleanupChannel();
+    };
+
+    return controller.stream;
+  }
+
+  /// Exponential backoff for notification re-subscription.
+  int _notificationBackoff(int attempt) {
+    return 800 * (1 << attempt.clamp(0, 4));
   }
 
   /// Fire a push notification to all devices of [userId] via the `send-push`

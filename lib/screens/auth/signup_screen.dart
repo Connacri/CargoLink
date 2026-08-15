@@ -68,7 +68,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Compte expéditeur créé. Complétez votre dossier de vérification.',
+              'Compte expÃ©diteur crÃ©Ã©. ComplÃ©tez votre dossier de vÃ©rification.',
             ),
             backgroundColor: AppTheme.accentColor,
           ),
@@ -76,7 +76,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Compte créé. Bienvenue sur CargoLink !'),
+            content: Text('Compte crÃ©Ã©. Bienvenue sur CargoLink !'),
             backgroundColor: AppTheme.accentColor,
           ),
         );
@@ -97,7 +97,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       body: CustomScrollView(
         slivers: [
           const GradientSliverHeader(
-            title: 'Créer un compte',
+            title: 'CrÃ©er un compte',
             subtitle: 'Rejoignez CargoLink',
             icon: Icons.person_add_alt_1,
           ),
@@ -122,8 +122,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             ),
                             ButtonSegment(
                               value: 'shipper',
-                              icon: Icon(Icons.local_shipping),
-                              label: Text('Expéditeur'),
+                              icon: Icon(Icons.flight_takeoff),
+                              label: Text('ExpÃ©diteur'),
                             ),
                           ],
                           selected: {_role},
@@ -158,12 +158,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
                           decoration: const InputDecoration(
-                            labelText: 'Téléphone',
+                            labelText: 'TÃ©lÃ©phone',
                             prefixIcon: Icon(Icons.phone_outlined),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Téléphone requis';
+                              return 'TÃ©lÃ©phone requis';
                             }
                             return null;
                           },
@@ -212,7 +212,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.length < 8) {
-                              return 'Minimum 8 caractères';
+                              return 'Minimum 8 caractÃ¨res';
                             }
                             return null;
                           },
@@ -257,8 +257,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                 )
                               : Text(
                                   _role == 'shipper'
-                                      ? 'Créer mon compte expéditeur'
-                                      : 'Créer mon compte',
+                                      ? 'CrÃ©er mon compte expÃ©diteur'
+                                      : 'CrÃ©er mon compte',
                                 ),
                         ),
                       ),
@@ -279,7 +279,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      'Déjà un compte ? ',
+                      'DÃ©jÃ  un compte ? ',
                       style: TextStyle(color: AppTheme.textSecondaryColor),
                     ),
                     TextButton(

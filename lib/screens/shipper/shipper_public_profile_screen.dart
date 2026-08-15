@@ -20,7 +20,7 @@ class ShipperPublicProfileScreen extends ConsumerWidget {
       data: (data) {
         if (data == null) {
           return const Scaffold(
-            body: Center(child: Text('Expéditeur introuvable')),
+            body: Center(child: Text('ExpÃ©diteur introuvable')),
           );
         }
         return _ShipperProfileBody(shipper: data);
@@ -51,9 +51,9 @@ class _ShipperProfileBody extends ConsumerWidget {
       body: CustomScrollView(
         slivers: [
           GradientSliverHeader(
-            title: user?.fullName ?? 'Expéditeur',
+            title: user?.fullName ?? 'ExpÃ©diteur',
             subtitle:
-                '${user?.email ?? ''}  •  ★ ${shipper.ratingDisplay}',
+                '${user?.email ?? ''}  â€¢  â˜… ${shipper.ratingDisplay}',
             icon: Icons.verified_user,
           ),
           SliverToBoxAdapter(
@@ -85,7 +85,7 @@ class _ShipperProfileBody extends ConsumerWidget {
                                 children: [
                                   Flexible(
                                     child: Text(
-                                      user?.fullName ?? 'Expéditeur',
+                                      user?.fullName ?? 'ExpÃ©diteur',
                                       style: AppTheme.h3,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -115,8 +115,8 @@ class _ShipperProfileBody extends ConsumerWidget {
                     if (shipper.totalShipments > 0) ...[
                       const SizedBox(height: AppTheme.spaceMd),
                       _MetaRow(
-                        icon: Icons.local_shipping_outlined,
-                        label: '${shipper.totalShipments} offres publiées',
+                        icon: Icons.flight_takeoff_outlined,
+                        label: '${shipper.totalShipments} offres publiÃ©es',
                       ),
                     ],
                     ..._contactTiles(user),
@@ -235,7 +235,7 @@ class _ShipperProfileBody extends ConsumerWidget {
     }
 
     add('WhatsApp', user.whatsapp, Icons.chat_rounded);
-    add('Télégram', user.telegram, Icons.send_rounded);
+    add('TÃ©lÃ©gram', user.telegram, Icons.send_rounded);
     add('Facebook', user.facebook, Icons.facebook_rounded);
     add('Instagram', user.instagram, Icons.camera_alt_outlined);
     add('TikTok', user.tiktok, Icons.music_note_rounded);
@@ -261,7 +261,7 @@ class VerifiedBadge extends StatelessWidget {
           Icon(Icons.verified_rounded, size: 13, color: AppTheme.primaryColor),
           SizedBox(width: 3),
           Text(
-            'Vérifié',
+            'VÃ©rifiÃ©',
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
@@ -312,7 +312,7 @@ class _PublicShipmentCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '${shipment.originCountry} → ${shipment.destinationCity}',
+                    '${shipment.originCountry} â†’ ${shipment.destinationCity}',
                     style: AppTheme.h3,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -347,7 +347,7 @@ class _PublicShipmentCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Arrivée ${shipment.arrivalDate.day}/${shipment.arrivalDate.month}',
+                  'ArrivÃ©e ${shipment.arrivalDate.day}/${shipment.arrivalDate.month}',
                   style: AppTheme.caption,
                 ),
               ],

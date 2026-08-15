@@ -9,6 +9,7 @@ import '../screens/client/client_home_screen.dart';
 import '../screens/client/my_orders_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/shipper/shipper_dashboard_screen.dart';
+import '../screens/shipper/shipper_finance_screen.dart';
 import 'app_widgets.dart';
 
 // ============================================================================
@@ -96,6 +97,7 @@ class HomeTabsScreen extends ConsumerWidget {
         children: const [
           ShipperDashboardScreen(),
           ActiveShipmentsScreen(),
+          ShipperFinanceScreen(),
           ProfileScreen(),
         ],
       ),
@@ -110,8 +112,12 @@ class HomeTabsScreen extends ConsumerWidget {
             label: 'Tableau de bord',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.local_shipping),
+            icon: Icon(Icons.flight_takeoff),
             label: 'Mes Offres',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Finance',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),

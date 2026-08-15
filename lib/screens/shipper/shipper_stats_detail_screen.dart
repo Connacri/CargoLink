@@ -38,7 +38,7 @@ extension ShipperStatsDetailTypeX on ShipperStatsDetailType {
       case ShipperStatsDetailType.active:
         return 'Offres actives';
       case ShipperStatsDetailType.bookings:
-        return 'Commandes reçues';
+        return 'Commandes reÃ§ues';
       case ShipperStatsDetailType.revenue:
         return 'Chiffre d\'affaires';
     }
@@ -47,7 +47,7 @@ extension ShipperStatsDetailTypeX on ShipperStatsDetailType {
   IconData get icon {
     switch (this) {
       case ShipperStatsDetailType.shipments:
-        return Icons.local_shipping_rounded;
+        return Icons.flight_takeoff_rounded;
       case ShipperStatsDetailType.active:
         return Icons.play_circle_outline_rounded;
       case ShipperStatsDetailType.bookings:
@@ -220,7 +220,7 @@ class _ShipperStatsDetailScreenState
   }
 
   String _buildSubtitle(AsyncValue<Shipper?> shipper) {
-    final name = shipper.valueOrNull?.user?.fullName ?? 'Espace expéditeur';
+    final name = shipper.valueOrNull?.user?.fullName ?? 'Espace expÃ©diteur';
     return name;
   }
 
@@ -268,7 +268,10 @@ class _ShipperStatsDetailScreenState
     final total = list.fold<double>(0, (s, f) => s + f.amount);
     final paid =
         list.where((f) => f.isPaid).fold<double>(0, (s, f) => s + f.amount);
-    final due = total - paid;
+    final awaiting = list
+        .where((f) => f.isAwaitingConfirmation)
+        .fold<double>(0, (s, f) => s + f.amount);
+    final due = total - paid - awaiting;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -293,8 +296,8 @@ class _ShipperStatsDetailScreenState
                   child: _CommissionStat(
                     icon: Icons.check_circle_rounded,
                     color: AppTheme.accentColor,
-                    label: 'Payé',
-                    value: '$paid.toStringAsFixed(0) $currency',
+                    label: 'PayÃ©',
+                    value: '${paid.toStringAsFixed(0)} $currency',
                   ),
                 ),
                 const SizedBox(width: AppTheme.spaceSm),
@@ -302,13 +305,38 @@ class _ShipperStatsDetailScreenState
                   child: _CommissionStat(
                     icon: Icons.pending_actions_rounded,
                     color:
-                        due > 0 ? AppTheme.warningColor : AppTheme.accentColor,
-                    label: 'Dette',
-                    value: '$due.toStringAsFixed(0) $currency',
+                        awaiting > 0 ? AppTheme.warningColor : AppTheme.accentColor,
+                    label: awaiting > 0 ? 'En attente' : 'Dette',
+                    value:
+                        '${(awaiting > 0 ? awaiting : due).toStringAsFixed(0)} $currency',
                   ),
                 ),
               ],
             ),
+            if (awaiting > 0) ...[
+              const SizedBox(height: AppTheme.spaceMd),
+              Container(
+                padding: const EdgeInsets.all(AppTheme.spaceMd),
+                decoration: BoxDecoration(
+                  color: AppTheme.warningColor.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.hourglass_top_rounded,
+                        size: 18, color: AppTheme.warningColor),
+                    SizedBox(width: AppTheme.spaceSm),
+                    Expanded(
+                      child: Text(
+                        'Paiement envoyÃ© â€” en attente de confirmation '
+                        'par l\'administrateur.',
+                        style: AppTheme.caption,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             if (due > 0) ...[
               const SizedBox(height: AppTheme.spaceMd),
               FilledButton.icon(
@@ -329,7 +357,7 @@ class _ShipperStatsDetailScreenState
                       : 'Payer mes dues (${due.toStringAsFixed(0)} $currency)',
                 ),
               ),
-            ] else ...[
+            ] else if (awaiting == 0) ...[
               const SizedBox(height: AppTheme.spaceSm),
               const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -341,7 +369,7 @@ class _ShipperStatsDetailScreenState
                   ),
                   SizedBox(width: 6),
                   Text(
-                    'Aucune dette : commission réglée',
+                    'Aucune dette : commission rÃ©glÃ©e',
                     style: TextStyle(
                       color: AppTheme.accentColor,
                       fontWeight: FontWeight.w700,
@@ -366,8 +394,11 @@ class _ShipperStatsDetailScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Commission réglée, merci !'),
-            backgroundColor: AppTheme.accentColor,
+            content: Text(
+              'Paiement envoyÃ© â€” en attente de confirmation '
+              'par l\'administrateur.',
+            ),
+            backgroundColor: AppTheme.warningColor,
           ),
         );
       }
@@ -422,7 +453,7 @@ class _ShipperStatsDetailScreenState
             const Text('Chiffre d\'affaires par mois', style: AppTheme.h3),
             const SizedBox(height: AppTheme.spaceXs),
             Text(
-              'Basé sur les commandes chargées (${pager.items.length})',
+              'BasÃ© sur les commandes chargÃ©es (${pager.items.length})',
               style: AppTheme.caption,
             ),
             const SizedBox(height: AppTheme.spaceMd),
@@ -478,7 +509,7 @@ class _ShipperStatsDetailScreenState
       ),
       emptyState: const _EmptyDetail(
         icon: Icons.receipt_long_outlined,
-        message: 'Aucune commande reçue',
+        message: 'Aucune commande reÃ§ue',
       ),
       itemBuilder: (context, booking, index) => StaggeredEntrance(
         delay: Duration(milliseconds: (index % 10) * 40),
@@ -512,8 +543,8 @@ class _ShipperStatsDetailScreenState
         AppTheme.spaceXxl,
       ),
       emptyState: const _EmptyDetail(
-        icon: Icons.local_shipping_outlined,
-        message: 'Aucune offre publiée',
+        icon: Icons.flight_takeoff_outlined,
+        message: 'Aucune offre publiÃ©e',
       ),
       itemBuilder: (context, shipment, index) {
         if (activeOnly && !shipment.isActive) {
@@ -550,14 +581,14 @@ class _ShipmentTile extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '${shipment.originCountry} → ${shipment.destinationCity}',
+                    '${shipment.originCountry} â†’ ${shipment.destinationCity}',
                     style: AppTheme.h3,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: AppTheme.spaceSm),
                 GradientBadge(
-                  label: shipment.isActive ? 'Active' : 'Terminée',
+                  label: shipment.isActive ? 'Active' : 'TerminÃ©e',
                   gradient: shipment.isActive
                       ? AppTheme.successGradient
                       : AppTheme.primaryGradient,
@@ -668,9 +699,30 @@ class _BookingTile extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     '${booking.client?.fullName ?? 'Client'}'
-                    '${booking.client?.phone.isNotEmpty ?? false ? ' · ${booking.client!.phone}' : ''}',
+                    '${booking.client?.phone.isNotEmpty ?? false ? ' Â· ${booking.client!.phone}' : ''}',
                     style: AppTheme.caption,
                     overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            Row(
+              children: [
+                Expanded(
+                  child: _InfoTile(
+                    icon: Icons.event_rounded,
+                    label: 'Commande',
+                    value: _formatDate(booking.createdAt),
+                  ),
+                ),
+                Expanded(
+                  child: _InfoTile(
+                    icon: Icons.flight_takeoff_rounded,
+                    label: 'DÃ©part',
+                    value: booking.shipment != null
+                        ? _formatDate(booking.shipment!.departureDate)
+                        : 'â€”',
                   ),
                 ),
               ],
@@ -711,7 +763,7 @@ class _BookingTile extends ConsumerWidget {
           FilledButton.icon(
             onPressed: () => _markShipped(context, ref),
             icon: const Icon(Icons.flight_takeoff_rounded, size: 18),
-            label: const Text('Marquer expédié'),
+            label: const Text('Marquer expÃ©diÃ©'),
           ),
         );
         actions.add(
@@ -730,7 +782,7 @@ class _BookingTile extends ConsumerWidget {
           FilledButton.icon(
             onPressed: () => _markDelivered(context, ref),
             icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-            label: const Text('Marquer livré'),
+            label: const Text('Marquer livrÃ©'),
           ),
         );
         break;
@@ -768,7 +820,7 @@ class _BookingTile extends ConsumerWidget {
       context,
       ref,
       () => ref.read(bookingServiceProvider).confirmBooking(booking.id),
-      'Commande confirmée');
+      'Commande confirmÃ©e');
 
   void _markShipped(BuildContext context, WidgetRef ref) => _runAction(
         context,
@@ -779,7 +831,7 @@ class _BookingTile extends ConsumerWidget {
                 bookingId: booking.id,
                 status: 'departed_origin',
                 notes:
-                    'Colis expédié depuis ${booking.shipment?.originCountry}',
+                    'Colis expÃ©diÃ© depuis ${booking.shipment?.originCountry}',
                 location: booking.shipment?.originCountry,
               );
           await ref
@@ -790,7 +842,7 @@ class _BookingTile extends ConsumerWidget {
                 destination: booking.shipment?.destinationCity ?? 'destination',
               );
         },
-        'Commande marquée comme expédiée',
+        'Commande marquÃ©e comme expÃ©diÃ©e',
       );
 
   Future<void> _markDelivered(BuildContext context, WidgetRef ref) async {
@@ -814,7 +866,7 @@ class _BookingTile extends ConsumerWidget {
         await ref.read(trackingServiceProvider).addTrackingUpdate(
               bookingId: booking.id,
               status: 'delivered',
-              notes: 'Colis livré à ${booking.shipment?.destinationCity}',
+              notes: 'Colis livrÃ© Ã  ${booking.shipment?.destinationCity}',
               location: booking.shipment?.destinationCity,
             );
         await ref
@@ -824,7 +876,7 @@ class _BookingTile extends ConsumerWidget {
               bookingId: booking.id,
             );
       },
-      'Commande marquée comme livrée',
+      'Commande marquÃ©e comme livrÃ©e',
     );
   }
 
@@ -832,7 +884,7 @@ class _BookingTile extends ConsumerWidget {
         context,
         ref,
         () => ref.read(bookingServiceProvider).cancelBooking(booking.id),
-        'Commande annulée',
+        'Commande annulÃ©e',
       );
 
   void _refresh(WidgetRef ref) {
@@ -843,6 +895,9 @@ class _BookingTile extends ConsumerWidget {
     ref.invalidate(shipperStatsProvider(shipperId));
     ref.invalidate(shipperEarningsProvider(shipperId));
   }
+
+  String _formatDate(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 }
 
 class _InfoTile extends StatelessWidget {
@@ -948,14 +1003,14 @@ class _InventoryTile extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '${shipment.originCountry} → ${shipment.destinationCity}',
+                    '${shipment.originCountry} â†’ ${shipment.destinationCity}',
                     style: AppTheme.h3,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: AppTheme.spaceSm),
                 GradientBadge(
-                  label: shipment.isActive ? 'Active' : 'Terminée',
+                  label: shipment.isActive ? 'Active' : 'TerminÃ©e',
                   gradient: shipment.isActive
                       ? AppTheme.successGradient
                       : AppTheme.primaryGradient,

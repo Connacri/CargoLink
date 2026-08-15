@@ -21,7 +21,7 @@ class LoadingScreen extends StatelessWidget {
             CircleAvatar(
               radius: 50,
               backgroundColor: AppTheme.primaryColor,
-              child: Icon(Icons.local_shipping, size: 50, color: Colors.white),
+              child: Icon(Icons.flight_takeoff, size: 50, color: Colors.white),
             ),
             SizedBox(height: 24),
             Text(
@@ -101,14 +101,14 @@ class _ErrorScreenState extends State<ErrorScreen> {
               OutlinedButton.icon(
                 onPressed: _copied ? null : _copy,
                 icon: Icon(_copied ? Icons.check : Icons.copy),
-                label: Text(_copied ? 'Copié' : 'Copier l\'erreur'),
+                label: Text(_copied ? 'CopiÃ©' : 'Copier l\'erreur'),
               ),
               const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pushReplacementNamed('/login');
                 },
-                child: const Text('Retour à l\'accueil'),
+                child: const Text('Retour Ã  l\'accueil'),
               ),
             ],
           ),

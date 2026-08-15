@@ -23,7 +23,7 @@ class TransactionsScreen extends ConsumerWidget {
             slivers: [
               const GradientSliverHeader(
                 title: 'Transactions',
-                subtitle: 'Toutes les opérations financières',
+                subtitle: 'Toutes les opÃ©rations financiÃ¨res',
                 icon: Icons.swap_horiz_rounded,
                 expandedHeight: 140,
               ),
@@ -85,10 +85,10 @@ class _TransactionCard extends StatelessWidget {
       _ => Icons.circle_outlined,
     };
     final String statusLabel = switch (status) {
-      'completed' => 'Payé',
+      'completed' => 'PayÃ©',
       'pending' => 'En attente',
-      'failed' => 'Échoué',
-      'refunded' => 'Remboursé',
+      'failed' => 'Ã‰chouÃ©',
+      'refunded' => 'RemboursÃ©',
       _ => status,
     };
 
@@ -141,10 +141,10 @@ class _TransactionCard extends StatelessWidget {
             ),
             const SizedBox(height: AppTheme.spaceSm),
             _PartyRow(
-              icon: Icons.local_shipping_outlined,
+              icon: Icons.flight_takeoff_outlined,
               iconColor: AppTheme.infoColor,
               label: 'Vers',
-              name: item.shipperName ?? 'Expéditeur',
+              name: item.shipperName ?? 'ExpÃ©diteur',
               avatar: item.shipperAvatar,
             ),
             const Divider(height: AppTheme.spaceLg),
@@ -172,7 +172,7 @@ class _TransactionCard extends StatelessWidget {
                 payment.transactionId!.isNotEmpty) ...[
               const SizedBox(height: AppTheme.spaceSm),
               Text(
-                'N° ${payment.transactionId}',
+                'NÂ° ${payment.transactionId}',
                 style: AppTheme.caption,
               ),
             ],
@@ -187,7 +187,7 @@ class _TransactionCard extends StatelessWidget {
     final date = DateTime(d.year, d.month, d.day);
     final today = DateTime(now.year, now.month, now.day);
     final diff = today.difference(date).inDays;
-    if (diff == 0) return "Aujourd'hui à ${d.hour}:${d.minute.toString().padLeft(2, '0')}";
+    if (diff == 0) return "Aujourd'hui Ã  ${d.hour}:${d.minute.toString().padLeft(2, '0')}";
     if (diff == 1) return 'Hier';
     return '${d.day}/${d.month}/${d.year}';
   }

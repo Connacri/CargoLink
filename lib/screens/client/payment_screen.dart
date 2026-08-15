@@ -35,7 +35,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Paiement confirmé avec succès'),
+          content: Text('Paiement confirmÃ© avec succÃ¨s'),
           backgroundColor: AppTheme.accentColor,
         ),
       );
@@ -63,7 +63,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         if (bookingData == null) {
           return Scaffold(
             appBar: AppBar(title: const Text('Paiement')),
-            body: const Center(child: Text('Réservation introuvable')),
+            body: const Center(child: Text('RÃ©servation introuvable')),
           );
         }
         return payment.when(
@@ -104,7 +104,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           slivers: [
             const GradientSliverHeader(
               title: 'Paiement',
-              subtitle: 'Commande réglée',
+              subtitle: 'Commande rÃ©glÃ©e',
               icon: Icons.payments_rounded,
             ),
             SliverFillRemaining(
@@ -139,7 +139,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         slivers: [
           const GradientSliverHeader(
             title: 'Paiement',
-            subtitle: 'Vérifie et confirme ton règlement',
+            subtitle: 'VÃ©rifie et confirme ton rÃ¨glement',
             icon: Icons.lock_rounded,
           ),
           SliverToBoxAdapter(
@@ -205,7 +205,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       child: Column(
         children: [
           const Text(
-            'Montant à payer',
+            'Montant Ã  payer',
             style: TextStyle(fontSize: 16, color: Colors.white70),
           ),
           const SizedBox(height: AppTheme.spaceSm),
@@ -227,7 +227,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Détail de la commande', style: AppTheme.label),
+          const Text('DÃ©tail de la commande', style: AppTheme.label),
           const SizedBox(height: AppTheme.spaceSm),
           _detailRow('Produit', booking.productName),
           _detailRow(
@@ -235,7 +235,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
           ),
           _detailRow(
-            'Transporteur vérifié',
+            'Transporteur vÃ©rifiÃ©',
             booking.shipment?.shipper?.isVerified == true ? 'Oui' : 'Non',
           ),
         ],
@@ -248,11 +248,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Méthode de paiement', style: AppTheme.label),
+          const Text('MÃ©thode de paiement', style: AppTheme.label),
           const SizedBox(height: AppTheme.spaceMd),
           _MethodTile(
             value: 'cash',
-            label: 'Espèces à la livraison',
+            label: 'EspÃ¨ces Ã  la livraison',
             icon: Icons.payments_outlined,
             groupValue: _paymentMethod,
             onChanged: (v) => setState(() => _paymentMethod = v),
@@ -320,7 +320,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         ),
         const SizedBox(height: AppTheme.spaceSm),
         const Text(
-          'Paiement simulé (pas d\'intégration bancaire réelle)',
+          'Paiement simulÃ© (pas d\'intÃ©gration bancaire rÃ©elle)',
           style: AppTheme.caption,
           textAlign: TextAlign.center,
         ),
@@ -349,10 +349,10 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               ),
             ),
             const SizedBox(height: AppTheme.spaceLg),
-            const Text('Paiement effectué', style: AppTheme.h2),
+            const Text('Paiement effectuÃ©', style: AppTheme.h2),
             const SizedBox(height: AppTheme.spaceSm),
             Text(
-              '${booking.allocatedWeightKg.toStringAsFixed(1)} kg • '
+              '${booking.allocatedWeightKg.toStringAsFixed(1)} kg â€¢ '
               '${booking.totalPrice.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
               style: AppTheme.bodySecondary,
             ),
@@ -361,7 +361,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: _openTracking,
-                icon: const Icon(Icons.route_rounded),
+                icon: const Icon(Icons.connecting_airports_rounded),
                 label: const Text('Suivre mon colis'),
               ),
             ),

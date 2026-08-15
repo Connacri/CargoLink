@@ -82,13 +82,13 @@ class _GateRoleDeciderState extends ConsumerState<_GateRoleDecider> {
   Future<void> _verify() async {
     // Tri-state: true = profile exists, false = definitively no row,
     // null = transient failure. Only a definitive "no row" may open the role
-    // picker — a returning user who already picked a role must never see it
+    // picker â€” a returning user who already picked a role must never see it
     // again (even for a single frame while the provider refreshes).
     final hasProfile = await widget.authService.hasProfile();
     if (!mounted) return;
     if (hasProfile == true) {
       // A profile exists but the provider returned null transiently. Invalidate
-      // so the parent gate re-routes straight to home — never the role picker.
+      // so the parent gate re-routes straight to home â€” never the role picker.
       ref.invalidate(currentUserProvider);
       ref.invalidate(currentShipperProvider);
       return;
@@ -182,7 +182,7 @@ class _GateLoading extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               AnimatedIconDot(
-                icon: Icons.local_shipping,
+                icon: Icons.flight_takeoff,
                 color: Colors.white,
                 size: 28,
               ),

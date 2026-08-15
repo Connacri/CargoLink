@@ -271,10 +271,29 @@ final shipperPlatformFeesProvider =
   return paymentService.getShipperPlatformFees(shipperId);
 });
 
+/// Commission fees awaiting super-admin confirmation (founder dashboard).
+final awaitingCommissionFeesProvider = FutureProvider<List<PlatformFee>>((ref) async {
+  final paymentService = ref.watch(paymentServiceProvider);
+  return paymentService.getAwaitingConfirmationFees();
+});
+
+/// Count of commission fees awaiting confirmation — powers the founder badge.
+final awaitingCommissionCountProvider = FutureProvider<int>((ref) async {
+  final paymentService = ref.watch(paymentServiceProvider);
+  return paymentService.countAwaitingConfirmationFees();
+});
+
 final shipperEarningsProvider =
     FutureProvider.family<double, String>((ref, shipperId) async {
   final paymentService = ref.watch(paymentServiceProvider);
   return paymentService.getShipperEarnings(shipperId);
+});
+
+final shipperFinanceSummaryProvider = FutureProvider.family<Map<String, dynamic>,
+    String>((ref, shipperId) async {
+  final paymentService = ref.watch(paymentServiceProvider);
+  final summary = await paymentService.getShipperFinanceSummary(shipperId);
+  return summary ?? const <String, dynamic>{};
 });
 
 // ============================================================================

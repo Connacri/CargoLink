@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
@@ -10,6 +11,7 @@ import 'entity_list_screen.dart';
 import 'user_details_screen.dart';
 import 'platform_settings_screen.dart';
 import 'verification_center_screen.dart';
+import 'commission_screen.dart';
 
 /// Founder (super_admin) dashboard — accès total et contrôle de la plateforme :
 /// stats globales, gestion de tous les comptes (rôles, activation,
@@ -64,6 +66,8 @@ class _SuperAdminDashboardScreenState
     ref.invalidate(platformStatsProvider);
     ref.invalidate(pendingShippersCountProvider);
     ref.invalidate(unreadFeedbackCountProvider);
+    ref.invalidate(awaitingCommissionCountProvider);
+    ref.invalidate(awaitingCommissionFeesProvider);
     await _refreshUsers();
   }
 
@@ -83,6 +87,7 @@ class _SuperAdminDashboardScreenState
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const _PendingVerificationBadge(),
+                  const _PendingCommissionBadge(),
                   IconButton(
                     tooltip: 'Annonces',
                     icon: const Icon(Icons.campaign, color: Colors.white),
@@ -97,6 +102,7 @@ class _SuperAdminDashboardScreenState
             ),
             const SliverToBoxAdapter(child: _StatsOverview()),
             const SliverToBoxAdapter(child: _PendingVerificationSection()),
+            const SliverToBoxAdapter(child: _PendingCommissionSection()),
             const SliverToBoxAdapter(child: _FeedbackSection()),
             const SliverToBoxAdapter(
               child: _SectionTitle(title: 'Gestion des comptes'),
@@ -351,6 +357,214 @@ class _PendingVerificationSection extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+/// Header badge with the number of commission payments awaiting confirmation.
+class _PendingCommissionBadge extends ConsumerWidget {
+  const _PendingCommissionBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(awaitingCommissionCountProvider);
+
+    final badge = count.when(
+      data: (n) => n > 0 ? (n > 99 ? '99+' : '$n') : '',
+      loading: () => '',
+      error: (_, __) => '',
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 4),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          IconButton(
+            tooltip: 'Paiements de commissions en attente',
+            icon: const Icon(Icons.payments_outlined, color: Colors.white),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CommissionScreen()),
+            ),
+          ),
+          if (badge.isNotEmpty)
+            Positioned(
+              right: 6,
+              top: 6,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.errorColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                constraints: const BoxConstraints(minWidth: 18),
+                child: Text(
+                  badge,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Commission payments awaiting super-admin confirmation. Each row offers a
+/// "Confirmer" action that moves the fee from `awaiting_confirmation` to `paid`.
+class _PendingCommissionSection extends ConsumerWidget {
+  const _PendingCommissionSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fees = ref.watch(awaitingCommissionFeesProvider);
+    final count = ref.watch(awaitingCommissionCountProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        0,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: GlassCard(
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const AnimatedIconDot(
+                  icon: Icons.payments_outlined,
+                  color: AppTheme.warningColor,
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                const Expanded(
+                  child: Text(
+                    'Paiements de commissions',
+                    style: AppTheme.h3,
+                  ),
+                ),
+                count.when(
+                  data: (n) => n > 0
+                      ? GradientBadge(
+                          label: '$n en attente',
+                          gradient: AppTheme.warningGradient,
+                          compact: true,
+                        )
+                      : const SizedBox.shrink(),
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            fees.when(
+              data: (list) {
+                if (list.isEmpty) {
+                  return const Text(
+                    'Aucune commission en attente de confirmation.',
+                    style: AppTheme.caption,
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final fee in list.take(10))
+                      _CommissionConfirmationTile(fee: fee),
+                  ],
+                );
+              },
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppTheme.spaceMd),
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ),
+              error: (_, __) => const Text(
+                'Impossible de charger les commissions.',
+                style: AppTheme.caption,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CommissionConfirmationTile extends ConsumerWidget {
+  const _CommissionConfirmationTile({required this.fee});
+
+  final PlatformFee fee;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final shipperName =
+        fee.shipment?.shipper?.user?.fullName ?? 'Expéditeur inconnu';
+    final route = fee.shipment == null
+        ? ''
+        : '${fee.shipment!.originCountry} → ${fee.shipment!.destinationCity}';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppTheme.spaceSm),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  shipperName,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (route.isNotEmpty)
+                  Text(route, style: AppTheme.caption),
+                Text(
+                  '${fee.amount.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          FilledButton.icon(
+            onPressed: () => _confirm(context, ref),
+            icon: const Icon(Icons.check_rounded, size: 18),
+            label: const Text('Confirmer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirm(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(paymentServiceProvider).confirmPlatformFee(fee.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Commission confirmée')),
+        );
+      }
+      ref.invalidate(awaitingCommissionFeesProvider);
+      ref.invalidate(awaitingCommissionCountProvider);
+      ref.invalidate(platformFeeSummaryProvider);
+    } catch (e) {
+      if (context.mounted) {
+        await showAppErrorDialog(context, message: 'Erreur: $e');
+      }
+    }
   }
 }
 

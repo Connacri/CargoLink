@@ -64,7 +64,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref.read(authServiceProvider).signInWithGoogle();
       _afterSignIn();
       // If first sign-in, the AccountGateScreen shows the role picker until a
-      // profile exists (no extra navigation needed — routing is state-driven).
+      // profile exists (no extra navigation needed â€” routing is state-driven).
     } catch (e) {
       if (mounted) {
         await showAppErrorDialog(context, message: 'Erreur: $e');
@@ -75,7 +75,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleForgotPassword() async {
-    // Navigate to the dedicated "mot de passe oublié" screen (same UX as the
+    // Navigate to the dedicated "mot de passe oubliÃ©" screen (same UX as the
     // login/signup/email-verification screens).
     Navigator.of(context).pushNamed('/forgot-password');
   }
@@ -88,8 +88,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         slivers: [
           const GradientSliverHeader(
             title: 'CargoLink',
-            subtitle: 'Connexion à votre compte',
-            icon: Icons.local_shipping,
+            subtitle: 'Connexion Ã  votre compte',
+            icon: Icons.flight_takeoff,
           ),
           SliverPadding(
             padding: const EdgeInsets.all(AppTheme.spaceMd),
@@ -148,7 +148,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               return 'Mot de passe requis';
                             }
                             if (value.length < AppConstants.minPasswordLength) {
-                              return 'Minimum ${AppConstants.minPasswordLength} caractères';
+                              return 'Minimum ${AppConstants.minPasswordLength} caractÃ¨res';
                             }
                             return null;
                           },
@@ -158,7 +158,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: _isLoading ? null : _handleForgotPassword,
-                          child: const Text('Mot de passe oublié ?'),
+                          child: const Text('Mot de passe oubliÃ© ?'),
                         ),
                       ),
                       const SizedBox(height: AppTheme.spaceSm),

@@ -22,10 +22,10 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
   static const _statusOptions = [
     (label: 'Toutes', value: null),
     (label: 'En attente', value: 'pending'),
-    (label: 'Confirmées', value: 'confirmed'),
-    (label: 'Expédiées', value: 'shipped'),
-    (label: 'Livrées', value: 'delivered'),
-    (label: 'Annulées', value: 'cancelled'),
+    (label: 'ConfirmÃ©es', value: 'confirmed'),
+    (label: 'ExpÃ©diÃ©es', value: 'shipped'),
+    (label: 'LivrÃ©es', value: 'delivered'),
+    (label: 'AnnulÃ©es', value: 'cancelled'),
   ];
 
   final _scrollController = ScrollController();
@@ -119,7 +119,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
         title: const Text('Annuler la commande'),
         content: const Text(
           'Voulez-vous vraiment annuler cette commande ? '
-          'Le poids réservé sera libéré et le paiement remboursé.',
+          'Le poids rÃ©servÃ© sera libÃ©rÃ© et le paiement remboursÃ©.',
         ),
         actions: [
           TextButton(
@@ -160,7 +160,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
           }
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Commande annulée et remboursée'),
+              content: Text('Commande annulÃ©e et remboursÃ©e'),
               backgroundColor: AppTheme.accentColor,
             ),
           );
@@ -194,7 +194,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
       return const Scaffold(
         body: Center(
           child: Text(
-            'Utilisateur non identifié',
+            'Utilisateur non identifiÃ©',
             style: AppTheme.bodySecondary,
           ),
         ),
@@ -222,7 +222,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
           slivers: [
             const GradientSliverHeader(
               title: 'Mes Commandes',
-              subtitle: 'Suis et gère tes réservations',
+              subtitle: 'Suis et gÃ¨re tes rÃ©servations',
               icon: Icons.receipt_long_rounded,
             ),
             SliverToBoxAdapter(
@@ -334,7 +334,7 @@ class _BookingCard extends ConsumerWidget {
       if (context.mounted) {
         await showAppErrorDialog(
           context,
-          message: 'Impossible de noter : expéditeur introuvable',
+          message: 'Impossible de noter : expÃ©diteur introuvable',
         );
       }
       return;
@@ -344,7 +344,7 @@ class _BookingCard extends ConsumerWidget {
 
     final submitted = await showRateShipperSheet(
       context,
-      shipperName: shipment.shipper?.user?.fullName ?? 'l\'expéditeur',
+      shipperName: shipment.shipper?.user?.fullName ?? 'l\'expÃ©diteur',
       onSubmit: (rating, comment) async {
         await ref.read(reviewServiceProvider).submitReview(
               bookingId: booking.id,
@@ -372,7 +372,7 @@ class _BookingCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final status = BookingStatusExt.fromString(booking.status);
     final route = booking.shipment != null
-        ? '${booking.shipment!.originCountry} → ${booking.shipment!.destinationCity}'
+        ? '${booking.shipment!.originCountry} â†’ ${booking.shipment!.destinationCity}'
         : null;
     final delivered = booking.status == 'delivered';
     final rated = ref.watch(hasReviewedProvider(booking.id)).valueOrNull;
@@ -500,7 +500,7 @@ class _BookingCard extends ConsumerWidget {
                       ? Icons.task_alt_rounded
                       : Icons.pending_actions_rounded,
                   label: shipperConfirmed
-                      ? 'Expéditeur a confirmé'
+                      ? 'ExpÃ©diteur a confirmÃ©'
                       : 'En attente de confirmation',
                   color: shipperConfirmed
                       ? AppTheme.accentColor
@@ -510,7 +510,7 @@ class _BookingCard extends ConsumerWidget {
                   icon: booking.isPaid
                       ? Icons.paid_rounded
                       : Icons.schedule_rounded,
-                  label: booking.isPaid ? 'Paiement reçu' : 'Paiement en attente',
+                  label: booking.isPaid ? 'Paiement reÃ§u' : 'Paiement en attente',
                   color:
                       booking.isPaid ? AppTheme.accentColor : AppTheme.warningColor,
                 ),
@@ -528,7 +528,7 @@ class _BookingCard extends ConsumerWidget {
                   size: 18,
                 ),
                 label: Text(
-                  rated == true ? 'Expéditeur noté' : 'Noter l\'expéditeur',
+                  rated == true ? 'ExpÃ©diteur notÃ©' : 'Noter l\'expÃ©diteur',
                 ),
               ),
             ],
@@ -538,7 +538,7 @@ class _BookingCard extends ConsumerWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: onTrack,
-                    icon: const Icon(Icons.route_rounded, size: 18),
+                    icon: const Icon(Icons.connecting_airports_rounded, size: 18),
                     label: const Text('Suivre'),
                   ),
                 ),
@@ -689,7 +689,7 @@ class _EmptyOrders extends StatelessWidget {
         Text('Aucune commande', style: AppTheme.h3),
         SizedBox(height: AppTheme.spaceSm),
         Text(
-          'Réserve un shipment pour retrouver tes commandes ici.',
+          'RÃ©serve un shipment pour retrouver tes commandes ici.',
           style: AppTheme.bodySecondary,
           textAlign: TextAlign.center,
         ),

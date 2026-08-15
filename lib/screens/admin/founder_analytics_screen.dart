@@ -45,7 +45,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
       case _AnalyticsPeriod.quarter:
         return '90 derniers jours';
       case _AnalyticsPeriod.all:
-        return 'Toute la période';
+        return 'Toute la pÃ©riode';
     }
   }
 
@@ -113,7 +113,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
             slivers: [
               const GradientSliverHeader(
                 title: 'Analytics',
-                subtitle: 'Chiffres détaillés de la plateforme',
+                subtitle: 'Chiffres dÃ©taillÃ©s de la plateforme',
                 icon: Icons.insert_chart_outlined_rounded,
               ),
               SliverToBoxAdapter(child: _buildPeriodSelector()),
@@ -233,15 +233,15 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
         children: [
           _kpiCard(Icons.attach_money_rounded, 'Chiffre d\'affaires',
               _money(ca), AppTheme.accentColor, cardWidth),
-          _kpiCard(Icons.savings_rounded, 'Bénéfice (commissions)',
+          _kpiCard(Icons.savings_rounded, 'BÃ©nÃ©fice (commissions)',
               _money(fees), AppTheme.accentDark, cardWidth),
           _kpiCard(Icons.receipt_long_rounded, 'Commandes',
               '$bookings', AppTheme.primaryColor, cardWidth),
           _kpiCard(Icons.flight_rounded, 'Vols', '$shipments',
               AppTheme.infoColor, cardWidth),
           _kpiCard(Icons.people_alt_rounded, 'Utilisateurs',
-              '$users · $totalUsers', AppTheme.warningColor, cardWidth),
-          _kpiCard(Icons.scale_rounded, 'Poids transporté',
+              '$users Â· $totalUsers', AppTheme.warningColor, cardWidth),
+          _kpiCard(Icons.scale_rounded, 'Poids transportÃ©',
               '${weight.toStringAsFixed(0)} kg', AppTheme.primaryDark,
               cardWidth),
         ],
@@ -265,11 +265,11 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
         child: Column(
           children: [
             _summaryTile(
-                Icons.check_circle_rounded, 'Commandes livrées', '$delivered',
+                Icons.check_circle_rounded, 'Commandes livrÃ©es', '$delivered',
                 AppTheme.accentColor),
             const Divider(height: 1, indent: AppTheme.spaceXxl),
             _summaryTile(
-                Icons.cancel_rounded, 'Commandes annulées', '$cancelled',
+                Icons.cancel_rounded, 'Commandes annulÃ©es', '$cancelled',
                 AppTheme.errorColor),
             const Divider(height: 1, indent: AppTheme.spaceXxl),
             _summaryTile(Icons.trending_up_rounded, 'Taux de livraison',
@@ -279,7 +279,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
                 _money(avgBasket), AppTheme.primaryColor),
             const Divider(height: 1, indent: AppTheme.spaceXxl),
             _summaryTile(Icons.account_balance_wallet_rounded,
-                'Volume encaissé (paiements)',
+                'Volume encaissÃ© (paiements)',
                 _money(paymentVolume), AppTheme.infoColor),
             const Divider(height: 1, indent: AppTheme.spaceXxl),
             _summaryTile(Icons.payment_rounded,
@@ -353,11 +353,11 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Chiffre d\'affaires par rôle', style: AppTheme.h3),
+            const Text('Chiffre d\'affaires par rÃ´le', style: AppTheme.h3),
             const SizedBox(height: AppTheme.spaceSm),
             Text(
-              'Volume commandé par les clients : ${_money(clientVolume)} · '
-              'montant reversé aux expéditeurs : ${_money(shipperEarned)}',
+              'Volume commandÃ© par les clients : ${_money(clientVolume)} Â· '
+              'montant reversÃ© aux expÃ©diteurs : ${_money(shipperEarned)}',
               style: AppTheme.caption,
             ),
             const SizedBox(height: AppTheme.spaceMd),
@@ -366,7 +366,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
                 if (clientVolume > 0)
                   (clientVolume, AppTheme.accentColor, 'Clients'),
                 if (shipperEarned > 0)
-                  (shipperEarned, AppTheme.primaryColor, 'Expéditeurs'),
+                  (shipperEarned, AppTheme.primaryColor, 'ExpÃ©diteurs'),
               ],
               total: total,
             ),
@@ -383,7 +383,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
       if (b.paymentStatus != 'paid' || b.status == 'cancelled') continue;
       final s = b.shipment;
       if (s == null) continue;
-      final key = '${s.originCountry} → ${s.destinationCity}';
+      final key = '${s.originCountry} â†’ ${s.destinationCity}';
       byRoute[key] = (byRoute[key] ?? 0) + b.totalPrice;
       byRouteCount[key] = (byRouteCount[key] ?? 0) + 1;
     }
@@ -403,7 +403,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
             const Text('Top destinations', style: AppTheme.h3),
             const SizedBox(height: AppTheme.spaceMd),
             if (top.isEmpty)
-              const Text('Aucune donnée', style: AppTheme.bodySecondary)
+              const Text('Aucune donnÃ©e', style: AppTheme.bodySecondary)
             else
               for (final e in top)
                 Padding(
@@ -422,7 +422,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
                             ),
                           ),
                           Text(
-                            '${_money(e.value)} · ${byRouteCount[e.key]}',
+                            '${_money(e.value)} Â· ${byRouteCount[e.key]}',
                             style: AppTheme.caption,
                           ),
                         ],
@@ -463,12 +463,12 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
 
     return _rankListCard(
       title: 'Top clients',
-      subtitle: 'Par chiffre d\'affaires payé',
+      subtitle: 'Par chiffre d\'affaires payÃ©',
       icon: Icons.person_rounded,
       rows: top.map((e) {
         final u = userById[e.key];
         return _RankRow(
-          name: u?.fullName ?? 'Utilisateur supprimé',
+          name: u?.fullName ?? 'Utilisateur supprimÃ©',
           value: _money(e.value),
           detail: '${byClientCount[e.key] ?? 0} commande(s)',
           avatar: u,
@@ -504,13 +504,13 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
     final userById = {for (final u in users) u.id: u};
 
     return _rankListCard(
-      title: 'Top expéditeurs',
-      subtitle: 'Par commandes payées sur leurs vols',
-      icon: Icons.local_shipping_rounded,
+      title: 'Top expÃ©diteurs',
+      subtitle: 'Par commandes payÃ©es sur leurs vols',
+      icon: Icons.flight_takeoff_rounded,
       rows: top.map((e) {
         final u = userById[e.key];
         return _RankRow(
-          name: u?.fullName ?? 'Expéditeur supprimé',
+          name: u?.fullName ?? 'ExpÃ©diteur supprimÃ©',
           value: _money(e.value),
           detail: '${shipmentByShipper[e.key]?.length ?? 0} vol(s)',
           avatar: u,
@@ -526,10 +526,10 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
     }
     const labels = {
       'pending': ('En attente', AppTheme.warningColor),
-      'confirmed': ('Confirmé', AppTheme.infoColor),
-      'shipped': ('Expédié', AppTheme.primaryColor),
-      'delivered': ('Livré', AppTheme.accentColor),
-      'cancelled': ('Annulé', AppTheme.errorColor),
+      'confirmed': ('ConfirmÃ©', AppTheme.infoColor),
+      'shipped': ('ExpÃ©diÃ©', AppTheme.primaryColor),
+      'delivered': ('LivrÃ©', AppTheme.accentColor),
+      'cancelled': ('AnnulÃ©', AppTheme.errorColor),
     };
     final total = allBookings.isEmpty ? 1 : allBookings.length;
 
@@ -599,7 +599,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
             ),
             const SizedBox(height: AppTheme.spaceMd),
             if (rows.isEmpty)
-              const Text('Aucune donnée', style: AppTheme.bodySecondary)
+              const Text('Aucune donnÃ©e', style: AppTheme.bodySecondary)
             else
               for (final row in rows)
                 Padding(

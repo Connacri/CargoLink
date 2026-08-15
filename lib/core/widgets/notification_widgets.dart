@@ -137,7 +137,15 @@ class NotificationsSheet extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Erreur: $error')),
+      error: (error, stack) => const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'Notifications indisponibles — réessayez dans un instant.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
     );
   }
 }

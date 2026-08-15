@@ -26,7 +26,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
   static const _audienceOptions = [
     (value: 'all', label: 'Tout le monde', icon: Icons.public_rounded),
     (value: 'client', label: 'Clients', icon: Icons.shopping_bag_rounded),
-    (value: 'shipper', label: 'Transporteurs', icon: Icons.local_shipping_rounded),
+    (value: 'shipper', label: 'Transporteurs', icon: Icons.flight_takeoff_rounded),
     (value: 'admin', label: 'Admins', icon: Icons.shield_outlined),
     (value: 'super_admin', label: 'Fondateur', icon: Icons.admin_panel_settings_outlined),
   ];
@@ -66,7 +66,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
     final title = _titleController.text.trim();
     final message = _messageController.text.trim();
     if (title.isEmpty || title.length > 80) {
-      _snack('Titre requis (max 80 caractères)', AppTheme.errorColor);
+      _snack('Titre requis (max 80 caractÃ¨res)', AppTheme.errorColor);
       return;
     }
     if (message.isEmpty) {
@@ -105,14 +105,14 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
       ref.invalidate(broadcastsProvider);
       _snack(
         wasEditing
-            ? 'Annonce mise à jour'
+            ? 'Annonce mise Ã  jour'
             : _targetUsers.isNotEmpty
-                ? 'Annonce envoyée à ${_targetUsers.length} utilisateur(s) ciblé(s)'
-                : 'Annonce envoyée à ${_audienceLabel(_audienceParam)}',
+                ? 'Annonce envoyÃ©e Ã  ${_targetUsers.length} utilisateur(s) ciblÃ©(s)'
+                : 'Annonce envoyÃ©e Ã  ${_audienceLabel(_audienceParam)}',
         AppTheme.accentColor,
       );
     } catch (e) {
-      _snack('Échec: $e', AppTheme.errorColor);
+      _snack('Ã‰chec: $e', AppTheme.errorColor);
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
@@ -172,7 +172,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Supprimer l\'annonce'),
         content: Text(
-          'Voulez-vous vraiment supprimer « ${broadcast.title} » ?',
+          'Voulez-vous vraiment supprimer Â« ${broadcast.title} Â» ?',
         ),
         actions: [
           TextButton(
@@ -193,9 +193,9 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
       await ref.read(broadcastServiceProvider).deleteBroadcast(broadcast.id);
       if (_editing?.id == broadcast.id) _cancelEdit();
       ref.invalidate(broadcastsProvider);
-      _snack('Annonce supprimée', AppTheme.accentColor);
+      _snack('Annonce supprimÃ©e', AppTheme.accentColor);
     } catch (e) {
-      _snack('Échec de la suppression: $e', AppTheme.errorColor);
+      _snack('Ã‰chec de la suppression: $e', AppTheme.errorColor);
     }
   }
 
@@ -261,7 +261,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
                             onPressed: () =>
                                 ref.invalidate(broadcastsProvider),
                             icon: const Icon(Icons.refresh_rounded),
-                            label: const Text('Réessayer'),
+                            label: const Text('RÃ©essayer'),
                           ),
                         ],
                       ),
@@ -315,7 +315,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Cibler par rôle', style: AppTheme.caption),
+        const Text('Cibler par rÃ´le', style: AppTheme.caption),
         const SizedBox(height: AppTheme.spaceXs),
         Wrap(
           spacing: AppTheme.spaceSm,
@@ -349,7 +349,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
           children: [
             const Expanded(
               child: Text(
-                'Ou cibler des utilisateurs précis',
+                'Ou cibler des utilisateurs prÃ©cis',
                 style: AppTheme.caption,
               ),
             ),
@@ -358,8 +358,8 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
               icon: const Icon(Icons.person_search_rounded, size: 18),
               label: Text(
                 _targetUsers.isEmpty
-                    ? 'Sélectionner'
-                    : '${_targetUsers.length} sélectionné(s)',
+                    ? 'SÃ©lectionner'
+                    : '${_targetUsers.length} sÃ©lectionnÃ©(s)',
               ),
             ),
           ],
@@ -420,7 +420,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
             controller: _titleController,
             decoration: const InputDecoration(
               labelText: 'Titre',
-              hintText: 'Ex: Nouveautés CargoLink',
+              hintText: 'Ex: NouveautÃ©s CargoLink',
               prefixIcon: Icon(Icons.title),
             ),
           ),
@@ -430,7 +430,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
             maxLines: 4,
             decoration: const InputDecoration(
               labelText: 'Message',
-              hintText: 'Rédigez votre annonce...',
+              hintText: 'RÃ©digez votre annonce...',
               alignLabelWithHint: true,
               prefixIcon: Icon(Icons.campaign_outlined),
             ),
@@ -478,7 +478,7 @@ class _EmptyBroadcasts extends StatelessWidget {
         Text('Aucune annonce pour le moment', style: AppTheme.h3),
         SizedBox(height: AppTheme.spaceSm),
         Text(
-          'Les annonces de la plateforme apparaîtront ici.',
+          'Les annonces de la plateforme apparaÃ®tront ici.',
           style: AppTheme.bodySecondary,
           textAlign: TextAlign.center,
         ),
@@ -646,7 +646,7 @@ class _UserPickerSheetState extends State<_UserPickerSheet> {
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(_selected),
-                child: const Text('Terminé'),
+                child: const Text('TerminÃ©'),
               ),
             ],
           ),
@@ -687,7 +687,7 @@ class _UserPickerSheetState extends State<_UserPickerSheet> {
                         ),
                         title: Text(user.fullName),
                         subtitle: Text(
-                          '${_roleLabel(user.role)} · ${user.email}',
+                          '${_roleLabel(user.role)} Â· ${user.email}',
                           style: AppTheme.caption,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
