@@ -9,6 +9,7 @@ import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/notification_widgets.dart';
 import '../../core/widgets/chat_widgets.dart';
 import '../../components/shipper_card.dart';
+import '../../components/workflow_slider.dart';
 import '../shipper/shipper_public_profile_screen.dart';
 import '../chat/chat_screen.dart';
 
@@ -265,6 +266,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               child: _buildGreeting(currentUser),
             ),
             SliverToBoxAdapter(
+              child: _buildHowItWorks(),
+            ),
+            SliverToBoxAdapter(
               child: _buildSearchBar(),
             ),
             SliverToBoxAdapter(
@@ -305,6 +309,53 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHowItWorks() {
+    return const Padding(
+      padding: EdgeInsets.only(
+        left: AppTheme.spaceMd,
+        right: AppTheme.spaceMd,
+        top: AppTheme.spaceSm,
+      ),
+      child: WorkflowSlider(
+        height: 250,
+        slides: [
+          WorkflowSlide(
+            title: '1. Trouvez votre offre',
+            subtitle: 'Recherchez parmi les micro-importateurs vérifiés',
+            icon: Icons.search_rounded,
+            steps: [
+              'Filtrez par destination, origine et prix',
+              'Choisissez une offre active (poids disponible)',
+              'Le poids est réservé dès la réservation',
+            ],
+          ),
+          WorkflowSlide(
+            title: '2. Réservez votre colis',
+            subtitle: 'Produit, photos et poids demandé',
+            icon: Icons.inventory_2_rounded,
+            steps: [
+              'Décrivez le produit (0,1 à 50 kg)',
+              'Ajoutez des photos du produit',
+              'Payez : Espèces, Virement, CCP, Chargily ou Stripe',
+            ],
+            gradient: AppTheme.infoGradient,
+          ),
+          WorkflowSlide(
+            title: '3. Suivez votre colis',
+            subtitle: '8 étapes en temps réel, DHL-style',
+            icon: Icons.timeline_rounded,
+            steps: [
+              'De la prise en charge à la livraison',
+              'Preuve photo à la livraison',
+              'Confirmez la réception et notez l\'expéditeur',
+            ],
+            gradient: AppTheme.successGradient,
+          ),
+        ],
       ),
     );
   }
