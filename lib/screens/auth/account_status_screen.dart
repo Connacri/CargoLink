@@ -13,10 +13,10 @@ class AccountStatusScreen extends ConsumerStatefulWidget {
   final DateTime? deletionRequestedAt;
 
   const AccountStatusScreen({
-    Key? key,
+    super.key,
     this.deletionPending = false,
     this.deletionRequestedAt,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<AccountStatusScreen> createState() => _AccountStatusScreenState();

@@ -12,9 +12,9 @@ class BookingScreen extends ConsumerStatefulWidget {
   final String shipmentId;
 
   const BookingScreen({
-    Key? key,
+    super.key,
     required this.shipmentId,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<BookingScreen> createState() => _BookingScreenState();
@@ -26,7 +26,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   late final _productDescController = TextEditingController();
   late final _weightController = TextEditingController();
 
-  List<File> _productImages = [];
+  final List<File> _productImages = [];
   bool _isLoading = false;
 
   int get _roundingPrecision => ref
@@ -156,7 +156,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           const SizedBox(height: AppTheme.spaceMd),
           Row(
             children: [
-              AnimatedIconDot(
+              const AnimatedIconDot(
                 icon: Icons.route_rounded,
                 color: AppTheme.primaryColor,
               ),
@@ -356,7 +356,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                   border: Border.all(color: AppTheme.dividerColor),
                   borderRadius: BorderRadius.circular(AppTheme.radiusXs),
                 ),
-                child: Column(
+                child: const Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
@@ -364,8 +364,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                       size: 48,
                       color: AppTheme.textSecondaryColor,
                     ),
-                    const SizedBox(height: AppTheme.spaceSm),
-                    const Text(
+                    SizedBox(height: AppTheme.spaceSm),
+                    Text(
                       'Tap pour ajouter une photo',
                       style: AppTheme.bodySecondary,
                     ),
@@ -472,15 +472,18 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
     // Check file size
     if (await imageFile.length() > AppConstants.maxFileSize) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Image too large (max 5MB)')),
       );
       return;
     }
 
-    setState(() {
-      _productImages.add(imageFile);
-    });
+    if (mounted) {
+      setState(() {
+        _productImages.add(imageFile);
+      });
+    }
   }
 
   Future<void> _submitBooking(
@@ -528,6 +531,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
       if (booking != null) {
         // Show success and navigate to payment
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Réservation créée avec succès')),
         );
@@ -538,11 +542,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur: $e')),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 }

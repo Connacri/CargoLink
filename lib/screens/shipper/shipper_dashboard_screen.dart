@@ -46,7 +46,7 @@ final shipperShipmentBookingsPagerProvider = StateNotifierProvider.family<
 // ============================================================================
 
 class ShipperDashboardScreen extends ConsumerStatefulWidget {
-  const ShipperDashboardScreen({Key? key}) : super(key: key);
+  const ShipperDashboardScreen({super.key});
 
   @override
   ConsumerState<ShipperDashboardScreen> createState() =>
@@ -1077,7 +1077,7 @@ class _ShipmentMiniCard extends ConsumerWidget {
 // ============================================================================
 
 class ActiveShipmentsScreen extends ConsumerStatefulWidget {
-  const ActiveShipmentsScreen({Key? key}) : super(key: key);
+  const ActiveShipmentsScreen({super.key});
 
   @override
   ConsumerState<ActiveShipmentsScreen> createState() =>
@@ -1209,8 +1209,7 @@ class _ActiveShipmentsScreenState extends ConsumerState<ActiveShipmentsScreen> {
 class ShipperShipmentDetailScreen extends ConsumerStatefulWidget {
   final Shipment shipment;
 
-  const ShipperShipmentDetailScreen({Key? key, required this.shipment})
-      : super(key: key);
+  const ShipperShipmentDetailScreen({super.key, required this.shipment});
 
   @override
   ConsumerState<ShipperShipmentDetailScreen> createState() =>
@@ -1648,6 +1647,7 @@ class _ManageBookingCard extends ConsumerWidget {
   Future<void> _confirmBooking(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(bookingServiceProvider).confirmBooking(booking.id);
+      if (!context.mounted) return;
       _reload(context, ref);
       _notifyClient(context, ref);
       _showSuccess(context, 'Commande confirmée');
@@ -1672,6 +1672,7 @@ class _ManageBookingCard extends ConsumerWidget {
             bookingId: booking.id,
             destination: booking.shipment?.destinationCity ?? 'destination',
           );
+      if (!context.mounted) return;
       _reload(context, ref);
       _showSuccess(context, 'Commande marquée comme expédiée');
     } catch (e) {
@@ -1682,6 +1683,7 @@ class _ManageBookingCard extends ConsumerWidget {
   Future<void> _markDelivered(BuildContext context, WidgetRef ref) async {
     final photo = await pickProofPhoto(context, title: 'Preuve de livraison');
     if (photo == null) return;
+    if (!context.mounted) return;
     try {
       final url = await ref
           .read(storageServiceProvider)
@@ -1703,6 +1705,7 @@ class _ManageBookingCard extends ConsumerWidget {
             clientId: booking.clientId,
             bookingId: booking.id,
           );
+      if (!context.mounted) return;
       _reload(context, ref);
       _showSuccess(context, 'Commande marquée comme livrée');
     } catch (e) {
@@ -1713,6 +1716,7 @@ class _ManageBookingCard extends ConsumerWidget {
   Future<void> _cancelBooking(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(bookingServiceProvider).cancelBooking(booking.id);
+      if (!context.mounted) return;
       _reload(context, ref);
       _showSuccess(context, 'Commande annulée');
     } catch (e) {
@@ -1721,6 +1725,7 @@ class _ManageBookingCard extends ConsumerWidget {
   }
 
   void _reload(BuildContext context, WidgetRef ref) {
+    if (!context.mounted) return;
     ref
         .read(shipperShipmentBookingsPagerProvider(booking.shipmentId).notifier)
         .refresh();

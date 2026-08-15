@@ -11,7 +11,7 @@ import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 
 class PlatformSettingsScreen extends ConsumerStatefulWidget {
-  const PlatformSettingsScreen({Key? key}) : super(key: key);
+  const PlatformSettingsScreen({super.key});
 
   @override
   ConsumerState<PlatformSettingsScreen> createState() =>
@@ -111,20 +111,20 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
                   icon: Icons.tune_rounded,
                   expandedHeight: 140,
                 ),
-                SliverToBoxAdapter(
+                const SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.all(AppTheme.spaceMd),
+                    padding: EdgeInsets.all(AppTheme.spaceMd),
                     child: GlassCard(
-                      padding: const EdgeInsets.all(AppTheme.spaceMd),
+                      padding: EdgeInsets.all(AppTheme.spaceMd),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Ces réglages s\'appliquent à toute la plateforme.',
                             style: AppTheme.bodySecondary,
                           ),
-                          const SizedBox(height: AppTheme.spaceXs),
-                          const Text(
+                          SizedBox(height: AppTheme.spaceXs),
+                          Text(
                             'Ils sont enregistrés dans la table '
                             'platform_settings et relus au prochain calcul.',
                             style: AppTheme.caption,
@@ -216,7 +216,7 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
                                     decoration: const InputDecoration(
                                       labelText: 'Poids min (kg)',
                                       prefixIcon:
-                                          const Icon(Icons.monitor_weight),
+                                          Icon(Icons.monitor_weight),
                                     ),
                                     validator: (v) {
                                       final value = double.tryParse(v ?? '');
@@ -237,7 +237,7 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
                                     decoration: const InputDecoration(
                                       labelText: 'Poids max (kg)',
                                       prefixIcon:
-                                          const Icon(Icons.inventory_2),
+                                          Icon(Icons.inventory_2),
                                     ),
                                     validator: (v) {
                                       final value = double.tryParse(v ?? '');
@@ -257,7 +257,7 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
                               decoration: const InputDecoration(
                                 labelText: 'Précision d\'arrondi',
                                 prefixIcon:
-                                    const Icon(Icons.precision_manufacturing),
+                                    Icon(Icons.precision_manufacturing),
                               ),
                               validator: (v) {
                                 final value = int.tryParse(v ?? '');

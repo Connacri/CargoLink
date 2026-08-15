@@ -16,7 +16,7 @@ import 'app_widgets.dart';
 // ============================================================================
 
 class HomeTabsScreen extends ConsumerWidget {
-  const HomeTabsScreen({Key? key}) : super(key: key);
+  const HomeTabsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -347,8 +347,8 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
         const SizedBox(height: AppTheme.spaceMd),
         Row(
           children: [
-            Expanded(
-              child: const Text(
+            const Expanded(
+              child: Text(
                 'Ou cibler des utilisateurs précis',
                 style: AppTheme.caption,
               ),
@@ -638,8 +638,8 @@ class _UserPickerSheetState extends State<_UserPickerSheet> {
           const SizedBox(height: AppTheme.spaceMd),
           Row(
             children: [
-              Expanded(
-                child: const Text(
+              const Expanded(
+                child: Text(
                   'Cibler des utilisateurs',
                   style: AppTheme.h3,
                 ),

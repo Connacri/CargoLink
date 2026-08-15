@@ -16,12 +16,12 @@ import '../../providers/index.dart';
 /// both parties always see the latest state.
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({
-    Key? key,
+    super.key,
     required this.counterpartUserId,
     required this.counterpartName,
     this.counterpartAvatarUrl,
     this.bookingId,
-  }) : super(key: key);
+  });
 
   /// Supabase `users.id` of the person the current user is talking to.
   final String counterpartUserId;
@@ -442,7 +442,7 @@ class _MessageBubble extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     color: isMine
-                        ? Colors.white.withOpacity(0.8)
+                        ? Colors.white.withValues(alpha: 0.8)
                         : AppTheme.textMutedColor,
                   ),
                 ),

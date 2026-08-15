@@ -111,8 +111,8 @@ void main() {
 
   group('RevenueBarChart', () {
     testWidgets('renders a bar per data point', (tester) async {
-      await tester.pumpWidget(_wrap(RevenueBarChart(
-        data: const [
+      await tester.pumpWidget(_wrap(const RevenueBarChart(
+        data: [
           RevenueBar(label: 'A', value: 10),
           RevenueBar(label: 'B', value: 30),
           RevenueBar(label: 'C', value: 20),

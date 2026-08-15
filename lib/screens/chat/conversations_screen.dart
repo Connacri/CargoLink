@@ -10,7 +10,7 @@ import 'chat_screen.dart';
 /// List of the current user's chat threads with a live unread badge counter and
 /// the last-message preview. Tapping a thread opens the [ChatScreen].
 class ConversationsScreen extends ConsumerStatefulWidget {
-  const ConversationsScreen({Key? key}) : super(key: key);
+  const ConversationsScreen({super.key});
 
   @override
   ConsumerState<ConversationsScreen> createState() =>

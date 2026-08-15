@@ -23,7 +23,7 @@ void openChatInbox(BuildContext context, WidgetRef ref) {
 /// Inbox icon with a badge showing total unread chat messages for the current
 /// user. Tapping opens the conversations list.
 class ChatInboxBadge extends ConsumerWidget {
-  const ChatInboxBadge({Key? key}) : super(key: key);
+  const ChatInboxBadge({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

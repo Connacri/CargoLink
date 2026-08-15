@@ -68,7 +68,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           GradientSliverHeader(
-            title: '',//'Administration',
+            title: '',
             subtitle: 'Vérification, litiges et revenus',
             icon: Icons.shield_outlined,
             trailing: Row(
@@ -84,17 +84,22 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 const LogoutIconButton(),
               ],
             ),
-            bottom: TabBar(
-              controller: _tabController,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              indicatorColor: Colors.white,
-              indicatorWeight: 3,
-              tabs: const [
-                Tab(icon: Icon(Icons.verified_user), text: 'Expéditeurs'),
-                Tab(icon: Icon(Icons.gavel), text: 'Litiges'),
-                Tab(icon: Icon(Icons.monetization_on), text: 'Revenus'),
-              ],
+          ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _TabBarDelegate(
+              TabBar(
+                controller: _tabController,
+                labelColor: AppTheme.primaryColor,
+                unselectedLabelColor: AppTheme.textSecondaryColor,
+                indicatorColor: AppTheme.primaryColor,
+                indicatorWeight: 3,
+                tabs: const [
+                  Tab(icon: Icon(Icons.verified_user), text: 'Expéditeurs'),
+                  Tab(icon: Icon(Icons.gavel), text: 'Litiges'),
+                  Tab(icon: Icon(Icons.monetization_on), text: 'Revenus'),
+                ],
+              ),
             ),
           ),
         ],
@@ -109,6 +114,31 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       ),
     );
   }
+}
+
+// Delegate that makes the TabBar stick below the gradient header.
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  const _TabBarDelegate(this.tabBar);
+
+  final TabBar tabBar;
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_TabBarDelegate oldDelegate) =>
+      tabBar != oldDelegate.tabBar;
 }
 
 // ============================================================================
@@ -450,7 +480,7 @@ class _DisputeCard extends ConsumerWidget {
                   child: FilledButton.icon(
                     onPressed: () => _resolveInFavorOfClient(context, ref),
                     icon: const Icon(Icons.thumb_up, size: 18),
-                    label: FittedBox(child: const Text('Rembourser')),
+                    label: const FittedBox(child: Text('Rembourser')),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppTheme.accentColor,
                       minimumSize: const Size(48, 48),

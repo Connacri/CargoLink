@@ -24,7 +24,7 @@ import 'app_widgets.dart';
 import 'home_tabs_screen.dart';
 
 class CargoLinkApp extends ConsumerWidget {
-  const CargoLinkApp({Key? key}) : super(key: key);
+  const CargoLinkApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

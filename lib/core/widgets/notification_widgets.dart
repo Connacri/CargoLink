@@ -13,7 +13,7 @@ import '../theme/app_theme.dart';
 /// Bell icon with a badge showing the number of unread notifications for the
 /// current signed-in user.
 class UnreadNotificationBadge extends ConsumerWidget {
-  const UnreadNotificationBadge({Key? key}) : super(key: key);
+  const UnreadNotificationBadge({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -48,8 +48,7 @@ class UnreadNotificationBadge extends ConsumerWidget {
 /// "mark all as read". Tapping a notification marks it read and, when
 /// [onBookingTap] is provided, navigates to the related booking detail.
 class NotificationsSheet extends ConsumerWidget {
-  const NotificationsSheet({Key? key, this.onBookingTap})
-      : super(key: key);
+  const NotificationsSheet({super.key, this.onBookingTap});
 
   final void Function(String bookingId)? onBookingTap;
 
@@ -112,7 +111,7 @@ class NotificationsSheet extends ConsumerWidget {
                         title: Text(notif.title),
                         subtitle: Text(notif.message),
                         trailing: !notif.isRead
-                            ? CircleAvatar(
+                            ? const CircleAvatar(
                                 radius: 4,
                                 backgroundColor: AppTheme.primaryColor,
                               )

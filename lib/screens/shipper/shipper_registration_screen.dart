@@ -11,7 +11,7 @@ import '../../core/widgets/ui_kit.dart';
 import 'live_selfie_screen.dart';
 
 class ShipperRegistrationScreen extends ConsumerStatefulWidget {
-  const ShipperRegistrationScreen({Key? key}) : super(key: key);
+  const ShipperRegistrationScreen({super.key});
 
   @override
   ConsumerState<ShipperRegistrationScreen> createState() =>

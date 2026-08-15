@@ -8,7 +8,7 @@ import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();

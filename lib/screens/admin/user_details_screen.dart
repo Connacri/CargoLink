@@ -217,20 +217,26 @@ class _UserDetailsScreenState extends ConsumerState<UserDetailsScreen>
                 ),
               ],
             ),
-            bottom: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              indicatorColor: Colors.white,
-              indicatorWeight: 3,
-              tabs: const [
-                Tab(text: 'Profil'),
-                Tab(text: 'Expéditions'),
-                Tab(text: 'Commandes'),
-                Tab(text: 'Finance'),
-                Tab(text: 'Litiges'),
-              ],
+          ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _TabBarDelegate(
+              TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                labelColor: AppTheme.primaryColor,
+                unselectedLabelColor: AppTheme.textSecondaryColor,
+                indicatorColor: AppTheme.primaryColor,
+                indicatorWeight: 3,
+                tabs: const [
+                  Tab(text: 'Profil'),
+                  Tab(text: 'Expéditions'),
+                  Tab(text: 'Commandes'),
+                  Tab(text: 'Finance'),
+                  Tab(text: 'Litiges'),
+                ],
+              ),
             ),
           ),
         ],
@@ -250,6 +256,31 @@ class _UserDetailsScreenState extends ConsumerState<UserDetailsScreen>
       ),
     );
   }
+}
+
+// Delegate that makes the TabBar stick below the gradient header.
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  const _TabBarDelegate(this.tabBar);
+
+  final TabBar tabBar;
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_TabBarDelegate oldDelegate) =>
+      tabBar != oldDelegate.tabBar;
 }
 
 // ============================================================================
@@ -328,7 +359,8 @@ class _ProfileTab extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppTheme.spaceSm + 4),
                 _infoCard('Informations du compte', [
-                  _row('Téléphone', user.phone),
+                  if (user.phone.trim().isNotEmpty)
+                    _row('Téléphone', user.phone),
                   _row('Membre depuis', _formatDate(user.createdAt)),
                   if (user.deactivatedAt != null)
                     _row('Désactivé le', _formatDate(user.deactivatedAt!)),
@@ -336,15 +368,10 @@ class _ProfileTab extends ConsumerWidget {
                     _row('Suppression demandée',
                         _formatDate(user.deletionRequestedAt!)),
                 ]),
-                const SizedBox(height: AppTheme.spaceSm + 4),
-                _infoCard('Réseaux sociaux', [
-                  _row('WeChat', user.wechat ?? '—'),
-                  _row('WhatsApp', user.whatsapp ?? '—'),
-                  _row('Telegram', user.telegram ?? '—'),
-                  _row('Facebook', user.facebook ?? '—'),
-                  _row('Instagram', user.instagram ?? '—'),
-                  _row('TikTok', user.tiktok ?? '—'),
-                ]),
+                if (_hasAnySocial(user)) ...[
+                  const SizedBox(height: AppTheme.spaceSm + 4),
+                  _infoCard('Réseaux sociaux', _socialRows(user)),
+                ],
                 if (isShipper) ...[
                   const SizedBox(height: AppTheme.spaceSm + 4),
                   shipper.when(
@@ -453,6 +480,23 @@ class _ProfileTab extends ConsumerWidget {
   String _formatDate(DateTime dt) {
     return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
   }
+
+  bool _hasAnySocial(User u) =>
+      (u.wechat?.isNotEmpty ?? false) ||
+      (u.whatsapp?.isNotEmpty ?? false) ||
+      (u.telegram?.isNotEmpty ?? false) ||
+      (u.facebook?.isNotEmpty ?? false) ||
+      (u.instagram?.isNotEmpty ?? false) ||
+      (u.tiktok?.isNotEmpty ?? false);
+
+  List<Widget> _socialRows(User u) => [
+        if (u.whatsapp?.isNotEmpty ?? false) _row('WhatsApp', u.whatsapp!),
+        if (u.telegram?.isNotEmpty ?? false) _row('Telegram', u.telegram!),
+        if (u.wechat?.isNotEmpty ?? false) _row('WeChat', u.wechat!),
+        if (u.facebook?.isNotEmpty ?? false) _row('Facebook', u.facebook!),
+        if (u.instagram?.isNotEmpty ?? false) _row('Instagram', u.instagram!),
+        if (u.tiktok?.isNotEmpty ?? false) _row('TikTok', u.tiktok!),
+      ];
 }
 
 // ============================================================================

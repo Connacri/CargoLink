@@ -62,8 +62,9 @@ class ShipperService {
         'verified_at': null,
       };
 
-      if (passportNumber != null)
+      if (passportNumber != null) {
         updateData['passport_number'] = passportNumber;
+      }
       if (passportPhotoUrl != null) {
         updateData['passport_photo_url'] = passportPhotoUrl;
       }

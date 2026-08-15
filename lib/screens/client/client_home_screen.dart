@@ -50,7 +50,7 @@ final clientSearchPagerProvider = StateNotifierProvider.family<
 });
 
 class ClientHomeScreen extends ConsumerStatefulWidget {
-  const ClientHomeScreen({Key? key}) : super(key: key);
+  const ClientHomeScreen({super.key});
 
   @override
   ConsumerState<ClientHomeScreen> createState() => _ClientHomeScreenState();
@@ -421,7 +421,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => SafeArea(
+      builder: (context) => const SafeArea(
         top: false,
         child: FractionallySizedBox(
           heightFactor: 0.85,

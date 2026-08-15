@@ -31,9 +31,9 @@ class GlassCard extends StatelessWidget {
     // DecoratedBox color).
     return Container(
       decoration: BoxDecoration(
-        color: color.withOpacity(0.92),
+        color: color.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: Colors.white.withOpacity(borderOpacity)),
+        border: Border.all(color: Colors.white.withValues(alpha: borderOpacity)),
         boxShadow: AppTheme.shadowSm,
       ),
       child: Material(
@@ -78,7 +78,7 @@ class GradientBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(50),
         boxShadow: [
           BoxShadow(
-            color: gradient.colors.last.withOpacity(0.3),
+            color: gradient.colors.last.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

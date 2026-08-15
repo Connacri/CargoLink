@@ -23,7 +23,7 @@ import '../../core/widgets/ui_kit.dart';
 /// `emailVerified: true`, so [CargoLinkApp] automatically swaps this screen
 /// for the app entry point — no manual button press needed.
 class EmailVerificationScreen extends ConsumerStatefulWidget {
-  const EmailVerificationScreen({Key? key}) : super(key: key);
+  const EmailVerificationScreen({super.key});
 
   @override
   ConsumerState<EmailVerificationScreen> createState() =>

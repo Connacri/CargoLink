@@ -9,7 +9,7 @@ import '../../core/widgets/ui_kit.dart';
 /// "Mot de passe oublié" : saisir l'email, un lien de réinitialisation est
 /// envoyé par Firebase, puis retour à la connexion. Même UX que login/signup.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
-  const ForgotPasswordScreen({Key? key}) : super(key: key);
+  const ForgotPasswordScreen({super.key});
 
   @override
   ConsumerState<ForgotPasswordScreen> createState() =>

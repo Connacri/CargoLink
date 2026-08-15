@@ -10,7 +10,7 @@ import '../../core/widgets/ui_kit.dart';
 class PaymentScreen extends ConsumerStatefulWidget {
   final String bookingId;
 
-  const PaymentScreen({Key? key, required this.bookingId}) : super(key: key);
+  const PaymentScreen({super.key, required this.bookingId});
 
   @override
   ConsumerState<PaymentScreen> createState() => _PaymentScreenState();
@@ -102,7 +102,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       return Scaffold(
         body: CustomScrollView(
           slivers: [
-            GradientSliverHeader(
+            const GradientSliverHeader(
               title: 'Paiement',
               subtitle: 'Commande réglée',
               icon: Icons.payments_rounded,
@@ -117,7 +117,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     }
 
     if (payment == null) {
-      return Scaffold(
+      return const Scaffold(
         body: CustomScrollView(
           slivers: [
             GradientSliverHeader(
@@ -125,7 +125,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               subtitle: 'En attente',
               icon: Icons.payments_rounded,
             ),
-            const SliverFillRemaining(
+            SliverFillRemaining(
               hasScrollBody: false,
               child: Center(child: Text('Aucun paiement en attente')),
             ),
@@ -137,7 +137,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          GradientSliverHeader(
+          const GradientSliverHeader(
             title: 'Paiement',
             subtitle: 'Vérifie et confirme ton règlement',
             icon: Icons.lock_rounded,

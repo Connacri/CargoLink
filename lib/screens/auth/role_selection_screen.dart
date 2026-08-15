@@ -17,10 +17,10 @@ class RoleSelectionScreen extends ConsumerStatefulWidget {
   final String? currentRole;
 
   const RoleSelectionScreen({
-    Key? key,
+    super.key,
     this.firstTime = false,
     this.currentRole,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<RoleSelectionScreen> createState() =>
@@ -88,8 +88,8 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
             subtitle: 'Que souhaitez-vous faire sur CargoLink ?',
             icon: Icons.verified_user,
           ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
+          const SliverPadding(
+            padding: EdgeInsets.fromLTRB(
               AppTheme.spaceMd,
               AppTheme.spaceXs,
               AppTheme.spaceMd,
@@ -97,8 +97,8 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
             ),
             sliver: SliverToBoxAdapter(
               child: StaggeredEntrance(
-                delay: const Duration(milliseconds: 100),
-                child: const Text(
+                delay: Duration(milliseconds: 100),
+                child: Text(
                   'Vous pourrez modifier ce choix à tout moment depuis '
                   'les paramètres du profil.',
                   textAlign: TextAlign.center,

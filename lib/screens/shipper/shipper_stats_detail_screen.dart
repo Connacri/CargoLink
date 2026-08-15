@@ -62,10 +62,10 @@ class ShipperStatsDetailScreen extends ConsumerStatefulWidget {
   final ShipperStatsDetailType type;
 
   const ShipperStatsDetailScreen({
-    Key? key,
+    super.key,
     required this.shipperId,
     required this.type,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<ShipperStatsDetailScreen> createState() =>
@@ -221,7 +221,7 @@ class _ShipperStatsDetailScreenState
             const SizedBox(height: AppTheme.spaceXs),
             Text(
               '${revenue.toStringAsFixed(0)} $currency',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w800,
                 color: AppTheme.accentColor,
@@ -307,9 +307,9 @@ class _ShipperStatsDetailScreenState
               ),
             ] else ...[
               const SizedBox(height: AppTheme.spaceSm),
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
+                children: [
                   Icon(
                     Icons.verified_rounded,
                     size: 16,
@@ -772,6 +772,7 @@ class _BookingTile extends ConsumerWidget {
   Future<void> _markDelivered(BuildContext context, WidgetRef ref) async {
     final photo = await pickProofPhoto(context, title: 'Preuve de livraison');
     if (photo == null) return;
+    if (!context.mounted) return;
     await _runAction(
       context,
       ref,
@@ -879,7 +880,7 @@ class _CommissionStat extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceMd),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       ),
       child: Column(

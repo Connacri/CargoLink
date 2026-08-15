@@ -10,8 +10,7 @@ import '../../core/widgets/ui_kit.dart';
 class ShipperPublicProfileScreen extends ConsumerWidget {
   final String shipperId;
 
-  const ShipperPublicProfileScreen({Key? key, required this.shipperId})
-      : super(key: key);
+  const ShipperPublicProfileScreen({super.key, required this.shipperId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -245,16 +244,16 @@ class _ShipperProfileBody extends ConsumerWidget {
 }
 
 class VerifiedBadge extends StatelessWidget {
-  const VerifiedBadge({Key? key}) : super(key: key);
+  const VerifiedBadge({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withOpacity(0.15),
+        color: AppTheme.primaryColor.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.4)),
+        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.4)),
       ),
       child: const Row(
         mainAxisSize: MainAxisSize.min,

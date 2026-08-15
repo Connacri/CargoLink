@@ -128,7 +128,7 @@ class TrackingService {
     double destinationLon,
   ) {
     if (currentLat == null || currentLon == null) {
-      return Duration(hours: 24); // Default 24 hours
+      return const Duration(hours: 24); // Default 24 hours
     }
 
     final distanceMeters = calculateDistance(

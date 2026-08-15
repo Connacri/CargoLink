@@ -262,12 +262,12 @@ class _ErrorState extends StatelessWidget {
               color: AppTheme.textMutedColor,
             ),
             const SizedBox(height: AppTheme.spaceMd),
-            Text(
+            const Text(
               'Impossible de charger',
               style: AppTheme.h3,
             ),
             const SizedBox(height: AppTheme.spaceSm),
-            Text(
+            const Text(
               'Vérifie ta connexion puis réessaie.',
               style: AppTheme.bodySecondary,
               textAlign: TextAlign.center,

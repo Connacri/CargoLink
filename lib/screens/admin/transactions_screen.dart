@@ -8,7 +8,7 @@ import '../../core/widgets/ui_kit.dart';
 /// Full accounting of every transaction: who paid, to whom, when, with all
 /// details (product, route, payment method, transaction id).
 class TransactionsScreen extends ConsumerWidget {
-  const TransactionsScreen({Key? key}) : super(key: key);
+  const TransactionsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

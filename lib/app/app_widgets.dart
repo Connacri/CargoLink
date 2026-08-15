@@ -8,7 +8,7 @@ import '../core/theme/app_theme.dart';
 // ============================================================================
 
 class LoadingScreen extends StatelessWidget {
-  const LoadingScreen({Key? key}) : super(key: key);
+  const LoadingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +52,7 @@ class LoadingScreen extends StatelessWidget {
 class ErrorScreen extends StatefulWidget {
   final String error;
 
-  const ErrorScreen({Key? key, required this.error}) : super(key: key);
+  const ErrorScreen({super.key, required this.error});
 
   @override
   State<ErrorScreen> createState() => _ErrorScreenState();

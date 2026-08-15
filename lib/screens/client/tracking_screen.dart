@@ -10,7 +10,7 @@ import '../../components/tracking_timeline.dart';
 class TrackingScreen extends ConsumerWidget {
   final String bookingId;
 
-  const TrackingScreen({Key? key, required this.bookingId}) : super(key: key);
+  const TrackingScreen({super.key, required this.bookingId});
 
   /// Ordered list of possible tracking stages (DHL/UPS/FedEx style).
   static const List<String> _order = [
@@ -184,8 +184,8 @@ class TrackingScreen extends ConsumerWidget {
           ),
         );
       },
-      loading: () => Scaffold(
-        body: const Center(child: CircularProgressIndicator()),
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
       ),
       error: (e, s) => Scaffold(
         body: Center(child: Text('Erreur: $e')),
@@ -292,7 +292,7 @@ class TrackingScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              AnimatedIconDot(
+              const AnimatedIconDot(
                 icon: Icons.inventory_2_rounded,
                 color: AppTheme.primaryColor,
               ),
@@ -435,8 +435,7 @@ class TrackingScreen extends ConsumerWidget {
 class _DeliveryProofSection extends ConsumerWidget {
   final Booking booking;
 
-  const _DeliveryProofSection({Key? key, required this.booking})
-      : super(key: key);
+  const _DeliveryProofSection({required this.booking});
 
   Future<void> _confirmReceipt(BuildContext context, WidgetRef ref) async {
     final photo = await pickProofPhoto(context, title: 'Confirmation de réception');
@@ -568,7 +567,7 @@ class _DeliveryProofSection extends ConsumerWidget {
 class _RatePrompt extends ConsumerWidget {
   final Booking booking;
 
-  const _RatePrompt({Key? key, required this.booking}) : super(key: key);
+  const _RatePrompt({required this.booking});
 
   Future<void> _rate(BuildContext context, WidgetRef ref) async {
     final shipment = booking.shipment;

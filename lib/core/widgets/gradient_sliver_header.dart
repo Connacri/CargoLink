@@ -96,12 +96,12 @@ class _HeaderBackground extends StatelessWidget {
           Positioned(
             top: -40,
             right: -30,
-            child: _Orb(size: 140, color: Colors.white.withOpacity(0.08)),
+            child: _Orb(size: 140, color: Colors.white.withValues(alpha: 0.08)),
           ),
           Positioned(
             bottom: -50,
             left: -20,
-            child: _Orb(size: 120, color: Colors.white.withOpacity(0.06)),
+            child: _Orb(size: 120, color: Colors.white.withValues(alpha: 0.06)),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -128,10 +128,10 @@ class _HeaderBackground extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.16),
+                            color: Colors.white.withValues(alpha: 0.16),
                             borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                             ),
                           ),
                           child: Icon(icon, color: Colors.white, size: 24),
@@ -145,7 +145,7 @@ class _HeaderBackground extends StatelessWidget {
                             subtitle!,
 
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.85),
+                              color: Colors.white.withValues(alpha: 0.85),
                               fontSize: 14,
                             ),
                           ),

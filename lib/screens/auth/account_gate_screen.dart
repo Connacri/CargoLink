@@ -15,7 +15,7 @@ import './role_selection_screen.dart';
 ///  - deletion pending within grace period -> cancel-deletion screen
 ///  - deletion grace elapsed  -> purge account permanently, then sign out
 class AccountGateScreen extends ConsumerWidget {
-  const AccountGateScreen({Key? key}) : super(key: key);
+  const AccountGateScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -175,12 +175,12 @@ class _GateLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _GateScaffold(
+    return const _GateScaffold(
       child: Center(
         child: StaggeredEntrance(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               AnimatedIconDot(
                 icon: Icons.local_shipping,
                 color: Colors.white,

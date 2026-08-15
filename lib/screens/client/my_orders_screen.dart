@@ -28,7 +28,7 @@ final clientBookingsPagerProvider = StateNotifierProvider.family<
 );
 
 class MyOrdersScreen extends ConsumerStatefulWidget {
-  const MyOrdersScreen({Key? key}) : super(key: key);
+  const MyOrdersScreen({super.key});
 
   @override
   ConsumerState<MyOrdersScreen> createState() => _MyOrdersScreenState();
@@ -161,7 +161,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
     );
 
     if (userId == null) {
-      return Scaffold(
+      return const Scaffold(
         body: Center(
           child: Text(
             'Utilisateur non identifié',
@@ -190,7 +190,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            GradientSliverHeader(
+            const GradientSliverHeader(
               title: 'Mes Commandes',
               subtitle: 'Suis et gère tes réservations',
               icon: Icons.receipt_long_rounded,

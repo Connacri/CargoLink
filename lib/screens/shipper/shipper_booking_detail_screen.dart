@@ -18,9 +18,9 @@ class ShipperBookingDetailScreen extends ConsumerStatefulWidget {
   final String bookingId;
 
   const ShipperBookingDetailScreen({
-    Key? key,
+    super.key,
     required this.bookingId,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<ShipperBookingDetailScreen> createState() =>
@@ -163,8 +163,8 @@ class _ShipperBookingDetailScreenState
   Widget _buildPhotos(Booking booking) {
     final photos = booking.productPhotosUrl ?? const <String>[];
     if (photos.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(AppTheme.spaceMd),
+      return const Padding(
+        padding: EdgeInsets.all(AppTheme.spaceMd),
         child: GlassCard(
           child: SizedBox(
             height: 160,
@@ -172,14 +172,14 @@ class _ShipperBookingDetailScreenState
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.image_outlined,
                     size: 48,
                     color: AppTheme.textMutedColor,
                   ),
-                  const SizedBox(height: AppTheme.spaceSm),
-                  const Text('Aucune photo', style: AppTheme.bodySecondary),
-                  const SizedBox(height: AppTheme.spaceSm),
+                  SizedBox(height: AppTheme.spaceSm),
+                  Text('Aucune photo', style: AppTheme.bodySecondary),
+                  SizedBox(height: AppTheme.spaceSm),
                   Text(
                     'Le client n\'a pas joint de photo à cette commande.',
                     style: AppTheme.caption,
@@ -443,7 +443,7 @@ class _ShipperBookingDetailScreenState
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Paiement', style: AppTheme.bodySecondary),
+            const Text('Paiement', style: AppTheme.bodySecondary),
             Text(
               booking.isPaid ? 'Payé' : 'En attente',
               style: TextStyle(

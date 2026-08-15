@@ -81,7 +81,7 @@ class AnimatedIconDot extends StatelessWidget {
       width: size + 14,
       height: size + 14,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(size),
       ),
       child: Icon(icon, color: color, size: size),

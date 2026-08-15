@@ -7,7 +7,7 @@ import '../../core/widgets/ui_kit.dart';
 
 /// Platform commissions overview: what has been collected vs outstanding debt.
 class CommissionScreen extends ConsumerWidget {
-  const CommissionScreen({Key? key}) : super(key: key);
+  const CommissionScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
