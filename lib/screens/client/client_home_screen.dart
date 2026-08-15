@@ -351,7 +351,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name.isEmpty ? 'Bonjour ðŸ‘‹' : 'Bonjour $name ðŸ‘‹',
+                      name.isEmpty ? 'Bonjour 👋' : 'Bonjour $name 👋',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -516,9 +516,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   Widget _buildSmartFilters(ClientSort current) {
     const options = [
       (sort: ClientSort.none, label: 'Toutes', icon: Icons.tune_rounded),
-      (sort: ClientSort.price, label: 'ðŸ’° Meilleur prix', icon: null),
-      (sort: ClientSort.fastest, label: 'âš¡ Plus rapide', icon: null),
-      (sort: ClientSort.topRated, label: 'â­ Top avis', icon: null),
+      (sort: ClientSort.price, label: '💰 Meilleur prix', icon: null),
+      (sort: ClientSort.fastest, label: '⚡ Plus rapide', icon: null),
+      (sort: ClientSort.topRated, label: '⭐ Top avis', icon: null),
     ];
 
     return SingleChildScrollView(
@@ -592,7 +592,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     final shipper = shipment.shipper;
     return ShipperCard(
       shipperId: shipper?.id ?? shipment.shipperId,
-      name: shipper?.user?.fullName ?? 'ExpÃ©diteur',
+      name: shipper?.user?.fullName ?? 'Expéditeur',
       avatarUrl: shipper?.user?.profilePictureUrl,
       rating: shipper?.rating ?? 0,
       shipmentsCount: shipper?.totalShipments,
@@ -616,7 +616,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 MaterialPageRoute(
                   builder: (_) => ChatScreen(
                     counterpartUserId: shipper!.user!.id,
-                    counterpartName: shipper.user?.fullName ?? 'ExpÃ©diteur',
+                    counterpartName: shipper.user?.fullName ?? 'Expéditeur',
                     counterpartAvatarUrl: shipper.user?.profilePictureUrl,
                     bookingId: null,
                   ),
@@ -679,7 +679,7 @@ class _EmptyShipments extends StatelessWidget {
         Text('Aucun shipment disponible', style: AppTheme.h3),
         SizedBox(height: AppTheme.spaceSm),
         Text(
-          'Reviens plus tard ou Ã©largis tes filtres.',
+          'Reviens plus tard ou élargis tes filtres.',
           style: AppTheme.bodySecondary,
           textAlign: TextAlign.center,
         ),
@@ -699,7 +699,7 @@ class _NoSearchResults extends StatelessWidget {
         Icon(Icons.search_off_rounded,
             size: 56, color: AppTheme.textMutedColor),
         SizedBox(height: AppTheme.spaceMd),
-        Text('Aucun rÃ©sultat pour cette recherche', style: AppTheme.h3),
+        Text('Aucun résultat pour cette recherche', style: AppTheme.h3),
         SizedBox(height: AppTheme.spaceSm),
         Text(
           'Essaie une autre destination ou origine.',

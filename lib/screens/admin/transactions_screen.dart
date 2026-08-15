@@ -23,7 +23,7 @@ class TransactionsScreen extends ConsumerWidget {
             slivers: [
               const GradientSliverHeader(
                 title: 'Transactions',
-                subtitle: 'Toutes les opÃ©rations financiÃ¨res',
+                subtitle: 'Toutes les opérations financières',
                 icon: Icons.swap_horiz_rounded,
                 expandedHeight: 140,
               ),
@@ -85,10 +85,10 @@ class _TransactionCard extends StatelessWidget {
       _ => Icons.circle_outlined,
     };
     final String statusLabel = switch (status) {
-      'completed' => 'PayÃ©',
+      'completed' => 'Payé',
       'pending' => 'En attente',
-      'failed' => 'Ã‰chouÃ©',
-      'refunded' => 'RemboursÃ©',
+      'failed' => 'Échoué',
+      'refunded' => 'Remboursé',
       _ => status,
     };
 
@@ -144,7 +144,7 @@ class _TransactionCard extends StatelessWidget {
               icon: Icons.flight_takeoff_outlined,
               iconColor: AppTheme.infoColor,
               label: 'Vers',
-              name: item.shipperName ?? 'ExpÃ©diteur',
+              name: item.shipperName ?? 'Expéditeur',
               avatar: item.shipperAvatar,
             ),
             const Divider(height: AppTheme.spaceLg),
@@ -172,7 +172,7 @@ class _TransactionCard extends StatelessWidget {
                 payment.transactionId!.isNotEmpty) ...[
               const SizedBox(height: AppTheme.spaceSm),
               Text(
-                'NÂ° ${payment.transactionId}',
+                'N° ${payment.transactionId}',
                 style: AppTheme.caption,
               ),
             ],
@@ -187,7 +187,7 @@ class _TransactionCard extends StatelessWidget {
     final date = DateTime(d.year, d.month, d.day);
     final today = DateTime(now.year, now.month, now.day);
     final diff = today.difference(date).inDays;
-    if (diff == 0) return "Aujourd'hui Ã  ${d.hour}:${d.minute.toString().padLeft(2, '0')}";
+    if (diff == 0) return "Aujourd'hui à ${d.hour}:${d.minute.toString().padLeft(2, '0')}";
     if (diff == 1) return 'Hier';
     return '${d.day}/${d.month}/${d.year}';
   }

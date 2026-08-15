@@ -50,8 +50,8 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
         SnackBar(
           content: Text(
             role == 'shipper'
-                ? 'Compte expÃ©diteur activÃ©'
-                : 'Compte client activÃ©',
+                ? 'Compte expéditeur activé'
+                : 'Compte client activé',
           ),
           backgroundColor: AppTheme.accentColor,
         ),
@@ -83,8 +83,8 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
         slivers: [
           GradientSliverHeader(
             title: widget.firstTime
-                ? 'Choisissez votre rÃ´le'
-                : 'Changer de rÃ´le',
+                ? 'Choisissez votre rôle'
+                : 'Changer de rôle',
             subtitle: 'Que souhaitez-vous faire sur CargoLink ?',
             icon: Icons.verified_user,
           ),
@@ -99,8 +99,8 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
               child: StaggeredEntrance(
                 delay: Duration(milliseconds: 100),
                 child: Text(
-                  'Vous pourrez modifier ce choix Ã  tout moment depuis '
-                  'les paramÃ¨tres du profil.',
+                  'Vous pourrez modifier ce choix à tout moment depuis '
+                  'les paramètres du profil.',
                   textAlign: TextAlign.center,
                   style: AppTheme.bodySecondary,
                 ),
@@ -122,7 +122,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                     delay: const Duration(milliseconds: 160),
                     child: _buildRoleOption(
                       title: 'Client',
-                      subtitle: 'Je cherche des expÃ©diteurs et je veux envoyer '
+                      subtitle: 'Je cherche des expéditeurs et je veux envoyer '
                           'mes colis.',
                       icon: Icons.shopping_bag,
                       value: 'client',
@@ -132,9 +132,9 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                   StaggeredEntrance(
                     delay: const Duration(milliseconds: 240),
                     child: _buildRoleOption(
-                      title: 'ExpÃ©diteur',
+                      title: 'Expéditeur',
                       subtitle: 'Je transporte des colis pour des clients '
-                          '(dossier de vÃ©rification requis).',
+                          '(dossier de vérification requis).',
                       icon: Icons.flight_takeoff,
                       value: 'shipper',
                     ),
@@ -155,9 +155,9 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                               ),
                             )
                           : Text(_selectedRole == null
-                              ? 'SÃ©lectionnez un rÃ´le'
+                              ? 'Sélectionnez un rôle'
                               : (_selectedRole == 'shipper'
-                                  ? 'Continuer comme expÃ©diteur'
+                                  ? 'Continuer comme expéditeur'
                                   : 'Continuer comme client')),
                     ),
                   ),

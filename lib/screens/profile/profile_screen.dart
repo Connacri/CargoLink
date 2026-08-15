@@ -15,7 +15,7 @@ import '../auth/role_selection_screen.dart';
 import '../shipper/live_selfie_screen.dart';
 
 // ============================================================================
-// PAGINATED PROVIDERS (local to this screen â€” history lists)
+// PAGINATED PROVIDERS (local to this screen — history lists)
 // ============================================================================
 
 final clientHistoryPagerProvider = StateNotifierProvider.family<
@@ -166,7 +166,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() => _pendingPicture = null);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Photo de profil mise Ã  jour'),
+            content: Text('Photo de profil mise à jour'),
             backgroundColor: AppTheme.accentColor,
           ),
         );
@@ -271,7 +271,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() => _isEditing = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Profil mis Ã  jour'),
+            content: Text('Profil mis à jour'),
             backgroundColor: AppTheme.accentColor,
           ),
         );
@@ -289,8 +289,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('DÃ©connexion'),
-        content: const Text('Voulez-vous vous dÃ©connecter ?'),
+        title: const Text('Déconnexion'),
+        content: const Text('Voulez-vous vous déconnecter ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -323,10 +323,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('DÃ©sactiver le compte'),
+        title: const Text('Désactiver le compte'),
         content: const Text(
-          'Votre compte sera dÃ©sactivÃ© : il sera masquÃ© et inaccessible, '
-          'mais rien ne sera supprimÃ©. Vous pourrez le rÃ©activer Ã  tout '
+          'Votre compte sera désactivé : il sera masqué et inaccessible, '
+          'mais rien ne sera supprimé. Vous pourrez le réactiver à tout '
           'moment en vous reconnectant.',
         ),
         actions: [
@@ -336,7 +336,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('DÃ©sactiver'),
+            child: const Text('Désactiver'),
           ),
         ],
       ),
@@ -357,12 +357,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Supprimer dÃ©finitivement le compte'),
+        title: const Text('Supprimer définitivement le compte'),
         content: const Text(
-          'Votre compte et toutes vos donnÃ©es seront dÃ©finitivement supprimÃ©s '
-          'aprÃ¨s une pÃ©riode d\'attente de 30 jours. Pendant ce dÃ©lai, vous '
+          'Votre compte et toutes vos données seront définitivement supprimés '
+          'après une période d\'attente de 30 jours. Pendant ce délai, vous '
           'pouvez annuler la suppression en vous reconnectant.\n\n'
-          'ÃŠtes-vous sÃ»r de vouloir continuer ?',
+          'Êtes-vous sûr de vouloir continuer ?',
         ),
         actions: [
           TextButton(
@@ -412,7 +412,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return user.when(
       data: (userData) {
         if (userData == null) {
-          return const Center(child: Text('Utilisateur non identifiÃ©'));
+          return const Center(child: Text('Utilisateur non identifié'));
         }
 
         return Scaffold(
@@ -484,7 +484,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _roleLabel(String role) {
     switch (role) {
       case 'shipper':
-        return 'ExpÃ©diteur';
+        return 'Expéditeur';
       case 'admin':
         return 'Administrateur';
       case 'super_admin':
@@ -595,16 +595,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Mon rÃ´le',
+              'Mon rôle',
               style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             Text(
               isShipper
-                  ? 'Vous Ãªtes expÃ©diteur : vous transportez des colis '
+                  ? 'Vous êtes expéditeur : vous transportez des colis '
                       'pour les clients.'
-                  : 'Vous Ãªtes client : vous envoyez vos colis avec des '
-                      'expÃ©diteurs.',
+                  : 'Vous êtes client : vous envoyez vos colis avec des '
+                      'expéditeurs.',
               style: AppTheme.caption,
             ),
             const SizedBox(height: AppTheme.spaceSm + 4),
@@ -619,7 +619,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 const SizedBox(width: AppTheme.spaceSm + 4),
                 const Expanded(
                   child: Text(
-                    'Changer de rÃ´le',
+                    'Changer de rôle',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimaryColor,
@@ -681,7 +681,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
-                  labelText: 'TÃ©lÃ©phone',
+                  labelText: 'Téléphone',
                   prefixIcon: Icon(Icons.phone_outlined),
                 ),
               ),
@@ -704,7 +704,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 (
                   icon: Icons.phone_outlined,
-                  label: 'TÃ©lÃ©phone',
+                  label: 'Téléphone',
                   value: userData.phone,
                   type: _ContactFieldType.phone,
                 ),
@@ -736,12 +736,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'RÃ©seaux sociaux & contacts',
+              'Réseaux sociaux & contacts',
               style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             const Text(
-              'Partagez vos identifiants pour que clients et expÃ©diteurs '
+              'Partagez vos identifiants pour que clients et expéditeurs '
               'puissent vous contacter facilement.',
               style: AppTheme.caption,
             ),
@@ -938,8 +938,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: _HistoryRow(
             color: BookingStatusExt.fromString(b.status).color,
             title: b.productName,
-            subtitle: '${b.allocatedWeightKg.toStringAsFixed(1)} kg â€¢ '
-                '${b.totalPrice.toStringAsFixed(0)} ${AppConstants.defaultCurrency} â€¢ '
+            subtitle: '${b.allocatedWeightKg.toStringAsFixed(1)} kg • '
+                '${b.totalPrice.toStringAsFixed(0)} ${AppConstants.defaultCurrency} • '
                 '${BookingStatusExt.fromString(b.status).displayName}',
             onTap: () =>
                 Navigator.of(context).pushNamed('/tracking', arguments: b.id),
@@ -960,8 +960,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 padding: EdgeInsets.fromLTRB(
                     AppTheme.spaceMd, 0, AppTheme.spaceMd, AppTheme.spaceSm),
                 child: Text(
-                  'Historique indisponible tant que votre dossier expÃ©diteur '
-                  'n\'est pas validÃ©.',
+                  'Historique indisponible tant que votre dossier expéditeur '
+                  'n\'est pas validé.',
                   style: AppTheme.bodySecondary,
                 ),
               ),
@@ -985,10 +985,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               delay: Duration(milliseconds: (index % 10) * 40),
               child: _HistoryRow(
                 color: AppTheme.primaryColor,
-                title: 'Vol ${s.flightNumber ?? 'â€”'}',
-                subtitle: '${s.originCountry} â†’ ${s.destinationCity} â€¢ '
-                    '${s.availableWeightKg.toStringAsFixed(0)} kg â€¢ '
-                    '${s.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}/kg â€¢ '
+                title: 'Vol ${s.flightNumber ?? '—'}',
+                subtitle: '${s.originCountry} → ${s.destinationCity} • '
+                    '${s.availableWeightKg.toStringAsFixed(0)} kg • '
+                    '${s.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}/kg • '
                     '${s.isActive ? 'Actif' : s.status}',
                 onTap: null,
               ),
@@ -1025,7 +1025,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   SizedBox(width: AppTheme.spaceSm + 4),
                   Expanded(
                     child: Text(
-                      'ExpÃ©diteur non enregistrÃ©. ComplÃ©tez votre dossier '
+                      'Expéditeur non enregistré. Complétez votre dossier '
                       'dans le tableau de bord.',
                       style: TextStyle(color: AppTheme.primaryDark),
                     ),
@@ -1039,16 +1039,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         Color color;
         switch (shipperData.verificationStatus) {
           case 'verified':
-            text = 'ExpÃ©diteur vÃ©rifiÃ©';
+            text = 'Expéditeur vérifié';
             color = AppTheme.accentColor;
             break;
           case 'rejected':
             text =
-                'Dossier rejetÃ©: ${shipperData.rejectionReason ?? 'Veuillez rÃ©essayer'}';
+                'Dossier rejeté: ${shipperData.rejectionReason ?? 'Veuillez réessayer'}';
             color = AppTheme.errorColor;
             break;
           default:
-            text = 'Dossier en attente de vÃ©rification';
+            text = 'Dossier en attente de vérification';
             color = AppTheme.warningColor;
         }
         return Padding(
@@ -1096,7 +1096,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               leading: const AnimatedIconDot(
                   icon: Icons.feedback_rounded, color: AppTheme.infoColor),
               title: const Text('Envoyer un feedback'),
-              subtitle: const Text('Signaler un problÃ¨me ou suggÃ©rer une amÃ©lioration'),
+              subtitle: const Text('Signaler un problème ou suggérer une amélioration'),
               trailing: const Icon(Icons.chevron_right,
                   color: AppTheme.textSecondaryColor),
               onTap: () => launchAppFeedback(context, ref),
@@ -1105,7 +1105,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ListTile(
               leading: const AnimatedIconDot(
                   icon: Icons.logout_rounded, color: AppTheme.accentColor),
-              title: const Text('Se dÃ©connecter'),
+              title: const Text('Se déconnecter'),
               trailing: const Icon(Icons.chevron_right,
                   color: AppTheme.textSecondaryColor),
               onTap: _signOut,
@@ -1115,7 +1115,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               leading: const AnimatedIconDot(
                   icon: Icons.pause_circle_rounded,
                   color: AppTheme.warningColor),
-              title: const Text('DÃ©sactiver le compte'),
+              title: const Text('Désactiver le compte'),
               subtitle: const Text('Masquer temporairement votre compte'),
               trailing: const Icon(Icons.chevron_right,
                   color: AppTheme.textSecondaryColor),
@@ -1127,10 +1127,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   icon: Icons.delete_forever_rounded,
                   color: AppTheme.errorColor),
               title: const Text(
-                'Supprimer dÃ©finitivement le compte',
+                'Supprimer définitivement le compte',
                 style: TextStyle(color: AppTheme.errorColor),
               ),
-              subtitle: const Text('30 jours avant suppression dÃ©finitive'),
+              subtitle: const Text('30 jours avant suppression définitive'),
               trailing: const Icon(Icons.chevron_right,
                   color: AppTheme.textSecondaryColor),
               onTap: _requestDeletion,

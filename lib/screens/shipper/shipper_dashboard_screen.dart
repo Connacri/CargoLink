@@ -60,8 +60,8 @@ class _ShipperDashboardScreenState
   static const _statusOptions = [
     (label: 'Toutes', value: null),
     (label: 'Actives', value: 'active'),
-    (label: 'TerminÃ©es', value: 'completed'),
-    (label: 'AnnulÃ©es', value: 'cancelled'),
+    (label: 'Terminées', value: 'completed'),
+    (label: 'Annulées', value: 'cancelled'),
   ];
 
   final _scrollController = ScrollController();
@@ -158,11 +158,11 @@ class _ShipperDashboardScreenState
 
   Widget _buildNotVerified(Shipper? shipper) {
     final isRejected = shipper?.isRejected ?? false;
-    final title = isRejected ? 'Dossier rejetÃ©' : 'VÃ©rification en attente';
+    final title = isRejected ? 'Dossier rejeté' : 'Vérification en attente';
     final message = isRejected
         ? shipper?.rejectionReason ??
-            'Veuillez soumettre Ã  nouveau vos documents.'
-        : 'Un administrateur doit valider votre identitÃ© avant '
+            'Veuillez soumettre à nouveau vos documents.'
+        : 'Un administrateur doit valider votre identité avant '
             'de pouvoir publier des offres de transport.';
 
     return Scaffold(
@@ -208,7 +208,7 @@ class _ShipperDashboardScreenState
                             : Icons.assignment_rounded,
                       ),
                       label: Text(
-                        isRejected ? 'Soumettre Ã  nouveau' : 'Voir mon dossier',
+                        isRejected ? 'Soumettre à nouveau' : 'Voir mon dossier',
                       ),
                     ),
                   ],
@@ -260,7 +260,7 @@ class _ShipperDashboardScreenState
             GradientSliverHeader(
               title: 'Tableau de bord',
               subtitle:
-                  '${shipper.user?.fullName ?? 'Espace expÃ©diteur'}  â€¢  â˜… ${shipper.ratingDisplay}',
+                  '${shipper.user?.fullName ?? 'Espace expéditeur'}  •  ★ ${shipper.ratingDisplay}',
               icon: Icons.flight_takeoff_rounded,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -459,7 +459,7 @@ class _ShipperDashboardScreenState
   }
 
   // --------------------------------------------------------------------------
-  // COMMANDES REÃ‡UES â€” the received-orders feed on the dashboard. Shows every
+  // COMMANDES REÇUES — the received-orders feed on the dashboard. Shows every
   // booking (confirmed and not yet) with client + details, clickable to the
   // ShipperBookingDetailScreen. Live-updates when a client books or the
   // booking status changes.
@@ -479,7 +479,7 @@ class _ShipperDashboardScreenState
       child: Row(
         children: [
           const Expanded(
-            child: Text('Commandes reÃ§ues', style: AppTheme.h2),
+            child: Text('Commandes reçues', style: AppTheme.h2),
           ),
           if (pending > 0)
             Container(
@@ -591,13 +591,13 @@ class _ShipperDashboardScreenState
                     ),
                     SizedBox(height: AppTheme.spaceMd),
                     Text(
-                      'Aucune commande reÃ§ue',
+                      'Aucune commande reçue',
                       style: AppTheme.h3,
                       textAlign: TextAlign.center,
                     ),
                     SizedBox(height: AppTheme.spaceXs),
                     Text(
-                      'Les commandes des clients apparaÃ®tront ici dÃ¨s '
+                      'Les commandes des clients apparaîtront ici dès '
                       'qu\'elles arrivent, pour que vous puissiez les '
                       'consulter et les confirmer.',
                       style: AppTheme.bodySecondary,
@@ -778,7 +778,7 @@ class _ShipperDashboardScreenState
                     TextFormField(
                       controller: flightController,
                       decoration: const InputDecoration(
-                        labelText: 'NumÃ©ro de vol (optionnel)',
+                        labelText: 'Numéro de vol (optionnel)',
                         prefixIcon: Icon(Icons.flight),
                       ),
                     ),
@@ -809,7 +809,7 @@ class _ShipperDashboardScreenState
                             },
                             icon: const Icon(Icons.flight_takeoff, size: 18),
                             label: Text(
-                                'DÃ©part ${departure.day}/${departure.month}'),
+                                'Départ ${departure.day}/${departure.month}'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -829,7 +829,7 @@ class _ShipperDashboardScreenState
                             },
                             icon: const Icon(Icons.flight_land, size: 18),
                             label:
-                                Text('ArrivÃ©e ${arrival.day}/${arrival.month}'),
+                                Text('Arrivée ${arrival.day}/${arrival.month}'),
                           ),
                         ),
                       ],
@@ -878,7 +878,7 @@ class _ShipperDashboardScreenState
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content:
-                                          Text('Offre publiÃ©e avec succÃ¨s'),
+                                          Text('Offre publiée avec succès'),
                                       backgroundColor: AppTheme.accentColor,
                                     ),
                                   );
@@ -1009,7 +1009,7 @@ class _FinanceSummaryStrip extends ConsumerWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                'BÃ©nÃ©fice: ${profit.toStringAsFixed(0)} $currency',
+                'Bénéfice: ${profit.toStringAsFixed(0)} $currency',
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -1023,7 +1023,7 @@ class _FinanceSummaryStrip extends ConsumerWidget {
             children: [
               Expanded(
                 child: _FinanceMini(
-                  label: 'Ã€ recevoir',
+                  label: 'À recevoir',
                   value: '${receivable.toStringAsFixed(0)} $currency',
                   icon: Icons.schedule_rounded,
                   color: AppTheme.infoColor,
@@ -1032,7 +1032,7 @@ class _FinanceSummaryStrip extends ConsumerWidget {
               const SizedBox(width: AppTheme.spaceSm),
               Expanded(
                 child: _FinanceMini(
-                  label: 'Commission Ã  payer',
+                  label: 'Commission à payer',
                   value: '${feesDue.toStringAsFixed(0)} $currency',
                   icon: Icons.hourglass_top_rounded,
                   color: AppTheme.warningColor,
@@ -1172,7 +1172,7 @@ class _ShipmentMiniCard extends ConsumerWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'DÃ©part ${_formatDate(shipment.departureDate)}',
+                            'Départ ${_formatDate(shipment.departureDate)}',
                             style: AppTheme.caption,
                           ),
                           const SizedBox(width: 8),
@@ -1183,7 +1183,7 @@ class _ShipmentMiniCard extends ConsumerWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'ArrivÃ©e ${_formatDate(shipment.arrivalDate)}',
+                            'Arrivée ${_formatDate(shipment.arrivalDate)}',
                             style: AppTheme.caption,
                           ),
                         ],
@@ -1265,7 +1265,7 @@ class _ShipmentMiniCard extends ConsumerWidget {
                 Expanded(
                   child: _InfoTile(
                     icon: Icons.scale_rounded,
-                    label: 'CapacitÃ©',
+                    label: 'Capacité',
                     value:
                         '${shipment.availableWeightKg.toStringAsFixed(1)} kg',
                   ),
@@ -1273,7 +1273,7 @@ class _ShipmentMiniCard extends ConsumerWidget {
                 Expanded(
                   child: _InfoTile(
                     icon: Icons.history_rounded,
-                    label: 'PubliÃ©e le',
+                    label: 'Publiée le',
                     value: _formatDate(shipment.createdAt),
                   ),
                 ),
@@ -1289,7 +1289,7 @@ class _ShipmentMiniCard extends ConsumerWidget {
                     color: AppTheme.accentColor,
                   ),
                   SizedBox(width: AppTheme.spaceXs),
-                  Text('Offre complÃ¨te', style: AppTheme.caption),
+                  Text('Offre complète', style: AppTheme.caption),
                 ],
               ),
             ],
@@ -1370,7 +1370,7 @@ class _ActiveShipmentsScreenState extends ConsumerState<ActiveShipmentsScreen> {
               child: Padding(
                 padding: EdgeInsets.all(AppTheme.spaceLg),
                 child: Text(
-                  'ComplÃ©tez votre dossier de vÃ©rification pour voir vos offres',
+                  'Complétez votre dossier de vérification pour voir vos offres',
                   textAlign: TextAlign.center,
                   style: AppTheme.bodySecondary,
                 ),
@@ -1412,7 +1412,7 @@ class _ActiveShipmentsScreenState extends ConsumerState<ActiveShipmentsScreen> {
           slivers: [
             const GradientSliverHeader(
               title: 'Mes Offres',
-              subtitle: 'Toutes tes offres publiÃ©es',
+              subtitle: 'Toutes tes offres publiées',
               icon: Icons.flight_takeoff_rounded,
             ),
             PagedSliverList<Shipment>(
@@ -1516,8 +1516,8 @@ class _ShipperShipmentDetailScreenState
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             GradientSliverHeader(
-              title: '${shipment.originCountry} â†’ ${shipment.destinationCity}',
-              subtitle: 'Commandes reÃ§ues pour cette offre',
+              title: '${shipment.originCountry} → ${shipment.destinationCity}',
+              subtitle: 'Commandes reçues pour cette offre',
               icon: Icons.flight_takeoff_rounded,
               expandedHeight: 140,
             ),
@@ -1532,7 +1532,7 @@ class _ShipperShipmentDetailScreenState
                   AppTheme.spaceMd,
                   AppTheme.spaceSm,
                 ),
-                child: Text('Commandes reÃ§ues', style: AppTheme.h2),
+                child: Text('Commandes reçues', style: AppTheme.h2),
               ),
             ),
             PagedSliverList<Booking>(
@@ -1568,21 +1568,21 @@ class _ShipperShipmentDetailScreenState
           children: [
             _SummaryRow(
               label: 'Vol',
-              value: shipment.flightNumber ?? 'â€”',
+              value: shipment.flightNumber ?? '—',
             ),
             const SizedBox(height: AppTheme.spaceSm),
             _SummaryRow(
-              label: 'DÃ©part',
+              label: 'Départ',
               value: _formatDate(shipment.departureDate),
             ),
             const SizedBox(height: AppTheme.spaceSm),
             _SummaryRow(
-              label: 'ArrivÃ©e',
+              label: 'Arrivée',
               value: _formatDate(shipment.arrivalDate),
             ),
             const SizedBox(height: AppTheme.spaceSm),
             _SummaryRow(
-              label: 'PubliÃ©e le',
+              label: 'Publiée le',
               value: _formatDate(shipment.createdAt),
             ),
             if (shipment.description != null &&
@@ -1603,7 +1603,7 @@ class _ShipperShipmentDetailScreenState
             ),
             const SizedBox(height: AppTheme.spaceSm),
             _SummaryRow(
-              label: 'RÃ©servÃ©',
+              label: 'Réservé',
               value: '${shipment.reservedWeightKg.toStringAsFixed(1)} kg',
             ),
             const SizedBox(height: AppTheme.spaceSm),
@@ -1727,9 +1727,9 @@ class _DashboardBookingCard extends ConsumerWidget {
                       ),
                       const SizedBox(height: AppTheme.spaceXs),
                       Text(
-                        '${booking.client?.fullName ?? 'Client'} â€¢ '
+                        '${booking.client?.fullName ?? 'Client'} • '
                         '${booking.allocatedWeightKg.toStringAsFixed(1)} kg '
-                        'â€¢ ${booking.shipment?.originCountry ?? ''} â†’ '
+                        '• ${booking.shipment?.originCountry ?? ''} → '
                         '${booking.shipment?.destinationCity ?? ''}',
                         style: AppTheme.caption,
                         overflow: TextOverflow.ellipsis,
@@ -1764,7 +1764,7 @@ class _DashboardBookingCard extends ConsumerWidget {
                       ? Icons.paid_rounded
                       : Icons.schedule_rounded,
                   label: booking.isPaid
-                      ? 'Paiement reÃ§u'
+                      ? 'Paiement reçu'
                       : 'Paiement en attente',
                   color: booking.isPaid
                       ? AppTheme.accentColor
@@ -1776,7 +1776,7 @@ class _DashboardBookingCard extends ConsumerWidget {
                       ? Icons.task_alt_rounded
                       : Icons.pending_actions_rounded,
                   label: booking.status == 'confirmed'
-                      ? 'Commande confirmÃ©e'
+                      ? 'Commande confirmée'
                       : 'En attente de confirmation',
                   color: booking.status == 'confirmed'
                       ? AppTheme.infoColor
@@ -1797,10 +1797,10 @@ class _DashboardBookingCard extends ConsumerWidget {
                 Expanded(
                   child: _InfoTile(
                     icon: Icons.flight_takeoff_rounded,
-                    label: 'DÃ©part',
+                    label: 'Départ',
                     value: booking.shipment != null
                         ? _formatShipmentDate(booking.shipment!.departureDate)
-                        : 'â€”',
+                        : '—',
                   ),
                 ),
               ],
@@ -1904,7 +1904,7 @@ class _ManageBookingCard extends ConsumerWidget {
                       ),
                       const SizedBox(height: AppTheme.spaceXs),
                       Text(
-                        '${booking.client?.fullName ?? 'Client'} â€¢ '
+                        '${booking.client?.fullName ?? 'Client'} • '
                         '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
                         style: AppTheme.caption,
                       ),
@@ -1947,10 +1947,10 @@ class _ManageBookingCard extends ConsumerWidget {
                 Expanded(
                   child: _InfoTile(
                     icon: Icons.flight_takeoff_rounded,
-                    label: 'DÃ©part',
+                    label: 'Départ',
                     value: booking.shipment != null
                         ? _formatShipmentDate(booking.shipment!.departureDate)
-                        : 'â€”',
+                        : '—',
                   ),
                 ),
               ],
@@ -1991,7 +1991,7 @@ class _ManageBookingCard extends ConsumerWidget {
           FilledButton.icon(
             onPressed: () => _markShipped(context, ref),
             icon: const Icon(Icons.flight_takeoff_rounded, size: 18),
-            label: const Text('Marquer expÃ©diÃ©'),
+            label: const Text('Marquer expédié'),
           ),
         );
         actions.add(
@@ -2010,7 +2010,7 @@ class _ManageBookingCard extends ConsumerWidget {
           FilledButton.icon(
             onPressed: () => _markDelivered(context, ref),
             icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-            label: const Text('Marquer livrÃ©'),
+            label: const Text('Marquer livré'),
           ),
         );
         break;
@@ -2029,7 +2029,7 @@ class _ManageBookingCard extends ConsumerWidget {
       if (!context.mounted) return;
       _reload(context, ref);
       _notifyClient(context, ref);
-      _showSuccess(context, 'Commande confirmÃ©e');
+      _showSuccess(context, 'Commande confirmée');
     } catch (e) {
       _showError(context, e);
     }
@@ -2041,7 +2041,7 @@ class _ManageBookingCard extends ConsumerWidget {
       await ref.read(trackingServiceProvider).addTrackingUpdate(
             bookingId: booking.id,
             status: 'departed_origin',
-            notes: 'Colis expÃ©diÃ© depuis ${booking.shipment?.originCountry}',
+            notes: 'Colis expédié depuis ${booking.shipment?.originCountry}',
             location: booking.shipment?.originCountry,
           );
       await ref
@@ -2053,7 +2053,7 @@ class _ManageBookingCard extends ConsumerWidget {
           );
       if (!context.mounted) return;
       _reload(context, ref);
-      _showSuccess(context, 'Commande marquÃ©e comme expÃ©diÃ©e');
+      _showSuccess(context, 'Commande marquée comme expédiée');
     } catch (e) {
       _showError(context, e);
     }
@@ -2077,7 +2077,7 @@ class _ManageBookingCard extends ConsumerWidget {
       await ref.read(trackingServiceProvider).addTrackingUpdate(
             bookingId: booking.id,
             status: 'delivered',
-            notes: 'Colis livrÃ© Ã  ${booking.shipment?.destinationCity}',
+            notes: 'Colis livré à ${booking.shipment?.destinationCity}',
             location: booking.shipment?.destinationCity,
           );
       await ref.read(notificationServiceProvider).notifyClientShipmentDelivered(
@@ -2086,7 +2086,7 @@ class _ManageBookingCard extends ConsumerWidget {
           );
       if (!context.mounted) return;
       _reload(context, ref);
-      _showSuccess(context, 'Commande marquÃ©e comme livrÃ©e');
+      _showSuccess(context, 'Commande marquée comme livrée');
     } catch (e) {
       _showError(context, e);
     }
@@ -2097,7 +2097,7 @@ class _ManageBookingCard extends ConsumerWidget {
       await ref.read(bookingServiceProvider).cancelBooking(booking.id);
       if (!context.mounted) return;
       _reload(context, ref);
-      _showSuccess(context, 'Commande annulÃ©e');
+      _showSuccess(context, 'Commande annulée');
     } catch (e) {
       _showError(context, e);
     }
@@ -2194,10 +2194,10 @@ class _EmptyShipments extends StatelessWidget {
           color: AppTheme.textMutedColor,
         ),
         SizedBox(height: AppTheme.spaceMd),
-        Text('Aucune offre publiÃ©e', style: AppTheme.h3),
+        Text('Aucune offre publiée', style: AppTheme.h3),
         SizedBox(height: AppTheme.spaceSm),
         Text(
-          'Publie ta premiÃ¨re offre pour commencer.',
+          'Publie ta première offre pour commencer.',
           style: AppTheme.bodySecondary,
           textAlign: TextAlign.center,
         ),
@@ -2254,9 +2254,9 @@ String _shipmentStatusLabel(String status) {
     case 'active':
       return 'Active';
     case 'completed':
-      return 'TerminÃ©e';
+      return 'Terminée';
     case 'cancelled':
-      return 'AnnulÃ©e';
+      return 'Annulée';
     default:
       return status;
   }

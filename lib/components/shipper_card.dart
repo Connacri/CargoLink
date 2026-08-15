@@ -160,7 +160,7 @@ class _ShipperCardState extends State<ShipperCard> {
                   const SizedBox(width: 6),
                   Text(
                     widget.reviewCount != null
-                        ? '${widget.rating.toStringAsFixed(1)} â€¢ ${widget.reviewCount} avis'
+                        ? '${widget.rating.toStringAsFixed(1)} • ${widget.reviewCount} avis'
                         : widget.rating > 0
                             ? '${widget.rating.toStringAsFixed(1)}/5'
                             : 'Nouveau transporteur',
@@ -188,7 +188,7 @@ class _ShipperCardState extends State<ShipperCard> {
         Expanded(
           child: Text(
             origin != null && origin.isNotEmpty
-                ? '$origin â†’ ${widget.destination}'
+                ? '$origin → ${widget.destination}'
                 : widget.destination,
             style: AppTheme.body,
             overflow: TextOverflow.ellipsis,
@@ -209,7 +209,7 @@ class _ShipperCardState extends State<ShipperCard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('DisponibilitÃ©', style: AppTheme.label),
+            const Text('Disponibilité', style: AppTheme.label),
             Text(
               '${widget.availableKg.toStringAsFixed(1)}/'
               '${widget.totalKg.toStringAsFixed(1)} kg '
@@ -266,7 +266,7 @@ class _ShipperCardState extends State<ShipperCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('ArrivÃ©e', style: AppTheme.caption),
+              const Text('Arrivée', style: AppTheme.caption),
               Text(
                 _daysUntilArrival <= 0
                     ? 'aujourd\'hui'
@@ -292,7 +292,7 @@ class _ShipperCardState extends State<ShipperCard> {
                 ),
               ),
               child: Text(
-                widget.isAvailable ? 'RÃ©server' : 'Complet',
+                widget.isAvailable ? 'Réserver' : 'Complet',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -323,7 +323,7 @@ class _ShipperCardState extends State<ShipperCard> {
           children: [
             Expanded(
               child: _StatTile(
-                label: 'ExpÃ©ditions',
+                label: 'Expéditions',
                 value: _compactNumber(widget.shipmentsCount),
                 icon: Icons.flight_takeoff_rounded,
                 color: AppTheme.primaryColor,
@@ -335,7 +335,7 @@ class _ShipperCardState extends State<ShipperCard> {
                 label: 'Note moyenne',
                 value: widget.rating > 0
                     ? '${widget.rating.toStringAsFixed(1)}/5'
-                    : 'â€”',
+                    : '—',
                 icon: Icons.star_rounded,
                 color: Colors.amber,
               ),
@@ -360,7 +360,7 @@ class _ShipperCardState extends State<ShipperCard> {
   }
 
   String _compactNumber(int? value) {
-    if (value == null || value <= 0) return 'â€”';
+    if (value == null || value <= 0) return '—';
     if (value >= 1000) {
       return '${(value / 1000).toStringAsFixed(1)}k';
     }

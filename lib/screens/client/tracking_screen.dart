@@ -29,21 +29,21 @@ class TrackingScreen extends ConsumerWidget {
   static String statusLabel(String status) {
     switch (status) {
       case 'order_processed':
-        return 'Commande traitÃ©e';
+        return 'Commande traitée';
       case 'collected':
-        return 'Colis rÃ©cupÃ©rÃ©';
+        return 'Colis récupéré';
       case 'departed_origin':
-        return 'DÃ©part du pays d\'origine';
+        return 'Départ du pays d\'origine';
       case 'in_transit':
         return 'En transit';
       case 'arrived_destination':
-        return 'ArrivÃ© Ã  destination';
+        return 'Arrivé à destination';
       case 'customs_cleared':
-        return 'Douane passÃ©e';
+        return 'Douane passée';
       case 'out_for_delivery':
         return 'En cours de livraison';
       case 'delivered':
-        return 'LivrÃ©';
+        return 'Livré';
       default:
         return status;
     }
@@ -89,7 +89,7 @@ class TrackingScreen extends ConsumerWidget {
         if (bookingData == null) {
           return Scaffold(
             appBar: AppBar(title: const Text('Suivi de colis')),
-            body: const Center(child: Text('RÃ©servation introuvable')),
+            body: const Center(child: Text('Réservation introuvable')),
           );
         }
         return Scaffold(
@@ -286,21 +286,21 @@ class TrackingScreen extends ConsumerWidget {
   String stageLabel(String status) {
     switch (status) {
       case 'order_processed':
-        return 'TraitÃ©e';
+        return 'Traitée';
       case 'collected':
-        return 'RÃ©cupÃ©rÃ©';
+        return 'Récupéré';
       case 'departed_origin':
-        return 'DÃ©part';
+        return 'Départ';
       case 'in_transit':
         return 'Transit';
       case 'arrived_destination':
-        return 'ArrivÃ©e';
+        return 'Arrivée';
       case 'customs_cleared':
         return 'Douane';
       case 'out_for_delivery':
         return 'Livraison';
       case 'delivered':
-        return 'LivrÃ©';
+        return 'Livré';
       default:
         return status;
     }
@@ -357,7 +357,7 @@ class TrackingScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'ExpÃ©diteur',
+                      'Expéditeur',
                       style: AppTheme.caption,
                     ),
                     const SizedBox(height: 2),
@@ -393,7 +393,7 @@ class TrackingScreen extends ConsumerWidget {
                         Text(
                           shipper?.rating != null
                               ? shipper!.rating.toStringAsFixed(1)
-                              : 'â€”',
+                              : '—',
                           style: AppTheme.caption,
                         ),
                         const SizedBox(width: AppTheme.spaceSm),
@@ -448,7 +448,7 @@ class TrackingScreen extends ConsumerWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'NÂ° suivi: ${booking.trackingNumber}',
+                  'N° suivi: ${booking.trackingNumber}',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -471,7 +471,7 @@ class TrackingScreen extends ConsumerWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    '${booking.shipment!.originCountry} â†’ ${booking.shipment!.destinationCity}',
+                    '${booking.shipment!.originCountry} → ${booking.shipment!.destinationCity}',
                     style: AppTheme.bodySecondary,
                   ),
                 ),
@@ -520,10 +520,10 @@ class TrackingScreen extends ConsumerWidget {
             color: AppTheme.textMutedColor,
           ),
           SizedBox(height: AppTheme.spaceMd),
-          Text('Aucune mise Ã  jour de suivi', style: AppTheme.h3),
+          Text('Aucune mise à jour de suivi', style: AppTheme.h3),
           SizedBox(height: AppTheme.spaceSm),
           Text(
-            'Le suivi sera disponible dÃ¨s la prise en charge du colis.',
+            'Le suivi sera disponible dès la prise en charge du colis.',
             style: AppTheme.bodySecondary,
             textAlign: TextAlign.center,
           ),
@@ -546,7 +546,7 @@ class TrackingScreen extends ConsumerWidget {
         if (event.location != null && event.location!.isNotEmpty)
           '${event.location}',
         if (event.notes != null && event.notes!.isNotEmpty) '${event.notes}',
-      ].join(' â€¢ ');
+      ].join(' • ');
       mapped.add(
         TrackingEvent(
           title: statusLabel(event.status),
@@ -572,7 +572,7 @@ class _DeliveryProofSection extends ConsumerWidget {
   const _DeliveryProofSection({required this.booking});
 
   Future<void> _confirmReceipt(BuildContext context, WidgetRef ref) async {
-    final photo = await pickProofPhoto(context, title: 'Confirmation de rÃ©ception');
+    final photo = await pickProofPhoto(context, title: 'Confirmation de réception');
     if (photo == null) return;
     try {
       final url = await ref
@@ -597,7 +597,7 @@ class _DeliveryProofSection extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('RÃ©ception confirmÃ©e. Merci !'),
+            content: Text('Réception confirmée. Merci !'),
             backgroundColor: AppTheme.accentColor,
           ),
         );
@@ -649,13 +649,13 @@ class _DeliveryProofSection extends ConsumerWidget {
             ),
             const SizedBox(height: AppTheme.spaceSm),
             const Text(
-              'Photo prise par l\'expÃ©diteur Ã  la livraison. '
+              'Photo prise par l\'expéditeur à la livraison. '
               'Touchez pour agrandir.',
               style: AppTheme.caption,
             ),
           ] else
             const Text(
-              'Aucune preuve photo fournie par l\'expÃ©diteur.',
+              'Aucune preuve photo fournie par l\'expéditeur.',
               style: AppTheme.caption,
             ),
           if (!receiptConfirmed) ...[
@@ -663,7 +663,7 @@ class _DeliveryProofSection extends ConsumerWidget {
             FilledButton.icon(
               onPressed: () => _confirmReceipt(context, ref),
               icon: const Icon(Icons.verified_rounded, size: 18),
-              label: const Text('Confirmer la rÃ©ception'),
+              label: const Text('Confirmer la réception'),
             ),
           ] else ...[
             const SizedBox(height: AppTheme.spaceMd),
@@ -674,7 +674,7 @@ class _DeliveryProofSection extends ConsumerWidget {
                 const SizedBox(width: AppTheme.spaceXs),
                 Expanded(
                   child: Text(
-                    'RÃ©ception confirmÃ©e le '
+                    'Réception confirmée le '
                     '${booking.receiptConfirmedAt!.day}/${booking.receiptConfirmedAt!.month}/${booking.receiptConfirmedAt!.year}',
                     style: AppTheme.body.copyWith(
                       fontWeight: FontWeight.w600,
@@ -712,7 +712,7 @@ class _RatePrompt extends ConsumerWidget {
 
     final submitted = await showRateShipperSheet(
       context,
-      shipperName: shipment.shipper?.user?.fullName ?? 'l\'expÃ©diteur',
+      shipperName: shipment.shipper?.user?.fullName ?? 'l\'expéditeur',
       onSubmit: (rating, comment) async {
         await ref.read(reviewServiceProvider).submitReview(
               bookingId: booking.id,
@@ -751,8 +751,8 @@ class _RatePrompt extends ConsumerWidget {
           Expanded(
             child: Text(
               rated == true
-                  ? 'ExpÃ©diteur notÃ©. Merci !'
-                  : 'Colis reÃ§u ? Notez votre expÃ©diteur.',
+                  ? 'Expéditeur noté. Merci !'
+                  : 'Colis reçu ? Notez votre expéditeur.',
               style: AppTheme.body.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
@@ -760,7 +760,7 @@ class _RatePrompt extends ConsumerWidget {
           FilledButton.icon(
             onPressed: rated == true ? null : () => _rate(context, ref),
             icon: const Icon(Icons.star_rounded, size: 18),
-            label: Text(rated == true ? 'NotÃ©' : 'Noter'),
+            label: Text(rated == true ? 'Noté' : 'Noter'),
           ),
         ],
       ),

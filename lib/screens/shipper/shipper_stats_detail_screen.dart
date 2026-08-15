@@ -38,7 +38,7 @@ extension ShipperStatsDetailTypeX on ShipperStatsDetailType {
       case ShipperStatsDetailType.active:
         return 'Offres actives';
       case ShipperStatsDetailType.bookings:
-        return 'Commandes reÃ§ues';
+        return 'Commandes reçues';
       case ShipperStatsDetailType.revenue:
         return 'Chiffre d\'affaires';
     }
@@ -220,7 +220,7 @@ class _ShipperStatsDetailScreenState
   }
 
   String _buildSubtitle(AsyncValue<Shipper?> shipper) {
-    final name = shipper.valueOrNull?.user?.fullName ?? 'Espace expÃ©diteur';
+    final name = shipper.valueOrNull?.user?.fullName ?? 'Espace expéditeur';
     return name;
   }
 
@@ -296,7 +296,7 @@ class _ShipperStatsDetailScreenState
                   child: _CommissionStat(
                     icon: Icons.check_circle_rounded,
                     color: AppTheme.accentColor,
-                    label: 'PayÃ©',
+                    label: 'Payé',
                     value: '${paid.toStringAsFixed(0)} $currency',
                   ),
                 ),
@@ -328,7 +328,7 @@ class _ShipperStatsDetailScreenState
                     SizedBox(width: AppTheme.spaceSm),
                     Expanded(
                       child: Text(
-                        'Paiement envoyÃ© â€” en attente de confirmation '
+                        'Paiement envoyé — en attente de confirmation '
                         'par l\'administrateur.',
                         style: AppTheme.caption,
                       ),
@@ -369,7 +369,7 @@ class _ShipperStatsDetailScreenState
                   ),
                   SizedBox(width: 6),
                   Text(
-                    'Aucune dette : commission rÃ©glÃ©e',
+                    'Aucune dette : commission réglée',
                     style: TextStyle(
                       color: AppTheme.accentColor,
                       fontWeight: FontWeight.w700,
@@ -395,7 +395,7 @@ class _ShipperStatsDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Paiement envoyÃ© â€” en attente de confirmation '
+              'Paiement envoyé — en attente de confirmation '
               'par l\'administrateur.',
             ),
             backgroundColor: AppTheme.warningColor,
@@ -453,7 +453,7 @@ class _ShipperStatsDetailScreenState
             const Text('Chiffre d\'affaires par mois', style: AppTheme.h3),
             const SizedBox(height: AppTheme.spaceXs),
             Text(
-              'BasÃ© sur les commandes chargÃ©es (${pager.items.length})',
+              'Basé sur les commandes chargées (${pager.items.length})',
               style: AppTheme.caption,
             ),
             const SizedBox(height: AppTheme.spaceMd),
@@ -509,7 +509,7 @@ class _ShipperStatsDetailScreenState
       ),
       emptyState: const _EmptyDetail(
         icon: Icons.receipt_long_outlined,
-        message: 'Aucune commande reÃ§ue',
+        message: 'Aucune commande reçue',
       ),
       itemBuilder: (context, booking, index) => StaggeredEntrance(
         delay: Duration(milliseconds: (index % 10) * 40),
@@ -544,7 +544,7 @@ class _ShipperStatsDetailScreenState
       ),
       emptyState: const _EmptyDetail(
         icon: Icons.flight_takeoff_outlined,
-        message: 'Aucune offre publiÃ©e',
+        message: 'Aucune offre publiée',
       ),
       itemBuilder: (context, shipment, index) {
         if (activeOnly && !shipment.isActive) {
@@ -581,14 +581,14 @@ class _ShipmentTile extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '${shipment.originCountry} â†’ ${shipment.destinationCity}',
+                    '${shipment.originCountry} → ${shipment.destinationCity}',
                     style: AppTheme.h3,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: AppTheme.spaceSm),
                 GradientBadge(
-                  label: shipment.isActive ? 'Active' : 'TerminÃ©e',
+                  label: shipment.isActive ? 'Active' : 'Terminée',
                   gradient: shipment.isActive
                       ? AppTheme.successGradient
                       : AppTheme.primaryGradient,
@@ -699,7 +699,7 @@ class _BookingTile extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     '${booking.client?.fullName ?? 'Client'}'
-                    '${booking.client?.phone.isNotEmpty ?? false ? ' Â· ${booking.client!.phone}' : ''}',
+                    '${booking.client?.phone.isNotEmpty ?? false ? ' · ${booking.client!.phone}' : ''}',
                     style: AppTheme.caption,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -719,10 +719,10 @@ class _BookingTile extends ConsumerWidget {
                 Expanded(
                   child: _InfoTile(
                     icon: Icons.flight_takeoff_rounded,
-                    label: 'DÃ©part',
+                    label: 'Départ',
                     value: booking.shipment != null
                         ? _formatDate(booking.shipment!.departureDate)
-                        : 'â€”',
+                        : '—',
                   ),
                 ),
               ],
@@ -763,7 +763,7 @@ class _BookingTile extends ConsumerWidget {
           FilledButton.icon(
             onPressed: () => _markShipped(context, ref),
             icon: const Icon(Icons.flight_takeoff_rounded, size: 18),
-            label: const Text('Marquer expÃ©diÃ©'),
+            label: const Text('Marquer expédié'),
           ),
         );
         actions.add(
@@ -782,7 +782,7 @@ class _BookingTile extends ConsumerWidget {
           FilledButton.icon(
             onPressed: () => _markDelivered(context, ref),
             icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-            label: const Text('Marquer livrÃ©'),
+            label: const Text('Marquer livré'),
           ),
         );
         break;
@@ -820,7 +820,7 @@ class _BookingTile extends ConsumerWidget {
       context,
       ref,
       () => ref.read(bookingServiceProvider).confirmBooking(booking.id),
-      'Commande confirmÃ©e');
+      'Commande confirmée');
 
   void _markShipped(BuildContext context, WidgetRef ref) => _runAction(
         context,
@@ -831,7 +831,7 @@ class _BookingTile extends ConsumerWidget {
                 bookingId: booking.id,
                 status: 'departed_origin',
                 notes:
-                    'Colis expÃ©diÃ© depuis ${booking.shipment?.originCountry}',
+                    'Colis expédié depuis ${booking.shipment?.originCountry}',
                 location: booking.shipment?.originCountry,
               );
           await ref
@@ -842,7 +842,7 @@ class _BookingTile extends ConsumerWidget {
                 destination: booking.shipment?.destinationCity ?? 'destination',
               );
         },
-        'Commande marquÃ©e comme expÃ©diÃ©e',
+        'Commande marquée comme expédiée',
       );
 
   Future<void> _markDelivered(BuildContext context, WidgetRef ref) async {
@@ -866,7 +866,7 @@ class _BookingTile extends ConsumerWidget {
         await ref.read(trackingServiceProvider).addTrackingUpdate(
               bookingId: booking.id,
               status: 'delivered',
-              notes: 'Colis livrÃ© Ã  ${booking.shipment?.destinationCity}',
+              notes: 'Colis livré à ${booking.shipment?.destinationCity}',
               location: booking.shipment?.destinationCity,
             );
         await ref
@@ -876,7 +876,7 @@ class _BookingTile extends ConsumerWidget {
               bookingId: booking.id,
             );
       },
-      'Commande marquÃ©e comme livrÃ©e',
+      'Commande marquée comme livrée',
     );
   }
 
@@ -884,7 +884,7 @@ class _BookingTile extends ConsumerWidget {
         context,
         ref,
         () => ref.read(bookingServiceProvider).cancelBooking(booking.id),
-        'Commande annulÃ©e',
+        'Commande annulée',
       );
 
   void _refresh(WidgetRef ref) {
@@ -1003,14 +1003,14 @@ class _InventoryTile extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '${shipment.originCountry} â†’ ${shipment.destinationCity}',
+                    '${shipment.originCountry} → ${shipment.destinationCity}',
                     style: AppTheme.h3,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: AppTheme.spaceSm),
                 GradientBadge(
-                  label: shipment.isActive ? 'Active' : 'TerminÃ©e',
+                  label: shipment.isActive ? 'Active' : 'Terminée',
                   gradient: shipment.isActive
                       ? AppTheme.successGradient
                       : AppTheme.primaryGradient,

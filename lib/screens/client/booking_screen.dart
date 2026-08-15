@@ -57,8 +57,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       data: (shipmentData) {
         if (shipmentData == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('RÃ©servation')),
-            body: const Center(child: Text('Shipment non trouvÃ©')),
+            appBar: AppBar(title: const Text('Réservation')),
+            body: const Center(child: Text('Shipment non trouvé')),
           );
         }
 
@@ -68,9 +68,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             child: CustomScrollView(
               slivers: [
                 GradientSliverHeader(
-                  title: 'Nouvelle RÃ©servation',
+                  title: 'Nouvelle Réservation',
                   subtitle:
-                      '${shipmentData.originCountry} â†’ ${shipmentData.destinationCity}',
+                      '${shipmentData.originCountry} → ${shipmentData.destinationCity}',
                   icon: Icons.assignment_turned_in_rounded,
                 ),
                 SliverToBoxAdapter(
@@ -137,11 +137,11 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         );
       },
       loading: () => Scaffold(
-        appBar: AppBar(title: const Text('RÃ©servation')),
+        appBar: AppBar(title: const Text('Réservation')),
         body: const Center(child: CircularProgressIndicator()),
       ),
       error: (error, stack) => Scaffold(
-        appBar: AppBar(title: const Text('RÃ©servation')),
+        appBar: AppBar(title: const Text('Réservation')),
         body: Center(child: Text('Erreur: $error')),
       ),
     );
@@ -152,7 +152,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('DÃ©tails du Shipment', style: AppTheme.label),
+          const Text('Détails du Shipment', style: AppTheme.label),
           const SizedBox(height: AppTheme.spaceMd),
           Row(
             children: [
@@ -166,7 +166,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${shipment.originCountry} â†’ ${shipment.destinationCity}',
+                      '${shipment.originCountry} → ${shipment.destinationCity}',
                       style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 2),
@@ -221,7 +221,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('DÃ©tails du Produit', style: AppTheme.label),
+          const Text('Détails du Produit', style: AppTheme.label),
           const SizedBox(height: AppTheme.spaceMd),
           TextFormField(
             controller: _productNameController,
@@ -238,7 +238,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             controller: _productDescController,
             decoration: const InputDecoration(
               labelText: 'Description du produit',
-              hintText: 'Marque, modÃ¨le, couleur, etc.',
+              hintText: 'Marque, modèle, couleur, etc.',
             ),
             maxLines: 3,
             validator: (value) {
@@ -268,7 +268,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 return 'Poids invalide';
               }
               if (weight > shipment.remainingWeightKg) {
-                return 'Poids supÃ©rieur au disponible';
+                return 'Poids supérieur au disponible';
               }
               return null;
             },
@@ -389,12 +389,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       child: Column(
         children: [
           _PriceRow(
-            label: 'Poids demandÃ©',
+            label: 'Poids demandé',
             value: '${requestedWeight.toStringAsFixed(2)} kg',
           ),
           const SizedBox(height: AppTheme.spaceSm),
           _PriceRow(
-            label: 'Poids allouÃ© (arrondi)',
+            label: 'Poids alloué (arrondi)',
             value: '${allocatedWeight.toStringAsFixed(1)} kg',
             highlight: true,
           ),
@@ -441,7 +441,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                   ),
                 )
               : const Text(
-                  'ProcÃ©der au Paiement',
+                  'Procéder au Paiement',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.white,
@@ -451,7 +451,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         ),
         const SizedBox(height: AppTheme.spaceSm),
         const Text(
-          'Le paiement sera traitÃ© de maniÃ¨re sÃ©curisÃ©e aprÃ¨s confirmation',
+          'Le paiement sera traité de manière sécurisée après confirmation',
           style: AppTheme.caption,
           textAlign: TextAlign.center,
         ),
@@ -533,7 +533,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         // Show success and navigate to payment
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('RÃ©servation crÃ©Ã©e avec succÃ¨s')),
+          const SnackBar(content: Text('Réservation créée avec succès')),
         );
 
         Navigator.of(context).pushReplacementNamed(

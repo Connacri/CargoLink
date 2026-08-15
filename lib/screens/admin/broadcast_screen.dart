@@ -66,7 +66,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
     final title = _titleController.text.trim();
     final message = _messageController.text.trim();
     if (title.isEmpty || title.length > 80) {
-      _snack('Titre requis (max 80 caractÃ¨res)', AppTheme.errorColor);
+      _snack('Titre requis (max 80 caractères)', AppTheme.errorColor);
       return;
     }
     if (message.isEmpty) {
@@ -105,14 +105,14 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
       ref.invalidate(broadcastsProvider);
       _snack(
         wasEditing
-            ? 'Annonce mise Ã  jour'
+            ? 'Annonce mise à jour'
             : _targetUsers.isNotEmpty
-                ? 'Annonce envoyÃ©e Ã  ${_targetUsers.length} utilisateur(s) ciblÃ©(s)'
-                : 'Annonce envoyÃ©e Ã  ${_audienceLabel(_audienceParam)}',
+                ? 'Annonce envoyée à ${_targetUsers.length} utilisateur(s) ciblé(s)'
+                : 'Annonce envoyée à ${_audienceLabel(_audienceParam)}',
         AppTheme.accentColor,
       );
     } catch (e) {
-      _snack('Ã‰chec: $e', AppTheme.errorColor);
+      _snack('Échec: $e', AppTheme.errorColor);
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
@@ -172,7 +172,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Supprimer l\'annonce'),
         content: Text(
-          'Voulez-vous vraiment supprimer Â« ${broadcast.title} Â» ?',
+          'Voulez-vous vraiment supprimer « ${broadcast.title} » ?',
         ),
         actions: [
           TextButton(
@@ -193,9 +193,9 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
       await ref.read(broadcastServiceProvider).deleteBroadcast(broadcast.id);
       if (_editing?.id == broadcast.id) _cancelEdit();
       ref.invalidate(broadcastsProvider);
-      _snack('Annonce supprimÃ©e', AppTheme.accentColor);
+      _snack('Annonce supprimée', AppTheme.accentColor);
     } catch (e) {
-      _snack('Ã‰chec de la suppression: $e', AppTheme.errorColor);
+      _snack('Échec de la suppression: $e', AppTheme.errorColor);
     }
   }
 
@@ -261,7 +261,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
                             onPressed: () =>
                                 ref.invalidate(broadcastsProvider),
                             icon: const Icon(Icons.refresh_rounded),
-                            label: const Text('RÃ©essayer'),
+                            label: const Text('Réessayer'),
                           ),
                         ],
                       ),
@@ -315,7 +315,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Cibler par rÃ´le', style: AppTheme.caption),
+        const Text('Cibler par rôle', style: AppTheme.caption),
         const SizedBox(height: AppTheme.spaceXs),
         Wrap(
           spacing: AppTheme.spaceSm,
@@ -349,7 +349,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
           children: [
             const Expanded(
               child: Text(
-                'Ou cibler des utilisateurs prÃ©cis',
+                'Ou cibler des utilisateurs précis',
                 style: AppTheme.caption,
               ),
             ),
@@ -358,8 +358,8 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
               icon: const Icon(Icons.person_search_rounded, size: 18),
               label: Text(
                 _targetUsers.isEmpty
-                    ? 'SÃ©lectionner'
-                    : '${_targetUsers.length} sÃ©lectionnÃ©(s)',
+                    ? 'Sélectionner'
+                    : '${_targetUsers.length} sélectionné(s)',
               ),
             ),
           ],
@@ -420,7 +420,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
             controller: _titleController,
             decoration: const InputDecoration(
               labelText: 'Titre',
-              hintText: 'Ex: NouveautÃ©s CargoLink',
+              hintText: 'Ex: Nouveautés CargoLink',
               prefixIcon: Icon(Icons.title),
             ),
           ),
@@ -430,7 +430,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
             maxLines: 4,
             decoration: const InputDecoration(
               labelText: 'Message',
-              hintText: 'RÃ©digez votre annonce...',
+              hintText: 'Rédigez votre annonce...',
               alignLabelWithHint: true,
               prefixIcon: Icon(Icons.campaign_outlined),
             ),
@@ -478,7 +478,7 @@ class _EmptyBroadcasts extends StatelessWidget {
         Text('Aucune annonce pour le moment', style: AppTheme.h3),
         SizedBox(height: AppTheme.spaceSm),
         Text(
-          'Les annonces de la plateforme apparaÃ®tront ici.',
+          'Les annonces de la plateforme apparaîtront ici.',
           style: AppTheme.bodySecondary,
           textAlign: TextAlign.center,
         ),
@@ -646,7 +646,7 @@ class _UserPickerSheetState extends State<_UserPickerSheet> {
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(_selected),
-                child: const Text('TerminÃ©'),
+                child: const Text('Terminé'),
               ),
             ],
           ),
@@ -687,7 +687,7 @@ class _UserPickerSheetState extends State<_UserPickerSheet> {
                         ),
                         title: Text(user.fullName),
                         subtitle: Text(
-                          '${_roleLabel(user.role)} Â· ${user.email}',
+                          '${_roleLabel(user.role)} · ${user.email}',
                           style: AppTheme.caption,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
