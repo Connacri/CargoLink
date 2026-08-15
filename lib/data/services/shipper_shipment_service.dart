@@ -434,11 +434,12 @@ class ShipmentService {
         (requestedWeight / roundingPrecision).ceil() *
             roundingPrecision.toDouble();
 
-    // Don't allocate more than requested or available
+    // Don't allocate more than available (the rounding-up rule must NOT be
+    // capped back to the requested weight, otherwise the displayed "rounded
+    // weight" preview in the booking wizard would never match the amount
+    // actually charged).
     allocatedWeight =
         allocatedWeight > availableWeight ? availableWeight : allocatedWeight;
-    allocatedWeight =
-        allocatedWeight > requestedWeight ? requestedWeight : allocatedWeight;
 
     return allocatedWeight;
   }

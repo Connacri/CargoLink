@@ -82,9 +82,24 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
     return allocated > available ? available : allocated;
   }
 
+  double _estimatedTotal(Shipment shipment) =>
+      _allocatedWeight(shipment.remainingWeightKg) * shipment.pricePerKg;
+
   @override
   Widget build(BuildContext context) {
     final shipment = ref.watch(shipmentByIdProvider(widget.shipmentId));
+
+    // Keep the "available weight" (and the instant price) live: refetch the
+    // shipment whenever it changes on the server (e.g. another client books
+    // and consumes kg on this offer).
+    ref.listen(
+      tableChangesProvider(('shipments', 'id', widget.shipmentId)),
+      (previous, next) {
+        if (next.hasValue) {
+          ref.invalidate(shipmentByIdProvider(widget.shipmentId));
+        }
+      },
+    );
 
     return shipment.when(
       data: (shipmentData) {
@@ -324,6 +339,40 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
                     ],
                   ),
                 ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppTheme.spaceMd),
+        GlassCard(
+          child: Row(
+            children: [
+              const AnimatedIconDot(
+                icon: Icons.bolt_rounded,
+                color: AppTheme.accentColor,
+                size: 20,
+              ),
+              const SizedBox(width: AppTheme.spaceMd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Montant instantané', style: AppTheme.caption),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${_estimatedTotal(shipment).toStringAsFixed(0)} $_currency',
+                      style: AppTheme.h2.copyWith(
+                        color: AppTheme.accentColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '${_allocatedWeight(shipment.remainingWeightKg).toStringAsFixed(1)} kg '
+                '× ${shipment.pricePerKg.toStringAsFixed(0)} $_currency',
+                style: AppTheme.caption,
+                textAlign: TextAlign.end,
               ),
             ],
           ),
