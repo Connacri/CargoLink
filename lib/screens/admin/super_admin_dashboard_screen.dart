@@ -12,6 +12,7 @@ import 'user_details_screen.dart';
 import 'platform_settings_screen.dart';
 import 'verification_center_screen.dart';
 import 'commission_screen.dart';
+import 'inventory_screen.dart';
 
 /// Founder (super_admin) dashboard — accès total et contrôle de la plateforme :
 /// stats globales, gestion de tous les comptes (rôles, activation,
@@ -1128,6 +1129,21 @@ class _AdminShortcuts extends ConsumerWidget {
                   color: AppTheme.textSecondaryColor),
               onTap: () =>
                   Navigator.of(context).pushNamed('/admin-dashboard'),
+            ),
+            const Divider(height: 1, indent: AppTheme.spaceXxl),
+            ListTile(
+              leading: const AnimatedIconDot(
+                  icon: Icons.warehouse_outlined, color: AppTheme.infoColor),
+              title: const Text('Inventaire'),
+              subtitle: const Text(
+                'Dépôts et colis collectés',
+                style: AppTheme.caption,
+              ),
+              trailing: const Icon(Icons.chevron_right,
+                  color: AppTheme.textSecondaryColor),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const InventoryScreen()),
+              ),
             ),
             const Divider(height: 1, indent: AppTheme.spaceXxl),
             ListTile(

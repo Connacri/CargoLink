@@ -9,6 +9,8 @@ import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/chat_widgets.dart';
 import 'transactions_screen.dart';
 import 'commission_screen.dart';
+import 'inventory_screen.dart';
+import 'depot_detail_screen.dart';
 
 // ============================================================================
 // PAGINATED PROVIDERS (local to this screen)
@@ -49,7 +51,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(pendingShippersPagerProvider.notifier).loadInitial();
       ref.read(openDisputesPagerProvider.notifier).loadInitial();
@@ -98,6 +100,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   Tab(icon: Icon(Icons.verified_user), text: 'Expéditeurs'),
                   Tab(icon: Icon(Icons.gavel), text: 'Litiges'),
                   Tab(icon: Icon(Icons.monetization_on), text: 'Revenus'),
+                  Tab(icon: Icon(Icons.warehouse_outlined), text: 'Inventaire'),
                 ],
               ),
             ),
@@ -109,6 +112,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             _ShippersTab(),
             _DisputesTab(),
             _RevenueTab(),
+            _InventoryTab(),
           ],
         ),
       ),
@@ -749,6 +753,160 @@ class _RevenueRow extends StatelessWidget {
                 color: AppTheme.textMutedColor,
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// INVENTORY TAB (dépôts de collecte des colis)
+// ============================================================================
+
+class _InventoryTab extends ConsumerWidget {
+  const _InventoryTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final depots = ref.watch(depotsProvider);
+
+    return RefreshIndicator(
+      onRefresh: () async => ref.invalidate(depotsProvider),
+      child: depots.when(
+        data: (items) => CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceSm,
+                ),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Dépôts de collecte',
+                        style: AppTheme.h3,
+                      ),
+                    ),
+                    FilledButton.tonalIcon(
+                      onPressed: () async {
+                        final created = await Navigator.of(context).push<bool>(
+                          MaterialPageRoute(
+                            builder: (_) => const DepotFormScreen(),
+                          ),
+                        );
+                        if (created == true) {
+                          ref.invalidate(depotsProvider);
+                        }
+                      },
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Dépôt'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (items.isEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(top: AppTheme.spaceXxl),
+                  child: _EmptyTabState(
+                    icon: Icons.warehouse_outlined,
+                    message: 'Aucun dépôt pour l\'instant',
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd,
+                  0,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceXxl,
+                ),
+                sliver: SliverList.builder(
+                  itemCount: items.length,
+                  itemBuilder: (context, index) => StaggeredEntrance(
+                    delay: Duration(milliseconds: (index % 10) * 40),
+                    child: _DepotSummaryCard(depot: items[index]),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, s) => Center(
+          child: Text('Erreur: $e', style: AppTheme.bodySecondary),
+        ),
+      ),
+    );
+  }
+}
+
+class _DepotSummaryCard extends ConsumerWidget {
+  const _DepotSummaryCard({required this.depot});
+
+  final Depot depot;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stats = ref.watch(depotStatsProvider(depot.id));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
+      child: GlassCard(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => DepotDetailScreen(depot: depot),
+          ),
+        ),
+        child: Row(
+          children: [
+            const AnimatedIconDot(
+              icon: Icons.warehouse_rounded,
+              color: AppTheme.primaryColor,
+            ),
+            const SizedBox(width: AppTheme.spaceSm + 4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    depot.name,
+                    style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (depot.city != null)
+                    Text(
+                      depot.city!,
+                      style: AppTheme.caption,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            stats.when(
+              data: (s) => Text(
+                '${s?['stored'] ?? 0} colis',
+                style: AppTheme.body.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.infoColor,
+                ),
+              ),
+              loading: () => const SizedBox.shrink(),
+              error: (e, s) => const SizedBox.shrink(),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: AppTheme.textMutedColor,
+            ),
           ],
         ),
       ),

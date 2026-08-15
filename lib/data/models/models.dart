@@ -927,6 +927,139 @@ class ChatMessage {
 }
 
 // ============================================================================
+// DEPOT MODEL (Magasin de collecte des colis — géré par admin / super_admin)
+// ============================================================================
+
+class Depot {
+  final String id;
+  final String name;
+  final String? address;
+  final String? city;
+  final String? phone;
+  final String? createdBy;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  Depot({
+    required this.id,
+    required this.name,
+    this.address,
+    this.city,
+    this.phone,
+    this.createdBy,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory Depot.fromJson(Map<String, dynamic> json) {
+    return Depot(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      address: json['address'] as String?,
+      city: json['city'] as String?,
+      phone: json['phone'] as String?,
+      createdBy: json['created_by'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'address': address,
+      'city': city,
+      'phone': phone,
+      'created_by': createdBy,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+}
+
+// ============================================================================
+// DEPOT ITEM MODEL (Colis dans l'inventaire d'un dépôt)
+// ============================================================================
+
+class DepotItem {
+  final String id;
+  final String depotId;
+  final String? reference;
+  final String? description;
+  final double weightKg;
+  final String? recipientName;
+  final String? recipientPhone;
+  final String status; // stored, dispatched, returned
+  final DateTime receivedAt;
+  final DateTime? dispatchedAt;
+  final String? notes;
+  final String? createdBy;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  DepotItem({
+    required this.id,
+    required this.depotId,
+    this.reference,
+    this.description,
+    this.weightKg = 0,
+    this.recipientName,
+    this.recipientPhone,
+    this.status = 'stored',
+    required this.receivedAt,
+    this.dispatchedAt,
+    this.notes,
+    this.createdBy,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory DepotItem.fromJson(Map<String, dynamic> json) {
+    return DepotItem(
+      id: json['id'] as String,
+      depotId: json['depot_id'] as String,
+      reference: json['reference'] as String?,
+      description: json['description'] as String?,
+      weightKg: (json['weight_kg'] as num?)?.toDouble() ?? 0,
+      recipientName: json['recipient_name'] as String?,
+      recipientPhone: json['recipient_phone'] as String?,
+      status: json['status'] as String? ?? 'stored',
+      receivedAt: DateTime.parse(json['received_at'] as String),
+      dispatchedAt: json['dispatched_at'] != null
+          ? DateTime.tryParse(json['dispatched_at'] as String)
+          : null,
+      notes: json['notes'] as String?,
+      createdBy: json['created_by'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'depot_id': depotId,
+      'reference': reference,
+      'description': description,
+      'weight_kg': weightKg,
+      'recipient_name': recipientName,
+      'recipient_phone': recipientPhone,
+      'status': status,
+      'received_at': receivedAt.toIso8601String(),
+      'dispatched_at': dispatchedAt?.toIso8601String(),
+      'notes': notes,
+      'created_by': createdBy,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+
+  bool get isStored => status == 'stored';
+  bool get isDispatched => status == 'dispatched';
+}
+
+// ============================================================================
 // REVIEW MODEL (Notation étoile d'un client pour un expéditeur)
 // ============================================================================
 

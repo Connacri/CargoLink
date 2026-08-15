@@ -12,6 +12,7 @@ import '../screens/admin/admin_dashboard_screen.dart';
 import '../screens/admin/broadcast_screen.dart';
 import '../screens/admin/feedback_inbox_screen.dart';
 import '../screens/admin/founder_analytics_screen.dart';
+import '../screens/admin/inventory_screen.dart';
 import '../screens/admin/platform_settings_screen.dart';
 import '../screens/client/booking_screen.dart';
 import '../screens/client/booking_wizard_screen.dart';
@@ -80,6 +81,7 @@ class CargoLinkApp extends ConsumerWidget {
         '/founder-analytics': (context) => const FounderAnalyticsScreen(),
         '/feedback-inbox': (context) => const FeedbackInboxScreen(),
         '/platform-settings': (context) => const PlatformSettingsScreen(),
+        '/inventory': (context) => const InventoryScreen(),
       },
       debugShowCheckedModeBanner: false,
     );

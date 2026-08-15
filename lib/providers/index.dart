@@ -15,6 +15,7 @@ import '../data/services/realtime_service.dart';
 import '../data/services/settings_service.dart';
 import '../data/services/v2_service.dart';
 import '../data/services/feedback_service.dart';
+import '../data/services/inventory_service.dart';
 
 // ============================================================================
 // AUTH PROVIDERS
@@ -796,4 +797,35 @@ final feedbackListProvider = FutureProvider<List<FeedbackItem>>((ref) async {
 final unreadFeedbackCountProvider = FutureProvider<int>((ref) async {
   final service = ref.watch(feedbackServiceProvider);
   return service.countUnread();
+});
+
+// ============================================================================
+// INVENTORY (dépôts + colis — admin / super_admin)
+// ============================================================================
+
+final inventoryServiceProvider = Provider<InventoryService>((ref) {
+  return InventoryService();
+});
+
+final depotsProvider = FutureProvider<List<Depot>>((ref) async {
+  final service = ref.watch(inventoryServiceProvider);
+  return service.getDepots();
+});
+
+final depotByIdProvider =
+    FutureProvider.family<Depot?, String>((ref, depotId) async {
+  final service = ref.watch(inventoryServiceProvider);
+  return service.getDepotById(depotId);
+});
+
+final depotItemsProvider =
+    FutureProvider.family<List<DepotItem>, String>((ref, depotId) async {
+  final service = ref.watch(inventoryServiceProvider);
+  return service.getDepotItems(depotId);
+});
+
+final depotStatsProvider =
+    FutureProvider.family<Map<String, dynamic>?, String>((ref, depotId) async {
+  final service = ref.watch(inventoryServiceProvider);
+  return service.getDepotStats(depotId);
 });
