@@ -10,7 +10,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:41156395312:android:85408005823586eef208f5",
         "android_client_info": {
-          "package_name": "com.cargolink.dz"
+          "package_name": "com.cargolink.dz.cargolink"
         }
       },
       "oauth_client": [
@@ -18,7 +18,7 @@
           "client_id": "41156395312-8jodeuqmfdha15j846oh60koh8dsvhil.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.cargolink.dz",
+            "package_name": "com.cargolink.dz.cargolink",
             "certificate_hash": "33b5e26a818650de78828244b961c898b920a4ca"
           }
         },
@@ -26,7 +26,7 @@
           "client_id": "41156395312-n8e8b0uus0igqjf6fa88u933rtsnjnqr.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.cargolink.dz",
+            "package_name": "com.cargolink.dz.cargolink",
             "certificate_hash": "503bca0e7d9cf11193b8a34339154f33bc34aace"
           }
         },
