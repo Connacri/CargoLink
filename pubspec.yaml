@@ -2,7 +2,7 @@ name: cargolink
 description: "Plateforme de logistique pour micro-importateurs en Algérie"
 publish_to: 'none'
 
-version: 0.1.28+1
+version: 1.0.0+1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -94,6 +94,12 @@ dev_dependencies:
   # Code Generation
   build_runner: ^2.4.0
 
+  # App icon generation (run: dart run flutter_launcher_icons)
+  flutter_launcher_icons: ^0.14.3
+
+  # Splash screen generation (run: dart run flutter_native_splash:create)
+  flutter_native_splash: ^2.4.0
+
 flutter:
   uses-material-design: true
 
@@ -101,6 +107,32 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/animations/
+
+# App icon configuration. Place your high-res logo at assets/icons/icon2.png
+# then run: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/icon2.png"
+  remove_alpha_ios: true
+  adaptive_icon_background: "#6366F1"
+  adaptive_icon_foreground: "assets/icons/icon2.png"
+  min_sdk_android: 21
+
+# Splash screen configuration. Run: dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/icons/splash2.png
+
+  android: true
+  ios: true
+  web: true
+
+  fullscreen: true
+
+  android_12:
+    color: "#FFFFFF"
+    image: assets/icons/splash2.png
 
 dependency_overrides:
   sign_in_with_apple: ^8.1.0

@@ -92,6 +92,47 @@ jobs:
           name: cargolink-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
+  android-aab:
+    name: Android App Bundle (Play Store)
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.0
+          channel: stable
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK platform 36
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" || true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Build signed release App Bundle
+        run: flutter build appbundle --release --build-name=${{ needs.version.outputs.version }} --build-number=${{ needs.version.outputs.build }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEYSTORE_KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Upload App Bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cargolink-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+
   windows:
     name: Windows installer
     needs: version
@@ -157,7 +198,7 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: [version, android, windows, web]
+    needs: [version, android, android-aab, windows, web]
     runs-on: ubuntu-latest
     permissions:
       contents: write
