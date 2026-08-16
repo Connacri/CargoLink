@@ -21,7 +21,7 @@ if (keystoreBase64 != null) {
 val hasReleaseKeystore = releaseKeystore.exists()
 
 android {
-    namespace = "com.cargolink.dz.cargolink"
+    namespace = "com.cargolink.dz"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -33,7 +33,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.cargolink.dz.cargolink"
+        applicationId = "com.cargolink.dz"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

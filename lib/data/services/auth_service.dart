@@ -551,7 +551,7 @@ class AuthService {
       fbauth.ActionCodeSettings(
     url: 'https://connacri.github.io/CargoLink/',
     handleCodeInApp: false,
-    androidPackageName: 'com.cargolink.dz.cargolink',
+    androidPackageName: 'com.cargolink.dz',
     androidInstallApp: true,
     androidMinimumVersion: '1',
     iOSBundleId: 'com.cargolink.dz.cargolink',
