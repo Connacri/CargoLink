@@ -69,6 +69,8 @@ class _SuperAdminDashboardScreenState
     ref.invalidate(unreadFeedbackCountProvider);
     ref.invalidate(awaitingCommissionCountProvider);
     ref.invalidate(awaitingCommissionFeesProvider);
+    ref.invalidate(pendingDeletionRequestsProvider);
+    ref.invalidate(pendingDeletionRequestsCountProvider);
     await _refreshUsers();
   }
 
@@ -89,6 +91,7 @@ class _SuperAdminDashboardScreenState
                 children: [
                   const _PendingVerificationBadge(),
                   const _PendingCommissionBadge(),
+                  const _PendingDeletionBadge(),
                   IconButton(
                     tooltip: 'Annonces',
                     icon: const Icon(Icons.campaign, color: Colors.white),
@@ -104,6 +107,7 @@ class _SuperAdminDashboardScreenState
             const SliverToBoxAdapter(child: _StatsOverview()),
             const SliverToBoxAdapter(child: _PendingVerificationSection()),
             const SliverToBoxAdapter(child: _PendingCommissionSection()),
+            const SliverToBoxAdapter(child: _PendingDeletionSection()),
             const SliverToBoxAdapter(child: _FeedbackSection()),
             const SliverToBoxAdapter(
               child: _SectionTitle(title: 'Gestion des comptes'),
@@ -566,6 +570,310 @@ class _CommissionConfirmationTile extends ConsumerWidget {
         await showAppErrorDialog(context, message: 'Erreur: $e');
       }
     }
+  }
+}
+
+/// Header bell with the count of account deletion requests awaiting review.
+class _PendingDeletionBadge extends ConsumerWidget {
+  const _PendingDeletionBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(pendingDeletionRequestsCountProvider);
+
+    final badge = count.when(
+      data: (n) => n > 0 ? (n > 99 ? '99+' : '$n') : '',
+      loading: () => '',
+      error: (_, __) => '',
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 4),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          IconButton(
+            tooltip: 'Demandes de suppression en attente',
+            icon: const Icon(Icons.delete_forever_outlined, color: Colors.white),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const AccountDeletionRequestsScreen(),
+              ),
+            ),
+          ),
+          if (badge.isNotEmpty)
+            Positioned(
+              right: 6,
+              top: 6,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.errorColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                constraints: const BoxConstraints(minWidth: 18),
+                child: Text(
+                  badge,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Card showing the pending account deletion requests with an "Accepter la
+/// suppression" action that archives + purges + emails the user, plus a
+/// shortcut to the full request screen.
+class _PendingDeletionSection extends ConsumerWidget {
+  const _PendingDeletionSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final requests = ref.watch(pendingDeletionRequestsProvider);
+    final count = ref.watch(pendingDeletionRequestsCountProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        0,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: GlassCard(
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const AnimatedIconDot(
+                  icon: Icons.delete_forever_outlined,
+                  color: AppTheme.errorColor,
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                const Expanded(
+                  child: Text(
+                    'Demandes de suppression de compte',
+                    style: AppTheme.h3,
+                  ),
+                ),
+                count.when(
+                  data: (n) => n > 0
+                      ? GradientBadge(
+                          label: '$n en attente',
+                          gradient: AppTheme.errorGradient,
+                          compact: true,
+                        )
+                      : const SizedBox.shrink(),
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            requests.when(
+              data: (list) {
+                if (list.isEmpty) {
+                  return const Text(
+                    'Aucune demande de suppression en attente.',
+                    style: AppTheme.caption,
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final req in list.take(5)) _DeletionRequestTile(req: req),
+                  ],
+                );
+              },
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppTheme.spaceMd),
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ),
+              error: (_, __) => const Text(
+                'Impossible de charger les demandes.',
+                style: AppTheme.caption,
+              ),
+            ),
+            if ((count.valueOrNull ?? 0) > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: AppTheme.spaceSm),
+                child: TextButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const AccountDeletionRequestsScreen(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                  label: const Text('Voir toutes les demandes'),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One pending deletion request row with an accept button.
+class _DeletionRequestTile extends ConsumerWidget {
+  const _DeletionRequestTile({required this.req});
+
+  final AccountDeletionRequest req;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppTheme.spaceSm),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  req.fullName ?? req.email,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(req.email, style: AppTheme.caption),
+                Text(
+                  'Demandé le ${_formatDate(req.requestedAt)}',
+                  style: AppTheme.caption,
+                ),
+              ],
+            ),
+          ),
+          FilledButton.icon(
+            onPressed: () => _approve(context, ref),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppTheme.errorColor,
+            ),
+            icon: const Icon(Icons.check_rounded, size: 18),
+            label: const Text('Accepter'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+
+  Future<void> _approve(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Accepter la suppression ?'),
+        content: Text(
+          'Le compte "${req.fullName ?? req.email}" (${req.email}) sera '
+          'supprimé définitivement : profil, colis, expéditions, commandes, '
+          'paiements, documents et messages.\n\n'
+          'Le compte sera archivé dans l\'historique (visible par le '
+          'Fondateur) et un e-mail sera envoyé à l\'utilisateur.\n\n'
+          'Cette action est irréversible. Continuer ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      final result =
+          await ref.read(authServiceProvider).approveDeletionRequest(req.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result['emailSent'] == true
+                  ? 'Compte supprimé et utilisateur prévenu par e-mail'
+                  : 'Compte supprimé (e-mail de notification non envoyé)',
+            ),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+      ref.invalidate(pendingDeletionRequestsProvider);
+      ref.invalidate(pendingDeletionRequestsCountProvider);
+      ref.invalidate(deletedAccountsProvider);
+      ref.invalidate(platformStatsProvider);
+    } catch (e) {
+      if (context.mounted) {
+        await showAppErrorDialog(context, message: 'Erreur: $e');
+      }
+    }
+  }
+}
+
+/// Full-screen list of account deletion requests with accept action.
+class AccountDeletionRequestsScreen extends ConsumerWidget {
+  const AccountDeletionRequestsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final requests = ref.watch(pendingDeletionRequestsProvider);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Demandes de suppression')),
+      body: RefreshIndicator(
+        onRefresh: () async =>
+            ref.refresh(pendingDeletionRequestsProvider.future),
+        child: requests.when(
+          data: (list) {
+            if (list.isEmpty) {
+              return const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.delete_sweep_outlined,
+                        size: 56, color: AppTheme.textMutedColor),
+                    SizedBox(height: AppTheme.spaceMd),
+                    Text('Aucune demande en attente', style: AppTheme.h3),
+                  ],
+                ),
+              );
+            }
+            return ListView.builder(
+              padding: const EdgeInsets.all(AppTheme.spaceMd),
+              itemCount: list.length,
+              itemBuilder: (context, index) =>
+                  Padding(
+                padding: const EdgeInsets.only(bottom: AppTheme.spaceSm),
+                child: _DeletionRequestTile(req: list[index]),
+              ),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, __) => const Center(
+            child: Text('Impossible de charger les demandes'),
+          ),
+        ),
+      ),
+    );
   }
 }
 

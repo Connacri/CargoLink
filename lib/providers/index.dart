@@ -526,6 +526,25 @@ final platformStatsProvider =
   return authService.getPlatformStats();
 });
 
+/// Pending account deletion requests (super admin dashboard).
+final pendingDeletionRequestsProvider =
+    FutureProvider<List<AccountDeletionRequest>>((ref) async {
+  final authService = ref.watch(authServiceProvider);
+  return authService.getPendingDeletionRequests();
+});
+
+/// Count of pending account deletion requests — powers the founder badge/card.
+final pendingDeletionRequestsCountProvider = FutureProvider<int>((ref) async {
+  final authService = ref.watch(authServiceProvider);
+  return authService.countPendingDeletionRequests();
+});
+
+/// History of deleted accounts (super admin only).
+final deletedAccountsProvider = FutureProvider<List<DeletedAccount>>((ref) async {
+  final authService = ref.watch(authServiceProvider);
+  return authService.getDeletedAccounts();
+});
+
 final allShipmentsProvider = FutureProvider<List<Shipment>>((ref) async {
   final shipmentService = ref.watch(shipmentServiceProvider);
   return shipmentService.getAllShipments(limit: 500);

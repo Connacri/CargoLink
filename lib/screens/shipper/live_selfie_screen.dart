@@ -132,20 +132,49 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
     } catch (_) {}
   }
 
+  /// Converts a raw [CameraImage] (YUV_420_888) into a tight NV21 buffer for
+  /// ML Kit.
+  ///
+  /// On Android `startImageStream` delivers YUV_420_888 planes whose row
+  /// strides and pixel strides carry padding, so naive concatenation produces
+  /// a malformed buffer (garbage U/V) and the face is never detected. Here we
+  /// re-pack the Y plane row by row (dropping the stride padding) and then
+  /// interleave V/U samples at the pixel stride, producing a valid NV21 layout
+  /// (Y plane + interleaved VU) that ML Kit accepts.
+  Uint8List _imageToNv21(CameraImage image) {
+    final width = image.width;
+    final height = image.height;
+    final y = image.planes[0];
+    final u = image.planes[1];
+    final v = image.planes[2];
+    final yStride = y.bytesPerRow;
+    final uvStride = u.bytesPerRow;
+    final uvPixelStride = u.bytesPerPixel ?? 1;
+
+    final nv21 = Uint8List(width * height + (width * height) ~/ 2);
+    var pos = 0;
+    // Y plane (one row of `width` bytes per row, stride padding skipped).
+    for (var row = 0; row < height; row++) {
+      final rowStart = row * yStride;
+      nv21.setRange(pos, pos + width, y.bytes, rowStart);
+      pos += width;
+    }
+    // Interleaved VU (NV21 order: V first, then U).
+    for (var row = 0; row < height ~/ 2; row++) {
+      for (var col = 0; col < width; col += 2) {
+        final uvIndex = row * uvStride + (col ~/ 2) * uvPixelStride;
+        nv21[pos++] = v.bytes[uvIndex];
+        nv21[pos++] = u.bytes[uvIndex];
+      }
+    }
+    return nv21;
+  }
+
   /// Converts a raw [CameraImage] (YUV) into an [InputImage] for ML Kit.
-  /// The planes are concatenated so the buffer is laid out as NV21 YUV
-  /// (Y plane + interleaved UV), which is the format ML Kit expects on
-  /// Android camera streams.
   InputImage _imageFromCamera(CameraImage image) {
     final width = image.width;
     final height = image.height;
-
-    // Concatenate all planes (Y, U, V).
-    final buffer = BytesBuilder(copy: false);
-    for (final plane in image.planes) {
-      buffer.add(plane.bytes);
-    }
-    final bytes = buffer.toBytes();
+    final bytes = _imageToNv21(image);
 
     final rotation = _controller?.description.sensorOrientation ?? 90;
     return InputImage.fromBytes(
@@ -157,7 +186,7 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
           orElse: () => InputImageRotation.rotation90deg,
         ),
         format: InputImageFormat.nv21,
-        bytesPerRow: image.planes.first.bytesPerRow,
+        bytesPerRow: width,
       ),
     );
   }
@@ -289,7 +318,22 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
       );
     }
 
-    final preview = CameraPreview(controller);
+    // CameraPreview is an AspectRatio widget: inside a Stack with
+    // StackFit.expand it receives tight constraints and gets stretched
+    // (portrait → stretched vertically). Wrapping it in a FittedBox that
+    // preserves the camera's aspect ratio and then scales (BoxFit.cover)
+    // fills the screen without distortion, cropping the overflow.
+    final preview = SizedBox.expand(
+      child: FittedBox(
+        fit: BoxFit.cover,
+        clipBehavior: Clip.hardEdge,
+        child: SizedBox(
+          width: controller.value.aspectRatio * 100,
+          height: 100,
+          child: CameraPreview(controller),
+        ),
+      ),
+    );
 
     return Stack(
       fit: StackFit.expand,

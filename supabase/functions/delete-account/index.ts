@@ -6,6 +6,11 @@
 //   A) Self-delete: body = { idToken }  -> deletes the authenticated caller.
 //   B) Admin-delete: body = { adminToken, targetUserUuid } -> a super_admin
 //      deletes any account. The caller must be a super_admin in public.users.
+//   C) Approve-deletion-request: body = { adminToken, requestId } -> a
+//      super_admin approves a pending account_deletion_requests row. Archives
+//      the account into deleted_accounts (with creation date + history), then
+//      performs the same full purge as mode B, emails the user (Resend) and
+//      marks the request 'approved'.
 //
 // Deletes: public rows referencing the user, storage objects, the Supabase
 // auth user, and the Firebase Auth account (self mode via idToken, admin mode
@@ -331,6 +336,139 @@ async function firebaseUidFromUuid(userUuid: string): Promise<string | undefined
   return typeof uid === "string" && uid.length > 0 ? uid : undefined;
 }
 
+// ---------------------------------------------------------------------------
+// Mode C: approve a pending account_deletion_requests row.
+// ---------------------------------------------------------------------------
+
+// Send a notification email via Resend (RESEND_API_KEY secret). Falls back to a
+// console log when the secret is not configured so the deletion still succeeds.
+async function sendDeletionEmail(
+  to: string,
+  fullName: string,
+): Promise<{ sent: boolean }> {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  if (!apiKey) {
+    console.error("RESEND_API_KEY not configured — deletion email skipped");
+    return { sent: false };
+  }
+  const from = Deno.env.get("RESEND_FROM") ?? "CargoLink <no-reply@cargolink.app>";
+
+  const html = [
+    `<h2>Votre compte CargoLink a été supprimé</h2>`,
+    `<p>Bonjour${fullName ? ` ${fullName}` : ""},</p>`,
+    `<p>Votre demande de suppression a été acceptée. Votre compte et l'ensemble de vos données CargoLink ont été <strong>définitivement supprimés</strong> : profil, colis, expéditions, commandes, paiements, documents et messages.</p>`,
+    `<p>Si vous n'êtes pas à l'origine de cette demande, contactez-nous immédiatement.</p>`,
+    `<p>Cordialement,<br>L'équipe CargoLink</p>`,
+  ].join("\n");
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ from, to, subject: "Votre compte CargoLink a été supprimé", html }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error("resend send failed", res.status, data?.message);
+      return { sent: false };
+    }
+    return { sent: true };
+  } catch (e) {
+    console.error("resend send error", e);
+    return { sent: false };
+  }
+}
+
+// Archive the account (creation date + a history snapshot) into
+// deleted_accounts, purge every trace, email the user and mark the request
+// approved. The deletion is performed regardless of email outcome.
+async function approveDeletionRequest(
+  requestId: string,
+  adminUuid: string,
+): Promise<{ ok: boolean; userUuid: string; emailSent: boolean }> {
+  const { data: request, error: reqErr } = await supabase
+    .from("account_deletion_requests")
+    .select("*")
+    .eq("id", requestId)
+    .maybeSingle();
+
+  if (reqErr) throw reqErr;
+  if (!request) throw new Error("Demande introuvable");
+  if (request.status !== "pending") {
+    throw new Error("Cette demande a déjà été traitée");
+  }
+
+  const userUuid = request.user_id as string;
+
+  // Snapshot the account for the trace (visible only by super admin).
+  const { data: userRow } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", userUuid)
+    .maybeSingle();
+
+  const history: Record<string, unknown> = {};
+  if (userRow) {
+    const { data: shipperRows } = await supabase
+      .from("shippers")
+      .select("id")
+      .eq("user_id", userUuid);
+    const shipperIds = (shipperRows ?? []).map((r) => r.id as string);
+    const { data: bookingRows } = await supabase
+      .from("bookings")
+      .select("id")
+      .eq("client_id", userUuid);
+    history.shippers = shipperIds;
+    history.bookings = (bookingRows ?? []).map((r) => r.id as string);
+  }
+
+  const { error: archiveError } = await supabase.from("deleted_accounts").insert({
+    user_id: userUuid,
+    email: request.email ?? userRow?.email ?? "",
+    full_name: request.full_name ?? userRow?.full_name ?? null,
+    role: request.role ?? userRow?.role ?? null,
+    account_created_at: userRow?.created_at ?? request.requested_at,
+    deleted_by: adminUuid,
+    history,
+  });
+  if (archiveError) {
+    console.error("archive error", archiveError);
+    throw archiveError;
+  }
+
+  // Full purge (auth users, public rows, storage).
+  const firebaseUid = await firebaseUidFromUuid(userUuid);
+  if (firebaseUid) {
+    await deleteFirebaseUserByUid(firebaseUid);
+  }
+  await purgeUser(userUuid);
+
+  // Notify the user that their account + data are gone.
+  const email = request.email ?? userRow?.email;
+  const emailResult = email
+    ? await sendDeletionEmail(email as string, request.full_name ?? userRow?.full_name)
+    : { sent: false };
+
+  // Mark the request approved.
+  const { error: markError } = await supabase
+    .from("account_deletion_requests")
+    .update({
+      status: "approved",
+      reviewed_at: new Date().toISOString(),
+      reviewed_by: adminUuid,
+    })
+    .eq("id", requestId);
+  if (markError) {
+    console.error("mark approved error", markError);
+    throw markError;
+  }
+
+  return { ok: true, userUuid, emailSent: emailResult.sent };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return json({ ok: true });
 
@@ -368,6 +506,23 @@ Deno.serve(async (req: Request) => {
 
       await purgeUser(targetUserUuid);
       return json({ ok: true, userUuid: targetUserUuid });
+    }
+
+    // -------- Mode C: super_admin approves a deletion request --------------
+    const requestId: string | undefined = body?.requestId;
+    if (adminToken && requestId) {
+      const admin = await verifyFirebaseToken(adminToken);
+      const adminUuid = await firebaseUidToUuid(admin.uid);
+      const { data: adminRow } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", adminUuid)
+        .single();
+      if (adminRow?.role !== "super_admin") {
+        return json({ error: "Forbidden: super_admin required" }, 403);
+      }
+      const result = await approveDeletionRequest(requestId, adminUuid);
+      return json(result);
     }
 
     // -------- Mode A: self delete -----------------------------------------

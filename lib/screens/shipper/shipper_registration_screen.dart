@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../data/services/storage_service.dart';
@@ -37,10 +37,23 @@ class _ShipperRegistrationScreenState
     super.dispose();
   }
 
+  /// Passport photo must be taken live with the camera (identity document),
+  /// not picked from the gallery, to prevent tampering with a saved image.
   Future<void> _pickPassport() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
-    if (result != null && result.files.isNotEmpty) {
-      setState(() => _passportPhoto = File(result.files.first.path!));
+    try {
+      final xfile = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 92,
+      );
+      if (xfile != null) {
+        setState(() => _passportPhoto = File(xfile.path));
+      }
+    } catch (e) {
+      if (mounted) {
+        _showMessage('Impossible d\'ouvrir la caméra: $e', isError: true);
+      }
     }
   }
 
@@ -305,7 +318,7 @@ class _ShipperRegistrationScreenState
                           ? _passportPhoto!.path.split('/').last
                           : (_existingPassportUrl != null
                               ? 'Image actuelle — toucher pour changer'
-                              : 'Choisir une photo'),
+                              : 'Prendre une photo (caméra)'),
                       icon: Icons.description_outlined,
                       hasFile: _passportPhoto != null,
                       previewFile: _passportPhoto,

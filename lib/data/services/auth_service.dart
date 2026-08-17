@@ -983,6 +983,102 @@ class AuthService {
       return null;
     }
   }
+
+  // ==========================================================================
+  // ACCOUNT DELETION REQUESTS (demandes web — super_admin only)
+  // ==========================================================================
+
+  /// Pending account deletion requests submitted from the public web page.
+  /// RLS restricts reads to admin/super_admin.
+  Future<List<AccountDeletionRequest>> getPendingDeletionRequests() async {
+    try {
+      final response = await SupabaseConfig.client
+          .from('account_deletion_requests')
+          .select()
+          .eq('status', 'pending')
+          .order('requested_at', ascending: false);
+      return (response as List)
+          .map((item) =>
+              AccountDeletionRequest.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting pending deletion requests: $e');
+      return [];
+    }
+  }
+
+  /// Count of pending deletion requests — powers the founder dashboard badge.
+  Future<int> countPendingDeletionRequests() async {
+    try {
+      final response = await SupabaseConfig.client
+          .from('account_deletion_requests')
+          .select('id')
+          .eq('status', 'pending');
+      return (response as List).length;
+    } catch (e) {
+      _logger.e('Error counting pending deletion requests: $e');
+      return 0;
+    }
+  }
+
+  /// History of deleted accounts (super_admin only). RLS restricts reads to
+  /// the super_admin role.
+  Future<List<DeletedAccount>> getDeletedAccounts() async {
+    try {
+      final response = await SupabaseConfig.client
+          .from('deleted_accounts')
+          .select()
+          .order('deleted_at', ascending: false)
+          .limit(200);
+      return (response as List)
+          .map((item) => DeletedAccount.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting deleted accounts: $e');
+      return [];
+    }
+  }
+
+  /// Approve a pending account deletion request (super_admin only). Calls the
+  /// `delete-account` edge function in approval mode: archives the account
+  /// into `deleted_accounts` (creation date + history), performs the full
+  /// purge (public rows, storage, Supabase Auth + Firebase Auth), emails the
+  /// user (Resend) and marks the request 'approved'.
+  Future<Map<String, dynamic>> approveDeletionRequest(
+    String requestId,
+  ) async {
+    try {
+      _logger.i('=== Super admin approves deletion request $requestId ===');
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('Aucun utilisateur connecté');
+      final adminToken = await user.getIdToken(true);
+      final response = await http.post(
+        Uri.parse(
+          '${SupabaseConfig.supabaseUrl}/functions/v1/delete-account',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'adminToken': adminToken,
+          'requestId': requestId,
+        }),
+      );
+      _logger.i('approve delete-account: HTTP ${response.statusCode}');
+      final body = response.body.isNotEmpty
+          ? (jsonDecode(response.body) as Map<String, dynamic>)
+          : <String, dynamic>{};
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Échec de la suppression (${response.statusCode}): '
+          '${body['error'] ?? response.body}',
+        );
+      }
+      _logger.i('Deletion request approved: $body');
+      return body;
+    } catch (e) {
+      _logger.e('Error approving deletion request: $e');
+      rethrow;
+    }
+  }
 }
 
 /// A user-facing auth error with a friendly message.

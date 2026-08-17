@@ -1110,3 +1110,91 @@ class Review {
     };
   }
 }
+
+// ============================================================================
+// ACCOUNT DELETION REQUEST (demande web -> validation super admin)
+// ============================================================================
+
+class AccountDeletionRequest {
+  final String id;
+  final String userId;
+  final String email;
+  final String? fullName;
+  final String? role;
+  final String status; // pending | approved | rejected
+  final DateTime requestedAt;
+  final DateTime? reviewedAt;
+  final String? reviewedBy;
+
+  AccountDeletionRequest({
+    required this.id,
+    required this.userId,
+    required this.email,
+    this.fullName,
+    this.role,
+    required this.status,
+    required this.requestedAt,
+    this.reviewedAt,
+    this.reviewedBy,
+  });
+
+  factory AccountDeletionRequest.fromJson(Map<String, dynamic> json) {
+    return AccountDeletionRequest(
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      email: json['email'] as String,
+      fullName: json['full_name'] as String?,
+      role: json['role'] as String?,
+      status: json['status'] as String,
+      requestedAt: DateTime.parse(json['requested_at'] as String),
+      reviewedAt: json['reviewed_at'] != null
+          ? DateTime.tryParse(json['reviewed_at'] as String)
+          : null,
+      reviewedBy: json['reviewed_by'] as String?,
+    );
+  }
+
+  bool get isPending => status == 'pending';
+}
+
+// ============================================================================
+// DELETED ACCOUNT (trace conservée — visible uniquement super admin)
+// ============================================================================
+
+class DeletedAccount {
+  final String id;
+  final String userId;
+  final String email;
+  final String? fullName;
+  final String? role;
+  final DateTime accountCreatedAt;
+  final DateTime deletedAt;
+  final String? deletedBy;
+  final Map<String, dynamic> history;
+
+  DeletedAccount({
+    required this.id,
+    required this.userId,
+    required this.email,
+    this.fullName,
+    this.role,
+    required this.accountCreatedAt,
+    required this.deletedAt,
+    this.deletedBy,
+    this.history = const {},
+  });
+
+  factory DeletedAccount.fromJson(Map<String, dynamic> json) {
+    return DeletedAccount(
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      email: json['email'] as String,
+      fullName: json['full_name'] as String?,
+      role: json['role'] as String?,
+      accountCreatedAt: DateTime.parse(json['account_created_at'] as String),
+      deletedAt: DateTime.parse(json['deleted_at'] as String),
+      deletedBy: json['deleted_by'] as String?,
+      history: (json['history'] as Map?)?.cast<String, dynamic>() ?? const {},
+    );
+  }
+}
