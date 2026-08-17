@@ -318,21 +318,46 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
       );
     }
 
-    // CameraPreview is an AspectRatio widget: inside a Stack with
-    // StackFit.expand it receives tight constraints and gets stretched
-    // (portrait → stretched vertically). Wrapping it in a FittedBox that
-    // preserves the camera's aspect ratio and then scales (BoxFit.cover)
-    // fills the screen without distortion, cropping the overflow.
-    final preview = SizedBox.expand(
-      child: FittedBox(
-        fit: BoxFit.cover,
-        clipBehavior: Clip.hardEdge,
-        child: SizedBox(
-          width: controller.value.aspectRatio * 100,
-          height: 100,
-          child: CameraPreview(controller),
-        ),
-      ),
+    // CameraPreview is internally an AspectRatio widget. If it receives tight
+    // constraints whose ratio differs from the camera's own ratio it gets
+    // stretched (that was the vertical stretch of the raw StackFit.expand and
+    // the horizontal stretch of the FittedBox wrapper). Here the preview box
+    // is sized so width/height ALWAYS equals the camera ratio (1:1, no
+    // scaling, no distortion) and the screen is filled by overflowing the
+    // smaller dimension and clipping the excess — a true "cover" crop.
+    final preview = LayoutBuilder(
+      builder: (context, constraints) {
+        final screen = constraints.biggest;
+        final cameraAspect = controller.value.aspectRatio;
+        final screenAspect = screen.width / screen.height;
+
+        double w;
+        double h;
+        if (cameraAspect >= screenAspect) {
+          // Camera wider than the screen: fill width, crop the vertical excess.
+          w = screen.width;
+          h = screen.width / cameraAspect;
+        } else {
+          // Camera taller than the screen: fill height, crop the sides.
+          h = screen.height;
+          w = screen.height * cameraAspect;
+        }
+
+        return ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.center,
+            minWidth: w,
+            maxWidth: w,
+            minHeight: h,
+            maxHeight: h,
+            child: SizedBox(
+              width: w,
+              height: h,
+              child: CameraPreview(controller),
+            ),
+          ),
+        );
+      },
     );
 
     return Stack(

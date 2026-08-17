@@ -9,8 +9,8 @@
 //   C) Approve-deletion-request: body = { adminToken, requestId } -> a
 //      super_admin approves a pending account_deletion_requests row. Archives
 //      the account into deleted_accounts (with creation date + history), then
-//      performs the same full purge as mode B, emails the user (Resend) and
-//      marks the request 'approved'.
+//      performs the same full purge as mode B, notifies the user by push (FCM)
+//      and marks the request 'approved'.
 //
 // Deletes: public rows referencing the user, storage objects, the Supabase
 // auth user, and the Firebase Auth account (self mode via idToken, admin mode
@@ -340,55 +340,63 @@ async function firebaseUidFromUuid(userUuid: string): Promise<string | undefined
 // Mode C: approve a pending account_deletion_requests row.
 // ---------------------------------------------------------------------------
 
-// Send a notification email via Resend (RESEND_API_KEY secret). Falls back to a
-// console log when the secret is not configured so the deletion still succeeds.
-async function sendDeletionEmail(
-  to: string,
+// Send a push notification to all devices of the target user via FCM
+// (FCM_SERVER_KEY secret). Falls back to a console log when the secret is not
+// configured so the deletion still succeeds.
+async function sendDeletionPush(
+  userUuid: string,
   fullName: string,
 ): Promise<{ sent: boolean }> {
-  const apiKey = Deno.env.get("RESEND_API_KEY");
-  if (!apiKey) {
-    console.error("RESEND_API_KEY not configured — deletion email skipped");
+  const serverKey = Deno.env.get("FCM_SERVER_KEY");
+  if (!serverKey) {
+    console.error("FCM_SERVER_KEY not configured — deletion push skipped");
     return { sent: false };
   }
-  const from = Deno.env.get("RESEND_FROM") ?? "CargoLink <no-reply@cargolink.app>";
 
-  const html = [
-    `<h2>Votre compte CargoLink a été supprimé</h2>`,
-    `<p>Bonjour${fullName ? ` ${fullName}` : ""},</p>`,
-    `<p>Votre demande de suppression a été acceptée. Votre compte et l'ensemble de vos données CargoLink ont été <strong>définitivement supprimés</strong> : profil, colis, expéditions, commandes, paiements, documents et messages.</p>`,
-    `<p>Si vous n'êtes pas à l'origine de cette demande, contactez-nous immédiatement.</p>`,
-    `<p>Cordialement,<br>L'équipe CargoLink</p>`,
-  ].join("\n");
+  const { data: tokens } = await supabase
+    .from("device_tokens")
+    .select("token")
+    .eq("user_id", userUuid);
+  if (!tokens || tokens.length === 0) {
+    console.error(`no device tokens for ${userUuid}`);
+    return { sent: false };
+  }
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
+  const title = "Votre compte CargoLink a été supprimé";
+  const body = fullName
+    ? `${fullName}, votre demande de suppression a été acceptée. Votre compte et l'ensemble de vos données ont été définitivement supprimés.`
+    : "Votre demande de suppression a été acceptée. Votre compte et l'ensemble de vos données ont été définitivement supprimés.";
+
+  let delivered = 0;
+  for (const row of tokens) {
+    const res = await fetch("https://fcm.googleapis.com/fcm/send", {
       method: "POST",
       headers: {
+        Authorization: "key=" + serverKey,
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({ from, to, subject: "Votre compte CargoLink a été supprimé", html }),
+      body: JSON.stringify({
+        to: row.token,
+        notification: { title, body, sound: "default" },
+        data: { click_action: "FLUTTER_NOTIFICATION_CLICK" },
+      }),
     });
-    const data = await res.json().catch(() => ({}));
+    delivered++;
     if (!res.ok) {
-      console.error("resend send failed", res.status, data?.message);
-      return { sent: false };
+      const text = await res.text();
+      console.error("FCM push failed", res.status, text);
     }
-    return { sent: true };
-  } catch (e) {
-    console.error("resend send error", e);
-    return { sent: false };
   }
+  return { sent: delivered > 0 };
 }
 
 // Archive the account (creation date + a history snapshot) into
-// deleted_accounts, purge every trace, email the user and mark the request
-// approved. The deletion is performed regardless of email outcome.
+// deleted_accounts, purge every trace, notify the user by push and mark the
+// request approved. The deletion is performed regardless of push outcome.
 async function approveDeletionRequest(
   requestId: string,
   adminUuid: string,
-): Promise<{ ok: boolean; userUuid: string; emailSent: boolean }> {
+): Promise<{ ok: boolean; userUuid: string; pushSent: boolean }> {
   const { data: request, error: reqErr } = await supabase
     .from("account_deletion_requests")
     .select("*")
@@ -439,18 +447,19 @@ async function approveDeletionRequest(
     throw archiveError;
   }
 
+  // Notify the user that their account + data are gone (best-effort, before
+  // the device tokens are purged).
+  const pushResult = await sendDeletionPush(
+    userUuid,
+    request.full_name ?? userRow?.full_name,
+  );
+
   // Full purge (auth users, public rows, storage).
   const firebaseUid = await firebaseUidFromUuid(userUuid);
   if (firebaseUid) {
     await deleteFirebaseUserByUid(firebaseUid);
   }
   await purgeUser(userUuid);
-
-  // Notify the user that their account + data are gone.
-  const email = request.email ?? userRow?.email;
-  const emailResult = email
-    ? await sendDeletionEmail(email as string, request.full_name ?? userRow?.full_name)
-    : { sent: false };
 
   // Mark the request approved.
   const { error: markError } = await supabase
@@ -466,7 +475,7 @@ async function approveDeletionRequest(
     throw markError;
   }
 
-  return { ok: true, userUuid, emailSent: emailResult.sent };
+  return { ok: true, userUuid, pushSent: pushResult.sent };
 }
 
 Deno.serve(async (req: Request) => {

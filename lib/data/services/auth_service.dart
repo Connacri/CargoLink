@@ -49,10 +49,14 @@ class GoogleSignInResult {
   final bool isNewUser;
   final String? email;
   final String? fullName;
+  final String? photoUrl;
+  final String? phone;
   const GoogleSignInResult({
     required this.isNewUser,
     this.email,
     this.fullName,
+    this.photoUrl,
+    this.phone,
   });
 }
 
@@ -330,11 +334,49 @@ class AuthService {
           isNewUser: true,
           email: user.email,
           fullName: user.displayName,
+          photoUrl: user.photoURL,
+          phone: user.phoneNumber,
         );
       }
       _logger.i(
         'Google sign-in: returning user (role=${existing.role}), SUCCESS',
       );
+
+      // Existing user: attach the Google profile picture and phone number to
+      // the CargoLink profile when the account has them (and they are missing
+      // locally), so the avatar/phone stay in sync with the Google account.
+      final googlePhoto = user.photoURL;
+      final googlePhone = user.phoneNumber;
+      if ((googlePhoto != null && googlePhoto.isNotEmpty) ||
+          (googlePhone != null && googlePhone.isNotEmpty)) {
+        try {
+          final updateData = <String, dynamic>{
+            'updated_at': DateTime.now().toIso8601String(),
+          };
+          final needsPhoto = (existing.profilePictureUrl == null ||
+                  existing.profilePictureUrl!.isEmpty) &&
+              googlePhoto != null &&
+              googlePhoto.isNotEmpty;
+          final needsPhone =
+              existing.phone.isEmpty && googlePhone != null && googlePhone.isNotEmpty;
+          if (needsPhoto) updateData['profile_picture_url'] = googlePhoto;
+          if (needsPhone) updateData['phone'] = googlePhone;
+          if (needsPhoto || needsPhone) {
+            await SupabaseConfig.client
+                .from('users')
+                .update(updateData)
+                .eq('id', existing.id);
+            _logger.i(
+              'Google sign-in: profile synced '
+              '(photo=${needsPhoto ? 'yes' : 'no'}, '
+              'phone=${needsPhone ? 'yes' : 'no'})',
+            );
+          }
+        } catch (e) {
+          _logger.w('Google sign-in: profile sync failed (ignored): $e');
+        }
+      }
+
       return const GoogleSignInResult(isNewUser: false);
     } catch (e) {
       _logger.e('Google sign-in FAILED: $e');
@@ -616,6 +658,7 @@ class AuthService {
     required String fullName,
     required String phone,
     required String role,
+    String? profilePictureUrl,
   }) async {
     try {
       await SupabaseConfig.client.from('users').insert({
@@ -624,6 +667,8 @@ class AuthService {
         'full_name': fullName,
         'phone': phone,
         'role': role,
+        if (profilePictureUrl != null && profilePictureUrl.isNotEmpty)
+          'profile_picture_url': profilePictureUrl,
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       });
@@ -656,6 +701,7 @@ class AuthService {
                 : 'Utilisateur'),
         phone: '',
         role: 'client',
+        profilePictureUrl: user.photoURL,
       );
       _logger.i('_ensureProfileIfAbsent: profile auto-created');
     } catch (e) {
@@ -665,6 +711,10 @@ class AuthService {
 
   /// Create the CargoLink profile for a brand-new user (e.g. first Google
   /// sign-in) with the role they picked. Used by the role-selection flow.
+  ///
+  /// When the Firebase account carries a Google profile picture or phone
+  /// number, they are attached to the profile so a Google sign-in always
+  /// restores the avatar and phone number.
   Future<void> createProfileWithRole({
     required String role,
     String? fullName,
@@ -680,8 +730,9 @@ class AuthService {
       fullName: fullName ??
           user.displayName ??
           ((user.email ?? '').isNotEmpty ? user.email!.split('@').first : 'Utilisateur'),
-      phone: phone ?? '',
+      phone: phone ?? user.phoneNumber ?? '',
       role: role,
+      profilePictureUrl: user.photoURL,
     );
     _logger.i('createProfileWithRole: profile created (role=$role)');
   }

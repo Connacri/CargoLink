@@ -82,25 +82,15 @@ class _SuperAdminDashboardScreenState
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            GradientSliverHeader(
+            const GradientSliverHeader(
               title: 'Fondateur',
               subtitle: 'Contrôle total de la plateforme',
               icon: Icons.admin_panel_settings_outlined,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const _PendingVerificationBadge(),
-                  const _PendingCommissionBadge(),
-                  const _PendingDeletionBadge(),
-                  IconButton(
-                    tooltip: 'Annonces',
-                    icon: const Icon(Icons.campaign, color: Colors.white),
-                    onPressed: () =>
-                        Navigator.of(context).pushNamed('/broadcast'),
-                  ),
-                  const _FeedbackBadge(),
-                  const ChatInboxBadge(),
-                  const LogoutIconButton(),
+                  _FounderMenuButton(),
+                  LogoutIconButton(),
                 ],
               ),
             ),
@@ -238,68 +228,6 @@ class _SectionTitle extends StatelessWidget {
 // PENDING VERIFICATION (Fondateur notification)
 // ============================================================================
 
-/// Bell icon with the count of shippers awaiting KYC verification. Tapping it
-/// opens the full-screen verification center (photos at full size).
-class _PendingVerificationBadge extends ConsumerWidget {
-  const _PendingVerificationBadge();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(pendingShippersCountProvider);
-
-    final badge = count.when(
-      data: (n) => n > 0
-          ? n > 99
-              ? '99+'
-              : '$n'
-          : '',
-      loading: () => '',
-      error: (_, __) => '',
-    );
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 4),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          IconButton(
-            tooltip: 'Vérifications en attente',
-            icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const VerificationCenterScreen(),
-              ),
-            ),
-          ),
-          if (badge.isNotEmpty)
-            Positioned(
-              right: 6,
-              top: 6,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppTheme.errorColor,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                constraints: const BoxConstraints(minWidth: 18),
-                child: Text(
-                  badge,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 /// Compact "comptes en attente" summary card linking to the verification center.
 class _PendingVerificationSection extends ConsumerWidget {
   const _PendingVerificationSection();
@@ -360,61 +288,6 @@ class _PendingVerificationSection extends ConsumerWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Header badge with the number of commission payments awaiting confirmation.
-class _PendingCommissionBadge extends ConsumerWidget {
-  const _PendingCommissionBadge();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(awaitingCommissionCountProvider);
-
-    final badge = count.when(
-      data: (n) => n > 0 ? (n > 99 ? '99+' : '$n') : '',
-      loading: () => '',
-      error: (_, __) => '',
-    );
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 4),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          IconButton(
-            tooltip: 'Paiements de commissions en attente',
-            icon: const Icon(Icons.payments_outlined, color: Colors.white),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const CommissionScreen()),
-            ),
-          ),
-          if (badge.isNotEmpty)
-            Positioned(
-              right: 6,
-              top: 6,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppTheme.errorColor,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                constraints: const BoxConstraints(minWidth: 18),
-                child: Text(
-                  badge,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }
@@ -573,61 +446,148 @@ class _CommissionConfirmationTile extends ConsumerWidget {
   }
 }
 
-/// Header bell with the count of account deletion requests awaiting review.
-class _PendingDeletionBadge extends ConsumerWidget {
-  const _PendingDeletionBadge();
+/// Regroupe toutes les actions du header du Fondateur dans un menu déroulant :
+/// vérifications, commissions, suppressions, annonces, feedback et messages.
+/// Chaque entrée affiche son compteur en direct. Seul « Déconnecter » reste
+/// visible directement dans le header.
+class _FounderMenuButton extends ConsumerWidget {
+  const _FounderMenuButton();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(pendingDeletionRequestsCountProvider);
+    final verification = ref.watch(pendingShippersCountProvider);
+    final commission = ref.watch(awaitingCommissionCountProvider);
+    final deletion = ref.watch(pendingDeletionRequestsCountProvider);
+    final feedback = ref.watch(unreadFeedbackCountProvider);
+    final chat = ref.watch(unreadChatTotalProvider);
 
-    final badge = count.when(
-      data: (n) => n > 0 ? (n > 99 ? '99+' : '$n') : '',
-      loading: () => '',
-      error: (_, __) => '',
-    );
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 4),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          IconButton(
-            tooltip: 'Demandes de suppression en attente',
-            icon: const Icon(Icons.delete_forever_outlined, color: Colors.white),
-            onPressed: () => Navigator.of(context).push(
+    return PopupMenuButton<_FounderMenuAction>(
+      tooltip: 'Menu du Fondateur',
+      icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
+      onSelected: (action) {
+        switch (action) {
+          case _FounderMenuAction.verification:
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const VerificationCenterScreen(),
+              ),
+            );
+          case _FounderMenuAction.commission:
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CommissionScreen()),
+            );
+          case _FounderMenuAction.deletion:
+            Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => const AccountDeletionRequestsScreen(),
               ),
-            ),
-          ),
-          if (badge.isNotEmpty)
-            Positioned(
-              right: 6,
-              top: 6,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppTheme.errorColor,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                constraints: const BoxConstraints(minWidth: 18),
-                child: Text(
-                  badge,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
+            );
+          case _FounderMenuAction.broadcast:
+            Navigator.of(context).pushNamed('/broadcast');
+          case _FounderMenuAction.feedback:
+            Navigator.of(context).pushNamed('/feedback-inbox');
+          case _FounderMenuAction.chat:
+            openChatInbox(context, ref);
+        }
+      },
+      itemBuilder: (context) => [
+        _founderMenuItem(
+          action: _FounderMenuAction.verification,
+          icon: Icons.fact_check_outlined,
+          label: 'Vérifications',
+          badge: _countLabel(verification),
+        ),
+        _founderMenuItem(
+          action: _FounderMenuAction.commission,
+          icon: Icons.payments_outlined,
+          label: 'Commissions',
+          badge: _countLabel(commission),
+        ),
+        _founderMenuItem(
+          action: _FounderMenuAction.deletion,
+          icon: Icons.delete_forever_outlined,
+          label: 'Suppressions',
+          badge: _countLabel(deletion),
+        ),
+        _founderMenuItem(
+          action: _FounderMenuAction.broadcast,
+          icon: Icons.campaign_outlined,
+          label: 'Annonces',
+        ),
+        _founderMenuItem(
+          action: _FounderMenuAction.feedback,
+          icon: Icons.feedback_outlined,
+          label: 'Feedback',
+          badge: _countLabel(feedback),
+        ),
+        _founderMenuItem(
+          action: _FounderMenuAction.chat,
+          icon: Icons.chat_bubble_outline_rounded,
+          label: 'Messages',
+          badge: _countLabel(chat),
+        ),
+      ],
     );
   }
+
+  String? _countLabel(AsyncValue<int> count) {
+    final n = count.valueOrNull ?? 0;
+    if (n <= 0) return null;
+    return n > 99 ? '99+' : '$n';
+  }
+}
+
+enum _FounderMenuAction {
+  verification,
+  commission,
+  deletion,
+  broadcast,
+  feedback,
+  chat,
+}
+
+/// One entry of the founder menu: icon + label + optional count badge.
+PopupMenuItem<_FounderMenuAction> _founderMenuItem({
+  required _FounderMenuAction action,
+  required IconData icon,
+  required String label,
+  String? badge,
+}) {
+  return PopupMenuItem<_FounderMenuAction>(
+    value: action,
+    child: Row(
+      children: [
+        Icon(icon, color: AppTheme.primaryColor, size: 22),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 15),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        if (badge != null)
+          Container(
+            margin: const EdgeInsets.only(left: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppTheme.errorColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            constraints: const BoxConstraints(minWidth: 22),
+            child: Text(
+              badge,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
 }
 
 /// Card showing the pending account deletion requests with an "Accepter la
@@ -784,7 +744,7 @@ class _DeletionRequestTile extends ConsumerWidget {
           'supprimé définitivement : profil, colis, expéditions, commandes, '
           'paiements, documents et messages.\n\n'
           'Le compte sera archivé dans l\'historique (visible par le '
-          'Fondateur) et un e-mail sera envoyé à l\'utilisateur.\n\n'
+          'Fondateur) et une notification push sera envoyée à l\'utilisateur.\n\n'
           'Cette action est irréversible. Continuer ?',
         ),
         actions: [
@@ -809,9 +769,9 @@ class _DeletionRequestTile extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              result['emailSent'] == true
-                  ? 'Compte supprimé et utilisateur prévenu par e-mail'
-                  : 'Compte supprimé (e-mail de notification non envoyé)',
+              result['pushSent'] == true
+                  ? 'Compte supprimé et utilisateur prévenu par notification'
+                  : 'Compte supprimé (notification push non envoyée)',
             ),
             backgroundColor: AppTheme.errorColor,
           ),
@@ -872,59 +832,6 @@ class AccountDeletionRequestsScreen extends ConsumerWidget {
             child: Text('Impossible de charger les demandes'),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Header bell with unread count linking to the feedback inbox.
-class _FeedbackBadge extends ConsumerWidget {
-  const _FeedbackBadge();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(unreadFeedbackCountProvider);
-
-    final badge = count.when(
-      data: (n) => n > 0 ? (n > 99 ? '99+' : '$n') : '',
-      loading: () => '',
-      error: (_, __) => '',
-    );
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 4),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          IconButton(
-            tooltip: 'Feedback des utilisateurs',
-            icon: const Icon(Icons.feedback_outlined, color: Colors.white),
-            onPressed: () => Navigator.of(context).pushNamed('/feedback-inbox'),
-          ),
-          if (badge.isNotEmpty)
-            Positioned(
-              right: 6,
-              top: 6,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppTheme.errorColor,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                constraints: const BoxConstraints(minWidth: 18),
-                child: Text(
-                  badge,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }
