@@ -1,20 +1,16 @@
 import 'dart:async';
-import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 import '../../core/theme/app_theme.dart';
 
 /// Selfie capture screen for identity verification.
 ///
-/// Opens the front camera with a face-shaped oval guide in the center. ML Kit
-/// (on-device, free — no cloud call) continuously checks that a human face is
-/// present, roughly centered and correctly scaled inside the guide. When the
-/// conditions are met, the guide turns green and the photo is captured
-/// automatically (also available via the shutter button).
+/// A plain front-camera viewfinder — no face detection, no crop, no overlay
+/// magic. The preview always keeps the camera's own aspect ratio (never
+/// stretched) and the photo is taken with the shutter button, just like
+/// photographing a passport with the stock camera app.
 class LiveSelfieScreen extends StatefulWidget {
   const LiveSelfieScreen({super.key});
 
@@ -33,10 +29,7 @@ class LiveSelfieScreen extends StatefulWidget {
 class _LiveSelfieScreenState extends State<LiveSelfieScreen>
     with WidgetsBindingObserver {
   CameraController? _controller;
-  FaceDetector? _detector;
   bool _initializing = true;
-  bool _processing = false;
-  bool _valid = false;
   bool _capturing = false;
   String? _error;
 
@@ -51,7 +44,6 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
-    _detector?.close();
     super.dispose();
   }
 
@@ -81,20 +73,9 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
         }
       }
 
-      _detector = FaceDetector(
-        options: FaceDetectorOptions(
-          enableClassification: false,
-          enableLandmarks: false,
-          enableContours: false,
-          enableTracking: false,
-          performanceMode: FaceDetectorMode.fast,
-          minFaceSize: 0.15,
-        ),
-      );
-
       final controller = CameraController(
         front,
-        ResolutionPreset.medium,
+        ResolutionPreset.high,
         enableAudio: false,
       );
       _controller = controller;
@@ -102,8 +83,6 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
 
       if (!mounted) return;
       setState(() => _initializing = false);
-
-      await controller.startImageStream(_onImage);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -123,122 +102,12 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
           break;
         }
       }
-      final controller = CameraController(front, ResolutionPreset.medium,
+      final controller = CameraController(front, ResolutionPreset.high,
           enableAudio: false);
       _controller = controller;
       await controller.initialize();
-      await controller.startImageStream(_onImage);
       if (mounted) setState(() {});
     } catch (_) {}
-  }
-
-  /// Converts a raw [CameraImage] (YUV_420_888) into a tight NV21 buffer for
-  /// ML Kit.
-  ///
-  /// On Android `startImageStream` delivers YUV_420_888 planes whose row
-  /// strides and pixel strides carry padding, so naive concatenation produces
-  /// a malformed buffer (garbage U/V) and the face is never detected. Here we
-  /// re-pack the Y plane row by row (dropping the stride padding) and then
-  /// interleave V/U samples at the pixel stride, producing a valid NV21 layout
-  /// (Y plane + interleaved VU) that ML Kit accepts.
-  Uint8List _imageToNv21(CameraImage image) {
-    final width = image.width;
-    final height = image.height;
-    final y = image.planes[0];
-    final u = image.planes[1];
-    final v = image.planes[2];
-    final yStride = y.bytesPerRow;
-    final uvStride = u.bytesPerRow;
-    final uvPixelStride = u.bytesPerPixel ?? 1;
-
-    final nv21 = Uint8List(width * height + (width * height) ~/ 2);
-    var pos = 0;
-    // Y plane (one row of `width` bytes per row, stride padding skipped).
-    for (var row = 0; row < height; row++) {
-      final rowStart = row * yStride;
-      nv21.setRange(pos, pos + width, y.bytes, rowStart);
-      pos += width;
-    }
-    // Interleaved VU (NV21 order: V first, then U).
-    for (var row = 0; row < height ~/ 2; row++) {
-      for (var col = 0; col < width; col += 2) {
-        final uvIndex = row * uvStride + (col ~/ 2) * uvPixelStride;
-        nv21[pos++] = v.bytes[uvIndex];
-        nv21[pos++] = u.bytes[uvIndex];
-      }
-    }
-    return nv21;
-  }
-
-  /// Converts a raw [CameraImage] (YUV) into an [InputImage] for ML Kit.
-  InputImage _imageFromCamera(CameraImage image) {
-    final width = image.width;
-    final height = image.height;
-    final bytes = _imageToNv21(image);
-
-    final rotation = _controller?.description.sensorOrientation ?? 90;
-    return InputImage.fromBytes(
-      bytes: bytes,
-      metadata: InputImageMetadata(
-        size: Size(width.toDouble(), height.toDouble()),
-        rotation: InputImageRotation.values.firstWhere(
-          (r) => r.rawValue == rotation,
-          orElse: () => InputImageRotation.rotation90deg,
-        ),
-        format: InputImageFormat.nv21,
-        bytesPerRow: width,
-      ),
-    );
-  }
-
-  Future<void> _onImage(CameraImage image) async {
-    if (_processing || _capturing) return;
-    final detector = _detector;
-    if (detector == null) return;
-
-    _processing = true;
-    try {
-      final faces = await detector.processImage(_imageFromCamera(image));
-      if (!mounted) {
-        return;
-      }
-      final ok = _faceMatchesGuide(faces, image);
-      setState(() {
-        _valid = ok;
-      });
-    } catch (_) {
-    } finally {
-      _processing = false;
-    }
-  }
-
-  /// True when a single face is detected, roughly centered in the guide area
-  /// and filling a sensible portion of it (too small = too far, too large =
-  /// too close).
-  bool _faceMatchesGuide(List<Face> faces, CameraImage image) {
-    if (faces.length != 1) return false;
-    final box = faces.first.boundingBox;
-    final imgWidth = image.width.toDouble();
-    final imgHeight = image.height.toDouble();
-
-    final center = Offset(box.center.dx, box.center.dy);
-    final imgCenter = Offset(imgWidth / 2, imgHeight / 2);
-
-    // Allow a bit of tolerance for centering.
-    final centerOffset = (center - imgCenter).distance;
-    final maxCenterDistance = min(imgWidth, imgHeight) * 0.12;
-    if (centerOffset > maxCenterDistance) return false;
-
-    final boxWidth = box.width;
-    final minFaceW = imgWidth * 0.18;
-    final maxFaceW = imgWidth * 0.55;
-    if (boxWidth < minFaceW || boxWidth > maxFaceW) return false;
-
-    // Reject strongly tilted faces.
-    final eulerZ = faces.first.headEulerAngleZ ?? 0;
-    if (eulerZ.abs() > 25) return false;
-
-    return true;
   }
 
   Future<void> _capture() async {
@@ -318,108 +187,41 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
       );
     }
 
-    // CameraPreview is internally an AspectRatio widget. If it receives tight
-    // constraints whose ratio differs from the camera's own ratio it gets
-    // stretched (that was the vertical stretch of the raw StackFit.expand and
-    // the horizontal stretch of the FittedBox wrapper). Here the preview box
-    // is sized so width/height ALWAYS equals the camera ratio (1:1, no
-    // scaling, no distortion) and the screen is filled by overflowing the
-    // smaller dimension and clipping the excess — a true "cover" crop.
-    final preview = LayoutBuilder(
-      builder: (context, constraints) {
-        final screen = constraints.biggest;
-        final cameraAspect = controller.value.aspectRatio;
-        final screenAspect = screen.width / screen.height;
-
-        double w;
-        double h;
-        if (cameraAspect >= screenAspect) {
-          // Camera wider than the screen: fill width, crop the vertical excess.
-          w = screen.width;
-          h = screen.width / cameraAspect;
-        } else {
-          // Camera taller than the screen: fill height, crop the sides.
-          h = screen.height;
-          w = screen.height * cameraAspect;
-        }
-
-        return ClipRect(
-          child: OverflowBox(
-            alignment: Alignment.center,
-            minWidth: w,
-            maxWidth: w,
-            minHeight: h,
-            maxHeight: h,
-            child: SizedBox(
-              width: w,
-              height: h,
-              child: CameraPreview(controller),
-            ),
-          ),
-        );
-      },
+    // CameraPreview sizes itself to the camera's own aspect ratio. Centered on
+    // a black background it can never be stretched, whatever the device.
+    final preview = Center(
+      child: AspectRatio(
+        aspectRatio: controller.value.aspectRatio,
+        child: CameraPreview(controller),
+      ),
     );
 
     return Stack(
       fit: StackFit.expand,
       children: [
         preview,
-        // Dark overlay + face guide.
-        CustomPaint(
-          painter: _SelfieOverlayPainter(
-            valid: _valid,
-            color: _valid ? const Color(0xFF2ECC71) : Colors.white,
-          ),
-        ),
-        // Status + hint.
+        // Hint text.
         Align(
-          alignment: Alignment.bottomCenter,
+          alignment: Alignment.topCenter,
           child: Padding(
-            padding: const EdgeInsets.only(bottom: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.spaceMd,
-                    vertical: AppTheme.spaceSm,
-                  ),
-                  decoration: BoxDecoration(
-                    color: (_valid ? const Color(0xFF2ECC71) : Colors.white)
-                        .withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _valid
-                            ? Icons.check_circle_rounded
-                            : Icons.person_rounded,
-                        size: 18,
-                        color: Colors.black87,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _valid
-                            ? 'Visage détecté'
-                            : 'Placez votre visage dans le cadre',
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
+            padding: const EdgeInsets.only(top: 24),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spaceMd,
+                vertical: AppTheme.spaceSm,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: const Text(
+                'Cadrez votre visage puis appuyez',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
                 ),
-                const SizedBox(height: AppTheme.spaceSm),
-                const Text(
-                  'Regardez la caméra, gardez le visage au centre',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -427,26 +229,21 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: const EdgeInsets.only(bottom: 96),
+            padding: const EdgeInsets.only(bottom: 48),
             child: GestureDetector(
-              onTap: _valid ? _capture : null,
+              onTap: _capture,
               child: Container(
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _valid ? const Color(0xFF2ECC71) : Colors.white,
-                    width: 4,
-                  ),
+                  border: Border.all(color: Colors.white, width: 4),
                 ),
                 padding: const EdgeInsets.all(6),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: _valid
-                        ? const Color(0xFF2ECC71).withValues(alpha: 0.85)
-                        : Colors.white.withValues(alpha: 0.7),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                   child: _capturing
                       ? const Center(
@@ -459,11 +256,9 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
                             ),
                           ),
                         )
-                      : Center(
+                      : const Center(
                           child: Icon(
-                            _valid
-                                ? Icons.check_rounded
-                                : Icons.photo_camera_rounded,
+                            Icons.photo_camera_rounded,
                             size: 30,
                             color: Colors.black87,
                           ),
@@ -474,81 +269,14 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
           ),
         ),
         // Close button.
-        SafeArea(
-          child: Align(
-            alignment: Alignment.topLeft,
-            child: IconButton(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.close_rounded, color: Colors.white),
-            ),
+        Align(
+          alignment: Alignment.topLeft,
+          child: IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.close_rounded, color: Colors.white),
           ),
         ),
       ],
     );
   }
-}
-
-/// Draws a darkened frame with an oval guide for the face in the center. Turns
-/// green once the face is detected and correctly placed.
-class _SelfieOverlayPainter extends CustomPainter {
-  const _SelfieOverlayPainter({required this.valid, required this.color});
-
-  final bool valid;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final dx = size.width;
-    final dy = size.height;
-    final guideWidth = dx * 0.62;
-    final guideHeight = guideWidth * 1.28;
-    final guide = Rect.fromCenter(
-      center: Offset(dx / 2, dy / 2 - dy * 0.04),
-      width: guideWidth,
-      height: guideHeight,
-    );
-
-    // Dim the surrounding area.
-    final path = Path.combine(
-      PathOperation.difference,
-      Path()..addRect(Rect.fromLTWH(0, 0, dx, dy)),
-      Path()..addOval(guide),
-    );
-    canvas.drawPath(
-      path,
-      Paint()..color = Colors.black.withValues(alpha: 0.55),
-    );
-
-    // Face outline (oval) guide.
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..color = color;
-    canvas.drawOval(guide, paint);
-
-    // Corner brackets for a professional look.
-    final inner = guide.deflate(10);
-    final bracket = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round
-      ..color = color;
-    const len = 26.0;
-    canvas.drawLine(inner.topLeft, inner.topLeft + const Offset(len, 0), bracket);
-    canvas.drawLine(inner.topLeft, inner.topLeft + const Offset(0, len), bracket);
-    canvas.drawLine(inner.topRight, inner.topRight - const Offset(len, 0), bracket);
-    canvas.drawLine(inner.topRight, inner.topRight + const Offset(0, len), bracket);
-    canvas.drawLine(inner.bottomLeft, inner.bottomLeft + const Offset(len, 0), bracket);
-    canvas.drawLine(inner.bottomLeft, inner.bottomLeft - const Offset(0, len), bracket);
-    canvas.drawLine(inner.bottomRight, inner.bottomRight - const Offset(len, 0), bracket);
-    canvas.drawLine(inner.bottomRight, inner.bottomRight - const Offset(0, len), bracket);
-
-    final centerDot = Paint()
-      ..color = color.withValues(alpha: valid ? 0.0 : 0.5);
-    canvas.drawCircle(guide.center, 4, centerDot);
-  }
-
-  @override
-  bool shouldRepaint(covariant _SelfieOverlayPainter oldDelegate) =>
-      oldDelegate.valid != valid || oldDelegate.color != color;
 }
