@@ -8,6 +8,7 @@
 
 🔗 **Démo web (GitHub Pages)** : https://connacri.github.io/CargoLink/
 🔒 **Politique de confidentialité** : https://connacri.github.io/CargoLink/privacy_policy.html
+🗑 **Suppression de compte & données** : https://connacri.github.io/CargoLink/account_deletion.html
 
 ---
 

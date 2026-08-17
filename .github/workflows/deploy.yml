@@ -37,6 +37,7 @@ jobs:
       - name: Add privacy policy page
         run: |
           cp docs/privacy_policy.html build/web/privacy_policy.html
+          cp docs/account_deletion.html build/web/account_deletion.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
