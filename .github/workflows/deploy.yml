@@ -34,6 +34,10 @@ jobs:
       - name: Build Flutter Web
         run: flutter build web --release --base-href "/${{ github.event.repository.name }}/" --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
 
+      - name: Add privacy policy page
+        run: |
+          cp docs/privacy_policy.html build/web/privacy_policy.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
