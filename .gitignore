@@ -63,5 +63,5 @@ android/build/
 # Local DevTools / IDE config
 /devtools_options.yaml
 
-# AAB signé (téléchargé depuis les releases GitHub)
+# AAB signe (telecharge depuis les releases GitHub)
 /playstore/app-release.aab
