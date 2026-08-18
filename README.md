@@ -325,6 +325,18 @@ keytool -genkeypair -v -keystore cargolink-release.jks -alias cargolink \
 
 > ⚠️ Ne committez jamais le fichier `.jks` ni les mots de passe.
 
+**Secrets Supabase (Edge Functions)** :
+
+| Secret | Contenu | Usage |
+|---|---|---|
+| `FIREBASE_WEB_API_KEY` | Clé API web Firebase | Vérification des tokens Firebase (delete-account, admin-reset, auth-exchange-firebase, broadcast) |
+| `FIREBASE_SERVICE_ACCOUNT` | Compte de service Firebase (JSON) | Suppression réelle du compte dans Firebase Auth |
+| `FCM_SERVER_KEY` | Legacy server key Firebase Cloud Messaging | Notifications push (send-push, delete-account, broadcast) |
+
+> ℹ️ **Resend a été abandonné** : plus aucune notification par e-mail (les fonctionnalités d'e-mail utilisent Firebase Auth directement). Le secret `RESEND_API_KEY` n'est donc **plus requis**.
+
+Configurer via la CLI : `supabase secrets set NOM_SECRET=...`
+
 ---
 
 ## 🗺 Roadmap
