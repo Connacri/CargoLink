@@ -10,6 +10,7 @@ import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/notification_widgets.dart';
 import '../../core/widgets/chat_widgets.dart';
+import '../shared/qr_scan_screen.dart';
 import 'shipper_stats_detail_screen.dart';
 import 'shipper_booking_detail_screen.dart';
 import 'shipper_finance_screen.dart';
@@ -114,6 +115,14 @@ class _ShipperDashboardScreenState
             onBookingTap: (bookingId) => _openBooking(context, bookingId),
           ),
         ),
+      ),
+    );
+  }
+
+  void _openQrScanner(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const QrScanScreen(mode: QrScanMode.shipperCollect),
       ),
     );
   }
@@ -278,6 +287,12 @@ class _ShipperDashboardScreenState
                     icon: const Icon(Icons.add_circle_outline,
                         color: Colors.white),
                     onPressed: () => _showPublishDialog(shipper.id),
+                  ),
+                  IconButton(
+                    tooltip: 'Scanner un colis',
+                    icon: const Icon(Icons.qr_code_scanner_rounded,
+                        color: Colors.white),
+                    onPressed: () => _openQrScanner(context),
                   ),
                   const LogoutIconButton(),
                 ],

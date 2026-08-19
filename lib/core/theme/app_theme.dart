@@ -317,6 +317,15 @@ class AppTheme {
         ),
         showDragHandle: true,
       ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: surfaceColor,
+        selectedItemColor: primaryColor,
+        unselectedItemColor: textSecondaryColor,
+        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
+        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w400),
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
       dividerTheme: const DividerThemeData(
         color: dividerColor,
         thickness: 1,

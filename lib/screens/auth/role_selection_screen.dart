@@ -75,98 +75,195 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
     }
   }
 
+  /// Sign out without deleting anything.
+  Future<void> _logout() async {
+    setState(() => _saving = true);
+    try {
+      await ref.read(authServiceProvider).signOut();
+    } catch (e) {
+      if (mounted) {
+        await showAppErrorDialog(context, message: 'Erreur de déconnexion: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  /// Cancel out of the account creation and remove every trace: deletes the
+  /// profile (if any) and all related data from Supabase, then the Supabase
+  /// mirror auth user and the Firebase account, server-side (delete-account
+  /// Edge Function). Used when the user no longer wants to continue.
+  Future<void> _signOutAndDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer mon compte ?'),
+        content: const Text(
+          'Votre compte et toutes vos données (profil, colis, notifications, '
+          'photos) seront définitivement supprimés de CargoLink, ainsi que de '
+          'Supabase et Firebase. Cette action est irréversible.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppTheme.errorColor,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Supprimer définitivement'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _saving = true);
+    try {
+      await ref.read(authServiceProvider).deleteAccountPermanently();
+    } catch (e) {
+      if (mounted) {
+        await showAppErrorDialog(
+          context,
+          message: 'Erreur de suppression: $e',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: CustomScrollView(
-        slivers: [
-          GradientSliverHeader(
-            title: widget.firstTime
-                ? 'Choisissez votre rôle'
-                : 'Changer de rôle',
-            subtitle: 'Que souhaitez-vous faire sur CargoLink ?',
-            icon: Icons.verified_user,
-          ),
-          const SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              AppTheme.spaceMd,
-              AppTheme.spaceXs,
-              AppTheme.spaceMd,
-              AppTheme.spaceXs,
+      body: SafeArea(
+        top: false,
+        child: CustomScrollView(
+          slivers: [
+            GradientSliverHeader(
+              title: widget.firstTime
+                  ? 'Choisissez votre rôle'
+                  : 'Changer de rôle',
+              subtitle: 'Que souhaitez-vous faire sur CargoLink ?',
+              icon: Icons.verified_user,
             ),
-            sliver: SliverToBoxAdapter(
-              child: StaggeredEntrance(
-                delay: Duration(milliseconds: 100),
-                child: Text(
-                  'Vous pourrez modifier ce choix à tout moment depuis '
-                  'les paramètres du profil.',
-                  textAlign: TextAlign.center,
-                  style: AppTheme.bodySecondary,
+            const SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.spaceMd,
+                AppTheme.spaceXs,
+                AppTheme.spaceMd,
+                AppTheme.spaceXs,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: StaggeredEntrance(
+                  delay: Duration(milliseconds: 100),
+                  child: Text(
+                    'Vous pourrez modifier ce choix à tout moment depuis '
+                    'les paramètres du profil.',
+                    textAlign: TextAlign.center,
+                    style: AppTheme.bodySecondary,
+                  ),
                 ),
               ),
             ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              AppTheme.spaceMd,
-              AppTheme.spaceSm,
-              AppTheme.spaceMd,
-              AppTheme.spaceMd,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  StaggeredEntrance(
-                    delay: const Duration(milliseconds: 160),
-                    child: _buildRoleOption(
-                      title: 'Client',
-                      subtitle: 'Je cherche des expéditeurs et je veux envoyer '
-                          'mes colis.',
-                      icon: Icons.shopping_bag,
-                      value: 'client',
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                AppTheme.spaceMd,
+                AppTheme.spaceSm,
+                AppTheme.spaceMd,
+                AppTheme.spaceMd,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    StaggeredEntrance(
+                      delay: const Duration(milliseconds: 160),
+                      child: _buildRoleOption(
+                        title: 'Client',
+                        subtitle:
+                            'Je cherche des expéditeurs et je veux envoyer '
+                            'mes colis.',
+                        icon: Icons.shopping_bag,
+                        value: 'client',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppTheme.spaceMd),
-                  StaggeredEntrance(
-                    delay: const Duration(milliseconds: 240),
-                    child: _buildRoleOption(
-                      title: 'Expéditeur',
-                      subtitle: 'Je transporte des colis pour des clients '
-                          '(dossier de vérification requis).',
-                      icon: Icons.flight_takeoff,
-                      value: 'shipper',
+                    const SizedBox(height: AppTheme.spaceMd),
+                    StaggeredEntrance(
+                      delay: const Duration(milliseconds: 240),
+                      child: _buildRoleOption(
+                        title: 'Expéditeur',
+                        subtitle: 'Je transporte des colis pour des clients '
+                            '(dossier de vérification requis).',
+                        icon: Icons.flight_takeoff,
+                        value: 'shipper',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppTheme.spaceXl),
-                  StaggeredEntrance(
-                    delay: const Duration(milliseconds: 320),
-                    child: FilledButton(
-                      onPressed:
-                          (_selectedRole == null || _saving) ? null : _confirm,
-                      child: _saving
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(_selectedRole == null
-                              ? 'Sélectionnez un rôle'
-                              : (_selectedRole == 'shipper'
-                                  ? 'Continuer comme expéditeur'
-                                  : 'Continuer comme client')),
+                    const SizedBox(height: AppTheme.spaceXl),
+                    StaggeredEntrance(
+                      delay: const Duration(milliseconds: 320),
+                      child: FilledButton(
+                        onPressed: (_selectedRole == null || _saving)
+                            ? null
+                            : _confirm,
+                        child: _saving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(_selectedRole == null
+                                ? 'Sélectionnez un rôle'
+                                : (_selectedRole == 'shipper'
+                                    ? 'Continuer comme expéditeur'
+                                    : 'Continuer comme client')),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLg)),
-        ],
+            const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLg)),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                AppTheme.spaceMd,
+                0,
+                AppTheme.spaceMd,
+                AppTheme.spaceXl,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Divider(color: AppTheme.dividerColor),
+                    const SizedBox(height: AppTheme.spaceSm),
+                    TextButton.icon(
+                      onPressed: _saving ? null : _logout,
+                      icon: const Icon(Icons.logout),
+                      label: const Text('Se déconnecter'),
+                    ),
+                    const SizedBox(height: AppTheme.spaceXs),
+                    TextButton.icon(
+                      onPressed: _saving ? null : _signOutAndDelete,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.errorColor,
+                      ),
+                      icon: const Icon(Icons.delete_forever_rounded),
+                      label: const Text(
+                        'Supprimer mon compte et mes données',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -191,9 +288,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
         children: [
           AnimatedIconDot(
             icon: icon,
-            color: selected
-                ? AppTheme.primaryColor
-                : AppTheme.textMutedColor,
+            color: selected ? AppTheme.primaryColor : AppTheme.textMutedColor,
             size: 24,
           ),
           const SizedBox(width: AppTheme.spaceMd),
@@ -218,9 +313,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
           const SizedBox(width: AppTheme.spaceSm),
           Icon(
             selected ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: selected
-                ? AppTheme.primaryColor
-                : AppTheme.dividerColor,
+            color: selected ? AppTheme.primaryColor : AppTheme.dividerColor,
           ),
         ],
       ),

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:logger/logger.dart';
 import '../../core/config/supabase_config.dart';
@@ -42,6 +43,36 @@ class StorageService {
       return url;
     } catch (e) {
       _logger.e('Error uploading image: $e');
+      rethrow;
+    }
+  }
+
+  /// Upload image bytes (cross-platform : mobile et web). Sur le web, l'XFile
+  /// renvoyé par image_picker pointe vers un blob URL illisible par `dart:io`,
+  /// donc on upload directement les octets récupérés via `xfile.readAsBytes()`.
+  Future<String> uploadImageBytes({
+    required Uint8List bytes,
+    required String path,
+    required String fileName,
+    String bucket = bookingsBucket,
+  }) async {
+    try {
+      _logger.i('Uploading image bytes to $bucket/$path');
+
+      final fullPath = '$path/$fileName';
+
+      await _supabase.storage.from(bucket).uploadBinary(
+            fullPath,
+            bytes,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+          );
+
+      final url = _supabase.storage.from(bucket).getPublicUrl(fullPath);
+
+      _logger.i('Image uploaded successfully');
+      return url;
+    } catch (e) {
+      _logger.e('Error uploading image bytes: $e');
       rethrow;
     }
   }

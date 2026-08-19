@@ -43,6 +43,13 @@ class SupabaseConfig {
 
   static SupabaseClient get client => _client;
 
+  /// Whether a Firebase-minted access token is currently active. When false,
+  /// every request falls back to the anon key and RLS (`auth.uid() = id`)
+  /// silently hides ALL rows — callers that must distinguish "no profile" from
+  /// "no session yet" (e.g. the account gate) must check this first, otherwise
+  /// an existing user looks like a brand-new one and lands on the role picker.
+  static bool get hasAccessToken => _supabaseJwt != null;
+
   /// Point the app's Supabase client at the (Firebase-minted) token, so every
   /// CRUD is authorized as the authenticated (RLS: auth.uid()) user.
   ///

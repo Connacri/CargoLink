@@ -12,6 +12,7 @@ import '../../components/shipper_card.dart';
 import '../../components/workflow_slider.dart';
 import '../shipper/shipper_public_profile_screen.dart';
 import '../chat/chat_screen.dart';
+import '../shared/qr_scan_screen.dart';
 
 /// Smart sort applied to the (server-side filtered) search feed.
 enum ClientSort { none, price, fastest, topRated }
@@ -250,6 +251,11 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                         ref.read(navigationIndexProvider.notifier).state = 1,
                     tooltip: 'Mes colis',
                     icon: const Icon(Icons.connecting_airports_rounded),
+                  ),
+                  IconButton(
+                    onPressed: () => _openQrScanner(context),
+                    tooltip: 'Scanner un colis',
+                    icon: const Icon(Icons.qr_code_scanner_rounded),
                   ),
                   GestureDetector(
                     onTap: () => _showNotificationsSheet(context),
@@ -542,6 +548,14 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _openQrScanner(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const QrScanScreen(mode: QrScanMode.clientReceipt),
       ),
     );
   }

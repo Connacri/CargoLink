@@ -6,8 +6,9 @@
 // Restricted to `admin` / `super_admin` (founder) roles: the caller's Supabase
 // JWT is verified and its role is checked server-side using the service role.
 //
-// Requires the `FCM_SERVER_KEY` secret on the project:
-//   supabase secrets set FCM_SERVER_KEY=...
+// Pushes via the FCM HTTP v1 API, authenticated with the Firebase service
+// account in the `FIREBASE_SERVICE_ACCOUNT` secret (the legacy FCM_SERVER_KEY
+// is deprecated and no longer exists on new projects).
 
 import { createClient } from "supabase-js";
 
@@ -32,6 +33,96 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
+function base64UrlEncode(bytes: Uint8Array): string {
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function b64UrlToBytes(s: string): Uint8Array {
+  const b64 = s.replace(/-/g, "+").replace(/_/g, "/");
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+function pemToDer(pem: string): ArrayBuffer {
+  const body = pem
+    .replace(/-----BEGIN [^-]+-----/g, "")
+    .replace(/-----END [^-]+-----/g, "")
+    .replace(/\s+/g, "");
+  return b64UrlToBytes(body).buffer;
+}
+
+interface ServiceAccount {
+  client_email?: string;
+  private_key?: string;
+  project_id?: string;
+  token_uri?: string;
+}
+
+function getServiceAccount(): ServiceAccount {
+  const raw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
+  if (!raw) throw new Error("FIREBASE_SERVICE_ACCOUNT secret is not configured");
+  const sa = JSON.parse(raw) as ServiceAccount;
+  if (!sa.private_key || !sa.client_email) {
+    throw new Error("FIREBASE_SERVICE_ACCOUNT is missing private_key/client_email");
+  }
+  return sa;
+}
+
+async function createSignedJwt(sa: ServiceAccount): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "RS256", typ: "JWT" };
+  const claims = {
+    iss: sa.client_email,
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+    aud: sa.token_uri ?? "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  };
+  const te = new TextEncoder();
+  const headerB64 = base64UrlEncode(te.encode(JSON.stringify(header)));
+  const claimsB64 = base64UrlEncode(te.encode(JSON.stringify(claims)));
+  const signingInput = `${headerB64}.${claimsB64}`;
+
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    pemToDer(sa.private_key!),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    key,
+    te.encode(signingInput),
+  );
+  return `${signingInput}.${base64UrlEncode(new Uint8Array(signature))}`;
+}
+
+async function getOAuthToken(sa: ServiceAccount): Promise<string> {
+  const jwt = await createSignedJwt(sa);
+  const res = await fetch(sa.token_uri ?? "https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }).toString(),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.access_token) {
+    const msg = (data.error_description as string) ??
+      (data.error as string) ??
+      `OAuth token exchange failed (HTTP ${res.status})`;
+    console.error("oauth token error", msg);
+    throw new Error(msg);
+  }
+  return data.access_token as string;
+}
+
 async function callerId(req: Request): Promise<string | null> {
   const authHeader = req.headers.get("Authorization") ?? "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
@@ -47,7 +138,7 @@ Deno.serve(async (req: Request) => {
   try {
     if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-    const callerUserId = await callerOf(req);
+    const callerUserId = await callerId(req);
     if (!callerUserId) return json({ error: "Unauthorized" }, 401);
 
     const { data: profile } = await supabase
@@ -78,33 +169,40 @@ Deno.serve(async (req: Request) => {
       return json({ error: insertError.message }, 500);
     }
 
-    const serverKey = Deno.env.get("FCM_SERVER_KEY") ?? "";
-    if (serverKey) {
+    try {
+      const sa = getServiceAccount();
+      const accessToken = await getOAuthToken(sa);
+      const projectId = sa.project_id ?? "cargolink-23dd3";
+      const fcmUrl =
+        `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+
       const { data: tokens } = await supabase
         .from("device_tokens")
         .select("token");
 
       for (const row of tokens ?? []) {
-        const res = await fetch("https://fcm.googleapis.com/fcm/send", {
+        const res = await fetch(fcmUrl, {
           method: "POST",
           headers: {
-            Authorization: "key=" + serverKey,
+            Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            to: row.token,
-            notification: { title, body: message, sound: "default" },
-            data: {
-              type: "broadcast",
-              broadcastId: broadcast?.id,
-              click_action: "FLUTTER_NOTIFICATION_CLICK",
+            message: {
+              token: row.token,
+              notification: { title, body: message },
+              data: {
+                type: "broadcast",
+                broadcastId: broadcast?.id,
+                click_action: "FLUTTER_NOTIFICATION_CLICK",
+              },
             },
           }),
         });
         if (!res.ok) console.error("FCM send failed", await res.text());
       }
-    } else {
-      console.warn("FCM_SERVER_KEY is not configured; no push sent.");
+    } catch (e) {
+      console.error("FCM push skipped", e);
     }
 
     return json({ ok: true, id: broadcast.id });

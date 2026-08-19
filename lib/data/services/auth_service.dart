@@ -779,6 +779,13 @@ class AuthService {
     try {
       final userId = currentUserId;
       if (userId == null) return null;
+      // Without an active access token the anon key is used and RLS filters
+      // every row out — the query "succeeds" but is empty, which would look
+      // like a definitive "no profile". Treat that as indeterminate so the
+      // account gate keeps retrying instead of showing the role picker to a
+      // returning user (web: session restore / popup can momentarily run with
+      // no token).
+      if (!SupabaseConfig.hasAccessToken) return null;
       final response = await SupabaseConfig.client
           .from('users')
           .select('id')

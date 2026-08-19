@@ -24,6 +24,10 @@ import '../screens/shipper/shipper_registration_screen.dart';
 import 'app_widgets.dart';
 import 'home_tabs_screen.dart';
 
+/// Global navigator key used to overlay app-level popups (e.g. the Android
+/// download dialog on the web) above every route.
+final appNavigatorKey = GlobalKey<NavigatorState>();
+
 class CargoLinkApp extends ConsumerWidget {
   const CargoLinkApp({super.key});
 
@@ -34,6 +38,11 @@ class CargoLinkApp extends ConsumerWidget {
     return MaterialApp(
       title: 'CargoLink',
       theme: AppTheme.darkTheme,
+      navigatorKey: appNavigatorKey,
+      builder: (context, child) => WebAndroidDownloadBanner(
+        navigatorKey: appNavigatorKey,
+        child: child ?? const SizedBox.shrink(),
+      ),
       home: authState.when(
         data: (authData) {
           if (authData.isSignedIn) {

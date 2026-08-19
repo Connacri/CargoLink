@@ -329,11 +329,10 @@ keytool -genkeypair -v -keystore cargolink-release.jks -alias cargolink \
 
 | Secret | Contenu | Usage |
 |---|---|---|
-| `FIREBASE_WEB_API_KEY` | Clé API web Firebase | Vérification des tokens Firebase (delete-account, admin-reset, auth-exchange-firebase, broadcast) |
-| `FIREBASE_SERVICE_ACCOUNT` | Compte de service Firebase (JSON) | Suppression réelle du compte dans Firebase Auth |
-| `FCM_SERVER_KEY` | Legacy server key Firebase Cloud Messaging | Notifications push (send-push, delete-account, broadcast) |
+| `FIREBASE_WEB_API_KEY` | Clé API web Firebase | Vérification des tokens Firebase (delete-account, admin-reset, auth-exchange-firebase) |
+| `FIREBASE_SERVICE_ACCOUNT` | Compte de service Firebase (JSON, bouton « Générer une nouvelle clé privée » dans Firebase Console → Comptes de service) | Suppression du compte dans Firebase Auth **et** authentification FCM HTTP v1 pour les notifications push (send-push, delete-account, broadcast) |
 
-> ℹ️ **Resend a été abandonné** : plus aucune notification par e-mail (les fonctionnalités d'e-mail utilisent Firebase Auth directement). Le secret `RESEND_API_KEY` n'est donc **plus requis**.
+> ℹ️ **Resend et FCM_SERVER_KEY sont abandonnés** : plus aucune notification par e-mail (les e-mails utilisent Firebase Auth directement), et Google a déprécié la Legacy FCM Server Key — les push passent par l'API FCM HTTP v1 via le compte de service. Seul `FIREBASE_SERVICE_ACCOUNT` est requis pour les notifications.
 
 Configurer via la CLI : `supabase secrets set NOM_SECRET=...`
 

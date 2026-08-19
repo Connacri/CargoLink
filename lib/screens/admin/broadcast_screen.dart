@@ -26,9 +26,17 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
   static const _audienceOptions = [
     (value: 'all', label: 'Tout le monde', icon: Icons.public_rounded),
     (value: 'client', label: 'Clients', icon: Icons.shopping_bag_rounded),
-    (value: 'shipper', label: 'Transporteurs', icon: Icons.flight_takeoff_rounded),
+    (
+      value: 'shipper',
+      label: 'Transporteurs',
+      icon: Icons.flight_takeoff_rounded
+    ),
     (value: 'admin', label: 'Admins', icon: Icons.shield_outlined),
-    (value: 'super_admin', label: 'Fondateur', icon: Icons.admin_panel_settings_outlined),
+    (
+      value: 'super_admin',
+      label: 'Fondateur',
+      icon: Icons.admin_panel_settings_outlined
+    ),
   ];
 
   @override
@@ -47,8 +55,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
     }
   }
 
-  bool get _canSend =>
-      _currentRole == 'admin' || _currentRole == 'super_admin';
+  bool get _canSend => _currentRole == 'admin' || _currentRole == 'super_admin';
 
   @override
   void dispose() {
@@ -258,8 +265,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
                           ),
                           const SizedBox(height: AppTheme.spaceLg),
                           FilledButton.icon(
-                            onPressed: () =>
-                                ref.invalidate(broadcastsProvider),
+                            onPressed: () => ref.invalidate(broadcastsProvider),
                             icon: const Icon(Icons.refresh_rounded),
                             label: const Text('Réessayer'),
                           ),
@@ -613,90 +619,94 @@ class _UserPickerSheetState extends State<_UserPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
-      decoration: const BoxDecoration(
-        color: AppTheme.backgroundColor,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLg)),
-      ),
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.spaceMd,
-        AppTheme.spaceMd,
-        AppTheme.spaceMd,
-        AppTheme.spaceLg,
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppTheme.textMutedColor,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: AppTheme.spaceMd),
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Cibler des utilisateurs',
-                  style: AppTheme.h3,
-                ),
+    return SafeArea(
+      top: false,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: AppTheme.backgroundColor,
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLg)),
+        ),
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.spaceMd,
+          AppTheme.spaceMd,
+          AppTheme.spaceMd,
+          AppTheme.spaceLg,
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppTheme.textMutedColor,
+                borderRadius: BorderRadius.circular(2),
               ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(_selected),
-                child: const Text('Terminé'),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spaceSm),
-          TextField(
-            controller: _query,
-            decoration: const InputDecoration(
-              hintText: 'Rechercher par nom ou email...',
-              prefixIcon: Icon(Icons.search_rounded),
             ),
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: AppTheme.spaceSm),
-          Expanded(
-            child: filtered.isEmpty
-                ? const Center(
-                    child: Text('Aucun utilisateur',
-                        style: AppTheme.bodySecondary),
-                  )
-                : ListView.builder(
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final user = filtered[index];
-                      final isSelected = _selected.contains(user.id);
-                      return CheckboxListTile(
-                        value: isSelected,
-                        onChanged: (v) => setState(() {
-                          if (v == true) {
-                            _selected.add(user.id);
-                          } else {
-                            _selected.remove(user.id);
-                          }
-                        }),
-                        secondary: GradientAvatar(
-                          initial: user.fullName,
-                          imageUrl: user.profilePictureUrl,
-                          radius: 20,
-                        ),
-                        title: Text(user.fullName),
-                        subtitle: Text(
-                          '${_roleLabel(user.role)} · ${user.email}',
-                          style: AppTheme.caption,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      );
-                    },
+            const SizedBox(height: AppTheme.spaceMd),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Cibler des utilisateurs',
+                    style: AppTheme.h3,
                   ),
-          ),
-        ],
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(_selected),
+                  child: const Text('Terminé'),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            TextField(
+              controller: _query,
+              decoration: const InputDecoration(
+                hintText: 'Rechercher par nom ou email...',
+                prefixIcon: Icon(Icons.search_rounded),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            Expanded(
+              child: filtered.isEmpty
+                  ? const Center(
+                      child: Text('Aucun utilisateur',
+                          style: AppTheme.bodySecondary),
+                    )
+                  : ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final user = filtered[index];
+                        final isSelected = _selected.contains(user.id);
+                        return CheckboxListTile(
+                          value: isSelected,
+                          onChanged: (v) => setState(() {
+                            if (v == true) {
+                              _selected.add(user.id);
+                            } else {
+                              _selected.remove(user.id);
+                            }
+                          }),
+                          secondary: GradientAvatar(
+                            initial: user.fullName,
+                            imageUrl: user.profilePictureUrl,
+                            radius: 20,
+                          ),
+                          title: Text(user.fullName),
+                          subtitle: Text(
+                            '${_roleLabel(user.role)} · ${user.email}',
+                            style: AppTheme.caption,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

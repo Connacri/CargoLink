@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../core/constants/app_constants.dart';
 import '../core/theme/app_theme.dart';
 
 // ============================================================================
@@ -109,6 +112,152 @@ class _ErrorScreenState extends State<ErrorScreen> {
                   Navigator.of(context).pushReplacementNamed('/login');
                 },
                 child: const Text('Retour à l\'accueil'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// WEB ANDROID DOWNLOAD BANNER + POPUP
+// ============================================================================
+
+/// Shows a top banner (and a one-time popup) on the web build when the browser
+/// runs on Android, prompting the user to download the native APK instead.
+class WebAndroidDownloadBanner extends StatefulWidget {
+  const WebAndroidDownloadBanner({
+    super.key,
+    required this.navigatorKey,
+    required this.child,
+  });
+
+  final GlobalKey<NavigatorState> navigatorKey;
+  final Widget child;
+
+  /// True when this build runs inside an Android browser (web only).
+  static bool get isAndroidWeb =>
+      kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  @override
+  State<WebAndroidDownloadBanner> createState() =>
+      _WebAndroidDownloadBannerState();
+}
+
+class _WebAndroidDownloadBannerState extends State<WebAndroidDownloadBanner> {
+  bool _dismissed = false;
+  static bool _popupShown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (WebAndroidDownloadBanner.isAndroidWeb && !_popupShown) {
+      _popupShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _showDownloadPopup();
+      });
+    }
+  }
+
+  Future<void> _openApk() async {
+    final url = Uri.parse(AppConstants.androidApkUrl);
+    final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible d\'ouvrir le lien de téléchargement'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _showDownloadPopup() async {
+    final navigatorContext = widget.navigatorKey.currentContext;
+    if (navigatorContext == null) return;
+    await showDialog<void>(
+      context: navigatorContext,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Téléchargez l\'application CargoLink'),
+        content: const Text(
+          'Vous utilisez un téléphone Android. Téléchargez l\'application '
+          'pour une meilleure expérience (notifications, caméra, vitesse).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Continuer sur le web'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _openApk();
+            },
+            child: const Text('Télécharger'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!WebAndroidDownloadBanner.isAndroidWeb || _dismissed) {
+      return widget.child;
+    }
+    return Column(
+      children: [
+        _buildBanner(),
+        Expanded(child: widget.child),
+      ],
+    );
+  }
+
+  Widget _buildBanner() {
+    return Material(
+      color: AppTheme.primaryDark,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spaceMd,
+            vertical: AppTheme.spaceXs,
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.smartphone_rounded,
+                  color: Colors.white, size: 20),
+              const SizedBox(width: AppTheme.spaceSm),
+              const Expanded(
+                child: Text(
+                  'CargoLink disponible en application Android',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              FilledButton(
+                onPressed: _openApk,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.accentColor,
+                  visualDensity: VisualDensity.compact,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+                ),
+                child:
+                    const Text('Télécharger', style: TextStyle(fontSize: 12)),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                onPressed: () => setState(() => _dismissed = true),
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.close_rounded,
+                    color: Colors.white, size: 18),
               ),
             ],
           ),

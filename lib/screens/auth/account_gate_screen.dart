@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/index.dart';
 import '../../data/services/auth_service.dart';
+import '../../core/config/supabase_config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
@@ -101,10 +102,18 @@ class _GateRoleDeciderState extends ConsumerState<_GateRoleDecider> {
       return;
     }
     // Indeterminate: stay on the gate and retry instead of guessing.
-    if (_retries < 3) {
-      _retries++;
-      Future.delayed(const Duration(milliseconds: 500), _verify);
-      return;
+    if (hasProfile == null) {
+      // No Supabase session yet (web restore / slow exchange): keep waiting for
+      // the auth stream to set the token — never treat this as "no profile".
+      if (!SupabaseConfig.hasAccessToken) {
+        Future.delayed(const Duration(milliseconds: 400), _verify);
+        return;
+      }
+      if (_retries < 3) {
+        _retries++;
+        Future.delayed(const Duration(milliseconds: 500), _verify);
+        return;
+      }
     }
     setState(() => _checked = true);
   }

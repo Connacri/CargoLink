@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:file_picker/file_picker.dart';
-import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:gal/gal.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/qr_booking.dart';
+import '../../core/widgets/qr_booking_ticket.dart';
 import '../../core/widgets/ui_kit.dart';
 
 /// 4-step booking wizard (Product → Photos → Review & Payment → Confirmation)
@@ -43,7 +44,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
   final _productNameCtrl = TextEditingController();
   final _productDescCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
-  final List<File> _productImages = [];
+  final List<_ProductImage> _productImages = [];
   String _paymentMethod = 'cash';
 
   @override
@@ -392,7 +393,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
         const Text('Photos du produit', style: AppTheme.h2),
         const SizedBox(height: 4),
         const Text(
-          'Ajoutez jusqu\'à 5 photos pour accélérer la confirmation.',
+          'Optionnel — ajoutez jusqu\'à 5 photos pour accélérer la confirmation.',
           style: AppTheme.bodySecondary,
         ),
         const SizedBox(height: AppTheme.spaceMd),
@@ -409,7 +410,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                       image: DecorationImage(
-                        image: FileImage(e.value),
+                        image: MemoryImage(e.value.bytes),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -444,22 +445,90 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
               ),
           ],
         ),
-        if (_productImages.isEmpty) ...[
-          const SizedBox(height: AppTheme.spaceSm),
-          const Text(
-            'Au moins une photo est requise pour continuer.',
-            style: TextStyle(color: AppTheme.errorColor, fontSize: 12),
-          ),
-        ],
+        const SizedBox(height: AppTheme.spaceSm),
+        const Text(
+          'Ce champ est facultatif : vous pouvez continuer sans photo.',
+          style: AppTheme.caption,
+        ),
       ],
     );
   }
 
   Future<void> _pickImage() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
-    if (result == null || result.files.isEmpty) return;
-    final file = File(result.files.first.path!);
-    if (await file.length() > AppConstants.maxFileSize) {
+    final source = await showModalBottomSheet<_ImageSource>(
+      context: context,
+      backgroundColor: AppTheme.backgroundColor,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: AppTheme.spaceMd),
+            const Text('Ajouter une photo', style: AppTheme.h2),
+            const SizedBox(height: AppTheme.spaceSm),
+            const Text(
+              'Prenez une photo du produit ou choisissez-en une dans votre galerie.',
+              textAlign: TextAlign.center,
+              style: AppTheme.caption,
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            ListTile(
+              leading: const Icon(
+                Icons.photo_camera_rounded,
+                color: AppTheme.accentColor,
+              ),
+              title: const Text('Appareil photo'),
+              subtitle: const Text(
+                'Prendre une photo maintenant',
+                style: AppTheme.caption,
+              ),
+              onTap: () => Navigator.of(sheetContext).pop(_ImageSource.camera),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppTheme.spaceLg),
+              child: Divider(color: AppTheme.dividerColor),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.photo_library_rounded,
+                color: AppTheme.accentColor,
+              ),
+              title: const Text('Galerie'),
+              subtitle: const Text(
+                'Choisir une image existante',
+                style: AppTheme.caption,
+              ),
+              onTap: () => Navigator.of(sheetContext).pop(_ImageSource.gallery),
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+    XFile? picked;
+    switch (source) {
+      case _ImageSource.camera:
+        picked = await ImagePicker().pickImage(
+          source: ImageSource.camera,
+          maxWidth: 2048,
+          maxHeight: 2048,
+          imageQuality: 92,
+        );
+      case _ImageSource.gallery:
+        picked = await ImagePicker().pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 2048,
+          maxHeight: 2048,
+          imageQuality: 92,
+        );
+    }
+
+    if (picked == null) return;
+    // `readAsBytes()` marche sur mobile ET sur le web (le blob URL est illisible
+    // par `dart:io`), et `bytes.length` remplace `file.length()` partout.
+    final bytes = await picked.readAsBytes();
+    if (bytes.length > AppConstants.maxFileSize) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Image trop lourde (max 5MB)')),
@@ -467,7 +536,11 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
       }
       return;
     }
-    setState(() => _productImages.add(file));
+    if (!mounted) return;
+    final name = picked.name.isNotEmpty
+        ? picked.name
+        : 'product_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    setState(() => _productImages.add(_ProductImage(bytes: bytes, name: name)));
   }
 
   // ---------------------------------------------------------------------------
@@ -621,10 +694,19 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
 
   Widget _buildStepConfirmation(Shipment shipment) {
     final bookingId = _createdBookingId;
-    final refCode = bookingId != null
-        ? bookingId.substring(0, bookingId.length > 10 ? 10 : bookingId.length)
-            .toUpperCase()
-        : 'RES-PENDING';
+    final currentUser = ref.read(currentUserProvider).valueOrNull;
+    final payload = bookingId != null
+        ? QrBookingPayload(
+            ref: QrBookingPayload.refCodeFor(bookingId),
+            bookingId: bookingId,
+            name: currentUser?.fullName ?? '',
+            phone: currentUser?.phone ?? '',
+            email: currentUser?.email ?? '',
+            destination:
+                '${shipment.originCountry} → ${shipment.destinationCity}',
+            product: _productNameCtrl.text.trim(),
+          )
+        : null;
     return Center(
       child: ListView(
         padding: const EdgeInsets.all(AppTheme.spaceLg),
@@ -650,56 +732,35 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
           const SizedBox(height: AppTheme.spaceLg),
           RepaintBoundary(
             key: _ticketKey,
-            child: Container(
-              padding: const EdgeInsets.all(AppTheme.spaceLg),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceColor,
-                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                border: Border.all(color: AppTheme.dividerColor),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (bookingId != null)
-                    QrImageView(
-                      data: bookingId,
-                      version: QrVersions.auto,
-                      size: 160,
-                      backgroundColor: Colors.white,
-                      eyeStyle: const QrEyeStyle(
-                        eyeShape: QrEyeShape.square,
-                        color: AppTheme.textPrimaryColor,
-                      ),
-                      dataModuleStyle: const QrDataModuleStyle(
-                        dataModuleShape: QrDataModuleShape.square,
-                        color: AppTheme.textPrimaryColor,
-                      ),
-                    )
-                  else
-                    const SizedBox(
-                      width: 160,
-                      height: 160,
-                      child: Icon(
-                        Icons.qr_code_2_rounded,
-                        size: 120,
-                        color: AppTheme.textMutedColor,
-                      ),
+            child: payload != null
+                ? QrBookingTicket(payload: payload)
+                : Container(
+                    padding: const EdgeInsets.all(AppTheme.spaceLg),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceColor,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                      border: Border.all(color: AppTheme.dividerColor),
                     ),
-                  const SizedBox(height: AppTheme.spaceMd),
-                  Text(
-                    'Réf : $refCode',
-                    style: AppTheme.h3,
+                    child: const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 160,
+                          height: 160,
+                          child: Icon(
+                            Icons.qr_code_2_rounded,
+                            size: 120,
+                            color: AppTheme.textMutedColor,
+                          ),
+                        ),
+                        SizedBox(height: AppTheme.spaceMd),
+                        Text(
+                          'Réf : RES-PENDING',
+                          style: AppTheme.h3,
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: AppTheme.spaceXs),
-                  Text(
-                    '${_productNameCtrl.text.trim()} · '
-                    '${_requestedWeight.toStringAsFixed(1)} kg',
-                    style: AppTheme.caption,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
           ),
           const SizedBox(height: AppTheme.spaceLg),
           FilledButton.icon(
@@ -874,10 +935,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
       return true;
     }
     if (_currentStep == 1) {
-      if (_productImages.isEmpty) {
-        _toast('Ajoutez au moins une photo');
-        return false;
-      }
+      // Photos facultatives : on peut passer cette étape sans image.
       return true;
     }
     return true;
@@ -905,8 +963,9 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
 
       List<String> imageUrls = [];
       for (final image in _productImages) {
-        final url = await storageService.uploadImage(
-          file: image,
+        final url = await storageService.uploadImageBytes(
+          bytes: image.bytes,
+          fileName: image.name,
           path: 'bookings/$userId/${DateTime.now().millisecondsSinceEpoch}',
         );
         imageUrls.add(url);
@@ -953,6 +1012,17 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
 // ============================================================================
 // SMALL HELPERS
 // ============================================================================
+
+enum _ImageSource { camera, gallery }
+
+/// Photo produit conservée en mémoire (octets) plutôt qu'en `File` :
+/// `dart:io` est illisible sur le web, alors que les octets marchent partout.
+class _ProductImage {
+  const _ProductImage({required this.bytes, required this.name});
+
+  final Uint8List bytes;
+  final String name;
+}
 
 class _InfoTile extends StatelessWidget {
   const _InfoTile({

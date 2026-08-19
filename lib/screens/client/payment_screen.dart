@@ -25,8 +25,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     try {
       await ref.read(paymentServiceProvider).completePayment(
             paymentId: payment.id,
-            transactionId:
-                'tx_${DateTime.now().millisecondsSinceEpoch}',
+            transactionId: 'tx_${DateTime.now().millisecondsSinceEpoch}',
             paymentMethod: _paymentMethod,
           );
       ref.invalidate(paymentByBookingProvider(widget.bookingId));
@@ -100,96 +99,105 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
 
     if (isPaid) {
       return Scaffold(
-        body: CustomScrollView(
-          slivers: [
-            const GradientSliverHeader(
-              title: 'Paiement',
-              subtitle: 'Commande réglée',
-              icon: Icons.payments_rounded,
-            ),
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: _buildPaidState(booking),
-            ),
-          ],
+        body: SafeArea(
+          top: false,
+          child: CustomScrollView(
+            slivers: [
+              const GradientSliverHeader(
+                title: 'Paiement',
+                subtitle: 'Commande réglée',
+                icon: Icons.payments_rounded,
+              ),
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: _buildPaidState(booking),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     if (payment == null) {
       return const Scaffold(
-        body: CustomScrollView(
-          slivers: [
-            GradientSliverHeader(
-              title: 'Paiement',
-              subtitle: 'En attente',
-              icon: Icons.payments_rounded,
-            ),
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(child: Text('Aucun paiement en attente')),
-            ),
-          ],
+        body: SafeArea(
+          top: false,
+          child: CustomScrollView(
+            slivers: [
+              GradientSliverHeader(
+                title: 'Paiement',
+                subtitle: 'En attente',
+                icon: Icons.payments_rounded,
+              ),
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: Text('Aucun paiement en attente')),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          const GradientSliverHeader(
-            title: 'Paiement',
-            subtitle: 'Vérifie et confirme ton règlement',
-            icon: Icons.lock_rounded,
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppTheme.spaceMd,
-                AppTheme.spaceMd,
-                AppTheme.spaceMd,
-                0,
-              ),
-              child: _buildAmountCard(payment),
+      body: SafeArea(
+        top: false,
+        child: CustomScrollView(
+          slivers: [
+            const GradientSliverHeader(
+              title: 'Paiement',
+              subtitle: 'Vérifie et confirme ton règlement',
+              icon: Icons.lock_rounded,
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppTheme.spaceMd,
-                AppTheme.spaceMd,
-                AppTheme.spaceMd,
-                0,
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceMd,
+                  0,
+                ),
+                child: _buildAmountCard(payment),
               ),
-              child: _buildRecap(booking),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppTheme.spaceMd,
-                AppTheme.spaceMd,
-                AppTheme.spaceMd,
-                0,
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceMd,
+                  0,
+                ),
+                child: _buildRecap(booking),
               ),
-              child: _buildMethodSelection(),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppTheme.spaceMd,
-                AppTheme.spaceLg,
-                AppTheme.spaceMd,
-                0,
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceMd,
+                  0,
+                ),
+                child: _buildMethodSelection(),
               ),
-              child: _buildPayCta(payment),
             ),
-          ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: AppTheme.spaceXxl),
-          ),
-        ],
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd,
+                  AppTheme.spaceLg,
+                  AppTheme.spaceMd,
+                  0,
+                ),
+                child: _buildPayCta(payment),
+              ),
+            ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: AppTheme.spaceXxl),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -427,8 +435,9 @@ class _MethodTile extends StatelessWidget {
           children: [
             AnimatedIconDot(
               icon: icon,
-              color:
-                  selected ? AppTheme.primaryColor : AppTheme.textSecondaryColor,
+              color: selected
+                  ? AppTheme.primaryColor
+                  : AppTheme.textSecondaryColor,
             ),
             const SizedBox(width: AppTheme.spaceMd),
             Expanded(
@@ -440,12 +449,9 @@ class _MethodTile extends StatelessWidget {
               ),
             ),
             Icon(
-              selected
-                  ? Icons.check_circle_rounded
-                  : Icons.circle_outlined,
+              selected ? Icons.check_circle_rounded : Icons.circle_outlined,
               size: 22,
-              color:
-                  selected ? AppTheme.primaryColor : AppTheme.textMutedColor,
+              color: selected ? AppTheme.primaryColor : AppTheme.textMutedColor,
             ),
           ],
         ),

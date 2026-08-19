@@ -55,4 +55,8 @@ class AppConstants {
   
   // Pagination
   static const int defaultPageSize = 20;
+
+  // Android APK download link (public GitHub Release artifact).
+  static const String androidApkUrl =
+      'https://github.com/Connacri/CargoLink/releases/latest/download/app-release.apk';
 }

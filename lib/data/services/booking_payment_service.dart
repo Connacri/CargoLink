@@ -150,6 +150,27 @@ class BookingService {
     }
   }
 
+  /// Look up a booking from its human-readable tracking ref code (first 10
+  /// characters of the booking id, upper-cased). Case-insensitive so the code
+  /// can be typed in or scanned from a QR code.
+  Future<Booking?> getBookingByRefCode(String refCode) async {
+    final code = refCode.trim().toUpperCase();
+    if (code.length < 4) return null;
+    try {
+      final response = await _supabase
+          .from('bookings')
+          .select(
+              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
+          .ilike('id', '$code%')
+          .limit(1)
+          .maybeSingle();
+      return response == null ? null : Booking.fromJson(response);
+    } catch (e) {
+      _logger.e('Error getting booking by ref code: $e');
+      return null;
+    }
+  }
+
   /// Get client's bookings
   Future<List<Booking>> getClientBookings({
     required String clientId,

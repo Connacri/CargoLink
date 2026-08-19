@@ -9,8 +9,9 @@
 //   C) Approve-deletion-request: body = { adminToken, requestId } -> a
 //      super_admin approves a pending account_deletion_requests row. Archives
 //      the account into deleted_accounts (with creation date + history), then
-//      performs the same full purge as mode B, notifies the user by push (FCM)
-//      and marks the request 'approved'.
+//      performs the same full purge as mode B, notifies the user by push (FCM
+//      HTTP v1 via the Firebase service account) and marks the request
+//      'approved'.
 //
 // Deletes: public rows referencing the user, storage objects, the Supabase
 // auth user, and the Firebase Auth account (self mode via idToken, admin mode
@@ -340,16 +341,22 @@ async function firebaseUidFromUuid(userUuid: string): Promise<string | undefined
 // Mode C: approve a pending account_deletion_requests row.
 // ---------------------------------------------------------------------------
 
-// Send a push notification to all devices of the target user via FCM
-// (FCM_SERVER_KEY secret). Falls back to a console log when the secret is not
+// Send a push notification to all devices of the target user via the FCM HTTP
+// v1 API, authenticated with the Firebase service account in
+// FIREBASE_SERVICE_ACCOUNT. Falls back to a console log when the account is not
 // configured so the deletion still succeeds.
 async function sendDeletionPush(
   userUuid: string,
   fullName: string,
 ): Promise<{ sent: boolean }> {
-  const serverKey = Deno.env.get("FCM_SERVER_KEY");
-  if (!serverKey) {
-    console.error("FCM_SERVER_KEY not configured — deletion push skipped");
+  let accessToken: string;
+  let projectId: string;
+  try {
+    const sa = getServiceAccount();
+    accessToken = await getOAuthToken(sa);
+    projectId = sa.project_id ?? "cargolink-23dd3";
+  } catch (e) {
+    console.error("FIREBASE_SERVICE_ACCOUNT not usable — deletion push skipped", e);
     return { sent: false };
   }
 
@@ -367,18 +374,23 @@ async function sendDeletionPush(
     ? `${fullName}, votre demande de suppression a été acceptée. Votre compte et l'ensemble de vos données ont été définitivement supprimés.`
     : "Votre demande de suppression a été acceptée. Votre compte et l'ensemble de vos données ont été définitivement supprimés.";
 
+  const fcmUrl =
+    `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+
   let delivered = 0;
   for (const row of tokens) {
-    const res = await fetch("https://fcm.googleapis.com/fcm/send", {
+    const res = await fetch(fcmUrl, {
       method: "POST",
       headers: {
-        Authorization: "key=" + serverKey,
+        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        to: row.token,
-        notification: { title, body, sound: "default" },
-        data: { click_action: "FLUTTER_NOTIFICATION_CLICK" },
+        message: {
+          token: row.token,
+          notification: { title, body },
+          data: { click_action: "FLUTTER_NOTIFICATION_CLICK" },
+        },
       }),
     });
     delivered++;

@@ -111,6 +111,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     ref.read(shipperHistoryPagerProvider(shipperId).notifier).loadInitial();
   }
 
+  /// Reloads the first page of the client/shipper history without the
+  /// one-shot guard, so the lists pick up bookings/offers created while the
+  /// screen was not visible. Called on tab re-entry and pull-to-refresh.
+  void _reloadHistory() {
+    final user = ref.read(currentUserProvider).value;
+    if (user != null && user.role != 'shipper') {
+      ref.read(clientHistoryPagerProvider(user.id).notifier).loadInitial();
+    }
+    final shipper = ref.read(currentShipperProvider).value;
+    if (shipper != null) {
+      ref.read(shipperHistoryPagerProvider(shipper.id).notifier).loadInitial();
+    }
+  }
+
   void _fillControllers(User userData) {
     _fullNameController.text = userData.fullName;
     _phoneController.text = userData.phone;
@@ -407,6 +421,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     });
 
+    // Refresh history whenever the user re-enters the Profile tab. The screen
+    // lives inside an IndexedStack, so it never rebuilds on tab switches and
+    // would otherwise show a stale list until the app is restarted.
+    ref.listen<int>(navigationIndexProvider, (prev, next) {
+      final user = ref.read(currentUserProvider).value;
+      if (user == null) return;
+      final profileTab = user.role == 'shipper' ? 3 : 2;
+      if (next == profileTab && prev != profileTab) {
+        _reloadHistory();
+      }
+    });
+
     final user = ref.watch(currentUserProvider);
 
     return user.when(
@@ -420,6 +446,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             onRefresh: () async {
               ref.invalidate(currentUserProvider);
               ref.invalidate(currentShipperProvider);
+              _reloadHistory();
             },
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),

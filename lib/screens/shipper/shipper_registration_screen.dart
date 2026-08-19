@@ -1,7 +1,10 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../data/services/storage_service.dart';
@@ -22,8 +25,10 @@ class _ShipperRegistrationScreenState
     extends ConsumerState<ShipperRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _passportNumberController = TextEditingController();
-  File? _passportPhoto;
-  File? _livePhoto;
+  Uint8List? _passportBytes;
+  Uint8List? _liveBytes;
+  String? _passportFileName;
+  String? _liveFileName;
   String? _existingShipperId;
   String? _existingPassportUrl;
   String? _existingLiveUrl;
@@ -48,7 +53,12 @@ class _ShipperRegistrationScreenState
         imageQuality: 92,
       );
       if (xfile != null) {
-        setState(() => _passportPhoto = File(xfile.path));
+        final bytes = await xfile.readAsBytes();
+        if (!mounted) return;
+        setState(() {
+          _passportBytes = bytes;
+          _passportFileName = p.basename(xfile.name);
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -58,9 +68,33 @@ class _ShipperRegistrationScreenState
   }
 
   Future<void> _pickLivePhoto() async {
+    if (kIsWeb) {
+      // The camera plugin has no web implementation: fall back to the
+      // browser camera via image_picker (works on mobile browsers).
+      final xfile = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 92,
+      );
+      if (xfile != null) {
+        final bytes = await xfile.readAsBytes();
+        if (!mounted) return;
+        setState(() {
+          _liveBytes = bytes;
+          _liveFileName = p.basename(xfile.name);
+        });
+      }
+      return;
+    }
     final path = await LiveSelfieScreen.capture(context);
     if (path != null) {
-      setState(() => _livePhoto = File(path));
+      final bytes = await File(path).readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        _liveBytes = bytes;
+        _liveFileName = 'selfie_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      });
     }
   }
 
@@ -70,12 +104,12 @@ class _ShipperRegistrationScreenState
     // Keep existing photos if the user did not pick a replacement
     final hasExisting = _existingShipperId != null;
 
-    if (_passportPhoto == null &&
+    if (_passportBytes == null &&
         (!hasExisting || _existingPassportUrl == null)) {
       _showMessage('Veuillez choisir une photo de passeport', isError: true);
       return;
     }
-    if (_livePhoto == null && (!hasExisting || _existingLiveUrl == null)) {
+    if (_liveBytes == null && (!hasExisting || _existingLiveUrl == null)) {
       _showMessage('Veuillez prendre une photo en direct', isError: true);
       return;
     }
@@ -88,18 +122,20 @@ class _ShipperRegistrationScreenState
       final storage = ref.read(storageServiceProvider);
 
       String? passportUrl = _existingPassportUrl;
-      if (_passportPhoto != null) {
-        passportUrl = await storage.uploadImage(
-          file: _passportPhoto!,
+      if (_passportBytes != null) {
+        passportUrl = await storage.uploadImageBytes(
+          bytes: _passportBytes!,
+          fileName: _passportFileName ?? 'passport.jpg',
           path: 'passports/$userId/${DateTime.now().millisecondsSinceEpoch}',
           bucket: StorageService.documentsBucket,
         );
       }
 
       String? liveUrl = _existingLiveUrl;
-      if (_livePhoto != null) {
-        liveUrl = await storage.uploadImage(
-          file: _livePhoto!,
+      if (_liveBytes != null) {
+        liveUrl = await storage.uploadImageBytes(
+          bytes: _liveBytes!,
+          fileName: _liveFileName ?? 'live.jpg',
           path: 'live/$userId/${DateTime.now().millisecondsSinceEpoch}',
           bucket: StorageService.documentsBucket,
         );
@@ -314,28 +350,28 @@ class _ShipperRegistrationScreenState
                     const SizedBox(height: AppTheme.spaceMd),
                     _buildUploadTile(
                       title: 'Photo du passeport',
-                      subtitle: _passportPhoto != null
-                          ? _passportPhoto!.path.split('/').last
+                      subtitle: _passportBytes != null
+                          ? (_passportFileName ?? 'Photo prise')
                           : (_existingPassportUrl != null
                               ? 'Image actuelle — toucher pour changer'
                               : 'Prendre une photo (caméra)'),
                       icon: Icons.description_outlined,
-                      hasFile: _passportPhoto != null,
-                      previewFile: _passportPhoto,
+                      hasFile: _passportBytes != null,
+                      previewBytes: _passportBytes,
                       previewUrl: _existingPassportUrl,
                       onTap: _pickPassport,
                     ),
                     const SizedBox(height: AppTheme.spaceMd),
                     _buildUploadTile(
                       title: 'Photo en direct (selfie)',
-                      subtitle: _livePhoto != null
+                      subtitle: _liveBytes != null
                           ? 'Selfie pris ✓'
                           : (_existingLiveUrl != null
                               ? 'Image actuelle — toucher pour reprendre'
                               : 'Ouvrir la caméra'),
                       icon: Icons.camera_alt_outlined,
-                      hasFile: _livePhoto != null,
-                      previewFile: _livePhoto,
+                      hasFile: _liveBytes != null,
+                      previewBytes: _liveBytes,
                       previewUrl: _existingLiveUrl,
                       onTap: _pickLivePhoto,
                     ),
@@ -397,10 +433,10 @@ class _ShipperRegistrationScreenState
     required IconData icon,
     required bool hasFile,
     required VoidCallback onTap,
-    File? previewFile,
+    Uint8List? previewBytes,
     String? previewUrl,
   }) {
-    final showNetworkPreview = previewFile == null && previewUrl != null;
+    final showNetworkPreview = previewBytes == null && previewUrl != null;
 
     return Material(
       color: Colors.transparent,
@@ -417,11 +453,11 @@ class _ShipperRegistrationScreenState
           ),
           child: Row(
             children: [
-              if (previewFile != null)
+              if (previewBytes != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(AppTheme.radiusXs),
-                  child: Image.file(
-                    previewFile,
+                  child: Image.memory(
+                    previewBytes,
                     width: 56,
                     height: 56,
                     fit: BoxFit.cover,

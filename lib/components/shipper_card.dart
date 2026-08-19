@@ -4,8 +4,10 @@ import '../core/widgets/ui_kit.dart';
 
 /// Reusable shipper offer card used on the client search feed.
 ///
-/// Compact on first render; tapping toggles an animated expandable section
-/// with shipper statistics + a direct message action. Follows the design
+/// Compact on first render. Tapping the card fires [onTap] (e.g. open the
+/// shipper detail/profile); a dedicated expand/collapse icon toggles the
+/// animated expandable section with shipper statistics + a direct message
+/// action. The two gestures are fully separated. Follows the design
 /// tokens defined in [AppTheme] and the shared kit inside `core/widgets`.
 class ShipperCard extends StatefulWidget {
   const ShipperCard({
@@ -85,10 +87,7 @@ class _ShipperCardState extends State<ShipperCard> {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
       child: GlassCard(
-        onTap: () {
-          setState(() => _expanded = !_expanded);
-          widget.onTap?.call();
-        },
+        onTap: widget.onTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -169,6 +168,18 @@ class _ShipperCardState extends State<ShipperCard> {
                 ],
               ),
             ],
+          ),
+        ),
+        // Dedicated expand/collapse toggle: the card tap itself opens the
+        // shipper detail, so expanding must not hijack that gesture.
+        IconButton(
+          onPressed: () => setState(() => _expanded = !_expanded),
+          visualDensity: VisualDensity.compact,
+          iconSize: 22,
+          tooltip: _expanded ? 'Réduire' : 'Détails',
+          icon: Icon(
+            _expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+            color: AppTheme.textSecondaryColor,
           ),
         ),
       ],

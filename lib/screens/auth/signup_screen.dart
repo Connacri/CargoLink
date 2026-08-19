@@ -94,208 +94,211 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: CustomScrollView(
-        slivers: [
-          const GradientSliverHeader(
-            title: 'Créer un compte',
-            subtitle: 'Rejoignez CargoLink',
-            icon: Icons.person_add_alt_1,
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(AppTheme.spaceMd),
-            sliver: SliverToBoxAdapter(
-              child: Form(
-                key: _formKey,
-                child: GlassCard(
-                  padding: const EdgeInsets.all(AppTheme.spaceLg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      StaggeredEntrance(
-                        delay: const Duration(milliseconds: 80),
-                        child: SegmentedButton<String>(
-                          segments: const [
-                            ButtonSegment(
-                              value: 'client',
-                              icon: Icon(Icons.shopping_bag),
-                              label: Text('Client'),
-                            ),
-                            ButtonSegment(
-                              value: 'shipper',
-                              icon: Icon(Icons.flight_takeoff),
-                              label: Text('Expéditeur'),
-                            ),
-                          ],
-                          selected: {_role},
-                          onSelectionChanged: (selection) {
-                            HapticFeedback.selectionClick();
-                            setState(() => _role = selection.first);
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: AppTheme.spaceLg),
-                      StaggeredEntrance(
-                        delay: const Duration(milliseconds: 140),
-                        child: TextFormField(
-                          controller: _fullNameController,
-                          textCapitalization: TextCapitalization.words,
-                          decoration: const InputDecoration(
-                            labelText: 'Nom complet',
-                            prefixIcon: Icon(Icons.person_outline),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Nom requis';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: AppTheme.spaceMd),
-                      StaggeredEntrance(
-                        delay: const Duration(milliseconds: 200),
-                        child: TextFormField(
-                          controller: _phoneController,
-                          keyboardType: TextInputType.phone,
-                          decoration: const InputDecoration(
-                            labelText: 'Téléphone',
-                            prefixIcon: Icon(Icons.phone_outlined),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Téléphone requis';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: AppTheme.spaceMd),
-                      StaggeredEntrance(
-                        delay: const Duration(milliseconds: 260),
-                        child: TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: Icon(Icons.email_outlined),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Email requis';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Email invalide';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: AppTheme.spaceMd),
-                      StaggeredEntrance(
-                        delay: const Duration(milliseconds: 320),
-                        child: TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: 'Mot de passe',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
+      body: SafeArea(
+        top: false,
+        child: CustomScrollView(
+          slivers: [
+            const GradientSliverHeader(
+              title: 'Créer un compte',
+              subtitle: 'Rejoignez CargoLink',
+              icon: Icons.person_add_alt_1,
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.all(AppTheme.spaceMd),
+              sliver: SliverToBoxAdapter(
+                child: Form(
+                  key: _formKey,
+                  child: GlassCard(
+                    padding: const EdgeInsets.all(AppTheme.spaceLg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        StaggeredEntrance(
+                          delay: const Duration(milliseconds: 80),
+                          child: SegmentedButton<String>(
+                            segments: const [
+                              ButtonSegment(
+                                value: 'client',
+                                icon: Icon(Icons.shopping_bag),
+                                label: Text('Client'),
                               ),
-                              onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword,
+                              ButtonSegment(
+                                value: 'shipper',
+                                icon: Icon(Icons.flight_takeoff),
+                                label: Text('Expéditeur'),
                               ),
+                            ],
+                            selected: {_role},
+                            onSelectionChanged: (selection) {
+                              HapticFeedback.selectionClick();
+                              setState(() => _role = selection.first);
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: AppTheme.spaceLg),
+                        StaggeredEntrance(
+                          delay: const Duration(milliseconds: 140),
+                          child: TextFormField(
+                            controller: _fullNameController,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: const InputDecoration(
+                              labelText: 'Nom complet',
+                              prefixIcon: Icon(Icons.person_outline),
                             ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Nom requis';
+                              }
+                              return null;
+                            },
                           ),
-                          validator: (value) {
-                            if (value == null || value.length < 8) {
-                              return 'Minimum 8 caractères';
-                            }
-                            return null;
-                          },
                         ),
-                      ),
-                      const SizedBox(height: AppTheme.spaceMd),
-                      StaggeredEntrance(
-                        delay: const Duration(milliseconds: 380),
-                        child: TextFormField(
-                          controller: _confirmController,
-                          obscureText: _obscurePassword,
-                          decoration: const InputDecoration(
-                            labelText: 'Confirmer le mot de passe',
-                            prefixIcon: Icon(Icons.lock_outline),
+                        const SizedBox(height: AppTheme.spaceMd),
+                        StaggeredEntrance(
+                          delay: const Duration(milliseconds: 200),
+                          child: TextFormField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            decoration: const InputDecoration(
+                              labelText: 'Téléphone',
+                              prefixIcon: Icon(Icons.phone_outlined),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Téléphone requis';
+                              }
+                              return null;
+                            },
                           ),
-                          validator: (value) {
-                            if (value != _passwordController.text) {
-                              return 'Les mots de passe ne correspondent pas';
-                            }
-                            return null;
-                          },
                         ),
-                      ),
-                      const SizedBox(height: AppTheme.spaceLg),
-                      StaggeredEntrance(
-                        delay: const Duration(milliseconds: 460),
-                        child: FilledButton(
-                          onPressed: _isLoading
-                              ? null
-                              : () {
-                                  HapticFeedback.selectionClick();
-                                  _handleSignup();
-                                },
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Text(
-                                  _role == 'shipper'
-                                      ? 'Créer mon compte expéditeur'
-                                      : 'Créer mon compte',
+                        const SizedBox(height: AppTheme.spaceMd),
+                        StaggeredEntrance(
+                          delay: const Duration(milliseconds: 260),
+                          child: TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                              prefixIcon: Icon(Icons.email_outlined),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Email requis';
+                              }
+                              if (!value.contains('@')) {
+                                return 'Email invalide';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: AppTheme.spaceMd),
+                        StaggeredEntrance(
+                          delay: const Duration(milliseconds: 320),
+                          child: TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            decoration: InputDecoration(
+                              labelText: 'Mot de passe',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
                                 ),
+                                onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword,
+                                ),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.length < 8) {
+                                return 'Minimum 8 caractères';
+                              }
+                              return null;
+                            },
+                          ),
                         ),
+                        const SizedBox(height: AppTheme.spaceMd),
+                        StaggeredEntrance(
+                          delay: const Duration(milliseconds: 380),
+                          child: TextFormField(
+                            controller: _confirmController,
+                            obscureText: _obscurePassword,
+                            decoration: const InputDecoration(
+                              labelText: 'Confirmer le mot de passe',
+                              prefixIcon: Icon(Icons.lock_outline),
+                            ),
+                            validator: (value) {
+                              if (value != _passwordController.text) {
+                                return 'Les mots de passe ne correspondent pas';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: AppTheme.spaceLg),
+                        StaggeredEntrance(
+                          delay: const Duration(milliseconds: 460),
+                          child: FilledButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () {
+                                    HapticFeedback.selectionClick();
+                                    _handleSignup();
+                                  },
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    _role == 'shipper'
+                                        ? 'Créer mon compte expéditeur'
+                                        : 'Créer mon compte',
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: StaggeredEntrance(
+                delay: const Duration(milliseconds: 540),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppTheme.spaceSm,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Déjà un compte ? ',
+                        style: TextStyle(color: AppTheme.textSecondaryColor),
+                      ),
+                      TextButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () => Navigator.of(context)
+                                .pushReplacementNamed('/login'),
+                        child: const Text('Se connecter'),
                       ),
                     ],
                   ),
                 ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: StaggeredEntrance(
-              delay: const Duration(milliseconds: 540),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppTheme.spaceSm,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Déjà un compte ? ',
-                      style: TextStyle(color: AppTheme.textSecondaryColor),
-                    ),
-                    TextButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () => Navigator.of(context)
-                              .pushReplacementNamed('/login'),
-                      child: const Text('Se connecter'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLg)),
-        ],
+            const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLg)),
+          ],
+        ),
       ),
     );
   }

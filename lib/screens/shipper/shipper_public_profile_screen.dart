@@ -48,179 +48,183 @@ class _ShipperProfileBody extends ConsumerWidget {
     final user = shipper.user;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          GradientSliverHeader(
-            title: user?.fullName ?? 'Expéditeur',
-            subtitle:
-                '${user?.email ?? ''}  •  ★ ${shipper.ratingDisplay}',
-            icon: Icons.verified_user,
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppTheme.spaceMd,
-                AppTheme.spaceMd,
-                AppTheme.spaceMd,
-                0,
-              ),
-              child: GlassCard(
-                padding: const EdgeInsets.all(AppTheme.spaceMd),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        GradientAvatar(
-                          initial: user?.fullName,
-                          imageUrl: user?.profilePictureUrl,
-                          radius: 32,
-                        ),
-                        const SizedBox(width: AppTheme.spaceMd),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      user?.fullName ?? 'Expéditeur',
-                                      style: AppTheme.h3,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  if (shipper.isVerified) ...[
-                                    const SizedBox(width: 6),
-                                    const VerifiedBadge(),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  StarRating(rating: shipper.rating),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    shipper.ratingDisplay,
-                                    style: AppTheme.caption,
-                                  ),
-                                ],
-                              ),
-                            ],
+      body: SafeArea(
+        top: false,
+        child: CustomScrollView(
+          slivers: [
+            GradientSliverHeader(
+              title: user?.fullName ?? 'Expéditeur',
+              subtitle: '${user?.email ?? ''}  •  ★ ${shipper.ratingDisplay}',
+              icon: Icons.verified_user,
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceMd,
+                  0,
+                ),
+                child: GlassCard(
+                  padding: const EdgeInsets.all(AppTheme.spaceMd),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          GradientAvatar(
+                            initial: user?.fullName,
+                            imageUrl: user?.profilePictureUrl,
+                            radius: 32,
                           ),
+                          const SizedBox(width: AppTheme.spaceMd),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        user?.fullName ?? 'Expéditeur',
+                                        style: AppTheme.h3,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (shipper.isVerified) ...[
+                                      const SizedBox(width: 6),
+                                      const VerifiedBadge(),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    StarRating(rating: shipper.rating),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      shipper.ratingDisplay,
+                                      style: AppTheme.caption,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (shipper.totalShipments > 0) ...[
+                        const SizedBox(height: AppTheme.spaceMd),
+                        _MetaRow(
+                          icon: Icons.flight_takeoff_outlined,
+                          label: '${shipper.totalShipments} offres publiées',
                         ),
                       ],
-                    ),
-                    if (shipper.totalShipments > 0) ...[
-                      const SizedBox(height: AppTheme.spaceMd),
-                      _MetaRow(
-                        icon: Icons.flight_takeoff_outlined,
-                        label: '${shipper.totalShipments} offres publiées',
-                      ),
+                      ..._contactTiles(user),
                     ],
-                    ..._contactTiles(user),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppTheme.spaceMd,
-                AppTheme.spaceLg,
-                AppTheme.spaceMd,
-                AppTheme.spaceSm,
-              ),
-              child: Text('Offres actives', style: AppTheme.h2),
-            ),
-          ),
-          shipments.when(
-            data: (items) {
-              final active = items.where((s) => s.isActive).toList();
-              if (active.isEmpty) {
-                return const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(AppTheme.spaceMd),
-                    child: Text(
-                      'Aucune offre active en ce moment.',
-                      style: AppTheme.bodySecondary,
-                    ),
-                  ),
-                );
-              }
-              return SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppTheme.spaceMd,
-                  0,
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
                   AppTheme.spaceMd,
                   AppTheme.spaceLg,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceSm,
                 ),
-                sliver: SliverList.builder(
-                  itemCount: active.length,
-                  itemBuilder: (context, index) => _PublicShipmentCard(
-                    shipment: active[index],
+                child: Text('Offres actives', style: AppTheme.h2),
+              ),
+            ),
+            shipments.when(
+              data: (items) {
+                final active = items.where((s) => s.isActive).toList();
+                if (active.isEmpty) {
+                  return const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(AppTheme.spaceMd),
+                      child: Text(
+                        'Aucune offre active en ce moment.',
+                        style: AppTheme.bodySecondary,
+                      ),
+                    ),
+                  );
+                }
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTheme.spaceMd,
+                    0,
+                    AppTheme.spaceMd,
+                    AppTheme.spaceLg,
                   ),
-                ),
-              );
-            },
-            loading: () => const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(AppTheme.spaceMd),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            ),
-            error: (e, s) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-          ),
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppTheme.spaceMd,
-                AppTheme.spaceSm,
-                AppTheme.spaceMd,
-                AppTheme.spaceSm,
-              ),
-              child: Text('Avis des clients', style: AppTheme.h2),
-            ),
-          ),
-          reviews.when(
-            data: (items) {
-              if (items.isEmpty) {
-                return const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(AppTheme.spaceMd),
-                    child: Text(
-                      'Aucun avis pour le moment.',
-                      style: AppTheme.bodySecondary,
+                  sliver: SliverList.builder(
+                    itemCount: active.length,
+                    itemBuilder: (context, index) => _PublicShipmentCard(
+                      shipment: active[index],
                     ),
                   ),
                 );
-              }
-              return SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppTheme.spaceMd,
-                  0,
-                  AppTheme.spaceMd,
-                  AppTheme.spaceXxl,
+              },
+              loading: () => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spaceMd),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
-                sliver: SliverList.builder(
-                  itemCount: items.length,
-                  itemBuilder: (context, index) => _ReviewCard(
-                    review: items[index],
-                  ),
-                ),
-              );
-            },
-            loading: () => const SliverToBoxAdapter(
+              ),
+              error: (e, s) =>
+                  const SliverToBoxAdapter(child: SizedBox.shrink()),
+            ),
+            const SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.all(AppTheme.spaceMd),
-                child: Center(child: CircularProgressIndicator()),
+                padding: EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd,
+                  AppTheme.spaceSm,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceSm,
+                ),
+                child: Text('Avis des clients', style: AppTheme.h2),
               ),
             ),
-            error: (e, s) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-          ),
-        ],
+            reviews.when(
+              data: (items) {
+                if (items.isEmpty) {
+                  return const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(AppTheme.spaceMd),
+                      child: Text(
+                        'Aucun avis pour le moment.',
+                        style: AppTheme.bodySecondary,
+                      ),
+                    ),
+                  );
+                }
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTheme.spaceMd,
+                    0,
+                    AppTheme.spaceMd,
+                    AppTheme.spaceXxl,
+                  ),
+                  sliver: SliverList.builder(
+                    itemCount: items.length,
+                    itemBuilder: (context, index) => _ReviewCard(
+                      review: items[index],
+                    ),
+                  ),
+                );
+              },
+              loading: () => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spaceMd),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+              error: (e, s) =>
+                  const SliverToBoxAdapter(child: SizedBox.shrink()),
+            ),
+          ],
+        ),
       ),
     );
   }

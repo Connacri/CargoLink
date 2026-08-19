@@ -101,25 +101,15 @@ class TrackingScreen extends ConsumerWidget {
                   label: const Text('Discuter'),
                 )
               : null,
-          body: CustomScrollView(
-            slivers: [
-              GradientSliverHeader(
-                title: 'Suivi de colis',
-                subtitle: bookingData.productName,
-                icon: Icons.connecting_airports_rounded,
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppTheme.spaceMd,
-                    AppTheme.spaceMd,
-                    AppTheme.spaceMd,
-                    0,
-                  ),
-                  child: _buildHeader(bookingData),
+          body: SafeArea(
+            top: false,
+            child: CustomScrollView(
+              slivers: [
+                GradientSliverHeader(
+                  title: 'Suivi de colis',
+                  subtitle: bookingData.productName,
+                  icon: Icons.connecting_airports_rounded,
                 ),
-              ),
-              if (bookingData.shipment?.shipper?.user != null)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
@@ -128,81 +118,94 @@ class TrackingScreen extends ConsumerWidget {
                       AppTheme.spaceMd,
                       0,
                     ),
-                    child: _buildShipperCard(context, bookingData),
+                    child: _buildHeader(bookingData),
                   ),
                 ),
-              if (bookingData.status == 'delivered')
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppTheme.spaceMd,
-                      AppTheme.spaceMd,
-                      AppTheme.spaceMd,
-                      0,
+                if (bookingData.shipment?.shipper?.user != null)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        0,
+                      ),
+                      child: _buildShipperCard(context, bookingData),
                     ),
-                    child: _DeliveryProofSection(booking: bookingData),
                   ),
-                ),
-              if (bookingData.status == 'delivered')
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppTheme.spaceMd,
-                      AppTheme.spaceMd,
-                      AppTheme.spaceMd,
-                      0,
+                if (bookingData.status == 'delivered')
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        0,
+                      ),
+                      child: _DeliveryProofSection(booking: bookingData),
                     ),
-                    child: _RatePrompt(booking: bookingData),
                   ),
-                ),
-              ...tracking.when<List<Widget>>(
-                data: (events) => events.isEmpty
-                    ? [SliverToBoxAdapter(child: _buildEmptyTimeline())]
-                    : [
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              AppTheme.spaceMd,
-                              AppTheme.spaceMd,
-                              AppTheme.spaceMd,
-                              AppTheme.spaceSm,
-                            ),
-                            child: _buildProgressBar(
-                              stageIndex(events.last.status),
-                            ),
-                          ),
-                        ),
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(
-                            AppTheme.spaceMd,
-                            AppTheme.spaceSm,
-                            AppTheme.spaceMd,
-                            AppTheme.spaceXxl,
-                          ),
-                          sliver: SliverToBoxAdapter(
-                            child: TrackingTimeline(
-                              events: _toTimelineEvents(
-                                events,
-                                delivered: bookingData.status == 'delivered',
+                if (bookingData.status == 'delivered')
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        0,
+                      ),
+                      child: _RatePrompt(booking: bookingData),
+                    ),
+                  ),
+                ...tracking.when<List<Widget>>(
+                  data: (events) => events.isEmpty
+                      ? [SliverToBoxAdapter(child: _buildEmptyTimeline())]
+                      : [
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppTheme.spaceMd,
+                                AppTheme.spaceMd,
+                                AppTheme.spaceMd,
+                                AppTheme.spaceSm,
+                              ),
+                              child: _buildProgressBar(
+                                stageIndex(events.last.status),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                loading: () => const [
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                ],
-                error: (e, s) => [
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(child: Text('Erreur: $e')),
-                  ),
-                ],
-              ),
-            ],
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppTheme.spaceMd,
+                              AppTheme.spaceSm,
+                              AppTheme.spaceMd,
+                              AppTheme.spaceXxl,
+                            ),
+                            sliver: SliverToBoxAdapter(
+                              child: TrackingTimeline(
+                                events: _toTimelineEvents(
+                                  events,
+                                  delivered: bookingData.status == 'delivered',
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                  loading: () => const [
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  ],
+                  error: (e, s) => [
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(child: Text('Erreur: $e')),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -340,10 +343,10 @@ class TrackingScreen extends ConsumerWidget {
             );
           }
         },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppTheme.spaceXs,
-                    ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: AppTheme.spaceXs,
+          ),
           child: Row(
             children: [
               GradientAvatar(
@@ -572,23 +575,25 @@ class _DeliveryProofSection extends ConsumerWidget {
   const _DeliveryProofSection({required this.booking});
 
   Future<void> _confirmReceipt(BuildContext context, WidgetRef ref) async {
-    final photo = await pickProofPhoto(context, title: 'Confirmation de réception');
+    final photo =
+        await pickProofPhoto(context, title: 'Confirmation de réception');
     if (photo == null) return;
     try {
-      final url = await ref
-          .read(storageServiceProvider)
-          .uploadBookingProofPhoto(
-            file: photo,
-            bookingId: booking.id,
-            type: 'receipt',
-          );
+      final url =
+          await ref.read(storageServiceProvider).uploadBookingProofPhoto(
+                file: photo,
+                bookingId: booking.id,
+                type: 'receipt',
+              );
       await ref.read(bookingServiceProvider).confirmReceipt(
             booking.id,
             receiptPhotoUrl: url,
           );
       final shipperId = booking.shipment?.shipperId;
       if (shipperId != null) {
-        await ref.read(notificationServiceProvider).notifyShipperReceiptConfirmed(
+        await ref
+            .read(notificationServiceProvider)
+            .notifyShipperReceiptConfirmed(
               shipperId: shipperId,
               bookingId: booking.id,
             );

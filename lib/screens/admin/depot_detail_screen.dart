@@ -94,86 +94,89 @@ class _DepotDetailScreenState extends ConsumerState<DepotDetailScreen> {
         icon: const Icon(Icons.add),
         label: const Text('Colis'),
       ),
-      body: RefreshIndicator(
-        onRefresh: _refresh,
-        child: items.when(
-          data: (list) => CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              GradientSliverHeader(
-                title: widget.depot.name,
-                subtitle: [
-                  if (widget.depot.city != null) widget.depot.city!,
-                  if (widget.depot.address != null) widget.depot.address!,
-                ].join(' — '),
-                icon: Icons.warehouse_outlined,
-                expandedHeight: 140,
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppTheme.spaceMd,
-                    AppTheme.spaceMd,
-                    AppTheme.spaceMd,
-                    AppTheme.spaceSm,
-                  ),
-                  child: stats.when(
-                    data: (s) => Row(
-                      children: [
-                        _StatPill(
-                          label: '${s?['stored'] ?? 0} stockés',
-                          icon: Icons.move_to_inbox_outlined,
-                          color: AppTheme.infoColor,
-                        ),
-                        const SizedBox(width: AppTheme.spaceSm),
-                        _StatPill(
-                          label: '${s?['dispatched'] ?? 0} expédiés',
-                          icon: Icons.flight_takeoff_rounded,
-                          color: AppTheme.accentColor,
-                        ),
-                        const SizedBox(width: AppTheme.spaceSm),
-                        _StatPill(
-                          label:
-                              '${(s?['stored_weight_kg'] as num?)?.toStringAsFixed(1) ?? '0'} kg',
-                          icon: Icons.scale_outlined,
-                          color: AppTheme.warningColor,
-                        ),
-                      ],
+      body: SafeArea(
+        top: false,
+        child: RefreshIndicator(
+          onRefresh: _refresh,
+          child: items.when(
+            data: (list) => CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                GradientSliverHeader(
+                  title: widget.depot.name,
+                  subtitle: [
+                    if (widget.depot.city != null) widget.depot.city!,
+                    if (widget.depot.address != null) widget.depot.address!,
+                  ].join(' — '),
+                  icon: Icons.warehouse_outlined,
+                  expandedHeight: 140,
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceSm,
                     ),
-                    loading: () => const SizedBox.shrink(),
-                    error: (e, s) => const SizedBox.shrink(),
+                    child: stats.when(
+                      data: (s) => Row(
+                        children: [
+                          _StatPill(
+                            label: '${s?['stored'] ?? 0} stockés',
+                            icon: Icons.move_to_inbox_outlined,
+                            color: AppTheme.infoColor,
+                          ),
+                          const SizedBox(width: AppTheme.spaceSm),
+                          _StatPill(
+                            label: '${s?['dispatched'] ?? 0} expédiés',
+                            icon: Icons.flight_takeoff_rounded,
+                            color: AppTheme.accentColor,
+                          ),
+                          const SizedBox(width: AppTheme.spaceSm),
+                          _StatPill(
+                            label:
+                                '${(s?['stored_weight_kg'] as num?)?.toStringAsFixed(1) ?? '0'} kg',
+                            icon: Icons.scale_outlined,
+                            color: AppTheme.warningColor,
+                          ),
+                        ],
+                      ),
+                      loading: () => const SizedBox.shrink(),
+                      error: (e, s) => const SizedBox.shrink(),
+                    ),
                   ),
                 ),
-              ),
-              if (list.isEmpty)
-                const SliverToBoxAdapter(child: _EmptyItems())
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppTheme.spaceMd,
-                    AppTheme.spaceSm,
-                    AppTheme.spaceMd,
-                    AppTheme.spaceXxl,
-                  ),
-                  sliver: SliverList.builder(
-                    itemCount: list.length,
-                    itemBuilder: (context, index) => StaggeredEntrance(
-                      delay: Duration(milliseconds: (index % 10) * 40),
-                      child: _ItemCard(
-                        item: list[index],
-                        onEdit: () => _openItemForm(item: list[index]),
-                        onDelete: () => _deleteItem(list[index]),
-                        onStatus: (status) =>
-                            _changeStatus(list[index], status),
+                if (list.isEmpty)
+                  const SliverToBoxAdapter(child: _EmptyItems())
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd,
+                      AppTheme.spaceSm,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceXxl,
+                    ),
+                    sliver: SliverList.builder(
+                      itemCount: list.length,
+                      itemBuilder: (context, index) => StaggeredEntrance(
+                        delay: Duration(milliseconds: (index % 10) * 40),
+                        child: _ItemCard(
+                          item: list[index],
+                          onEdit: () => _openItemForm(item: list[index]),
+                          onDelete: () => _deleteItem(list[index]),
+                          onStatus: (status) =>
+                              _changeStatus(list[index], status),
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, s) => Center(
-            child: Text('Erreur: $e', style: AppTheme.bodySecondary),
+              ],
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, s) => Center(
+              child: Text('Erreur: $e', style: AppTheme.bodySecondary),
+            ),
           ),
         ),
       ),
@@ -450,8 +453,7 @@ class _ItemFormScreenState extends ConsumerState<_ItemFormScreen> {
       text: item != null ? item.weightKg.toStringAsFixed(2) : '',
     );
     _recipientName = TextEditingController(text: item?.recipientName ?? '');
-    _recipientPhone =
-        TextEditingController(text: item?.recipientPhone ?? '');
+    _recipientPhone = TextEditingController(text: item?.recipientPhone ?? '');
     _notes = TextEditingController(text: item?.notes ?? '');
     _status = item?.status ?? 'stored';
   }
@@ -521,7 +523,8 @@ class _ItemFormScreenState extends ConsumerState<_ItemFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Modifier le colis' : 'Nouveau colis')),
+      appBar:
+          AppBar(title: Text(_isEdit ? 'Modifier le colis' : 'Nouveau colis')),
       body: ListView(
         padding: const EdgeInsets.all(AppTheme.spaceMd),
         children: [
@@ -544,8 +547,7 @@ class _ItemFormScreenState extends ConsumerState<_ItemFormScreen> {
           const SizedBox(height: AppTheme.spaceSm + 4),
           TextField(
             controller: _weight,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(
               labelText: 'Poids (kg)',
               prefixIcon: Icon(Icons.scale_outlined),

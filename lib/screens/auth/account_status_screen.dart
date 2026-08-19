@@ -19,7 +19,8 @@ class AccountStatusScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<AccountStatusScreen> createState() => _AccountStatusScreenState();
+  ConsumerState<AccountStatusScreen> createState() =>
+      _AccountStatusScreenState();
 }
 
 class _AccountStatusScreenState extends ConsumerState<AccountStatusScreen> {
@@ -84,9 +85,8 @@ class _AccountStatusScreenState extends ConsumerState<AccountStatusScreen> {
   String _remainingDays() {
     final requested = widget.deletionRequestedAt;
     if (requested == null) return '';
-    final remaining =
-        AuthServiceConstants.deletionGracePeriod -
-            DateTime.now().difference(requested);
+    final remaining = AuthServiceConstants.deletionGracePeriod -
+        DateTime.now().difference(requested);
     final days = remaining.inDays + 1;
     return '${days.clamp(0, 999)} jour${days > 1 ? 's' : ''}';
   }
@@ -96,89 +96,93 @@ class _AccountStatusScreenState extends ConsumerState<AccountStatusScreen> {
     final deletion = widget.deletionPending;
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: CustomScrollView(
-        slivers: [
-          GradientSliverHeader(
-            title: deletion ? 'Suppression programmée' : 'Compte désactivé',
-            subtitle: deletion
-                ? 'Votre compte sera bientôt supprimé'
-                : 'Votre compte est temporairement inactif',
-            icon: deletion
-                ? Icons.delete_forever_outlined
-                : Icons.pause_circle_outline,
-            gradient: deletion ? AppTheme.errorGradient : AppTheme.warningGradient,
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(AppTheme.spaceMd),
-            sliver: SliverToBoxAdapter(
-              child: StaggeredEntrance(
-                child: GlassCard(
-                  padding: const EdgeInsets.all(AppTheme.spaceLg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      AnimatedIconDot(
-                        icon: deletion
-                            ? Icons.delete_forever_outlined
-                            : Icons.pause_circle_outline,
-                        color: deletion
-                            ? AppTheme.errorColor
-                            : AppTheme.warningColor,
-                        size: 28,
-                      ),
-                      const SizedBox(height: AppTheme.spaceMd),
-                      Text(
-                        deletion
-                            ? 'Votre compte sera définitivement supprimé dans '
-                                '${_remainingDays()}. Connectez-vous à tout '
-                                'moment pour annuler la suppression.'
-                            : 'Vous avez désactivé votre compte. Il est masqué '
-                                'et inaccessible, mais rien n\'est supprimé. '
-                                'Réactivez-le à tout moment pour retrouver '
-                                'votre profil, vos commandes et vos données.',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          height: 1.5,
-                          color: AppTheme.textSecondaryColor,
+      body: SafeArea(
+        top: false,
+        child: CustomScrollView(
+          slivers: [
+            GradientSliverHeader(
+              title: deletion ? 'Suppression programmée' : 'Compte désactivé',
+              subtitle: deletion
+                  ? 'Votre compte sera bientôt supprimé'
+                  : 'Votre compte est temporairement inactif',
+              icon: deletion
+                  ? Icons.delete_forever_outlined
+                  : Icons.pause_circle_outline,
+              gradient:
+                  deletion ? AppTheme.errorGradient : AppTheme.warningGradient,
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.all(AppTheme.spaceMd),
+              sliver: SliverToBoxAdapter(
+                child: StaggeredEntrance(
+                  child: GlassCard(
+                    padding: const EdgeInsets.all(AppTheme.spaceLg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        AnimatedIconDot(
+                          icon: deletion
+                              ? Icons.delete_forever_outlined
+                              : Icons.pause_circle_outline,
+                          color: deletion
+                              ? AppTheme.errorColor
+                              : AppTheme.warningColor,
+                          size: 28,
                         ),
-                      ),
-                      const SizedBox(height: AppTheme.spaceLg),
-                      FilledButton(
-                        onPressed: _loading
-                            ? null
-                            : () {
-                                HapticFeedback.selectionClick();
-                                deletion ? _cancelDeletion() : _reactivate();
-                              },
-                        child: _loading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
+                        const SizedBox(height: AppTheme.spaceMd),
+                        Text(
+                          deletion
+                              ? 'Votre compte sera définitivement supprimé dans '
+                                  '${_remainingDays()}. Connectez-vous à tout '
+                                  'moment pour annuler la suppression.'
+                              : 'Vous avez désactivé votre compte. Il est masqué '
+                                  'et inaccessible, mais rien n\'est supprimé. '
+                                  'Réactivez-le à tout moment pour retrouver '
+                                  'votre profil, vos commandes et vos données.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            height: 1.5,
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: AppTheme.spaceLg),
+                        FilledButton(
+                          onPressed: _loading
+                              ? null
+                              : () {
+                                  HapticFeedback.selectionClick();
+                                  deletion ? _cancelDeletion() : _reactivate();
+                                },
+                          child: _loading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  deletion
+                                      ? 'Annuler la suppression'
+                                      : 'Réactiver mon compte',
                                 ),
-                              )
-                            : Text(
-                                deletion
-                                    ? 'Annuler la suppression'
-                                    : 'Réactiver mon compte',
-                              ),
-                      ),
-                      const SizedBox(height: AppTheme.spaceSm),
-                      TextButton(
-                        onPressed: _signOut,
-                        child: const Text('Se déconnecter'),
-                      ),
-                    ],
+                        ),
+                        const SizedBox(height: AppTheme.spaceSm),
+                        TextButton(
+                          onPressed: _signOut,
+                          child: const Text('Se déconnecter'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLg)),
-        ],
+            const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLg)),
+          ],
+        ),
       ),
     );
   }

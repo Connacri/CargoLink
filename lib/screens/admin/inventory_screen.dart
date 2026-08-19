@@ -57,9 +57,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     if (confirmed != true) return;
 
     try {
-      await ref
-          .read(inventoryServiceProvider)
-          .deleteDepot(depot.id);
+      await ref.read(inventoryServiceProvider).deleteDepot(depot.id);
       ref.invalidate(depotsProvider);
     } catch (e) {
       if (mounted) {
@@ -79,51 +77,54 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
         icon: const Icon(Icons.add),
         label: const Text('Dépôt'),
       ),
-      body: RefreshIndicator(
-        onRefresh: _refresh,
-        child: depots.when(
-          data: (items) => CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              const GradientSliverHeader(
-                title: 'Inventaire',
-                subtitle: 'Dépôts de collecte des colis',
-                icon: Icons.warehouse_outlined,
-                expandedHeight: 140,
-              ),
-              if (items.isEmpty)
-                const SliverToBoxAdapter(child: _EmptyDepots())
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppTheme.spaceMd,
-                    AppTheme.spaceMd,
-                    AppTheme.spaceMd,
-                    AppTheme.spaceXxl,
-                  ),
-                  sliver: SliverList.builder(
-                    itemCount: items.length,
-                    itemBuilder: (context, index) => StaggeredEntrance(
-                      delay: Duration(milliseconds: (index % 10) * 50),
-                      child: _DepotCard(
-                        depot: items[index],
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                DepotDetailScreen(depot: items[index]),
+      body: SafeArea(
+        top: false,
+        child: RefreshIndicator(
+          onRefresh: _refresh,
+          child: depots.when(
+            data: (items) => CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                const GradientSliverHeader(
+                  title: 'Inventaire',
+                  subtitle: 'Dépôts de collecte des colis',
+                  icon: Icons.warehouse_outlined,
+                  expandedHeight: 140,
+                ),
+                if (items.isEmpty)
+                  const SliverToBoxAdapter(child: _EmptyDepots())
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceXxl,
+                    ),
+                    sliver: SliverList.builder(
+                      itemCount: items.length,
+                      itemBuilder: (context, index) => StaggeredEntrance(
+                        delay: Duration(milliseconds: (index % 10) * 50),
+                        child: _DepotCard(
+                          depot: items[index],
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  DepotDetailScreen(depot: items[index]),
+                            ),
                           ),
+                          onEdit: () => _openDepotForm(depot: items[index]),
+                          onDelete: () => _deleteDepot(items[index]),
                         ),
-                        onEdit: () => _openDepotForm(depot: items[index]),
-                        onDelete: () => _deleteDepot(items[index]),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, s) => Center(
-            child: Text('Erreur: $e', style: AppTheme.bodySecondary),
+              ],
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, s) => Center(
+              child: Text('Erreur: $e', style: AppTheme.bodySecondary),
+            ),
           ),
         ),
       ),
@@ -332,17 +333,14 @@ class _DepotFormScreenState extends ConsumerState<DepotFormScreen> {
         await service.updateDepot(
           depotId: widget.depot!.id,
           name: name,
-          address: _address.text.trim().isEmpty
-              ? null
-              : _address.text.trim(),
+          address: _address.text.trim().isEmpty ? null : _address.text.trim(),
           city: _city.text.trim().isEmpty ? null : _city.text.trim(),
           phone: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
         );
       } else {
         await service.createDepot(
           name: name,
-          address:
-              _address.text.trim().isEmpty ? null : _address.text.trim(),
+          address: _address.text.trim().isEmpty ? null : _address.text.trim(),
           city: _city.text.trim().isEmpty ? null : _city.text.trim(),
           phone: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
         );
@@ -360,7 +358,8 @@ class _DepotFormScreenState extends ConsumerState<DepotFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Modifier le dépôt' : 'Nouveau dépôt')),
+      appBar:
+          AppBar(title: Text(_isEdit ? 'Modifier le dépôt' : 'Nouveau dépôt')),
       body: ListView(
         padding: const EdgeInsets.all(AppTheme.spaceMd),
         children: [

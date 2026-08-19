@@ -49,37 +49,40 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: CustomScrollView(
-        slivers: [
-          const GradientSliverHeader(
-            title: 'Mot de passe oublié',
-            subtitle: 'Réinitialisez votre mot de passe',
-            icon: Icons.lock_reset,
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(AppTheme.spaceMd),
-            sliver: SliverToBoxAdapter(
-              child: Form(
-                key: _formKey,
-                child: StaggeredEntrance(
-                  child: _sent ? _buildSuccessCard() : _buildResetForm(),
+      body: SafeArea(
+        top: false,
+        child: CustomScrollView(
+          slivers: [
+            const GradientSliverHeader(
+              title: 'Mot de passe oublié',
+              subtitle: 'Réinitialisez votre mot de passe',
+              icon: Icons.lock_reset,
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.all(AppTheme.spaceMd),
+              sliver: SliverToBoxAdapter(
+                child: Form(
+                  key: _formKey,
+                  child: StaggeredEntrance(
+                    child: _sent ? _buildSuccessCard() : _buildResetForm(),
+                  ),
                 ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceSm),
-              child: Center(
-                child: TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Retour à la connexion'),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceSm),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Retour à la connexion'),
+                  ),
                 ),
               ),
             ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLg)),
-        ],
+            const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLg)),
+          ],
+        ),
       ),
     );
   }
