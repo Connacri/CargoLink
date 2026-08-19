@@ -39,7 +39,7 @@ void main() {
       expect(booked, isTrue);
     });
 
-    testWidgets('expands stats on card tap', (tester) async {
+    testWidgets('expands stats via the details icon', (tester) async {
       await tester.pumpWidget(_wrap(ShipperCard(
         shipperId: 's1',
         name: 'Fatima B.',
@@ -55,7 +55,7 @@ void main() {
       )));
 
       expect(find.text('Statistiques'), findsNothing);
-      await tester.tap(find.text('Fatima B.'));
+      await tester.tap(find.byTooltip('Détails'));
       await tester.pumpAndSettle();
       expect(find.text('Statistiques'), findsOneWidget);
       expect(find.text('1.2k'), findsOneWidget);

@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../../core/config/supabase_config.dart';
+import '../../core/utils/qr_booking.dart';
 import './shipper_shipment_service.dart';
 import './tracking_dispute_service.dart';
 import './settings_service.dart';
@@ -33,8 +34,7 @@ class BookingService {
       final settings = await SettingsService().getSettings();
 
       // Validate requested weight
-      if (requestedWeightKg <= 0 ||
-          requestedWeightKg > settings.maxWeightKg) {
+      if (requestedWeightKg <= 0 || requestedWeightKg > settings.maxWeightKg) {
         throw Exception('Invalid weight requested');
       }
 
@@ -64,10 +64,12 @@ class BookingService {
       final totalPrice = allocatedWeight * shipment.pricePerKg;
 
       // Create booking
+      final bookingId = const Uuid().v4();
       final response = await _supabase
           .from('bookings')
           .insert({
-            'id': const Uuid().v4(),
+            'id': bookingId,
+            'tracking_number': QrBookingPayload.trackingCodeFor(bookingId),
             'shipment_id': shipmentId,
             'client_id': clientId,
             'product_name': productName,
@@ -118,8 +120,7 @@ class BookingService {
       final user = shipper['users'] as Map<String, dynamic>?;
       final shipperUserId = user?['id'] as String?;
       if (shipperUserId == null) return;
-      final route =
-          '${shipment['origin_country'] ?? '?'} → '
+      final route = '${shipment['origin_country'] ?? '?'} → '
           '${shipment['destination_city'] ?? '?'}';
       NotificationService().notifyShipperNewBooking(
         shipperUserId: shipperUserId,
@@ -150,9 +151,9 @@ class BookingService {
     }
   }
 
-  /// Look up a booking from its human-readable tracking ref code (first 10
-  /// characters of the booking id, upper-cased). Case-insensitive so the code
-  /// can be typed in or scanned from a QR code.
+  /// Look up a booking from its human-readable tracking ref code (alphanumeric,
+  /// no special characters — stored in `tracking_number`). Case-insensitive so
+  /// the code can be typed in or scanned from a QR code.
   Future<Booking?> getBookingByRefCode(String refCode) async {
     final code = refCode.trim().toUpperCase();
     if (code.length < 4) return null;
@@ -161,7 +162,7 @@ class BookingService {
           .from('bookings')
           .select(
               '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
-          .ilike('id', '$code%')
+          .ilike('tracking_number', '$code%')
           .limit(1)
           .maybeSingle();
       return response == null ? null : Booking.fromJson(response);
@@ -663,8 +664,7 @@ class PaymentService {
           .from('payments')
           .select(
               '*, bookings!payments_booking_id_fkey(client_id, shipments(shipper_id, shippers(user_id)))')
-          .or(
-              'bookings.client_id.eq.$userId,'
+          .or('bookings.client_id.eq.$userId,'
               'bookings.shipments.shippers.user_id.eq.$userId')
           .order('created_at', ascending: false);
 
@@ -719,7 +719,8 @@ class PaymentService {
   /// Full finance summary for a shipper: revenue (paid bookings), receivable
   /// (bookings not yet paid), platform commission (cost) and the resulting net
   /// profit. Also returns the monthly revenue breakdown for the chart.
-  Future<Map<String, dynamic>?> getShipperFinanceSummary(String shipperId) async {
+  Future<Map<String, dynamic>?> getShipperFinanceSummary(
+      String shipperId) async {
     try {
       final bookings = await _supabase
           .from('bookings')
@@ -785,7 +786,8 @@ class PaymentService {
   /// Global platform commission summary (admin): collected vs outstanding debt.
   Future<Map<String, dynamic>?> getPlatformFeeSummary() async {
     try {
-      final fees = await _supabase.from('platform_fees').select('amount,status');
+      final fees =
+          await _supabase.from('platform_fees').select('amount,status');
       final list = fees as List;
       var collected = 0.0;
       var pending = 0.0;
@@ -863,10 +865,14 @@ class PaymentService {
   /// (`awaiting_confirmation` -> `paid`).
   Future<void> confirmPlatformFee(String feeId) async {
     try {
-      await _supabase.from('platform_fees').update({
-        'status': 'paid',
-        'paid_at': DateTime.now().toIso8601String(),
-      }).eq('id', feeId).eq('status', 'awaiting_confirmation');
+      await _supabase
+          .from('platform_fees')
+          .update({
+            'status': 'paid',
+            'paid_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', feeId)
+          .eq('status', 'awaiting_confirmation');
       _logger.i('Platform fee confirmed: $feeId');
     } catch (e) {
       _logger.e('Error confirming platform fee: $e');

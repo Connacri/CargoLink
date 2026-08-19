@@ -5,7 +5,8 @@ import '../theme/app_theme.dart';
 import '../utils/qr_booking.dart';
 
 /// Booking "ticket": the QR code carries the client's tracking ref code, and
-/// below it the client details (name, phone, account, destination) plus the ref
+/// below it the client details (name, phone, account, destination), the
+/// shipper + flight info (shipper name, flight date, flight ref) plus the ref
 /// code as plain text. A shipper scans it — or types the ref in — to confirm
 /// collection in the country of origin; the client does the same to confirm
 /// the final reception.
@@ -66,6 +67,26 @@ class QrBookingTicket extends StatelessWidget {
           ),
           if (payload.product.isNotEmpty)
             _row(Icons.inventory_2_outlined, 'Produit', payload.product),
+          const Divider(color: AppTheme.dividerColor, height: 1),
+          const SizedBox(height: AppTheme.spaceXs),
+          if (payload.shipperName.isNotEmpty)
+            _row(
+              Icons.storefront_outlined,
+              'Expéditeur',
+              payload.shipperName,
+            ),
+          if (payload.flightDate.isNotEmpty)
+            _row(
+              Icons.event_rounded,
+              'Date du vol',
+              payload.flightDate,
+            ),
+          if (payload.flightNumber.isNotEmpty)
+            _row(
+              Icons.flight_takeoff_rounded,
+              'Réf. vol',
+              payload.flightNumber,
+            ),
         ],
       ),
     );

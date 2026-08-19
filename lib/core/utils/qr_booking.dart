@@ -3,9 +3,10 @@ import 'dart:convert';
 /// Encodes / decodes the content of a booking QR code.
 ///
 /// The QR carries the client's tracking ref code plus the info needed by the
-/// shipper (name, phone, account, destination) so that scanning it lets the
-/// shipper confirm collection in the country of origin and the client confirm
-/// the final reception — or fall back to entering the ref code by hand.
+/// shipper (name, phone, account, destination) and the flight details (shipper
+/// name, flight date, flight ref) so that scanning it lets the shipper confirm
+/// collection in the country of origin and the client confirm the final
+/// reception — or fall back to entering the ref code by hand.
 class QrBookingPayload {
   static const int version = 1;
 
@@ -16,6 +17,9 @@ class QrBookingPayload {
   final String email;
   final String destination;
   final String product;
+  final String shipperName;
+  final String flightDate;
+  final String flightNumber;
 
   const QrBookingPayload({
     required this.ref,
@@ -25,13 +29,24 @@ class QrBookingPayload {
     required this.email,
     required this.destination,
     required this.product,
+    this.shipperName = '',
+    this.flightDate = '',
+    this.flightNumber = '',
   });
 
-  /// Human-readable tracking ref code derived from a booking id (first 10
-  /// characters, upper-cased). Kept short enough to type by hand.
+  /// Human-readable tracking ref code derived from a booking id. Kept short
+  /// enough to type by hand and ALPHANUMERIC ONLY (no hyphens or special
+  /// characters) so it can be re-entered on any keyboard or scanned by a
+  /// third-party reader.
   static String refCodeFor(String bookingId) {
-    final upper = bookingId.toUpperCase();
-    return upper.substring(0, upper.length > 10 ? 10 : upper.length);
+    final cleaned =
+        bookingId.replaceAll(RegExp(r'[^A-Za-z0-9]'), '').toUpperCase();
+    return cleaned.substring(0, cleaned.length > 10 ? 10 : cleaned.length);
+  }
+
+  /// Full alphanumeric tracking code stored on the booking (unique in DB).
+  static String trackingCodeFor(String bookingId) {
+    return bookingId.replaceAll(RegExp(r'[^A-Za-z0-9]'), '').toUpperCase();
   }
 
   String encode() => jsonEncode({
@@ -43,6 +58,9 @@ class QrBookingPayload {
         'email': email,
         'dest': destination,
         'prod': product,
+        'ship': shipperName,
+        'fdate': flightDate,
+        'fnum': flightNumber,
       });
 
   static QrBookingPayload? decode(String raw) {
@@ -60,6 +78,9 @@ class QrBookingPayload {
         email: (map['email'] as String?) ?? '',
         destination: (map['dest'] as String?) ?? '',
         product: (map['prod'] as String?) ?? '',
+        shipperName: (map['ship'] as String?) ?? '',
+        flightDate: (map['fdate'] as String?) ?? '',
+        flightNumber: (map['fnum'] as String?) ?? '',
       );
     } catch (_) {
       return null;

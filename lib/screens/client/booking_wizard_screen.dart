@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:gal/gal.dart';
@@ -10,6 +10,8 @@ import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/qr_booking.dart';
+import '../../core/utils/web_download_stub.dart'
+    if (dart.library.html) '../../core/utils/web_download.dart';
 import '../../core/widgets/qr_booking_ticket.dart';
 import '../../core/widgets/ui_kit.dart';
 
@@ -39,6 +41,10 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
   bool _submitting = false;
   String? _createdBookingId;
   bool _savingTicket = false;
+  bool _loadingImage = false;
+  bool _uploadingPhotos = false;
+  int _uploadedPhotos = 0;
+  int _totalPhotos = 0;
   final _ticketKey = GlobalKey();
 
   final _productNameCtrl = TextEditingController();
@@ -57,29 +63,22 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
 
   double get _requestedWeight => double.tryParse(_weightCtrl.text) ?? 0;
 
-  int get _roundingPrecision => ref
-          .watch(platformSettingsProvider)
-          .valueOrNull
-          ?.roundingPrecision ??
+  int get _roundingPrecision =>
+      ref.watch(platformSettingsProvider).valueOrNull?.roundingPrecision ??
       AppConstants.roundingPrecision;
 
-  double get _commissionPercent => ref
-          .watch(platformSettingsProvider)
-          .valueOrNull
-          ?.commissionPercent ??
+  double get _commissionPercent =>
+      ref.watch(platformSettingsProvider).valueOrNull?.commissionPercent ??
       AppConstants.platformCommissionPercent;
 
-  String get _currency => ref
-          .watch(platformSettingsProvider)
-          .valueOrNull
-          ?.defaultCurrency ??
+  String get _currency =>
+      ref.watch(platformSettingsProvider).valueOrNull?.defaultCurrency ??
       AppConstants.defaultCurrency;
 
   double _allocatedWeight(double available) {
     if (_requestedWeight <= 0) return 0;
-    final allocated =
-        (_requestedWeight / _roundingPrecision).ceil() *
-            _roundingPrecision.toDouble();
+    final allocated = (_requestedWeight / _roundingPrecision).ceil() *
+        _roundingPrecision.toDouble();
     return allocated > available ? available : allocated;
   }
 
@@ -438,7 +437,34 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
                 ],
               );
             }),
-            if (_productImages.length < 5)
+            if (_loadingImage)
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceMuted,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                ),
+                child: const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Chargement…',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppTheme.textSecondaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (_productImages.length < 5 && !_loadingImage)
               GestureDetector(
                 onTap: _pickImage,
                 child: DottedAddTile(onTap: _pickImage),
@@ -506,41 +532,56 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
     );
 
     if (source == null) return;
+    setState(() => _loadingImage = true);
     XFile? picked;
-    switch (source) {
-      case _ImageSource.camera:
-        picked = await ImagePicker().pickImage(
-          source: ImageSource.camera,
-          maxWidth: 2048,
-          maxHeight: 2048,
-          imageQuality: 92,
-        );
-      case _ImageSource.gallery:
-        picked = await ImagePicker().pickImage(
-          source: ImageSource.gallery,
-          maxWidth: 2048,
-          maxHeight: 2048,
-          imageQuality: 92,
-        );
-    }
-
-    if (picked == null) return;
-    // `readAsBytes()` marche sur mobile ET sur le web (le blob URL est illisible
-    // par `dart:io`), et `bytes.length` remplace `file.length()` partout.
-    final bytes = await picked.readAsBytes();
-    if (bytes.length > AppConstants.maxFileSize) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Image trop lourde (max 5MB)')),
-        );
+    try {
+      switch (source) {
+        case _ImageSource.camera:
+          picked = await ImagePicker().pickImage(
+            source: ImageSource.camera,
+            maxWidth: 2048,
+            maxHeight: 2048,
+            imageQuality: 92,
+          );
+        case _ImageSource.gallery:
+          picked = await ImagePicker().pickImage(
+            source: ImageSource.gallery,
+            maxWidth: 2048,
+            maxHeight: 2048,
+            imageQuality: 92,
+          );
       }
-      return;
+
+      if (picked == null) {
+        if (mounted) setState(() => _loadingImage = false);
+        return;
+      }
+      // `readAsBytes()` marche sur mobile ET sur le web (le blob URL est illisible
+      // par `dart:io`), et `bytes.length` remplace `file.length()` partout.
+      final bytes = await picked.readAsBytes();
+      if (bytes.length > AppConstants.maxFileSize) {
+        if (mounted) {
+          setState(() => _loadingImage = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Image trop lourde (max 5MB)')),
+          );
+        }
+        return;
+      }
+      if (!mounted) return;
+      final name = picked.name.isNotEmpty
+          ? picked.name
+          : 'product_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      setState(() {
+        _loadingImage = false;
+        _productImages.add(_ProductImage(bytes: bytes, name: name));
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loadingImage = false);
+        _toast('Erreur lors de la sélection de l\'image');
+      }
     }
-    if (!mounted) return;
-    final name = picked.name.isNotEmpty
-        ? picked.name
-        : 'product_${DateTime.now().millisecondsSinceEpoch}.jpg';
-    setState(() => _productImages.add(_ProductImage(bytes: bytes, name: name)));
   }
 
   // ---------------------------------------------------------------------------
@@ -705,6 +746,9 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
             destination:
                 '${shipment.originCountry} → ${shipment.destinationCity}',
             product: _productNameCtrl.text.trim(),
+            shipperName: shipment.shipper?.user?.fullName ?? '',
+            flightDate: _formatFlightDate(shipment.departureDate),
+            flightNumber: shipment.flightNumber ?? '',
           )
         : null;
     return Center(
@@ -775,8 +819,11 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
                     ),
                   )
                 : const Icon(Icons.download_rounded, size: 18),
-            label: Text(
-                _savingTicket ? 'Enregistrement…' : 'Enregistrer la confirmation'),
+            label: Text(_savingTicket
+                ? 'Préparation…'
+                : (kIsWeb
+                    ? 'Télécharger la confirmation (PNG)'
+                    : 'Enregistrer la confirmation')),
           ),
           const SizedBox(height: AppTheme.spaceSm),
           FilledButton.icon(
@@ -805,21 +852,28 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
     if (boundary is! RenderRepaintBoundary) return;
     setState(() => _savingTicket = true);
     try {
-      if (!await Gal.hasAccess()) {
-        await Gal.requestAccess();
-      }
-      if (!mounted) return;
       final image = await boundary.toImage(pixelRatio: 3);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) throw Exception('Impossible de générer l\'image');
-      await Gal.putImageBytes(
-        byteData.buffer.asUint8List(),
-        name: 'cargolink-reservation-$bookingId',
-      );
+      final bytes = byteData.buffer.asUint8List();
+      if (kIsWeb) {
+        // `gal` n'existe pas sur le web : on déclenche un téléchargement
+        // classique du PNG généré dans le navigateur.
+        downloadBytesOnWeb(bytes, 'cargolink-reservation-$bookingId.png');
+      } else {
+        if (!await Gal.hasAccess()) {
+          await Gal.requestAccess();
+        }
+        if (!mounted) return;
+        await Gal.putImageBytes(
+          bytes,
+          name: 'cargolink-reservation-$bookingId',
+        );
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Confirmation enregistrée dans vos photos.'),
+            content: Text('Confirmation téléchargée.'),
             backgroundColor: AppTheme.accentColor,
           ),
         );
@@ -857,46 +911,100 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
       top: false,
       child: Padding(
         padding: const EdgeInsets.all(AppTheme.spaceMd),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (_currentStep > 0) ...[
-              OutlinedButton(
-                onPressed: _submitting ? null : _previousStep,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 8,
+            if (_uploadingPhotos) ...[
+              _buildUploadProgress(),
+              const SizedBox(height: AppTheme.spaceMd),
+            ],
+            Row(
+              children: [
+                if (_currentStep > 0) ...[
+                  OutlinedButton(
+                    onPressed: _submitting ? null : _previousStep,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                    ),
+                    child: const Text('Précédent'),
+                  ),
+                  const SizedBox(width: AppTheme.spaceMd),
+                ],
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _submitting ? null : () => _nextStep(shipment),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    child: _submitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            _currentStep == 2
+                                ? 'Confirmer la réservation'
+                                : 'Suivant',
+                          ),
                   ),
                 ),
-                child: const Text('Précédent'),
-              ),
-              const SizedBox(width: AppTheme.spaceMd),
-            ],
-            Expanded(
-              child: FilledButton(
-                onPressed: _submitting ? null : () => _nextStep(shipment),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-                child: _submitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        _currentStep == 2
-                            ? 'Confirmer la réservation'
-                            : 'Suivant',
-                      ),
-              ),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildUploadProgress() {
+    final done = _totalPhotos > 0 && _uploadedPhotos >= _totalPhotos;
+    final progress = _totalPhotos == 0 ? 0.0 : _uploadedPhotos / _totalPhotos;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.cloud_upload_outlined,
+              size: 18,
+              color: AppTheme.primaryColor,
+            ),
+            const SizedBox(width: AppTheme.spaceSm),
+            Expanded(
+              child: Text(
+                done
+                    ? 'Photos téléchargées ✓'
+                    : 'Téléchargement des photos… '
+                        '($_uploadedPhotos/$_totalPhotos)',
+                style: AppTheme.body.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppTheme.spaceSm),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            minHeight: 6,
+            value: progress,
+            backgroundColor: AppTheme.surfaceMuted,
+            valueColor:
+                const AlwaysStoppedAnimation<Color>(AppTheme.accentColor),
+          ),
+        ),
+      ],
     );
   }
 
@@ -950,9 +1058,19 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
     );
   }
 
+  String _formatFlightDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
   Future<void> _submitBooking() async {
     if (_createdBookingId != null) return;
-    setState(() => _submitting = true);
+    setState(() {
+      _submitting = true;
+      _uploadingPhotos = _productImages.isNotEmpty;
+      _uploadedPhotos = 0;
+      _totalPhotos = _productImages.length;
+    });
     try {
       final authService = ref.read(authServiceProvider);
       final bookingService = ref.read(bookingServiceProvider);
@@ -962,14 +1080,17 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
       if (userId == null) throw Exception('Non authentifié');
 
       List<String> imageUrls = [];
-      for (final image in _productImages) {
+      for (var i = 0; i < _productImages.length; i++) {
+        final image = _productImages[i];
         final url = await storageService.uploadImageBytes(
           bytes: image.bytes,
           fileName: image.name,
           path: 'bookings/$userId/${DateTime.now().millisecondsSinceEpoch}',
         );
         imageUrls.add(url);
+        if (mounted) setState(() => _uploadedPhotos = i + 1);
       }
+      if (mounted) setState(() => _uploadingPhotos = false);
 
       final booking = await bookingService.createBooking(
         shipmentId: widget.shipmentId,
@@ -1002,7 +1123,10 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _submitting = false);
+        setState(() {
+          _submitting = false;
+          _uploadingPhotos = false;
+        });
         _toast('Erreur: $e');
       }
     }

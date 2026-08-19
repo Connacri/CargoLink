@@ -69,11 +69,11 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     try {
       final payload = QrBookingPayload.decode(raw);
       final booking = payload != null
-          ? await ref.read(bookingServiceProvider).getBookingById(payload.bookingId)
+          ? await ref
+              .read(bookingServiceProvider)
+              .getBookingById(payload.bookingId)
           : QrBookingPayload.isPlainRef(raw)
-              ? await ref
-                  .read(bookingServiceProvider)
-                  .getBookingByRefCode(raw)
+              ? await ref.read(bookingServiceProvider).getBookingByRefCode(raw)
               : null;
       if (!mounted) return;
       if (booking == null) {
@@ -135,7 +135,9 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            _isShipper ? 'Collecte confirmée. Merci !' : 'Réception confirmée. Merci !',
+            _isShipper
+                ? 'Collecte confirmée. Merci !'
+                : 'Réception confirmée. Merci !',
           ),
           backgroundColor: AppTheme.accentColor,
         ),
@@ -165,15 +167,14 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
   }
 
   Future<void> _confirmClientReceipt(Booking booking) async {
-    final photo = await pickProofPhoto(context, title: 'Confirmation de réception');
+    final photo =
+        await pickProofPhoto(context, title: 'Confirmation de réception');
     if (photo == null) {
       setState(() => _busy = false);
       return;
     }
     if (!mounted) return;
-    final url = await ref
-        .read(storageServiceProvider)
-        .uploadBookingProofPhoto(
+    final url = await ref.read(storageServiceProvider).uploadBookingProofPhoto(
           file: photo,
           bookingId: booking.id,
           type: 'receipt',
@@ -183,9 +184,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
         .confirmReceipt(booking.id, receiptPhotoUrl: url);
     final shipperId = booking.shipment?.shipperId;
     if (shipperId != null) {
-      await ref
-          .read(notificationServiceProvider)
-          .notifyShipperReceiptConfirmed(
+      await ref.read(notificationServiceProvider).notifyShipperReceiptConfirmed(
             shipperId: shipperId,
             bookingId: booking.id,
           );
@@ -193,7 +192,8 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     ref.invalidate(bookingByIdProvider(booking.id));
     final myUserId = ref.read(authServiceProvider).currentUserId;
     if (myUserId != null) {
-      ref.invalidate(clientBookingsPagerProvider((clientId: myUserId, status: null)));
+      ref.invalidate(
+          clientBookingsPagerProvider((clientId: myUserId, status: null)));
     }
   }
 
@@ -243,7 +243,9 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _isShipper ? 'Confirmer la collecte' : 'Confirmer la réception',
+                  _isShipper
+                      ? 'Confirmer la collecte'
+                      : 'Confirmer la réception',
                   style: AppTheme.h3,
                 ),
                 Text(
@@ -370,6 +372,10 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     final clientPhone = booking.client?.phone ?? '';
     final ref = QrBookingPayload.refCodeFor(booking.id);
 
+    final shipperName = booking.shipment?.shipper?.user?.fullName ?? '';
+    final flightNumber = booking.shipment?.flightNumber ?? '';
+    final flightDate = booking.shipment?.departureDate;
+
     return ListView(
       padding: const EdgeInsets.all(AppTheme.spaceMd),
       children: [
@@ -396,7 +402,8 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
           padding: const EdgeInsets.all(AppTheme.spaceMd),
           child: Column(
             children: [
-              _infoRow(Icons.inventory_2_outlined, 'Produit', booking.productName),
+              _infoRow(
+                  Icons.inventory_2_outlined, 'Produit', booking.productName),
               _infoRow(Icons.person_outline, 'Client', clientName),
               if (clientPhone.isNotEmpty)
                 _infoRow(Icons.phone_outlined, 'Téléphone', clientPhone),
@@ -405,6 +412,22 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
                 'Itinéraire',
                 '$origin → $destination',
               ),
+              if (shipperName.isNotEmpty)
+                _infoRow(
+                  Icons.storefront_outlined,
+                  'Expéditeur',
+                  shipperName,
+                ),
+              if (flightNumber.isNotEmpty)
+                _infoRow(Icons.flight_land_rounded, 'Réf. vol', flightNumber),
+              if (flightDate != null)
+                _infoRow(
+                  Icons.event_rounded,
+                  'Date du vol',
+                  '${flightDate.day.toString().padLeft(2, '0')}/'
+                      '${flightDate.month.toString().padLeft(2, '0')}/'
+                      '${flightDate.year}',
+                ),
             ],
           ),
         ),
@@ -452,7 +475,8 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
             child: Text('$label : ', style: AppTheme.caption),
           ),
           Flexible(
-            child: Text(value, textAlign: TextAlign.right, style: AppTheme.body),
+            child:
+                Text(value, textAlign: TextAlign.right, style: AppTheme.body),
           ),
         ],
       ),
