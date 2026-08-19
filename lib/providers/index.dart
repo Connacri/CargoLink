@@ -384,12 +384,16 @@ final conversationMessagesProvider =
 });
 
 /// Unread incoming message counts keyed by conversation id for the current user.
+/// Live : le comptage est recalculé à chaque émission du flux de conversations
+/// (un nouveau message met à jour `last_message`/`updated_at` → le flux émet →
+/// le badge de l'inbox se rafraîchit instantanément avec le nombre exact).
 final unreadMessageCountsProvider =
     FutureProvider<Map<String, int>>((ref) async {
   final chatService = ref.watch(chatServiceProvider);
   final userId = ref.watch(authServiceProvider).currentUserId;
   if (userId == null) return {};
-  final conversations = await ref.watch(myConversationsProvider.future);
+  final conversations =
+      ref.watch(conversationsStreamProvider).value ?? const <Conversation>[];
   return chatService.getUnreadCounts(
     userId,
     conversations.map((c) => c.id).toList(),
