@@ -337,6 +337,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               'Filtrez par destination, origine et prix',
               'Choisissez une offre active (poids disponible)',
               'Le poids est réservé dès la réservation',
+
             ],
           ),
           WorkflowSlide(
@@ -346,7 +347,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             steps: [
               'Décrivez le produit (0,1 à 50 kg)',
               'Ajoutez des photos du produit',
-              'Payez : Espèces, Virement, CCP, Chargily ou Stripe',
+              'Paiement : Espèces, Virement, CCP, Chargily ou Stripe',
             ],
             gradient: AppTheme.infoGradient,
           ),

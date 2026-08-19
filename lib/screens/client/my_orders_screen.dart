@@ -698,7 +698,7 @@ class _EmptyOrders extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Column(
       mainAxisSize: MainAxisSize.min,
-      children: [
+      children: [SizedBox(height: 50),
         Icon(
           Icons.receipt_long_outlined,
           size: 64,
@@ -707,10 +707,13 @@ class _EmptyOrders extends StatelessWidget {
         SizedBox(height: AppTheme.spaceMd),
         Text('Aucune commande', style: AppTheme.h3),
         SizedBox(height: AppTheme.spaceSm),
-        Text(
-          'Réserve un shipment pour retrouver tes commandes ici.',
-          style: AppTheme.bodySecondary,
-          textAlign: TextAlign.center,
+        Padding(
+          padding: EdgeInsets.all(28.0),
+          child: Text(
+            'Réserve un shipment pour retrouver tes commandes ici.',
+            style: AppTheme.bodySecondary,
+            textAlign: TextAlign.center,
+          ),
         ),
       ],
     );

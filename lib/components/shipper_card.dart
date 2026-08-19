@@ -281,7 +281,7 @@ class _ShipperCardState extends State<ShipperCard> {
               Text(
                 _daysUntilArrival <= 0
                     ? 'aujourd\'hui'
-                    : '$_daysUntilArrival j${_daysUntilArrival == 1 ? '' : 's'}',
+                    : '$_daysUntilArrival j${_daysUntilArrival == 1 ? '' : ''}',
                 style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
               ),
             ],
