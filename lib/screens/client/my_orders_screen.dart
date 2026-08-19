@@ -177,6 +177,25 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
   Widget build(BuildContext context) {
     final userId = ref.watch(authServiceProvider).currentUserId;
 
+    // Reload the current page whenever the user re-enters the Commandes tab,
+    // exactly like the profile "Historique" reloads on tab re-entry. Guarantees
+    // fresh data (new bookings, status changes) even if a realtime event was
+    // missed while the tab was hidden inside the IndexedStack.
+    ref.listen<int>(navigationIndexProvider, (prev, next) {
+      if (next == 1 && prev != 1) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final uid = ref.read(authServiceProvider).currentUserId;
+          if (uid == null) return;
+          ref
+              .read(clientBookingsPagerProvider((
+                clientId: uid,
+                status: _statusFilter,
+              )).notifier)
+              .loadInitial();
+        });
+      }
+    });
+
     // Live refresh: whenever this client's bookings change on the server
     // (accept/confirm/ship/cancel by the shipper), patch the affected tile.
     // Kept unconditional (before any early return) so the set of listened
