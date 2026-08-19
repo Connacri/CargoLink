@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -141,6 +142,47 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final source = await _showSourceSheet();
       if (source == null) return;
       if (!mounted) return;
+
+      // Sur le web, ni image_cropper ni le plugin camera n'ont d'implémentation :
+      // on choisit l'image via ImagePicker (supporté) et on upload directement
+      // les octets — pas de crop sur le navigateur.
+      if (kIsWeb) {
+        final xfile = await ImagePicker().pickImage(
+          source: source == _AvatarSource.camera
+              ? ImageSource.camera
+              : ImageSource.gallery,
+          maxWidth: 2048,
+          maxHeight: 2048,
+          imageQuality: 92,
+        );
+        if (xfile == null) return;
+        final bytes = await xfile.readAsBytes();
+        if (!mounted) return;
+
+        final url = await ref.read(storageServiceProvider).uploadImageBytes(
+              bytes: bytes,
+              fileName:
+                  'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
+              path: 'avatars/$userId',
+              bucket: 'profiles',
+            );
+
+        await ref.read(authServiceProvider).updateUserProfile(
+              userId: userId,
+              profilePictureUrl: url,
+            );
+
+        ref.invalidate(currentUserProvider);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Photo de profil mise à jour'),
+              backgroundColor: AppTheme.accentColor,
+            ),
+          );
+        }
+        return;
+      }
 
       File? picked;
       switch (source) {
