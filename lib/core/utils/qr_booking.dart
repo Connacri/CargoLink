@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 /// Encodes / decodes the content of a booking QR code.
 ///
@@ -9,6 +10,13 @@ import 'dart:convert';
 /// reception — or fall back to entering the ref code by hand.
 class QrBookingPayload {
   static const int version = 1;
+
+  /// Alphabet without ambiguous characters (0/O, 1/I/L) so the code is easy to
+  /// read aloud and to type. 32 symbols ^ 10 chars ≈ 1.1 × 10^15 combinations.
+  static const String _alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+  /// Default length of a tracking code (within the user-required 6-14 range).
+  static const int refLength = 10;
 
   final String ref;
   final String bookingId;
@@ -36,17 +44,26 @@ class QrBookingPayload {
 
   /// Human-readable tracking ref code derived from a booking id. Kept short
   /// enough to type by hand and ALPHANUMERIC ONLY (no hyphens or special
-  /// characters) so it can be re-entered on any keyboard or scanned by a
-  /// third-party reader.
+  /// characters). Used as a fallback when no dedicated tracking number exists.
   static String refCodeFor(String bookingId) {
     final cleaned =
         bookingId.replaceAll(RegExp(r'[^A-Za-z0-9]'), '').toUpperCase();
     return cleaned.substring(0, cleaned.length > 10 ? 10 : cleaned.length);
   }
 
-  /// Full alphanumeric tracking code stored on the booking (unique in DB).
+  /// Full alphanumeric tracking code derived from the booking id (used as a
+  /// deterministic fallback by the database trigger when no code is supplied).
   static String trackingCodeFor(String bookingId) {
     return bookingId.replaceAll(RegExp(r'[^A-Za-z0-9]'), '').toUpperCase();
+  }
+
+  /// Generates a random alphanumeric tracking code (no special characters,
+  /// no ambiguous glyphs) of [length] chars — default 10, within the required
+  /// 6-14 range. Uniqueness is enforced against the `bookings` table at insert.
+  static String randomRefCode({int length = refLength}) {
+    final rng = Random.secure();
+    return List.generate(length, (_) => _alphabet[rng.nextInt(_alphabet.length)])
+        .join();
   }
 
   String encode() => jsonEncode({

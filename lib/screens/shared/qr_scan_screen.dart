@@ -370,7 +370,10 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     final destination = booking.shipment?.destinationCity ?? '—';
     final clientName = booking.client?.fullName ?? '';
     final clientPhone = booking.client?.phone ?? '';
-    final ref = QrBookingPayload.refCodeFor(booking.id);
+    final ref =
+        (booking.trackingNumber?.isNotEmpty ?? false)
+            ? booking.trackingNumber!
+            : QrBookingPayload.refCodeFor(booking.id);
 
     final shipperName = booking.shipment?.shipper?.user?.fullName ?? '';
     final flightNumber = booking.shipment?.flightNumber ?? '';

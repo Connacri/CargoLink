@@ -63,29 +63,41 @@ class BookingService {
       // Calculate total price
       final totalPrice = allocatedWeight * shipment.pricePerKg;
 
-      // Create booking
+      // Create booking. A random short tracking code (10 chars, alphanumeric
+      // only) is generated with a uniqueness retry in case of a rare collision
+      // against the unique index on bookings.tracking_number.
       final bookingId = const Uuid().v4();
-      final response = await _supabase
-          .from('bookings')
-          .insert({
-            'id': bookingId,
-            'tracking_number': QrBookingPayload.trackingCodeFor(bookingId),
-            'shipment_id': shipmentId,
-            'client_id': clientId,
-            'product_name': productName,
-            'product_description': productDescription,
-            'product_photos_url': productPhotosUrl,
-            'requested_weight_kg': requestedWeightKg,
-            'allocated_weight_kg': allocatedWeight,
-            'total_price': totalPrice,
-            'status': 'pending',
-            'payment_status': 'pending',
-            'created_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .select(
-              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*)))')
-          .single();
+      Map<String, dynamic> response = const {};
+      var created = false;
+      for (var attempt = 0; attempt < 5 && !created; attempt++) {
+        try {
+          response = await _supabase
+              .from('bookings')
+              .insert({
+                'id': bookingId,
+                'tracking_number': QrBookingPayload.randomRefCode(),
+                'shipment_id': shipmentId,
+                'client_id': clientId,
+                'product_name': productName,
+                'product_description': productDescription,
+                'product_photos_url': productPhotosUrl,
+                'requested_weight_kg': requestedWeightKg,
+                'allocated_weight_kg': allocatedWeight,
+                'total_price': totalPrice,
+                'status': 'pending',
+                'payment_status': 'pending',
+                'created_at': DateTime.now().toIso8601String(),
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+              .select(
+                  '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*)))')
+              .single();
+          created = true;
+        } catch (e) {
+          if (attempt >= 4 || !_isUniqueViolation(e)) rethrow;
+          // Unique violation on tracking_number → retry with a fresh code.
+        }
+      }
 
       // Reserved weight is accounted by the DB trigger
       // (trg_bookings_sync_reserved_weight) so it also works for client
@@ -162,7 +174,7 @@ class BookingService {
           .from('bookings')
           .select(
               '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
-          .ilike('tracking_number', '$code%')
+          .ilike('tracking_number', code)
           .limit(1)
           .maybeSingle();
       return response == null ? null : Booking.fromJson(response);
@@ -411,6 +423,16 @@ class BookingService {
       _logger.e('Error getting booking stats: $e');
       return null;
     }
+  }
+
+  /// True when the error is a PostgREST unique-constraint violation (code
+  /// 23505), e.g. a collision on `bookings.tracking_number`.
+  bool _isUniqueViolation(Object error) {
+    final e = error;
+    if (e is PostgrestException) return e.code == '23505';
+    return e.toString().contains('23505') ||
+        e.toString().contains('duplicate key') ||
+        e.toString().contains('unique_violation');
   }
 }
 

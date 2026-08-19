@@ -40,6 +40,10 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
   int _currentStep = 0;
   bool _submitting = false;
   String? _createdBookingId;
+
+  /// Tracking code réel du booking créé (`tracking_number` en base), le même
+  /// que celui affiché dans le QR, le suivi et la page de recherche.
+  String? _createdTrackingCode;
   bool _savingTicket = false;
   bool _loadingImage = false;
   bool _uploadingPhotos = false;
@@ -735,10 +739,11 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
 
   Widget _buildStepConfirmation(Shipment shipment) {
     final bookingId = _createdBookingId;
+    final trackingCode = _createdTrackingCode;
     final currentUser = ref.read(currentUserProvider).valueOrNull;
     final payload = bookingId != null
         ? QrBookingPayload(
-            ref: QrBookingPayload.refCodeFor(bookingId),
+            ref: trackingCode ?? QrBookingPayload.refCodeFor(bookingId),
             bookingId: bookingId,
             name: currentUser?.fullName ?? '',
             phone: currentUser?.phone ?? '',
@@ -1117,6 +1122,8 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
         ref.invalidate(bookingByIdProvider(booking.id));
         setState(() {
           _createdBookingId = booking.id;
+          _createdTrackingCode = booking.trackingNumber ??
+              QrBookingPayload.refCodeFor(booking.id);
           _currentStep = 3;
           _submitting = false;
         });

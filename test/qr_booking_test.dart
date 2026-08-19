@@ -30,6 +30,30 @@ void main() {
     });
   });
 
+  group('QrBookingPayload.randomRefCode', () {
+    test('returns exactly 10 chars (within the 6-14 range)', () {
+      for (var i = 0; i < 50; i++) {
+        final code = QrBookingPayload.randomRefCode();
+        expect(code.length, 10);
+        expect(code.length, inInclusiveRange(6, 14));
+      }
+    });
+
+    test('only uses unambiguous alphanumeric symbols (no 0/O/1/I/L)', () {
+      final allowed = RegExp(r'^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]+$');
+      for (var i = 0; i < 200; i++) {
+        expect(allowed.hasMatch(QrBookingPayload.randomRefCode()), isTrue);
+      }
+    });
+
+    test('is unique in practice across many draws', () {
+      final codes = <String>{
+        for (var i = 0; i < 1000; i++) QrBookingPayload.randomRefCode(),
+      };
+      expect(codes.length, 1000);
+    });
+  });
+
   group('QrBookingPayload encode/decode', () {
     test('roundtrips client, destination, product and flight details', () {
       const payload = QrBookingPayload(
