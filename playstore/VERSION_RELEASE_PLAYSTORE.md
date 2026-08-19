@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **0.1.78** |
-| Code de version (versionCode) | **91** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `8e4586c` |
-| Statut CI | Build AAB en cours → une fois terminé, `v0.1.78` est publié sur GitHub |
+| Version (versionName) | **0.1.82** |
+| Code de version (versionCode) | **95** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `051df2a` |
+| Statut CI | À publier au prochain push → release `v0.1.82` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v0.1.78** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v0.1.82** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,14 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Badge de messages non lus en temps réel** : quand un utilisateur reçoit un message,
+  le badge de l'inbox affiche instantanément le nombre exact de messages non lus
+  (recalculé à chaque réception, sans action manuelle).
+- **Push FCM avec badge de non-lus** : la notification inclut le nombre de messages
+  non lus (`notification.badge` sur iOS/macOS + `data.unread_count`) — fonctionne sur
+  Android / iOS / macOS (pas de FCM sur desktop/web, limitation Firebase).
+- Photo de profil modifiable sur le **web** (plus d'erreur `image_cropper` : upload
+  direct des octets via ImagePicker).
 - QR code de collecte/réception avec **référence de suivi courte et unique**
   (10 caractères alphanumériques, sans caractères ambigus) — même code QR/suivi.
 - **Liste des commandes client** mise à jour instantanément (réel-time + rechargement
@@ -154,7 +162,7 @@ colis supprimables dans l'app).
 - [ ] Pas de fonctionnalité financière déclarée
 - [ ] Tranche d'âge adulte (18+), contenu familial : Non
 - [ ] Signature App Signing : téléverser le keystore CI en « clé de dépôt »
-- [ ] Vérifier versionCode croissant (91 > 90 du dépôt précédent)
+- [ ] Vérifier versionCode croissant (95 > 94 du dépôt précédent)
 
 ---
 
