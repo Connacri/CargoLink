@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -42,6 +43,16 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
   String? _error;
 
   bool get _isShipper => widget.mode == QrScanMode.shipperCollect;
+
+  /// `mobile_scanner` has no implementation on desktop (Windows/Linux): on
+  /// those platforms we skip the camera entirely and only show the manual
+  /// code entry, so the screen never throws MissingPluginException.
+  bool get _supportsCamera {
+    if (kIsWeb) return true;
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+  }
 
   @override
   void dispose() {
@@ -274,28 +285,14 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            MobileScanner(
-              controller: _controller,
-              onDetect: _onDetect,
-              errorBuilder: (context, error) => const ColoredBox(
-                color: Color(0xFF0F172A),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.no_photography_outlined,
-                          color: Colors.white38, size: 48),
-                      SizedBox(height: AppTheme.spaceSm),
-                      Text(
-                        'Caméra indisponible\nSaisissez le code ci-dessous',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            if (_supportsCamera)
+              MobileScanner(
+                controller: _controller,
+                onDetect: _onDetect,
+                errorBuilder: (context, error) => const _CameraUnavailable(),
+              )
+            else
+              const _CameraUnavailable(),
             _buildScanOverlay(),
           ],
         ),
@@ -489,6 +486,32 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
                 Text(value, textAlign: TextAlign.right, style: AppTheme.body),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CameraUnavailable extends StatelessWidget {
+  const _CameraUnavailable();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: Color(0xFF0F172A),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.no_photography_outlined,
+                color: Colors.white38, size: 48),
+            SizedBox(height: AppTheme.spaceSm),
+            Text(
+              'Caméra indisponible\nSaisissez le code ci-dessous',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -14,6 +14,7 @@ import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../auth/role_selection_screen.dart';
 import '../shipper/live_selfie_screen.dart';
+import '../shipper/shipper_dashboard_screen.dart';
 
 // ============================================================================
 // PAGINATED PROVIDERS (local to this screen — history lists)
@@ -1061,7 +1062,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     '${s.availableWeightKg.toStringAsFixed(0)} kg • '
                     '${s.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}/kg • '
                     '${s.isActive ? 'Actif' : s.status}',
-                onTap: null,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        ShipperShipmentDetailScreen(shipment: s),
+                  ),
+                ),
               ),
             ),
           ),
