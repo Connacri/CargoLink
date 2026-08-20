@@ -193,34 +193,20 @@ final clientBookingsPagerProvider = StateNotifierProvider.family<
     ({String clientId, String? status})>(
   (ref, params) {
     return createPaginatedNotifier(
-      (limit, offset) => ref.read(clientBookingsProvider((
-        clientId: params.clientId,
-        status: params.status,
-        limit: limit,
-        offset: offset,
-      )).future),
+      // Direct service call (not a cached FutureProvider) so every reload —
+      // tab re-entry, filter change, realtime miss — fetches fresh data and
+      // immediately shows bookings created elsewhere.
+      (limit, offset) => ref.read(bookingServiceProvider).getClientBookings(
+            clientId: params.clientId,
+            status: params.status,
+            limit: limit,
+            offset: offset,
+          ),
       pageSize: 15,
       idOf: (booking) => booking.id,
     );
   },
 );
-
-final clientBookingsProvider = FutureProvider.family<
-    List<Booking>,
-    ({
-      String clientId,
-      String? status,
-      int limit,
-      int offset
-    })>((ref, params) async {
-  final bookingService = ref.watch(bookingServiceProvider);
-  return bookingService.getClientBookings(
-    clientId: params.clientId,
-    status: params.status,
-    limit: params.limit,
-    offset: params.offset,
-  );
-});
 
 final shipmentBookingsProvider = FutureProvider.family<List<Booking>,
     ({String shipmentId, int limit, int offset})>((ref, params) async {
