@@ -60,6 +60,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
     final payments = ref.watch(allPaymentsProvider).valueOrNull ?? [];
     final disputes = ref.watch(allDisputesProvider).valueOrNull ?? [];
     final fees = ref.watch(platformFeeSummaryProvider).valueOrNull ?? {};
+    final allFees = ref.watch(allPlatformFeesProvider).valueOrNull ?? [];
 
     final start = _startDate;
 
@@ -84,6 +85,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
 
     final collectedFees = (fees['collected'] as num?)?.toDouble() ?? 0;
     final pendingFees = (fees['pending'] as num?)?.toDouble() ?? 0;
+    final awaitingFees = (fees['awaiting'] as num?)?.toDouble() ?? 0;
 
     final avgBasket = paidBookings.isEmpty
         ? 0.0
@@ -135,6 +137,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
                   successRate: successRate,
                   avgBasket: avgBasket,
                   pendingFees: pendingFees,
+                  awaitingFees: awaitingFees,
                   paymentVolume: paymentVolume,
                   openDisputes: openDisputes,
                 ),
@@ -153,6 +156,9 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
               ),
               SliverToBoxAdapter(
                 child: _buildTopShippers(shipments, bookings, users),
+              ),
+              SliverToBoxAdapter(
+                child: _buildShipperFinanceList(bookings, allFees),
               ),
               SliverToBoxAdapter(
                 child: _buildStatusBreakdown(bookings),
@@ -255,6 +261,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
     required double successRate,
     required double avgBasket,
     required double pendingFees,
+    required double awaitingFees,
     required double paymentVolume,
     required int openDisputes,
   }) {
@@ -283,8 +290,12 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
                 _money(paymentVolume), AppTheme.infoColor),
             const Divider(height: 1, indent: AppTheme.spaceXxl),
             _summaryTile(Icons.payment_rounded,
-                'Commissions en attente', _money(pendingFees),
+                'En attente de confirmation', _money(awaitingFees),
                 AppTheme.warningColor),
+            const Divider(height: 1, indent: AppTheme.spaceXxl),
+            _summaryTile(Icons.schedule_rounded,
+                'Commissions à encaisser', _money(pendingFees),
+                AppTheme.primaryColor),
             const Divider(height: 1, indent: AppTheme.spaceXxl),
             _summaryTile(Icons.gavel_rounded, 'Litiges ouverts',
                 '$openDisputes', AppTheme.errorColor),
@@ -724,6 +735,129 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
       return '${(v / 1000).toStringAsFixed(1)}k';
     }
     return rounded.toString();
+  }
+
+  /// Finance de chaque expéditeur (vue fondateur) : chiffre d'affaires,
+  /// commission réglée et commission due — pour vérifier les comptes de
+  /// chacun et que le total global est cohérent.
+  Widget _buildShipperFinanceList(
+      List<Booking> allBookings, List<PlatformFee> allFees) {
+    final caByShipper = <String, double>{};
+    final nameByShipper = <String, String>{};
+    final avatarByShipper = <String, String?>{};
+    for (final b in allBookings) {
+      if (b.paymentStatus != 'paid' || b.status == 'cancelled') continue;
+      final shipper = b.shipment?.shipper;
+      if (shipper == null) continue;
+      caByShipper[shipper.id] = (caByShipper[shipper.id] ?? 0) + b.totalPrice;
+      nameByShipper[shipper.id] =
+          shipper.user?.fullName ?? 'Expéditeur';
+      avatarByShipper[shipper.id] = shipper.user?.profilePictureUrl;
+    }
+
+    final paidByShipper = <String, double>{};
+    final dueByShipper = <String, double>{};
+    for (final f in allFees) {
+      if (f.isPaid) {
+        paidByShipper[f.shipperId] =
+            (paidByShipper[f.shipperId] ?? 0) + f.amount;
+      } else {
+        dueByShipper[f.shipperId] = (dueByShipper[f.shipperId] ?? 0) + f.amount;
+      }
+      if (!nameByShipper.containsKey(f.shipperId)) {
+        nameByShipper[f.shipperId] =
+            f.shipment?.shipper?.user?.fullName ?? 'Expéditeur';
+        avatarByShipper[f.shipperId] =
+            f.shipment?.shipper?.user?.profilePictureUrl;
+      }
+    }
+
+    final ids = <String>{
+      ...caByShipper.keys,
+      ...paidByShipper.keys,
+      ...dueByShipper.keys,
+    };
+    if (ids.isEmpty) return const SizedBox.shrink();
+
+    final rows = ids.toList()
+      ..sort((a, b) =>
+          (caByShipper[b] ?? 0).compareTo(caByShipper[a] ?? 0));
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: GlassCard(
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Finances des expéditeurs', style: AppTheme.h2),
+            const SizedBox(height: AppTheme.spaceXs),
+            const Text(
+              'CA encaissé, commission réglée et restant due par expéditeur.',
+              style: AppTheme.caption,
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            for (final id in rows)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppTheme.spaceSm),
+                child: Row(
+                  children: [
+                    GradientAvatar(
+                      initial: nameByShipper[id],
+                      imageUrl: avatarByShipper[id],
+                      radius: 14,
+                    ),
+                    const SizedBox(width: AppTheme.spaceSm + 2),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            nameByShipper[id] ?? 'Expéditeur',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.body
+                                .copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          Text(
+                            'CA: ${_money(caByShipper[id] ?? 0)} DZD',
+                            style: AppTheme.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Payé: ${_money(paidByShipper[id] ?? 0)} DZD',
+                          style: AppTheme.caption
+                              .copyWith(color: AppTheme.accentColor),
+                        ),
+                        Text(
+                          (dueByShipper[id] ?? 0) > 0
+                              ? 'Due: ${_money(dueByShipper[id] ?? 0)} DZD'
+                              : 'Pas de dettes',
+                          style: AppTheme.caption.copyWith(
+                            color: (dueByShipper[id] ?? 0) > 0
+                                ? AppTheme.warningColor
+                                : AppTheme.accentColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

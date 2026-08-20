@@ -7,6 +7,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/utils/profile_navigation.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../components/revenue_bar_chart.dart';
 import 'shipper_dashboard_screen.dart';
@@ -272,6 +273,7 @@ class _ShipperStatsDetailScreenState
         .where((f) => f.isAwaitingConfirmation)
         .fold<double>(0, (s, f) => s + f.amount);
     final due = total - paid - awaiting;
+    final toPay = awaiting + due;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -305,10 +307,10 @@ class _ShipperStatsDetailScreenState
                   child: _CommissionStat(
                     icon: Icons.pending_actions_rounded,
                     color:
-                        awaiting > 0 ? AppTheme.warningColor : AppTheme.accentColor,
-                    label: awaiting > 0 ? 'En attente' : 'Dette',
+                        toPay > 0 ? AppTheme.warningColor : AppTheme.accentColor,
+                    label: 'À payer',
                     value:
-                        '${(awaiting > 0 ? awaiting : due).toStringAsFixed(0)} $currency',
+                        '${toPay.toStringAsFixed(0)} $currency',
                   ),
                 ),
               ],
@@ -354,7 +356,7 @@ class _ShipperStatsDetailScreenState
                 label: Text(
                   _submittingPay
                       ? 'Paiement...'
-                      : 'Payer mes dues (${due.toStringAsFixed(0)} $currency)',
+                      : 'Payer la plateforme (${due.toStringAsFixed(0)} $currency)',
                 ),
               ),
             ] else if (awaiting == 0) ...[
@@ -369,7 +371,7 @@ class _ShipperStatsDetailScreenState
                   ),
                   SizedBox(width: 6),
                   Text(
-                    'Aucune dette : commission réglée',
+                    'Pas de dettes',
                     style: TextStyle(
                       color: AppTheme.accentColor,
                       fontWeight: FontWeight.w700,
@@ -391,6 +393,12 @@ class _ShipperStatsDetailScreenState
     try {
       await ref.read(paymentServiceProvider).payPlatformFees(widget.shipperId);
       ref.invalidate(shipperPlatformFeesProvider(widget.shipperId));
+      ref.invalidate(shipperFinanceSummaryProvider(widget.shipperId));
+      ref.invalidate(shipperEarningsProvider(widget.shipperId));
+      ref.invalidate(shipperStatsProvider(widget.shipperId));
+      ref.invalidate(platformFeeSummaryProvider);
+      ref.invalidate(awaitingCommissionFeesProvider);
+      ref.invalidate(awaitingCommissionCountProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -430,6 +438,7 @@ class _ShipperStatsDetailScreenState
     final pager = ref.watch(shipperBookingsPagerProvider(widget.shipperId));
     final byMonth = <int, double>{};
     for (final booking in pager.items) {
+      if (booking.status == 'cancelled' || !booking.isPaid) continue;
       final month = booking.createdAt.month;
       byMonth[month] = (byMonth[month] ?? 0) + booking.totalPrice;
     }
@@ -453,7 +462,7 @@ class _ShipperStatsDetailScreenState
             const Text('Chiffre d\'affaires par mois', style: AppTheme.h3),
             const SizedBox(height: AppTheme.spaceXs),
             Text(
-              'Basé sur les commandes chargées (${pager.items.length})',
+              'Commandes payées (${pager.items.length} chargées)',
               style: AppTheme.caption,
             ),
             const SizedBox(height: AppTheme.spaceMd),
@@ -694,6 +703,10 @@ class _BookingTile extends ConsumerWidget {
                   initial: booking.client?.fullName,
                   imageUrl: booking.client?.profilePictureUrl,
                   radius: 12,
+                  onTap: booking.client != null
+                      ? () => openUserProfileFromUser(
+                          context, ref, booking.client!)
+                      : null,
                 ),
                 const SizedBox(width: AppTheme.spaceSm),
                 Expanded(

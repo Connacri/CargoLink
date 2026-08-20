@@ -162,8 +162,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
         final url = await ref.read(storageServiceProvider).uploadImageBytes(
               bytes: bytes,
-              fileName:
-                  'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
+              fileName: 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
               path: 'avatars/$userId',
               bucket: 'profiles',
             );
@@ -521,6 +520,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 if (userData.role == 'shipper')
                   SliverToBoxAdapter(child: _buildShipperStatus()),
+                if (userData.role == 'shipper')
+                  SliverToBoxAdapter(child: _buildShipperFinance()),
                 SliverToBoxAdapter(child: _buildRoleSettings(userData)),
                 SliverToBoxAdapter(child: _buildPersonalInfo(userData)),
                 SliverToBoxAdapter(child: _buildSocialSection(userData)),
@@ -792,7 +793,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildSocialSection(User userData) {
-    if (!_isEditing && !_hasSocialData(userData)) return const SizedBox.shrink();
+    if (!_isEditing && !_hasSocialData(userData)) {
+      return const SizedBox.shrink();
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.spaceMd,
@@ -931,12 +934,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   /// actually carry a value are rendered (no blank placeholders or leftover
   /// spacers), so the profile only ever shows filled attributes.
   List<Widget> _buildReadonlyRows(
-    List<({
-      IconData icon,
-      String label,
-      String? value,
-      _ContactFieldType type,
-    })> entries,
+    List<
+            ({
+              IconData icon,
+              String label,
+              String? value,
+              _ContactFieldType type,
+            })>
+        entries,
   ) {
     final rows = <Widget>[];
     for (final entry in entries) {
@@ -1064,8 +1069,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     '${s.isActive ? 'Actif' : s.status}',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) =>
-                        ShipperShipmentDetailScreen(shipment: s),
+                    builder: (_) => ShipperShipmentDetailScreen(shipment: s),
                   ),
                 ),
               ),
@@ -1157,11 +1161,190 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  Widget _buildShipperFinance() {
+    final shipper = ref.watch(currentShipperProvider);
+    return shipper.when(
+      data: (shipperData) {
+        if (shipperData == null) return const SizedBox.shrink();
+        final summary =
+            ref.watch(shipperFinanceSummaryProvider(shipperData.id));
+        final settings = ref.watch(platformSettingsProvider);
+        final currency = settings.valueOrNull?.defaultCurrency ??
+            AppConstants.defaultCurrency;
+
+        final revenue =
+            (summary.valueOrNull?['revenue'] as num?)?.toDouble() ?? 0;
+        final profit =
+            (summary.valueOrNull?['profit'] as num?)?.toDouble() ?? 0;
+        final feesPaid =
+            (summary.valueOrNull?['fees_paid'] as num?)?.toDouble() ?? 0;
+        final feesDue = ((summary.valueOrNull?['due'] as num?) ?? 0).toDouble();
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.spaceMd,
+            AppTheme.spaceMd,
+            AppTheme.spaceMd,
+            0,
+          ),
+          child: GlassCard(
+            padding: const EdgeInsets.all(AppTheme.spaceMd),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Row(
+                  children: [
+                    Text('Finance', style: AppTheme.h3),
+                    Spacer(),
+                    Icon(
+                      Icons.account_balance_wallet_rounded,
+                      size: 18,
+                      color: AppTheme.accentColor,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spaceSm),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ProfileFinanceStat(
+                        label: 'Chiffre d\'affaires',
+                        value: '${revenue.toStringAsFixed(0)} $currency',
+                        icon: Icons.payments_outlined,
+                        color: AppTheme.accentColor,
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.spaceSm),
+                    Expanded(
+                      child: _ProfileFinanceStat(
+                        label: 'Bénéfice net',
+                        value: '${profit.toStringAsFixed(0)} $currency',
+                        icon: Icons.trending_up_rounded,
+                        color: AppTheme.accentColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spaceSm),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ProfileFinanceStat(
+                        label: 'Commission payée',
+                        value: '${feesPaid.toStringAsFixed(0)} $currency',
+                        icon: Icons.verified_rounded,
+                        color: AppTheme.accentColor,
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.spaceSm),
+                    Expanded(
+                      child: _ProfileFinanceStat(
+                        label: 'Commission à payer',
+                        value: feesDue > 0
+                            ? '${feesDue.toStringAsFixed(0)} $currency'
+                            : 'Pas de dettes',
+                        icon: feesDue > 0
+                            ? Icons.hourglass_top_rounded
+                            : Icons.verified_rounded,
+                        color: feesDue > 0
+                            ? AppTheme.warningColor
+                            : AppTheme.accentColor,
+                      ),
+                    ),
+                  ],
+                ),
+                if (feesDue > 0) ...[
+                  const SizedBox(height: AppTheme.spaceSm),
+                  FilledButton.icon(
+                    onPressed: _submittingPlatformPay
+                        ? null
+                        : () => _payPlatformDues(shipperData.id),
+                    icon: _submittingPlatformPay
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.payment_rounded, size: 18),
+                    label: Text(
+                      _submittingPlatformPay
+                          ? 'Paiement...'
+                          : 'Payer la plateforme '
+                              '(${feesDue.toStringAsFixed(0)} $currency)',
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: AppTheme.spaceSm),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.verified_rounded,
+                        size: 16,
+                        color: AppTheme.accentColor,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'Pas de dettes envers la plateforme',
+                        style: TextStyle(
+                          color: AppTheme.accentColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (e, s) => const SizedBox.shrink(),
+    );
+  }
+
+  bool _submittingPlatformPay = false;
+
+  Future<void> _payPlatformDues(String shipperId) async {
+    setState(() => _submittingPlatformPay = true);
+    try {
+      await ref.read(paymentServiceProvider).payPlatformFees(shipperId);
+      ref.invalidate(shipperFinanceSummaryProvider(shipperId));
+      ref.invalidate(shipperPlatformFeesProvider(shipperId));
+      ref.invalidate(shipperEarningsProvider(shipperId));
+      ref.invalidate(shipperStatsProvider(shipperId));
+      ref.invalidate(platformFeeSummaryProvider);
+      ref.invalidate(awaitingCommissionFeesProvider);
+      ref.invalidate(awaitingCommissionCountProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Paiement envoyé — en attente de confirmation '
+              'par l\'administrateur.',
+            ),
+            backgroundColor: AppTheme.warningColor,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        await showAppErrorDialog(context, message: 'Erreur: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _submittingPlatformPay = false);
+    }
+  }
+
   Widget _buildActionsSection() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.spaceMd,
-        AppTheme.spaceLg,
+        AppTheme.spaceMd,
         AppTheme.spaceMd,
         0,
       ),
@@ -1173,7 +1356,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               leading: const AnimatedIconDot(
                   icon: Icons.feedback_rounded, color: AppTheme.infoColor),
               title: const Text('Envoyer un feedback'),
-              subtitle: const Text('Signaler un problème ou suggérer une amélioration'),
+              subtitle: const Text(
+                  'Signaler un problème ou suggérer une amélioration'),
               trailing: const Icon(Icons.chevron_right,
                   color: AppTheme.textSecondaryColor),
               onTap: () => launchAppFeedback(context, ref),
@@ -1407,6 +1591,48 @@ class _ReadonlyField extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfileFinanceStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _ProfileFinanceStat({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 20, color: color),
+        const SizedBox(height: AppTheme.spaceXs),
+        Text(
+          label,
+          style: AppTheme.caption,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimaryColor,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );

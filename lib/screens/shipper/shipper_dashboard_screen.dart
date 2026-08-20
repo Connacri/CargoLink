@@ -1181,9 +1181,15 @@ class _FinanceSummaryStrip extends ConsumerWidget {
               Expanded(
                 child: _FinanceMini(
                   label: 'Commission à payer',
-                  value: '${feesDue.toStringAsFixed(0)} $currency',
-                  icon: Icons.hourglass_top_rounded,
-                  color: AppTheme.warningColor,
+                  value: feesDue > 0
+                      ? '${feesDue.toStringAsFixed(0)} $currency'
+                      : 'Pas de dettes',
+                  icon: feesDue > 0
+                      ? Icons.hourglass_top_rounded
+                      : Icons.verified_rounded,
+                  color: feesDue > 0
+                      ? AppTheme.warningColor
+                      : AppTheme.accentColor,
                 ),
               ),
             ],

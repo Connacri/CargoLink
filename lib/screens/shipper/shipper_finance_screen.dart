@@ -86,6 +86,17 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
         final event = next.valueOrNull;
         if (event == null) return;
         ref.invalidate(shipperFinanceSummaryProvider(shipper.id));
+        ref.invalidate(shipperEarningsProvider(shipper.id));
+      },
+    );
+
+    ref.listen(
+      tableChangesProvider(('platform_fees', null, null)),
+      (previous, next) {
+        final event = next.valueOrNull;
+        if (event == null) return;
+        ref.invalidate(shipperFinanceSummaryProvider(shipper.id));
+        ref.invalidate(shipperPlatformFeesProvider(shipper.id));
       },
     );
 
@@ -153,7 +164,7 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
             ),
             const SizedBox(height: AppTheme.spaceXs),
             const Text(
-              'Revenus encaissés moins la commission déjà réglée.',
+              'Revenus encaissés moins la commission plateforme.',
               style: AppTheme.bodySecondary,
             ),
           ],
@@ -227,9 +238,13 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
               Expanded(
                 child: _FinanceStatCard(
                   label: 'Commission à payer',
-                  value: '${feesDue.toStringAsFixed(0)} $currency',
+                  value: feesDue > 0
+                      ? '${feesDue.toStringAsFixed(0)} $currency'
+                      : 'Pas de dettes',
                   icon: Icons.hourglass_top_rounded,
-                  color: AppTheme.warningColor,
+                  color: feesDue > 0
+                      ? AppTheme.warningColor
+                      : AppTheme.accentColor,
                 ),
               ),
             ],

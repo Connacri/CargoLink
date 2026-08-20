@@ -420,7 +420,7 @@ class _CommissionConfirmationTile extends ConsumerWidget {
           FilledButton.icon(
             onPressed: () => _confirm(context, ref),
             icon: const Icon(Icons.check_rounded, size: 18),
-            label: const Text('Confirmer'),
+            label: const Text('Paiement confirmé'),
           ),
         ],
       ),
@@ -432,12 +432,17 @@ class _CommissionConfirmationTile extends ConsumerWidget {
       await ref.read(paymentServiceProvider).confirmPlatformFee(fee.id);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Commission confirmée')),
+          const SnackBar(content: Text('Paiement confirmé')),
         );
       }
       ref.invalidate(awaitingCommissionFeesProvider);
       ref.invalidate(awaitingCommissionCountProvider);
       ref.invalidate(platformFeeSummaryProvider);
+      ref.invalidate(allPlatformFeesProvider);
+      ref.invalidate(shipperFinanceSummaryProvider(fee.shipperId));
+      ref.invalidate(shipperPlatformFeesProvider(fee.shipperId));
+      ref.invalidate(shipperEarningsProvider(fee.shipperId));
+      ref.invalidate(shipperStatsProvider(fee.shipperId));
     } catch (e) {
       if (context.mounted) {
         await showAppErrorDialog(context, message: 'Erreur: $e');

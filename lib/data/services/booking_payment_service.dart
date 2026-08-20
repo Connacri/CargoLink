@@ -633,15 +633,16 @@ class PaymentService {
     return (amount * settings.commissionPercent) / 100;
   }
 
-  /// Get shipper earnings
+  /// Get shipper earnings (chiffre d'affaires encaissé : commandes payées,
+  /// non annulées — indépendamment de la date de livraison).
   Future<double> getShipperEarnings(String shipperId) async {
     try {
       final bookings = await _supabase
           .from('bookings')
           .select('total_price, shipments(shipper_id)')
           .eq('shipments.shipper_id', shipperId)
-          .eq('status', 'delivered')
-          .eq('payment_status', 'paid');
+          .eq('payment_status', 'paid')
+          .neq('status', 'cancelled');
 
       return (bookings as List).fold<double>(
         0,
@@ -779,15 +780,18 @@ class PaymentService {
       var feesPending = 0.0;
       for (final f in fees as List) {
         final amount = (f['amount'] as num).toDouble();
-        switch (f['status']) {
-          case 'paid':
-            feesPaid += amount;
-          case 'awaiting_confirmation':
-            feesAwaiting += amount;
-          default:
-            feesPending += amount;
+        final status = f['status'] as String? ?? '';
+        if (status == 'paid') {
+          feesPaid += amount;
+        } else if (status == 'awaiting_confirmation') {
+          feesAwaiting += amount;
+        } else {
+          feesPending += amount;
         }
       }
+
+      final feesTotal = feesPaid + feesAwaiting + feesPending;
+      final due = feesAwaiting + feesPending;
 
       return {
         'revenue': revenue,
@@ -795,8 +799,12 @@ class PaymentService {
         'fees_paid': feesPaid,
         'fees_awaiting': feesAwaiting,
         'fees_pending': feesPending,
-        'fees_total': feesPaid + feesAwaiting + feesPending,
-        'profit': revenue - feesPaid,
+        'fees_total': feesTotal,
+        // Bénéfice net = chiffre d'affaires encaissé moins la commission
+        // plateforme totale (réglée ou non) : la commission est une charge
+        // réelle de l'expéditeur, qu'elle ait déjà été versée ou pas.
+        'profit': revenue - feesTotal,
+        'due': due,
         'monthly': byMonth,
       };
     } catch (e) {
@@ -812,23 +820,49 @@ class PaymentService {
           await _supabase.from('platform_fees').select('amount,status');
       final list = fees as List;
       var collected = 0.0;
+      var awaiting = 0.0;
       var pending = 0.0;
       for (final f in list) {
         final amount = (f['amount'] as num).toDouble();
-        if (f['status'] == 'paid') {
+        final status = f['status'] as String? ?? '';
+        if (status == 'paid') {
           collected += amount;
+        } else if (status == 'awaiting_confirmation') {
+          awaiting += amount;
         } else {
           pending += amount;
         }
       }
+      final due = awaiting + pending;
       return {
         'collected': collected,
-        'pending': pending,
-        'total': collected + pending,
+        'awaiting': awaiting,
+        'pending': due,
+        'total': collected + due,
       };
     } catch (e) {
       _logger.e('Error getting platform fee summary: $e');
       return null;
+    }
+  }
+
+  /// All platform fees (admin / super_admin only, RLS) — used by the founder
+  /// to see every shipper's commission status at a glance.
+  Future<List<PlatformFee>> getAllPlatformFees({int limit = 500}) async {
+    try {
+      final response = await _supabase
+          .from('platform_fees')
+          .select(
+            '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*)))',
+          )
+          .order('created_at', ascending: false)
+          .limit(limit);
+      return (response as List)
+          .map((item) => PlatformFee.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting all platform fees: $e');
+      return [];
     }
   }
 

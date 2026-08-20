@@ -40,6 +40,12 @@ final isAuthenticatedProvider = Provider<bool>((ref) {
   return authService.isAuthenticated;
 });
 
+final userByIdProvider =
+    FutureProvider.family<User?, String>((ref, userId) async {
+  final authService = ref.watch(authServiceProvider);
+  return authService.getUserById(userId);
+});
+
 // ============================================================================
 // SHIPPER PROVIDERS
 // ============================================================================
@@ -276,6 +282,12 @@ final shipperPlatformFeesProvider =
 final awaitingCommissionFeesProvider = FutureProvider<List<PlatformFee>>((ref) async {
   final paymentService = ref.watch(paymentServiceProvider);
   return paymentService.getAwaitingConfirmationFees();
+});
+
+/// All platform fees across the whole platform (founder analytics).
+final allPlatformFeesProvider = FutureProvider<List<PlatformFee>>((ref) async {
+  final paymentService = ref.watch(paymentServiceProvider);
+  return paymentService.getAllPlatformFees();
 });
 
 /// Count of commission fees awaiting confirmation — powers the founder badge.
