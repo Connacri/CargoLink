@@ -3,8 +3,10 @@
 ## Workflow de commit
 
 - **Après chaque commit**, mettre à jour le fichier `playstore/VERSION_RELEASE_PLAYSTORE.md` :
-  - recalculer la version de la release (versionName = dernier tag `vX.Y.Z` + 1 par commit
-    depuis le tag ; versionCode = nombre total de commits `git rev-list --count HEAD`) ;
+  - recalculer la version de la release (schéma `1.{MINOR}.{PATCH}` : à partir de `1.0.0`,
+    le patch s'incrémente à chaque commit de 0 à 99 puis rolle à 0 et la mineure s'incrémente :
+    `1.0.0 → 1.0.99 → 1.1.0 → 1.1.99 → 1.2.0 …` ; versionCode = nombre total de commits
+    `git rev-list --count HEAD`) ;
   - mettre à jour le tableau « Dernière version » (versionName, versionCode, commit de
     référence, statut CI, lien de téléchargement du `app-release.aab`) ;
   - ajouter les nouveautés de la version dans la section « Contenu de cette version » ;

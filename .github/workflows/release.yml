@@ -23,29 +23,42 @@ jobs:
       - name: Derive version from git tags
         id: v
         run: |
-          # Highest semver tag, NOT git describe: describe can return a stale tag
-          # when two tags sit on the same commit, causing version collisions.
+          # Versioning scheme (after 0.1.101): 1.{MINOR}.{PATCH}
+          #   PATCH increments each commit from 0 to 99, then rolls back to 0
+          #   and MINOR increments: 1.0.0 → 1.0.99 → 1.1.0 → 1.1.99 → 1.2.0 …
+          # Highest semver tag, NOT git describe: describe can return a stale
+          # tag when two tags sit on the same commit, causing collisions.
           LAST=$(git tag --sort=-v:refname | head -n1 || true)
           BASE="${LAST#v}"
           BASE=${BASE:-0.0.0}
           MAJ=$(echo "$BASE" | cut -d. -f1)
-          MIN=$(echo "$BASE" | cut -d. -f2)
-          PATC=$(echo "$BASE" | cut -d. -f3)
-          # Commits since the highest tag = the auto-increment at each commit
-          if [ -z "$LAST" ]; then
-            COUNT=$(git rev-list --count HEAD 2>/dev/null)
+          if [ "$MAJ" = "0" ]; then
+            # Still on the legacy 0.x scheme → switch to 1.0.0
+            VER_MAJ=1
+            VER_MIN=0
+            VER_PATCH=0
           else
-            COUNT=$(git rev-list --count HEAD --not "$LAST" 2>/dev/null)
+            # Commits since the highest tag = the auto-increment at each commit
+            if [ -z "$LAST" ]; then
+              COUNT=$(git rev-list --count HEAD 2>/dev/null)
+            else
+              COUNT=$(git rev-list --count HEAD --not "$LAST" 2>/dev/null)
+            fi
+            COUNT=${COUNT:-0}
+            MIN=$(echo "$BASE" | cut -d. -f2)
+            PATC=$(echo "$BASE" | cut -d. -f3)
+            INC=$((PATC + COUNT))
+            VER_MAJ=1
+            VER_MIN=$((MIN + INC / 100))
+            VER_PATCH=$((INC % 100))
           fi
-          COUNT=${COUNT:-0}
-          NEW_PATCH=$((PATC + COUNT))
           # Android versionCode MUST strictly increase between releases or the
           # update is rejected as a downgrade/same-version. Total commit count
           # is monotonic (the per-release delta was 1 every time, so every APK
           # shipped versionCode=1). Use total commits for `build`.
           TOTAL=$(git rev-list --count HEAD 2>/dev/null)
           TOTAL=${TOTAL:-0}
-          echo "version=${MAJ}.${MIN}.${NEW_PATCH}" >> "$GITHUB_OUTPUT"
+          echo "version=${VER_MAJ}.${VER_MIN}.${VER_PATCH}" >> "$GITHUB_OUTPUT"
           echo "build=${TOTAL}" >> "$GITHUB_OUTPUT"
 
   android:
