@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **0.1.82** |
-| Code de version (versionCode) | **95** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `051df2a` |
-| Statut CI | À publier au prochain push → release `v0.1.82` sur GitHub |
+| Version (versionName) | **0.1.84** |
+| Code de version (versionCode) | **98** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `3691720` |
+| Statut CI | À publier au prochain push → release `v0.1.84` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v0.1.82** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v0.1.84** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,11 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Changement de rôle sans crash** : passer de client à expéditeur (ou l'inverse)
+  ne provoque plus d'erreur `BottomNavigationBar` (l'onglet actif est remis à zéro
+  et borné au bon nombre d'onglets).
+- Plus d'erreur `PGRST116` dans les logs quand l'utilisateur vient de passer
+  expéditeur mais n'a pas encore de profil expéditeur (dossier non soumis).
 - **Badge de messages non lus en temps réel** : quand un utilisateur reçoit un message,
   le badge de l'inbox affiche instantanément le nombre exact de messages non lus
   (recalculé à chaque réception, sans action manuelle).
