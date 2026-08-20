@@ -8,6 +8,7 @@ import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/utils/profile_navigation.dart';
 import '../../core/widgets/ui_kit.dart';
 
 // ============================================================================
@@ -110,6 +111,9 @@ class _VerificationCard extends ConsumerWidget {
                   initial: shipper.user?.fullName ?? '?',
                   imageUrl: shipper.user?.profilePictureUrl,
                   radius: 20,
+                  onTap: shipper.user != null
+                      ? () => openUserProfile(context, ref, shipper.user!.id)
+                      : null,
                 ),
                 const SizedBox(width: AppTheme.spaceSm + 4),
                 Expanded(

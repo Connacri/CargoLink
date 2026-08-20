@@ -6,6 +6,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/utils/profile_navigation.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../chat/chat_screen.dart';
 
@@ -349,6 +350,9 @@ class _ShipperBookingDetailScreenState
               initial: client?.fullName,
               imageUrl: client?.profilePictureUrl,
               radius: 24,
+              onTap: client != null
+                  ? () => openUserProfileFromUser(context, ref, client)
+                  : null,
             ),
             const SizedBox(width: AppTheme.spaceMd),
             Expanded(

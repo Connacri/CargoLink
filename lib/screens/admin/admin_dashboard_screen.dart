@@ -5,6 +5,7 @@ import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/utils/profile_navigation.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/chat_widgets.dart';
 import 'transactions_screen.dart';
@@ -217,6 +218,9 @@ class _ShipperVerificationCard extends ConsumerWidget {
                   initial: shipper.user?.fullName ?? '?',
                   imageUrl: shipper.user?.profilePictureUrl,
                   radius: 20,
+                  onTap: shipper.user != null
+                      ? () => openUserProfile(context, ref, shipper.user!.id)
+                      : null,
                 ),
                 const SizedBox(width: AppTheme.spaceSm + 4),
                 Expanded(

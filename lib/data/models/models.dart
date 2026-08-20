@@ -640,8 +640,10 @@ class Payment {
 class TransactionItem {
   final Payment payment;
   final String? shipmentRoute;
+  final String? clientId;
   final String? clientName;
   final String? clientAvatar;
+  final String? shipperUserId;
   final String? shipperName;
   final String? shipperAvatar;
   final String? productName;
@@ -649,8 +651,10 @@ class TransactionItem {
   TransactionItem({
     required this.payment,
     this.shipmentRoute,
+    this.clientId,
     this.clientName,
     this.clientAvatar,
+    this.shipperUserId,
     this.shipperName,
     this.shipperAvatar,
     this.productName,
@@ -669,8 +673,10 @@ class TransactionItem {
               shipment?['destination_city'] != null)
           ? '${shipment!['origin_country']} → ${shipment['destination_city']}'
           : null,
+      clientId: client?['id'] as String?,
       clientName: client?['full_name'] as String?,
       clientAvatar: client?['profile_picture_url'] as String?,
+      shipperUserId: shipperUser?['id'] as String?,
       shipperName: shipperUser?['full_name'] as String?,
       shipperAvatar: shipperUser?['profile_picture_url'] as String?,
       productName: booking?['product_name'] as String?,

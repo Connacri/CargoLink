@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/user_avatar.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../components/revenue_bar_chart.dart';
@@ -745,6 +746,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
     final caByShipper = <String, double>{};
     final nameByShipper = <String, String>{};
     final avatarByShipper = <String, String?>{};
+    final userIdByShipper = <String, String?>{};
     for (final b in allBookings) {
       if (b.paymentStatus != 'paid' || b.status == 'cancelled') continue;
       final shipper = b.shipment?.shipper;
@@ -753,6 +755,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
       nameByShipper[shipper.id] =
           shipper.user?.fullName ?? 'Expéditeur';
       avatarByShipper[shipper.id] = shipper.user?.profilePictureUrl;
+      userIdByShipper[shipper.id] = shipper.user?.id;
     }
 
     final paidByShipper = <String, double>{};
@@ -769,6 +772,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
             f.shipment?.shipper?.user?.fullName ?? 'Expéditeur';
         avatarByShipper[f.shipperId] =
             f.shipment?.shipper?.user?.profilePictureUrl;
+        userIdByShipper[f.shipperId] = f.shipment?.shipper?.user?.id;
       }
     }
 
@@ -807,11 +811,19 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
                 padding: const EdgeInsets.only(bottom: AppTheme.spaceSm),
                 child: Row(
                   children: [
-                    GradientAvatar(
-                      initial: nameByShipper[id],
-                      imageUrl: avatarByShipper[id],
-                      radius: 14,
-                    ),
+                    if (userIdByShipper[id] != null)
+                      UserAvatar(
+                        userId: userIdByShipper[id]!,
+                        initial: nameByShipper[id],
+                        imageUrl: avatarByShipper[id],
+                        radius: 14,
+                      )
+                    else
+                      GradientAvatar(
+                        initial: nameByShipper[id],
+                        imageUrl: avatarByShipper[id],
+                        radius: 14,
+                      ),
                     const SizedBox(width: AppTheme.spaceSm + 2),
                     Expanded(
                       child: Column(
@@ -879,7 +891,8 @@ class _RankRow extends StatelessWidget {
     return Row(
       children: [
         if (avatar != null)
-          GradientAvatar(
+          UserAvatar(
+            userId: avatar!.id,
             initial: avatar!.fullName,
             imageUrl: avatar!.profilePictureUrl,
             radius: 14,

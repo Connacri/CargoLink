@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/profile_navigation.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
@@ -215,6 +216,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               initial: widget.counterpartName,
               imageUrl: widget.counterpartAvatarUrl,
               radius: 18,
+              onTap: () => openUserProfile(
+                  context, ref, widget.counterpartUserId),
             ),
             const SizedBox(width: AppTheme.spaceSm),
             Expanded(

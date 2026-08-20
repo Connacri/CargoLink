@@ -4,6 +4,7 @@ import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/user_avatar.dart';
 
 /// Full accounting of every transaction: who paid, to whom, when, with all
 /// details (product, route, payment method, transaction id).
@@ -138,6 +139,7 @@ class _TransactionCard extends StatelessWidget {
               label: 'De',
               name: item.clientName ?? 'Client',
               avatar: item.clientAvatar,
+              userId: item.clientId,
             ),
             const SizedBox(height: AppTheme.spaceSm),
             _PartyRow(
@@ -146,6 +148,7 @@ class _TransactionCard extends StatelessWidget {
               label: 'Vers',
               name: item.shipperName ?? 'Expéditeur',
               avatar: item.shipperAvatar,
+              userId: item.shipperUserId,
             ),
             const Divider(height: AppTheme.spaceLg),
             Wrap(
@@ -200,6 +203,7 @@ class _PartyRow extends StatelessWidget {
     required this.label,
     required this.name,
     this.avatar,
+    this.userId,
   });
 
   final IconData icon;
@@ -207,12 +211,21 @@ class _PartyRow extends StatelessWidget {
   final String label;
   final String name;
   final String? avatar;
+  final String? userId;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        GradientAvatar(initial: name, imageUrl: avatar, radius: 14),
+        if (userId != null)
+          UserAvatar(
+            userId: userId!,
+            initial: name,
+            imageUrl: avatar,
+            radius: 14,
+          )
+        else
+          GradientAvatar(initial: name, imageUrl: avatar, radius: 14),
         const SizedBox(width: AppTheme.spaceSm),
         Icon(icon, size: 15, color: iconColor),
         const SizedBox(width: 4),

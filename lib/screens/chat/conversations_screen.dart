@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/user_avatar.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import 'chat_screen.dart';
@@ -122,11 +123,14 @@ class _ConversationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       onTap: onTap,
-      leading: GradientAvatar(
-        initial: _name,
-        imageUrl: _avatar,
-        radius: 24,
-      ),
+      leading: participant != null
+        ? UserAvatar(
+            userId: participant!.id,
+            initial: _name,
+            imageUrl: _avatar,
+            radius: 24,
+          )
+        : GradientAvatar(initial: _name, imageUrl: _avatar, radius: 24),
       title: Text(
         _name,
         style: const TextStyle(fontWeight: FontWeight.w700),

@@ -708,7 +708,7 @@ class PaymentService {
       final response = await _supabase
           .from('payments')
           .select(
-              '*, bookings!inner(*, users!bookings_client_id_fkey(full_name, profile_picture_url), shipments(*, shippers(*, users!shippers_user_id_fkey(full_name, profile_picture_url))))')
+              '*, bookings!inner(*, users!bookings_client_id_fkey(id, full_name, profile_picture_url), shipments(*, shippers(*, users!shippers_user_id_fkey(id, full_name, profile_picture_url))))')
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
 
