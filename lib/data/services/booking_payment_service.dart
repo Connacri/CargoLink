@@ -746,7 +746,7 @@ class PaymentService {
     try {
       final bookings = await _supabase
           .from('bookings')
-          .select('total_price, status, payment_status, created_at')
+          .select('total_price, status, payment_status, created_at, shipments(shipper_id)')
           .eq('shipments.shipper_id', shipperId);
       final bookingList = bookings as List;
 

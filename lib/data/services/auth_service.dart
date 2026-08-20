@@ -37,7 +37,9 @@ class AppAuthState {
   final String? firebaseUid;
   final String? userId; // deterministic Supabase user id
   final bool emailVerified;
-  const AppAuthState({this.firebaseUid, this.userId, this.emailVerified = false});
+
+  const AppAuthState(
+      {this.firebaseUid, this.userId, this.emailVerified = false});
 
   bool get isSignedIn => firebaseUid != null;
 }
@@ -51,6 +53,7 @@ class GoogleSignInResult {
   final String? fullName;
   final String? photoUrl;
   final String? phone;
+
   const GoogleSignInResult({
     required this.isNewUser,
     this.email,
@@ -98,7 +101,7 @@ class AuthService {
         try {
           await _onAuthenticated(user);
         } catch (e) {
-          _logger.e('Failed to exchange Firebase token for Supabase: $e');
+          // _logger.e('Failed to exchange Firebase token for Supabase: $e');
         }
       } else {
         SupabaseConfig.reset();
@@ -121,23 +124,23 @@ class AuthService {
   /// Exchange the current Firebase user's ID token for a Supabase access token
   /// (minted by the Edge Function) and point every Supabase call at it.
   Future<void> _onAuthenticated(fbauth.User user) async {
-    _logger.i('_onAuthenticated: exchanging Firebase token for Supabase JWT');
+    // _logger.i('_onAuthenticated: exchanging Firebase token for Supabase JWT');
     final token = await _exchangeForSupabaseToken(user);
-    _logger.i('_onAuthenticated: received Supabase access token');
+    // _logger.i('_onAuthenticated: received Supabase access token');
     SupabaseConfig.setAccessToken(token);
     final userId = supabaseUserIdFromFirebase(user.uid);
-    _logger.i('_onAuthenticated: supabase userId=$userId');
+    // _logger.i('_onAuthenticated: supabase userId=$userId');
     await FcmService.instance.registerToken(userId);
-    _logger.i('_onAuthenticated: FCM token registered');
+    // _logger.i('_onAuthenticated: FCM token registered');
   }
 
   Future<String> _exchangeForSupabaseToken(fbauth.User user) async {
-    _logger.i('_exchange: fetching fresh Firebase idToken');
+    // _logger.i('_exchange: fetching fresh Firebase idToken');
     final idToken = await user.getIdToken(true);
-    _logger.i(
-      '_exchange: posting to auth-exchange-firebase '
-      '(idToken.length=${idToken?.length ?? 0})',
-    );
+    // _logger.i(
+    //   '_exchange: posting to auth-exchange-firebase '
+    //   '(idToken.length=${idToken?.length ?? 0})',
+    // );
     final response = await http.post(
       Uri.parse(
         '${SupabaseConfig.supabaseUrl}/functions/v1/auth-exchange-firebase',
@@ -145,7 +148,7 @@ class AuthService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'idToken': idToken}),
     );
-    _logger.i('_exchange: HTTP ${response.statusCode}');
+    // _logger.i('_exchange: HTTP ${response.statusCode}');
 
     if (response.statusCode != 200) {
       _logger.e('_exchange: failed response body=${response.body}');
@@ -268,7 +271,8 @@ class AuthService {
       );
 
       if (kIsWeb) {
-        _logger.i('Web: starting FirebaseAuth.signInWithPopup(GoogleAuthProvider)');
+        _logger.i(
+            'Web: starting FirebaseAuth.signInWithPopup(GoogleAuthProvider)');
         // Force the account chooser on every sign-in. Without
         // `prompt: select_account`, Google Identity Services silently reuses
         // the last authenticated account, so after a sign-out a user trying to
@@ -357,8 +361,9 @@ class AuthService {
                   existing.profilePictureUrl!.isEmpty) &&
               googlePhoto != null &&
               googlePhoto.isNotEmpty;
-          final needsPhone =
-              existing.phone.isEmpty && googlePhone != null && googlePhone.isNotEmpty;
+          final needsPhone = existing.phone.isEmpty &&
+              googlePhone != null &&
+              googlePhone.isNotEmpty;
           if (needsPhoto) updateData['profile_picture_url'] = googlePhoto;
           if (needsPhone) updateData['phone'] = googlePhone;
           if (needsPhoto || needsPhone) {
@@ -428,7 +433,7 @@ class AuthService {
       _logger.i('Password reset email sent');
     } on fbauth.FirebaseAuthException catch (e) {
       _logger.e('Reset password error: ${e.message} (code ${e.code})');
-        throw AuthServiceException(e.message ?? 'Erreur de réinitialisation');
+      throw AuthServiceException(e.message ?? 'Erreur de réinitialisation');
     } catch (e) {
       _logger.e('Unexpected error during password reset: $e');
       rethrow;
@@ -448,14 +453,11 @@ class AuthService {
       _logger.i('=== Deactivate account ===');
       final userId = currentUserId;
       if (userId == null) throw Exception('Aucun utilisateur connecté');
-      await SupabaseConfig.client
-          .from('users')
-          .update({
-            'is_active': false,
-            'deactivated_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', userId);
+      await SupabaseConfig.client.from('users').update({
+        'is_active': false,
+        'deactivated_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', userId);
       _logger.i('Account deactivated');
       await signOut();
     } catch (e) {
@@ -470,14 +472,11 @@ class AuthService {
       _logger.i('=== Reactivate account ===');
       final userId = currentUserId;
       if (userId == null) throw Exception('Aucun utilisateur connecté');
-      await SupabaseConfig.client
-          .from('users')
-          .update({
-            'is_active': true,
-            'deactivated_at': null,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', userId);
+      await SupabaseConfig.client.from('users').update({
+        'is_active': true,
+        'deactivated_at': null,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', userId);
       _logger.i('Account reactivated');
     } catch (e) {
       _logger.e('Error reactivating account: $e');
@@ -493,15 +492,12 @@ class AuthService {
       _logger.i('=== Request account deletion ===');
       final userId = currentUserId;
       if (userId == null) throw Exception('Aucun utilisateur connecté');
-      await SupabaseConfig.client
-          .from('users')
-          .update({
-            'is_active': false,
-            'deletion_requested_at': DateTime.now().toIso8601String(),
-            'deactivated_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', userId);
+      await SupabaseConfig.client.from('users').update({
+        'is_active': false,
+        'deletion_requested_at': DateTime.now().toIso8601String(),
+        'deactivated_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', userId);
       _logger.i('Deletion requested (30-day grace period)');
       await signOut();
     } catch (e) {
@@ -516,15 +512,12 @@ class AuthService {
       _logger.i('=== Cancel account deletion ===');
       final userId = currentUserId;
       if (userId == null) throw Exception('Aucun utilisateur connecté');
-      await SupabaseConfig.client
-          .from('users')
-          .update({
-            'is_active': true,
-            'deletion_requested_at': null,
-            'deactivated_at': null,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', userId);
+      await SupabaseConfig.client.from('users').update({
+        'is_active': true,
+        'deletion_requested_at': null,
+        'deactivated_at': null,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', userId);
       _logger.i('Deletion cancelled');
     } catch (e) {
       _logger.e('Error cancelling deletion: $e');
@@ -628,7 +621,8 @@ class AuthService {
       await _sendVerificationEmail(user);
       _logger.i('Verification email re-sent');
     } on fbauth.FirebaseAuthException catch (e) {
-      _logger.e('Resend verification email error: ${e.message} (code ${e.code})');
+      _logger
+          .e('Resend verification email error: ${e.message} (code ${e.code})');
       throw AuthServiceException(e.message ?? 'Erreur d\'envoi');
     } catch (e) {
       _logger.e('Unexpected error while resending verification email: $e');
@@ -687,7 +681,8 @@ class AuthService {
     _logger.i('_ensureProfileIfAbsent: checking users row');
     final existing = await getCurrentUserProfile();
     if (existing != null) {
-      _logger.i('_ensureProfileIfAbsent: profile exists (role=${existing.role})');
+      _logger
+          .i('_ensureProfileIfAbsent: profile exists (role=${existing.role})');
       return;
     }
 
@@ -729,7 +724,9 @@ class AuthService {
       email: user.email ?? 'user@cargolink.app',
       fullName: fullName ??
           user.displayName ??
-          ((user.email ?? '').isNotEmpty ? user.email!.split('@').first : 'Utilisateur'),
+          ((user.email ?? '').isNotEmpty
+              ? user.email!.split('@').first
+              : 'Utilisateur'),
       phone: phone ?? user.phoneNumber ?? '',
       role: role,
       profilePictureUrl: user.photoURL,
@@ -1001,26 +998,23 @@ class AuthService {
   /// Platform-wide stats for the founder dashboard.
   Future<Map<String, dynamic>?> getPlatformStats() async {
     try {
-      final users = await SupabaseConfig.client.from('users').select('id, role');
+      final users =
+          await SupabaseConfig.client.from('users').select('id, role');
       final usersList = users as List;
-      final clients =
-          usersList.where((u) => u['role'] == 'client').length;
-      final shippers =
-          usersList.where((u) => u['role'] == 'shipper').length;
-      final admins =
-          usersList.where((u) => u['role'] == 'admin' || u['role'] == 'super_admin').length;
-
-      final shipments = await SupabaseConfig.client
-          .from('shipments')
-          .select('id, status');
-      final shipmentsList = shipments as List;
-      final activeShipments = shipmentsList
-          .where((s) => s['status'] == 'active')
+      final clients = usersList.where((u) => u['role'] == 'client').length;
+      final shippers = usersList.where((u) => u['role'] == 'shipper').length;
+      final admins = usersList
+          .where((u) => u['role'] == 'admin' || u['role'] == 'super_admin')
           .length;
 
-      final bookings = await SupabaseConfig.client
-          .from('bookings')
-          .select('id, status');
+      final shipments =
+          await SupabaseConfig.client.from('shipments').select('id, status');
+      final shipmentsList = shipments as List;
+      final activeShipments =
+          shipmentsList.where((s) => s['status'] == 'active').length;
+
+      final bookings =
+          await SupabaseConfig.client.from('bookings').select('id, status');
       final bookingsList = bookings as List;
       final activeBookings = bookingsList
           .where((b) => b['status'] == 'pending' || b['status'] == 'confirmed')
@@ -1142,6 +1136,7 @@ class AuthService {
 /// A user-facing auth error with a friendly message.
 class AuthServiceException implements Exception {
   final String message;
+
   AuthServiceException(this.message, {this.cause});
 
   final Object? cause;
