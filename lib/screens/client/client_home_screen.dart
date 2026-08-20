@@ -665,6 +665,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       isVerified: shipper?.isVerified ?? false,
       origin: shipment.originCountry,
       destination: shipment.destinationCity,
+      airline: shipment.airline,
       flightNumber: shipment.flightNumber,
       availableKg: shipment.remainingWeightKg,
       totalKg: shipment.availableWeightKg,

@@ -19,6 +19,7 @@ class Trip {
   final double reservedKg;
   final double availableKg;
   final double pricePerKg;
+  final String? airline;
   final String? flightNumber;
   final String status; // active, in_progress, completed, cancelled
   final DateTime createdAt;
@@ -37,6 +38,7 @@ class Trip {
     required this.reservedKg,
     required this.availableKg,
     required this.pricePerKg,
+    this.airline,
     this.flightNumber,
     required this.status,
     required this.createdAt,
@@ -61,6 +63,7 @@ class Trip {
       reservedKg: (json['reserved_kg'] as num? ?? 0).toDouble(),
       availableKg: (json['available_kg'] as num? ?? 0).toDouble(),
       pricePerKg: (json['price_per_kg'] as num).toDouble(),
+      airline: json['airline'] as String?,
       flightNumber: json['flight_number'] as String?,
       status: json['status'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -82,6 +85,7 @@ class Trip {
       'reserved_kg': reservedKg,
       'available_kg': availableKg,
       'price_per_kg': pricePerKg,
+      'airline': airline,
       'flight_number': flightNumber,
       'status': status,
       'created_at': createdAt.toIso8601String(),

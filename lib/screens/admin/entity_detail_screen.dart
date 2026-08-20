@@ -87,6 +87,10 @@ class _ShipmentDetail extends StatelessWidget {
                           _LabelValue('Statut', _statusLabel(s.status),
                               badge: _statusGradient(s.status)),
                           const SizedBox(height: AppTheme.spaceSm + 4),
+                          if (s.airline != null) ...[
+                            _LabelValue('Compagnie', s.airline!),
+                            const SizedBox(height: AppTheme.spaceSm + 4),
+                          ],
                           _LabelValue('Vol', s.flightNumber ?? '—'),
                           const SizedBox(height: AppTheme.spaceSm + 4),
                           _LabelValue(

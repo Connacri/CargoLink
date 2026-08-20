@@ -28,6 +28,7 @@ class QrBookingPayload {
   final String shipperName;
   final String flightDate;
   final String flightNumber;
+  final String airline;
 
   const QrBookingPayload({
     required this.ref,
@@ -40,6 +41,7 @@ class QrBookingPayload {
     this.shipperName = '',
     this.flightDate = '',
     this.flightNumber = '',
+    this.airline = '',
   });
 
   /// Human-readable tracking ref code derived from a booking id. Kept short
@@ -78,6 +80,7 @@ class QrBookingPayload {
         'ship': shipperName,
         'fdate': flightDate,
         'fnum': flightNumber,
+        'air': airline,
       });
 
   static QrBookingPayload? decode(String raw) {
@@ -98,6 +101,7 @@ class QrBookingPayload {
         shipperName: (map['ship'] as String?) ?? '',
         flightDate: (map['fdate'] as String?) ?? '',
         flightNumber: (map['fnum'] as String?) ?? '',
+        airline: (map['air'] as String?) ?? '',
       );
     } catch (_) {
       return null;

@@ -19,6 +19,7 @@ class ShipperCard extends StatefulWidget {
     this.reviewCount,
     this.origin,
     required this.destination,
+    this.airline,
     this.flightNumber,
     required this.availableKg,
     required this.totalKg,
@@ -43,6 +44,7 @@ class ShipperCard extends StatefulWidget {
   /// "recent shipments" gallery).
   final String? origin;
   final String destination;
+  final String? airline;
   final String? flightNumber;
 
   /// Remaining / total available weight in kg.
@@ -207,7 +209,15 @@ class _ShipperCardState extends State<ShipperCard> {
         ),
         if (widget.flightNumber != null) ...[
           const SizedBox(width: AppTheme.spaceSm),
-          Text('Vol ${widget.flightNumber}', style: AppTheme.caption),
+          Flexible(
+            child: Text(
+              widget.airline != null
+                  ? '${widget.airline} · ${widget.flightNumber}'
+                  : 'Vol ${widget.flightNumber}',
+              style: AppTheme.caption,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ],
     );

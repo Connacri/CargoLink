@@ -274,6 +274,7 @@ class ShipmentService {
     required double pricePerKg,
     required DateTime departureDate,
     required DateTime arrivalDate,
+    String? airline,
     String? flightNumber,
     String? description,
   }) async {
@@ -291,6 +292,7 @@ class ShipmentService {
             'price_per_kg': pricePerKg,
             'departure_date': departureDate.toIso8601String(),
             'arrival_date': arrivalDate.toIso8601String(),
+            'airline': airline,
             'flight_number': flightNumber,
             'status': 'active',
             'description': description,

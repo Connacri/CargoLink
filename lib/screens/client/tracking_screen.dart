@@ -486,7 +486,9 @@ class TrackingScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.only(left: 22),
                 child: Text(
-                  'Vol ${booking.shipment!.flightNumber}',
+                  booking.shipment!.airline != null
+                      ? '${booking.shipment!.airline} · Vol ${booking.shipment!.flightNumber}'
+                      : 'Vol ${booking.shipment!.flightNumber}',
                   style: AppTheme.caption,
                 ),
               ),

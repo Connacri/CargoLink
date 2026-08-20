@@ -754,6 +754,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
             shipperName: shipment.shipper?.user?.fullName ?? '',
             flightDate: _formatFlightDate(shipment.departureDate),
             flightNumber: shipment.flightNumber ?? '',
+            airline: shipment.airline ?? '',
           )
         : null;
     return Center(

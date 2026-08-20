@@ -1054,7 +1054,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               delay: Duration(milliseconds: (index % 10) * 40),
               child: _HistoryRow(
                 color: AppTheme.primaryColor,
-                title: 'Vol ${s.flightNumber ?? '—'}',
+                title: s.airline != null
+                    ? '${s.airline} · Vol ${s.flightNumber ?? '—'}'
+                    : 'Vol ${s.flightNumber ?? '—'}',
                 subtitle: '${s.originCountry} → ${s.destinationCity} • '
                     '${s.availableWeightKg.toStringAsFixed(0)} kg • '
                     '${s.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}/kg • '

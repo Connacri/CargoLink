@@ -223,6 +223,7 @@ class Shipment {
   final double pricePerKg;
   final DateTime departureDate;
   final DateTime arrivalDate;
+  final String? airline;
   final String? flightNumber;
   final String status; // active, completed, cancelled
   final String? description;
@@ -246,6 +247,7 @@ class Shipment {
     required this.pricePerKg,
     required this.departureDate,
     required this.arrivalDate,
+    this.airline,
     this.flightNumber,
     required this.status,
     this.description,
@@ -265,6 +267,7 @@ class Shipment {
       pricePerKg: (json['price_per_kg'] as num).toDouble(),
       departureDate: DateTime.parse(json['departure_date'] as String),
       arrivalDate: DateTime.parse(json['arrival_date'] as String),
+      airline: json['airline'] as String?,
       flightNumber: json['flight_number'] as String?,
       status: json['status'] as String,
       description: json['description'] as String?,
@@ -286,6 +289,7 @@ class Shipment {
       'price_per_kg': pricePerKg,
       'departure_date': departureDate.toIso8601String(),
       'arrival_date': arrivalDate.toIso8601String(),
+      'airline': airline,
       'flight_number': flightNumber,
       'status': status,
       'description': description,

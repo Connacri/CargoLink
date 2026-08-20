@@ -85,7 +85,9 @@ class QrBookingTicket extends StatelessWidget {
             _row(
               Icons.flight_takeoff_rounded,
               'Réf. vol',
-              payload.flightNumber,
+              payload.airline.isNotEmpty
+                  ? '${payload.airline} · ${payload.flightNumber}'
+                  : payload.flightNumber,
             ),
         ],
       ),

@@ -376,6 +376,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
             : QrBookingPayload.refCodeFor(booking.id);
 
     final shipperName = booking.shipment?.shipper?.user?.fullName ?? '';
+    final airline = booking.shipment?.airline ?? '';
     final flightNumber = booking.shipment?.flightNumber ?? '';
     final flightDate = booking.shipment?.departureDate;
 
@@ -420,6 +421,12 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
                   Icons.storefront_outlined,
                   'Expéditeur',
                   shipperName,
+                ),
+              if (airline.isNotEmpty)
+                _infoRow(
+                  Icons.airlines,
+                  'Compagnie',
+                  airline,
                 ),
               if (flightNumber.isNotEmpty)
                 _infoRow(Icons.flight_land_rounded, 'Réf. vol', flightNumber),

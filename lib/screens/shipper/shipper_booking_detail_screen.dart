@@ -489,6 +489,10 @@ class _ShipperBookingDetailScreenState
           label: 'Arrivée',
           value: _formatDate(shipment.arrivalDate),
         ),
+        if (shipment.airline != null) ...[
+          const SizedBox(height: AppTheme.spaceSm),
+          _SummaryRow(label: 'Compagnie', value: shipment.airline!),
+        ],
         if (shipment.flightNumber != null) ...[
           const SizedBox(height: AppTheme.spaceSm),
           _SummaryRow(label: 'Vol', value: shipment.flightNumber!),

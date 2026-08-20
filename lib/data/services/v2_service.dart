@@ -80,6 +80,7 @@ class V2Service {
     required double pricePerKg,
     DateTime? departureAt,
     DateTime? estimatedArrivalAt,
+    String? airline,
     String? flightNumber,
     String? originLocation,
     String? destinationLocation,
@@ -100,6 +101,7 @@ class V2Service {
             'reserved_kg': 0,
             'available_kg': capacityKg,
             'price_per_kg': pricePerKg,
+            'airline': airline,
             'flight_number': flightNumber,
             'status': 'active',
           })

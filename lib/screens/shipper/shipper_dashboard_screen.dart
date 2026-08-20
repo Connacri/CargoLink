@@ -542,7 +542,8 @@ class _ShipperDashboardScreenState
       (previous, next) {
         final event = next.valueOrNull;
         if (event == null) return;
-        final notifier = ref.read(shipperBookingsPagerProvider(shipperId).notifier);
+        final notifier =
+            ref.read(shipperBookingsPagerProvider(shipperId).notifier);
         final id = event.eventType == PostgresChangeEvent.delete
             ? event.oldRecord['id']
             : event.newRecord['id'];
@@ -550,20 +551,15 @@ class _ShipperDashboardScreenState
           if (event.eventType == PostgresChangeEvent.delete) {
             notifier.removeItem(id);
           } else {
-            ref
-                .read(bookingServiceProvider)
-                .getBookingById(id)
-                .then((booking) {
-                  if (booking == null ||
-                      booking.shipment?.shipperId != shipperId) {
-                    notifier.removeItem(id);
-                  } else {
-                    notifier.upsertItem(booking);
-                  }
-                })
-                .catchError((Object e) {
-                  notifier.removeItem(id);
-                });
+            ref.read(bookingServiceProvider).getBookingById(id).then((booking) {
+              if (booking == null || booking.shipment?.shipperId != shipperId) {
+                notifier.removeItem(id);
+              } else {
+                notifier.upsertItem(booking);
+              }
+            }).catchError((Object e) {
+              notifier.removeItem(id);
+            });
           }
         }
         ref.invalidate(shipperStatsProvider(shipperId));
@@ -698,8 +694,7 @@ class _ShipperDashboardScreenState
     final minWeight = settings?.minWeightKg ?? AppConstants.minWeightKg;
     final maxWeight = settings?.maxWeightKg ?? AppConstants.maxWeightKg;
     final minPrice = settings?.minPricePerKg ?? AppConstants.minPricePerKg;
-    final currency =
-        settings?.defaultCurrency ?? AppConstants.defaultCurrency;
+    final currency = settings?.defaultCurrency ?? AppConstants.defaultCurrency;
 
     await showModalBottomSheet(
       context: context,
@@ -1181,14 +1176,17 @@ class _ShipmentMiniCard extends ConsumerWidget {
                       Row(
                         children: [
                           const Icon(
-                            Icons.event_rounded,
+                            Icons.flight_takeoff_rounded,
                             size: 14,
                             color: AppTheme.textMutedColor,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            'Départ ${_formatDate(shipment.departureDate)}',
-                            style: AppTheme.caption,
+                          Flexible(
+                            child: Text(
+                              'Départ ${_formatDate(shipment.departureDate)}',
+                              style: AppTheme.caption,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           const Icon(
@@ -1197,9 +1195,12 @@ class _ShipmentMiniCard extends ConsumerWidget {
                             color: AppTheme.textMutedColor,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            'Arrivée ${_formatDate(shipment.arrivalDate)}',
-                            style: AppTheme.caption,
+                          Flexible(
+                            child: Text(
+                              'Arrivée ${_formatDate(shipment.arrivalDate)}',
+                              style: AppTheme.caption,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
@@ -1208,14 +1209,19 @@ class _ShipmentMiniCard extends ConsumerWidget {
                         Row(
                           children: [
                             const Icon(
-                              Icons.flight_takeoff_rounded,
+                              Icons.event_rounded,
                               size: 14,
                               color: AppTheme.textMutedColor,
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              'Vol ${shipment.flightNumber}',
-                              style: AppTheme.caption,
+                            Flexible(
+                              child: Text(
+                                shipment.airline != null
+                                    ? '${shipment.airline} · Vol ${shipment.flightNumber}'
+                                    : 'Vol ${shipment.flightNumber}',
+                                style: AppTheme.caption,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
@@ -1314,12 +1320,29 @@ class _ShipmentMiniCard extends ConsumerWidget {
     );
   }
 
-  String _formatDate(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+  String _formatDate(DateTime d) => _formatDateFr(d);
 }
 
-String _formatShipmentDate(DateTime d) =>
-    '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+const List<String> _frMonths = [
+  'janvier',
+  'février',
+  'mars',
+  'avril',
+  'mai',
+  'juin',
+  'juillet',
+  'août',
+  'septembre',
+  'octobre',
+  'novembre',
+  'décembre',
+];
+
+String _formatDateFr(DateTime d) =>
+    '${d.day.toString().padLeft(2, '0')} ${_frMonths[d.month - 1]} '
+    '${(d.year % 100).toString().padLeft(2, '0')}';
+
+String _formatShipmentDate(DateTime d) => _formatDateFr(d);
 
 // ============================================================================
 // SHIPPER SHIPMENTS LIST (TAB)
@@ -1650,8 +1673,7 @@ class _ShipperShipmentDetailScreenState
     );
   }
 
-  String _formatDate(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+  String _formatDate(DateTime d) => _formatDateFr(d);
 }
 
 // ============================================================================
@@ -1772,15 +1794,14 @@ class _DashboardBookingCard extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: AppTheme.spaceSm),
-            Row(
+            Wrap(
               children: [
                 _DashboardStatusChip(
                   icon: booking.isPaid
                       ? Icons.paid_rounded
                       : Icons.schedule_rounded,
-                  label: booking.isPaid
-                      ? 'Paiement reçu'
-                      : 'Paiement en attente',
+                  label:
+                      booking.isPaid ? 'Paiement reçu' : 'Paiement en attente',
                   color: booking.isPaid
                       ? AppTheme.accentColor
                       : AppTheme.warningColor,
@@ -2079,13 +2100,12 @@ class _ManageBookingCard extends ConsumerWidget {
     if (photo == null) return;
     if (!context.mounted) return;
     try {
-      final url = await ref
-          .read(storageServiceProvider)
-          .uploadBookingProofPhoto(
-            file: photo,
-            bookingId: booking.id,
-            type: 'delivery',
-          );
+      final url =
+          await ref.read(storageServiceProvider).uploadBookingProofPhoto(
+                file: photo,
+                bookingId: booking.id,
+                type: 'delivery',
+              );
       await ref
           .read(bookingServiceProvider)
           .markAsDelivered(booking.id, deliveryPhotoUrl: url);
