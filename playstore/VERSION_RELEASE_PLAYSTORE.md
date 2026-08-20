@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **0.1.87** |
-| Code de version (versionCode) | **101** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `1adb8af` |
-| Statut CI | À publier au prochain push → release `v0.1.87` sur GitHub |
+| Version (versionName) | **0.1.89** |
+| Code de version (versionCode) | **104** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `80595a1` |
+| Statut CI | À publier au prochain push → release `v0.1.89` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v0.1.87** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v0.1.89** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,18 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Accueil expéditeur refondu** : l'appbar ne garde que les actions essentielles
+  (notifications, chat, déconnexion) ; un grand bouton « Publier une offre » et une
+  grande carte « Scanner un colis » sont affichés en tête de page.
+- **Compagnie aérienne sur toutes les cartes d'offres** : le formulaire de publication
+  d'une offre comporte un champ « Compagnie aérienne » à côté du numéro de vol, et la
+  compagnie apparaît (quand elle est renseignée) sur chaque carte d'offre pour tous les
+  rôles : dashboard expéditeur, historique profil, recherche client (ShipperCard),
+  profil public expéditeur, suivi colis, ticket QR, scan QR, listes et détail admin.
+- **Historique des offres cliquable** : toucher une offre dans l'historique du profil
+  expéditeur ouvre son détail.
+- **Scanner QR sur desktop** : sur Windows/Linux (sans caméra), l'écran de scan propose
+  la saisie manuelle du code au lieu de planter (pas d'implémentation desktop de la caméra).
 - **Compagnie aérienne sur les offres expéditeur** : le formulaire de publication
   d'une offre comporte désormais un champ « Compagnie aérienne » à côté du numéro
   de vol, et la compagnie est affichée sur tous les écrans où l'offre apparaît
@@ -177,7 +189,7 @@ colis supprimables dans l'app).
 - [ ] Pas de fonctionnalité financière déclarée
 - [ ] Tranche d'âge adulte (18+), contenu familial : Non
 - [ ] Signature App Signing : téléverser le keystore CI en « clé de dépôt »
-- [ ] Vérifier versionCode croissant (101 > 98 du dépôt précédent)
+- [ ] Vérifier versionCode croissant (104 > 101 du dépôt précédent)
 
 ---
 
