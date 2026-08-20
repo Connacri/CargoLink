@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **0.1.89** |
-| Code de version (versionCode) | **104** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `80595a1` |
-| Statut CI | À publier au prochain push → release `v0.1.89` sur GitHub |
+| Version (versionName) | **0.1.91** |
+| Code de version (versionCode) | **106** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `1f781d0` |
+| Statut CI | À publier au prochain push → release `v0.1.91` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v0.1.89** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v0.1.91** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,23 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Finances précises partout** : le chiffre d'affaires d'un expéditeur = commandes
+  payées et non annulées (plus besoin d'être livrées) ; le **bénéfice net** = CA
+  moins la **commission plateforme totale** (réglée ou non) ; la dette affichée
+  = commission restant à payer. Cohérent entre le dashboard, l'écran Finance,
+  le profil et le graphique mensuel (filtré sur les commandes payées).
+- **Payer la plateforme** : bouton dédié dans le profil expéditeur et l'écran
+  de commission (renommé depuis « Payer mes dues ») ; le fondateur reçoit et
+  **confirme le paiement** avec le bouton « Paiement confirmé » (anciennement
+  « Confirmer »). Les finances se rafraîchissent partout en temps réel après
+  le paiement ou la confirmation.
+- **« Pas de dettes »** : quand un expéditeur n'a rien à payer, la section
+  finance l'affiche explicitement (au lieu d'un montant à zéro) — sur le
+  tableau de bord, l'écran Finance, le profil et la vue fondateur.
+- **Vue finance par expéditeur (fondateur)** : l'analytics du fondateur liste
+  chaque expéditeur avec son CA encaissé, sa commission réglée et sa
+  commission due, et détaille les commissions encaissées / en attente de
+  confirmation / à encaisser.
 - **Accueil expéditeur refondu** : l'appbar ne garde que les actions essentielles
   (notifications, chat, déconnexion) ; un grand bouton « Publier une offre » et une
   grande carte « Scanner un colis » sont affichés en tête de page.
@@ -189,7 +206,7 @@ colis supprimables dans l'app).
 - [ ] Pas de fonctionnalité financière déclarée
 - [ ] Tranche d'âge adulte (18+), contenu familial : Non
 - [ ] Signature App Signing : téléverser le keystore CI en « clé de dépôt »
-- [ ] Vérifier versionCode croissant (104 > 101 du dépôt précédent)
+- [ ] Vérifier versionCode croissant (106 > 104 du dépôt précédent)
 
 ---
 
