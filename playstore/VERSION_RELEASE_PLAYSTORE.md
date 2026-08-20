@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **0.1.95** |
-| Code de version (versionCode) | **110** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `d519d5d` |
-| Statut CI | À publier au prochain push → release `v0.1.95` sur GitHub |
+| Version (versionName) | **0.1.98** |
+| Code de version (versionCode) | **113** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `6d65aed` |
+| Statut CI | À publier au prochain push → release `v0.1.98` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v0.1.95** → workflow `release.yml` (job `android-aab`) |
@@ -39,6 +39,19 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
   expéditeurs en attente et sélecteur de diffusion) ouvre son **profil public**
   — profil expéditeur s'il est expéditeur, profil client sinon — avec nom, rôle,
   date d'inscription et coordonnées (téléphone, WhatsApp, Télégram, réseaux).
+- **Gestes tuile/avatar séparés** : sur les cartes d'offres (recherche client), les
+  commandes client et les réservations du dashboard expéditeur, toucher l'avatar
+  ouvre le profil public tandis que toucher la tuile déclenche l'action principale
+  (détail de l'offre / suivi) — plus d'ouverture accidentelle du profil.
+- **Inscription & connexion fiabilisées** : l'échange de session Firebase → Supabase
+  est sérialisé (plus d'échec « Database error creating new user » au premier
+  lancement d'un nouveau compte, causé par deux demandes concurrentes) et la
+  fonction `auth-exchange-firebase` est devenue idempotente (ré-vérifie le compte
+  après une erreur de création).
+- **Offres et kg disponibles mis à jour en temps réel** : après la création d'une
+  réservation (même sans paiement immédiat), le poids réservé de l'offre se met à
+  jour dans le fil de recherche — via le realtime et un rechargement déterministe
+  du fil comme filet de sécurité.
 - **Finances précises partout** : le chiffre d'affaires d'un expéditeur = commandes
   payées et non annulées (plus besoin d'être livrées) ; le **bénéfice net** = CA
   moins la **commission plateforme totale** (réglée ou non) ; la dette affichée
