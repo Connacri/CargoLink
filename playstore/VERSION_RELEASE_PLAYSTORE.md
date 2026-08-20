@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **0.1.91** |
-| Code de version (versionCode) | **106** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `1f781d0` |
-| Statut CI | À publier au prochain push → release `v0.1.91` sur GitHub |
+| Version (versionName) | **0.1.93** |
+| Code de version (versionCode) | **108** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `88aa074` |
+| Statut CI | À publier au prochain push → release `v0.1.93` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v0.1.91** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v0.1.93** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,12 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Avatar cliquable → profil public** : toucher l'avatar d'un utilisateur n'importe
+  où (liste de conversations, écran de chat, commandes client, réservations
+  expéditeur, listes admin, écran de vérification, transactions, analytics fondateur)
+  ouvre son **profil public** — profil expéditeur s'il est expéditeur, profil client
+  sinon — avec nom, rôle, date d'inscription et coordonnées (téléphone, WhatsApp,
+  Télégram, réseaux).
 - **Finances précises partout** : le chiffre d'affaires d'un expéditeur = commandes
   payées et non annulées (plus besoin d'être livrées) ; le **bénéfice net** = CA
   moins la **commission plateforme totale** (réglée ou non) ; la dette affichée
