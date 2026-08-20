@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **0.1.98** |
-| Code de version (versionCode) | **113** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `6d65aed` |
-| Statut CI | À publier au prochain push → release `v0.1.98` sur GitHub |
+| Version (versionName) | **0.1.100** |
+| Code de version (versionCode) | **115** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `8bd3707` |
+| Statut CI | À publier au prochain push → release `v0.1.100` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v0.1.95** → workflow `release.yml` (job `android-aab`) |
@@ -32,6 +32,11 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Système de publicités** : le fondateur ou un admin peut ajouter une publicité
+  (image paysage + lien) depuis l'écran « Publicités » du menu fondateur, l'activer
+  ou la désactiver, et la supprimer. La bannière s'affiche sur l'accueil des
+  clients à la place du header (l'appbar reste intacte) ; toucher l'image ouvre
+  le lien dans le navigateur.
 - **Avatar cliquable → profil public** : toucher l'avatar d'un utilisateur n'importe
   où (liste de conversations, écran de chat, commandes client, réservations
   expéditeur, listes admin — grille users, tuiles d'offres et de réservations,
