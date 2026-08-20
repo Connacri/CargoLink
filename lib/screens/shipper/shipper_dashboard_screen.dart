@@ -282,24 +282,15 @@ class _ShipperDashboardScreenState
                       child: UnreadNotificationBadge(),
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Publier une offre',
-                    icon: const Icon(Icons.add_circle_outline,
-                        color: Colors.white),
-                    onPressed: () => _showPublishDialog(shipper.id),
-                  ),
-                  IconButton(
-                    tooltip: 'Scanner un colis',
-                    icon: const Icon(Icons.qr_code_scanner_rounded,
-                        color: Colors.white),
-                    onPressed: () => _openQrScanner(context),
-                  ),
                   const LogoutIconButton(),
                 ],
               ),
             ),
             SliverToBoxAdapter(
               child: _buildStats(shipper),
+            ),
+            SliverToBoxAdapter(
+              child: _buildPublishAndScan(shipper.id),
             ),
             SliverToBoxAdapter(
               child: _buildBookingsHeader(shipper.id),
@@ -467,6 +458,131 @@ class _ShipperDashboardScreenState
             onPressed: () => _showPublishDialog(shipperId),
             icon: const Icon(Icons.add_rounded),
             label: const Text('Publier'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // PUBLIER + SCANNER — large "Publier une offre" button with a big QR scanner
+  // card below it, both taking the place of the two app-bar icons.
+  // --------------------------------------------------------------------------
+
+  Widget _buildPublishAndScan(String shipperId) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Large "Publier une offre" button
+          InkWell(
+            onTap: () => _showPublishDialog(shipperId),
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.35),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(
+                vertical: 18,
+                horizontal: AppTheme.spaceMd,
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_circle_outline_rounded,
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    'Publier une offre',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceMd),
+          // Big QR scanner card
+          InkWell(
+            onTap: () => _openQrScanner(context),
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: AppTheme.darkGradient,
+                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                boxShadow: AppTheme.shadowMd,
+              ),
+              padding: const EdgeInsets.all(AppTheme.spaceLg),
+              child: Row(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const Icon(
+                      Icons.qr_code_scanner_rounded,
+                      color: Colors.white,
+                      size: 38,
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.spaceMd),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Scanner un colis',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Scannez le QR code du colis pour confirmer la '
+                          'collecte ou la remise au client.',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.spaceSm),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Colors.white70,
+                    size: 18,
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -682,6 +798,7 @@ class _ShipperDashboardScreenState
     final formKey = GlobalKey<FormState>();
     final weightController = TextEditingController();
     final priceController = TextEditingController();
+    final airlineController = TextEditingController();
     final flightController = TextEditingController();
     final descriptionController = TextEditingController();
     String originCountry = AppConstants.populateOrigins.first;
@@ -785,12 +902,29 @@ class _ShipperDashboardScreenState
                       },
                     ),
                     const SizedBox(height: 12),
-                    TextFormField(
-                      controller: flightController,
-                      decoration: const InputDecoration(
-                        labelText: 'Numéro de vol (optionnel)',
-                        prefixIcon: Icon(Icons.flight),
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: airlineController,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: const InputDecoration(
+                              labelText: 'Compagnie aérienne (optionnel)',
+                              prefixIcon: Icon(Icons.airlines),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: flightController,
+                            decoration: const InputDecoration(
+                              labelText: 'N° de vol (optionnel)',
+                              prefixIcon: Icon(Icons.flight),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -864,6 +998,10 @@ class _ShipperDashboardScreenState
                                           double.parse(priceController.text),
                                       departureDate: departure,
                                       arrivalDate: arrival,
+                                      airline:
+                                          airlineController.text.isEmpty
+                                              ? null
+                                              : airlineController.text,
                                       flightNumber:
                                           flightController.text.isEmpty
                                               ? null
@@ -1172,38 +1310,6 @@ class _ShipmentMiniCard extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: AppTheme.spaceXs),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.flight_takeoff_rounded,
-                            size: 14,
-                            color: AppTheme.textMutedColor,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              'Départ ${_formatDate(shipment.departureDate)}',
-                              style: AppTheme.caption,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(
-                            Icons.flight_land_rounded,
-                            size: 14,
-                            color: AppTheme.textMutedColor,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              'Arrivée ${_formatDate(shipment.arrivalDate)}',
-                              style: AppTheme.caption,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
                       if (shipment.flightNumber != null) ...[
                         const SizedBox(height: AppTheme.spaceXs),
                         Row(
@@ -1255,6 +1361,51 @@ class _ShipmentMiniCard extends ConsumerWidget {
                       color: AppTheme.textMutedColor,
                     ),
                   ],
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceXs),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.flight_takeoff_rounded,
+                        size: 14,
+                        color: AppTheme.textMutedColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          'Départ ${_formatDate(shipment.departureDate)}',
+                          style: AppTheme.caption,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.flight_land_rounded,
+                        size: 14,
+                        color: AppTheme.textMutedColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          'Arrivée ${_formatDate(shipment.arrivalDate)}',
+                          style: AppTheme.caption,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -1340,7 +1491,7 @@ const List<String> _frMonths = [
 
 String _formatDateFr(DateTime d) =>
     '${d.day.toString().padLeft(2, '0')} ${_frMonths[d.month - 1]} '
-    '${(d.year % 100).toString().padLeft(2, '0')}';
+    '${(d.year)}';
 
 String _formatShipmentDate(DateTime d) => _formatDateFr(d);
 
@@ -1604,6 +1755,13 @@ class _ShipperShipmentDetailScreenState
       child: GlassCard(
         child: Column(
           children: [
+            if (shipment.airline != null) ...[
+              _SummaryRow(
+                label: 'Compagnie',
+                value: shipment.airline!,
+              ),
+              const SizedBox(height: AppTheme.spaceSm),
+            ],
             _SummaryRow(
               label: 'Vol',
               value: shipment.flightNumber ?? '—',

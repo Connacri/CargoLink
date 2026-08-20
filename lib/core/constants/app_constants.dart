@@ -3,6 +3,22 @@
 // ============================================================================
 
 class AppConstants {
+  /// French month names, for dates displayed as "20 mars 26".
+  static const List<String> frMonths = [
+    'janvier',
+    'février',
+    'mars',
+    'avril',
+    'mai',
+    'juin',
+    'juillet',
+    'août',
+    'septembre',
+    'octobre',
+    'novembre',
+    'décembre',
+  ];
+
   // API Endpoints
   static const String baseUrl = 'https://api.cargolink.local/v1';
   

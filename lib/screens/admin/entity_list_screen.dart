@@ -465,6 +465,15 @@ class _ShipmentCard extends ConsumerWidget {
                     '${s.availableWeightKg.toStringAsFixed(0)}kg dispo',
                     style: AppTheme.caption,
                   ),
+                  if (s.flightNumber != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      s.airline != null
+                          ? '${s.airline} · Vol ${s.flightNumber}'
+                          : 'Vol ${s.flightNumber}',
+                      style: AppTheme.caption,
+                    ),
+                  ],
                 ],
               ),
             ),

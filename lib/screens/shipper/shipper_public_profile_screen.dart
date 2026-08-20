@@ -331,6 +331,26 @@ class _PublicShipmentCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppTheme.spaceSm),
+            if (shipment.flightNumber != null) ...[
+              Row(
+                children: [
+                  const Icon(
+                    Icons.confirmation_number_rounded,
+                    size: 15,
+                    color: AppTheme.textMutedColor,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      shipment.airline != null
+                          ? '${shipment.airline} · Vol ${shipment.flightNumber}'
+                          : 'Vol ${shipment.flightNumber}',
+                      style: AppTheme.caption,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             Row(
               children: [
                 const Icon(
