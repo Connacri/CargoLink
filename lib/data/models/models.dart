@@ -141,6 +141,8 @@ class Shipper {
   final String passportPhotoUrl;
   final String livePhotoUrl;
   final String verificationStatus; // pending, verified, rejected
+  final String shipperType; // voyageur_ordinaire, micro_importateur
+  final String? microCardPhotoUrl;
   final String? rejectionReason;
   final String? verifiedByAdminId;
   final DateTime? verifiedAt;
@@ -156,6 +158,8 @@ class Shipper {
     required this.passportPhotoUrl,
     required this.livePhotoUrl,
     required this.verificationStatus,
+    this.shipperType = 'voyageur_ordinaire',
+    this.microCardPhotoUrl,
     this.rejectionReason,
     this.verifiedByAdminId,
     this.verifiedAt,
@@ -173,6 +177,8 @@ class Shipper {
       passportPhotoUrl: json['passport_photo_url'] as String,
       livePhotoUrl: json['live_photo_url'] as String,
       verificationStatus: json['verification_status'] as String,
+      shipperType: json['shipper_type'] as String? ?? 'voyageur_ordinaire',
+      microCardPhotoUrl: json['micro_card_photo_url'] as String?,
       rejectionReason: json['rejection_reason'] as String?,
       verifiedByAdminId: json['verified_by_admin_id'] as String?,
       verifiedAt: json['verified_at'] != null
@@ -193,6 +199,8 @@ class Shipper {
       'passport_photo_url': passportPhotoUrl,
       'live_photo_url': livePhotoUrl,
       'verification_status': verificationStatus,
+      'shipper_type': shipperType,
+      'micro_card_photo_url': microCardPhotoUrl,
       'rejection_reason': rejectionReason,
       'verified_by_admin_id': verifiedByAdminId,
       'verified_at': verifiedAt?.toIso8601String(),
@@ -205,6 +213,7 @@ class Shipper {
   bool get isVerified => verificationStatus == 'verified';
   bool get isPending => verificationStatus == 'pending';
   bool get isRejected => verificationStatus == 'rejected';
+  bool get isMicroImportateur => shipperType == 'micro_importateur';
 
   String get ratingDisplay => rating.toStringAsFixed(1);
 }
@@ -227,6 +236,10 @@ class Shipment {
   final String? flightNumber;
   final String status; // active, completed, cancelled
   final String? description;
+  final double? publicationFee;
+  final String publicationFeeStatus; // pending, awaiting_confirmation, paid
+  final double publicationFeeDiscount;
+  final DateTime? publicationPaidAt;
   final DateTime createdAt;
   final DateTime updatedAt;
   final Shipper? shipper; // Related shipper object
@@ -236,6 +249,8 @@ class Shipment {
   bool get isFull => remainingWeightKg <= 0;
   bool get isActive =>
       status == 'active' && arrivalDate.isAfter(DateTime.now());
+  /// The offer is only visible to clients once its publication fee is paid.
+  bool get isPublished => status == 'active' && publicationFeeStatus == 'paid';
 
   Shipment({
     required this.id,
@@ -251,6 +266,10 @@ class Shipment {
     this.flightNumber,
     required this.status,
     this.description,
+    this.publicationFee,
+    this.publicationFeeStatus = 'pending',
+    this.publicationFeeDiscount = 0,
+    this.publicationPaidAt,
     required this.createdAt,
     required this.updatedAt,
     this.shipper,
@@ -271,6 +290,14 @@ class Shipment {
       flightNumber: json['flight_number'] as String?,
       status: json['status'] as String,
       description: json['description'] as String?,
+      publicationFee: (json['publication_fee'] as num?)?.toDouble(),
+      publicationFeeStatus:
+          json['publication_fee_status'] as String? ?? 'pending',
+      publicationFeeDiscount:
+          (json['publication_fee_discount'] as num?)?.toDouble() ?? 0,
+      publicationPaidAt: json['publication_paid_at'] != null
+          ? DateTime.tryParse(json['publication_paid_at'] as String)
+          : null,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       shipper:
@@ -293,6 +320,10 @@ class Shipment {
       'flight_number': flightNumber,
       'status': status,
       'description': description,
+      'publication_fee': publicationFee,
+      'publication_fee_status': publicationFeeStatus,
+      'publication_fee_discount': publicationFeeDiscount,
+      'publication_paid_at': publicationPaidAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -313,12 +344,28 @@ class Booking {
   final double requestedWeightKg;
   final double allocatedWeightKg;
   final double totalPrice;
-  final String status; // pending, confirmed, shipped, delivered, cancelled
+  final String status; // pending, confirmed, collected, verifying, accepted, shipped, arrived, out_for_delivery, delivered, cancelled
   final String paymentStatus; // pending, paid, refunded
   final String? trackingNumber;
   final String? deliveryPhotoUrl;
   final String? receiptPhotoUrl;
   final DateTime? receiptConfirmedAt;
+  final String? cniPhotoUrl;
+  final String? deliveryPhone;
+  final String? deliveryAddress;
+  final String? refusalReason;
+  final String? cancellationReason;
+  final String? collectedPhotoUrl;
+  final double? verifiedWeightKg;
+  final String verificationStatus; // none, awaiting_verification, verifying, accepted, returned, waiting_client_update
+  final String? deliveryMethod; // in_person, courier
+  final String? courierName;
+  final String? courierPhone;
+  final String? courierTrackingCode;
+  final DateTime? courierDepositedAt;
+  final String? pickupScanPhotoUrl;
+  final DateTime? pickupConfirmedAt;
+  final DateTime? deliveredAt;
   final DateTime createdAt;
   final DateTime updatedAt;
   final Shipment? shipment;
@@ -340,6 +387,22 @@ class Booking {
     this.deliveryPhotoUrl,
     this.receiptPhotoUrl,
     this.receiptConfirmedAt,
+    this.cniPhotoUrl,
+    this.deliveryPhone,
+    this.deliveryAddress,
+    this.refusalReason,
+    this.cancellationReason,
+    this.collectedPhotoUrl,
+    this.verifiedWeightKg,
+    this.verificationStatus = 'none',
+    this.deliveryMethod,
+    this.courierName,
+    this.courierPhone,
+    this.courierTrackingCode,
+    this.courierDepositedAt,
+    this.pickupScanPhotoUrl,
+    this.pickupConfirmedAt,
+    this.deliveredAt,
     required this.createdAt,
     required this.updatedAt,
     this.shipment,
@@ -365,7 +428,30 @@ class Booking {
       deliveryPhotoUrl: json['delivery_photo_url'] as String?,
       receiptPhotoUrl: json['receipt_photo_url'] as String?,
       receiptConfirmedAt: json['receipt_confirmed_at'] != null
-          ? DateTime.parse(json['receipt_confirmed_at'] as String)
+          ? DateTime.tryParse(json['receipt_confirmed_at'] as String)
+          : null,
+      cniPhotoUrl: json['cni_photo_url'] as String?,
+      deliveryPhone: json['delivery_phone'] as String?,
+      deliveryAddress: json['delivery_address'] as String?,
+      refusalReason: json['refusal_reason'] as String?,
+      cancellationReason: json['cancellation_reason'] as String?,
+      collectedPhotoUrl: json['collected_photo_url'] as String?,
+      verifiedWeightKg: (json['verified_weight_kg'] as num?)?.toDouble(),
+      verificationStatus:
+          json['verification_status'] as String? ?? 'none',
+      deliveryMethod: json['delivery_method'] as String?,
+      courierName: json['courier_name'] as String?,
+      courierPhone: json['courier_phone'] as String?,
+      courierTrackingCode: json['courier_tracking_code'] as String?,
+      courierDepositedAt: json['courier_deposited_at'] != null
+          ? DateTime.tryParse(json['courier_deposited_at'] as String)
+          : null,
+      pickupScanPhotoUrl: json['pickup_scan_photo_url'] as String?,
+      pickupConfirmedAt: json['pickup_confirmed_at'] != null
+          ? DateTime.tryParse(json['pickup_confirmed_at'] as String)
+          : null,
+      deliveredAt: json['delivered_at'] != null
+          ? DateTime.tryParse(json['delivered_at'] as String)
           : null,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
@@ -393,6 +479,22 @@ class Booking {
       'delivery_photo_url': deliveryPhotoUrl,
       'receipt_photo_url': receiptPhotoUrl,
       'receipt_confirmed_at': receiptConfirmedAt?.toIso8601String(),
+      'cni_photo_url': cniPhotoUrl,
+      'delivery_phone': deliveryPhone,
+      'delivery_address': deliveryAddress,
+      'refusal_reason': refusalReason,
+      'cancellation_reason': cancellationReason,
+      'collected_photo_url': collectedPhotoUrl,
+      'verified_weight_kg': verifiedWeightKg,
+      'verification_status': verificationStatus,
+      'delivery_method': deliveryMethod,
+      'courier_name': courierName,
+      'courier_phone': courierPhone,
+      'courier_tracking_code': courierTrackingCode,
+      'courier_deposited_at': courierDepositedAt?.toIso8601String(),
+      'pickup_scan_photo_url': pickupScanPhotoUrl,
+      'pickup_confirmed_at': pickupConfirmedAt?.toIso8601String(),
+      'delivered_at': deliveredAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -400,6 +502,7 @@ class Booking {
 
   bool get isPaid => paymentStatus == 'paid';
   bool get isDelivered => status == 'delivered';
+  bool get isCancelled => status == 'cancelled';
 }
 
 // ============================================================================
@@ -590,6 +693,8 @@ class Payment {
   final String status; // pending, completed, failed, refunded
   final String? paymentMethod;
   final String? transactionId;
+  final double discountPercent; // remise Visa (-30% dus plateforme)
+  final double? originalAmount;
   final DateTime createdAt;
 
   Payment({
@@ -600,6 +705,8 @@ class Payment {
     required this.status,
     this.paymentMethod,
     this.transactionId,
+    this.discountPercent = 0,
+    this.originalAmount,
     required this.createdAt,
   });
 
@@ -612,6 +719,8 @@ class Payment {
       status: json['status'] as String,
       paymentMethod: json['payment_method'] as String?,
       transactionId: json['transaction_id'] as String?,
+      discountPercent: (json['discount_percent'] as num?)?.toDouble() ?? 0,
+      originalAmount: (json['original_amount'] as num?)?.toDouble(),
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
@@ -625,6 +734,8 @@ class Payment {
       'status': status,
       'payment_method': paymentMethod,
       'transaction_id': transactionId,
+      'discount_percent': discountPercent,
+      'original_amount': originalAmount,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -696,6 +807,9 @@ class PlatformFee {
   final double amount;
   final String status; // pending, awaiting_confirmation, paid
   final DateTime? paidAt;
+  final DateTime? dueAt; // échéance (délai de 7 jours)
+  final String? paymentMethod; // visa, baridimob, cash
+  final String escalationStatus; // none, overdue, justice_filed
   final DateTime createdAt;
   final Shipment? shipment; // Related shipment (route + shipper) for admin lists
 
@@ -707,6 +821,9 @@ class PlatformFee {
     required this.amount,
     required this.status,
     this.paidAt,
+    this.dueAt,
+    this.paymentMethod,
+    this.escalationStatus = 'none',
     required this.createdAt,
     this.shipment,
   });
@@ -722,6 +839,11 @@ class PlatformFee {
       paidAt: json['paid_at'] != null
           ? DateTime.tryParse(json['paid_at'] as String)
           : null,
+      dueAt: json['due_at'] != null
+          ? DateTime.tryParse(json['due_at'] as String)
+          : null,
+      paymentMethod: json['payment_method'] as String?,
+      escalationStatus: json['escalation_status'] as String? ?? 'none',
       createdAt: DateTime.parse(json['created_at'] as String),
       shipment: json['shipments'] != null
           ? Shipment.fromJson(json['shipments'])
@@ -732,6 +854,9 @@ class PlatformFee {
   bool get isPaid => status == 'paid';
 
   bool get isAwaitingConfirmation => status == 'awaiting_confirmation';
+
+  bool get isOverdue =>
+      !isPaid && dueAt != null && DateTime.now().isAfter(dueAt!);
 }
 
 // ============================================================================

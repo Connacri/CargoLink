@@ -18,6 +18,8 @@ class ShipperService {
     required String passportNumber,
     required String passportPhotoUrl,
     required String livePhotoUrl,
+    String shipperType = 'voyageur_ordinaire',
+    String? microCardPhotoUrl,
   }) async {
     try {
       _logger.i('Registering shipper: $userId');
@@ -30,6 +32,8 @@ class ShipperService {
             'passport_photo_url': passportPhotoUrl,
             'live_photo_url': livePhotoUrl,
             'verification_status': 'pending',
+            'shipper_type': shipperType,
+            'micro_card_photo_url': microCardPhotoUrl,
             'rating': 0.0,
             'total_shipments': 0,
             'created_at': DateTime.now().toIso8601String(),
@@ -51,6 +55,8 @@ class ShipperService {
     String? passportNumber,
     String? passportPhotoUrl,
     String? livePhotoUrl,
+    String? shipperType,
+    String? microCardPhotoUrl,
   }) async {
     try {
       _logger.i('Updating shipper documents: $shipperId');
@@ -69,6 +75,10 @@ class ShipperService {
         updateData['passport_photo_url'] = passportPhotoUrl;
       }
       if (livePhotoUrl != null) updateData['live_photo_url'] = livePhotoUrl;
+      if (shipperType != null) updateData['shipper_type'] = shipperType;
+      if (microCardPhotoUrl != null) {
+        updateData['micro_card_photo_url'] = microCardPhotoUrl;
+      }
 
       final response = await _supabase
           .from('shippers')
@@ -277,6 +287,8 @@ class ShipmentService {
     String? airline,
     String? flightNumber,
     String? description,
+    double? publicationFee,
+    double publicationFeeDiscount = 0,
   }) async {
     try {
       _logger.i('Publishing shipment for shipper: $shipperId');
@@ -295,6 +307,11 @@ class ShipmentService {
             'airline': airline,
             'flight_number': flightNumber,
             'status': 'active',
+            'publication_fee': publicationFee,
+            'publication_fee_status': publicationFee == null
+                ? 'paid'
+                : 'pending',
+            'publication_fee_discount': publicationFeeDiscount,
             'description': description,
             'created_at': DateTime.now().toIso8601String(),
             'updated_at': DateTime.now().toIso8601String(),
@@ -307,6 +324,92 @@ class ShipmentService {
     } catch (e) {
       _logger.e('Error publishing shipment: $e');
       rethrow;
+    }
+  }
+
+  /// The shipper requests to pay the publication fee by card. The 30% Visa
+  /// discount is already applied by the caller when the checkbox is checked.
+  /// The offer stays hidden from clients until the founder confirms.
+  Future<Shipment?> payShipmentPublicationFee(String shipmentId,
+      {double discount = 0}) async {
+    try {
+      final response = await _supabase
+          .from('shipments')
+          .update({
+            'publication_fee_status': 'awaiting_confirmation',
+            'publication_fee_discount': discount,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', shipmentId)
+          .select('*, shippers(*, users!shippers_user_id_fkey(*))')
+          .single();
+      _logger.i('Publication fee payment requested for shipment: $shipmentId');
+      return Shipment.fromJson(response);
+    } catch (e) {
+      _logger.e('Error paying shipment publication fee: $e');
+      rethrow;
+    }
+  }
+
+  /// Founder confirms the publication payment → the offer becomes visible to
+  /// clients (publication_fee_status = paid).
+  Future<Shipment?> confirmShipmentPublication(String shipmentId) async {
+    try {
+      final response = await _supabase
+          .from('shipments')
+          .update({
+            'publication_fee_status': 'paid',
+            'publication_paid_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', shipmentId)
+          .select('*, shippers(*, users!shippers_user_id_fkey(*))')
+          .single();
+      _logger.i('Shipment publication confirmed: $shipmentId');
+      return Shipment.fromJson(response);
+    } catch (e) {
+      _logger.e('Error confirming shipment publication: $e');
+      rethrow;
+    }
+  }
+
+  /// Offers whose publication fee is pending or awaiting confirmation — used
+  /// by the founder dashboard to validate the payment and make them visible.
+  /// (admin / super_admin only, enforced by RLS).
+  Future<List<Shipment>> getAwaitingPublicationShipments({
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    try {
+      final response = await _supabase
+          .from('shipments')
+          .select('*, shippers(*, users!shippers_user_id_fkey(*))')
+          .neq('publication_fee_status', 'paid')
+          .eq('status', 'active')
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+      return (response as List)
+          .map((item) => Shipment.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting awaiting publication shipments: $e');
+      return [];
+    }
+  }
+
+  /// Count of offers awaiting publication confirmation — powers the founder
+  /// dashboard badge.
+  Future<int> countAwaitingPublicationShipments() async {
+    try {
+      final response = await _supabase
+          .from('shipments')
+          .select('id')
+          .neq('publication_fee_status', 'paid')
+          .eq('status', 'active');
+      return (response as List).length;
+    } catch (e) {
+      _logger.e('Error counting awaiting publication shipments: $e');
+      return 0;
     }
   }
 
@@ -326,10 +429,13 @@ class ShipmentService {
     }
   }
 
-  /// Get active shipments with filters
+  /// Get active shipments with filters. Only offers whose publication fee was
+  /// confirmed by the founder (publication_fee_status = 'paid') are shown to
+  /// clients.
   Future<List<Shipment>> getActiveShipments({
     String? destinationCity,
     String? originCountry,
+    String? shipperType,
     int limit = 50,
     int offset = 0,
   }) async {
@@ -338,6 +444,7 @@ class ShipmentService {
           .from('shipments')
           .select('*, shippers(*, users!shippers_user_id_fkey(*))')
           .eq('status', 'active')
+          .eq('publication_fee_status', 'paid')
           .gt('available_weight_kg', 0);
 
       if (destinationCity != null) {
@@ -346,6 +453,10 @@ class ShipmentService {
 
       if (originCountry != null) {
         query = query.ilike('origin_country', originCountry);
+      }
+
+      if (shipperType != null) {
+        query = query.eq('shippers.shipper_type', shipperType);
       }
 
       final response = await query

@@ -26,6 +26,9 @@ class BookingService {
     required String productDescription,
     required List<String> productPhotosUrl,
     required double requestedWeightKg,
+    String? cniPhotoUrl,
+    String? deliveryPhone,
+    String? deliveryAddress,
   }) async {
     try {
       _logger.i('Creating booking for shipment: $shipmentId');
@@ -60,8 +63,11 @@ class BookingService {
         roundingPrecision: settings.roundingPrecision,
       );
 
-      // Calculate total price
-      final totalPrice = allocatedWeight * shipment.pricePerKg;
+      // Calculate total price = prix expéditeur + commission plateforme
+      // (le prix au kg affiché au client inclut la commission).
+      final commissionPerKg = shipment.pricePerKg * settings.commissionPercent / 100;
+      final totalPrice =
+          allocatedWeight * (shipment.pricePerKg + commissionPerKg);
 
       // Create booking. A random short tracking code (10 chars, alphanumeric
       // only) is generated with a uniqueness retry in case of a rare collision
@@ -86,6 +92,9 @@ class BookingService {
                 'total_price': totalPrice,
                 'status': 'pending',
                 'payment_status': 'pending',
+                'cni_photo_url': cniPhotoUrl,
+                'delivery_phone': deliveryPhone,
+                'delivery_address': deliveryAddress,
                 'created_at': DateTime.now().toIso8601String(),
                 'updated_at': DateTime.now().toIso8601String(),
               })
@@ -329,7 +338,8 @@ class BookingService {
   }
 
   /// Cancel booking and refund
-  Future<Booking?> cancelBooking(String bookingId) async {
+  Future<Booking?> cancelBooking(String bookingId,
+      {String? reason}) async {
     try {
       _logger.i('Cancelling booking: $bookingId');
 
@@ -343,7 +353,27 @@ class BookingService {
       await _paymentService.refundPayment(bookingId);
 
       // Update booking status
-      final updatedBooking = await updateBookingStatus(bookingId, 'cancelled');
+      final updatedBooking =
+          await updateBookingStatus(bookingId, 'cancelled');
+
+      // Persist the refusal / cancellation reason (shipper or client).
+      if (reason != null && reason.trim().isNotEmpty) {
+        final payload = <String, dynamic>{
+          'updated_at': DateTime.now().toIso8601String(),
+        };
+        final isShipperSide =
+            booking.shipment?.shipperId != null &&
+                _supabase.auth.currentUser?.id != null &&
+                booking.shipment!.shipper!.userId ==
+                    _supabase.auth.currentUser!.id;
+        payload[isShipperSide ? 'refusal_reason' : 'cancellation_reason'] =
+            reason.trim();
+        try {
+          await _supabase.from('bookings').update(payload).eq('id', bookingId);
+        } catch (e) {
+          _logger.e('Error persisting refusal reason: $e');
+        }
+      }
 
       _logger.i('Booking cancelled and refunded');
       return updatedBooking;
@@ -359,6 +389,168 @@ class BookingService {
       return await updateBookingStatus(bookingId, 'shipped');
     } catch (e) {
       _logger.e('Error marking booking as shipped: $e');
+      rethrow;
+    }
+  }
+
+  /// Shipper physically received the parcel (QR scan) and photographs it.
+  Future<Booking?> collectBooking(String bookingId,
+      {required String collectedPhotoUrl}) async {
+    try {
+      _logger.i('Collecting booking: $bookingId');
+      final response = await _supabase
+          .from('bookings')
+          .update({
+            'status': 'collected',
+            'collected_photo_url': collectedPhotoUrl,
+            'verification_status': 'awaiting_verification',
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', bookingId)
+          .select(
+              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
+          .single();
+      return Booking.fromJson(response);
+    } catch (e) {
+      _logger.e('Error collecting booking: $e');
+      rethrow;
+    }
+  }
+
+  /// The shipper starts the manual verification (forbidden items, weight).
+  Future<Booking?> startVerification(String bookingId) async {
+    try {
+      return await updateBookingStatus(bookingId, 'verifying');
+    } catch (e) {
+      _logger.e('Error starting verification: $e');
+      rethrow;
+    }
+  }
+
+  /// The shipper accepts the parcel after verification (real weight recorded).
+  Future<Booking?> acceptBooking(String bookingId,
+      {required double verifiedWeightKg}) async {
+    try {
+      _logger.i('Accepting booking after verification: $bookingId');
+      final response = await _supabase
+          .from('bookings')
+          .update({
+            'status': 'accepted',
+            'verified_weight_kg': verifiedWeightKg,
+            'verification_status': 'accepted',
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', bookingId)
+          .select(
+              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
+          .single();
+      return Booking.fromJson(response);
+    } catch (e) {
+      _logger.e('Error accepting booking: $e');
+      rethrow;
+    }
+  }
+
+  /// The parcel was refused during verification (forbidden item / damage).
+  Future<Booking?> returnBooking(String bookingId,
+      {String? reason}) async {
+    try {
+      final response = await _supabase
+          .from('bookings')
+          .update({
+            'status': 'verifying',
+            'verification_status': 'returned',
+            'refusal_reason': reason,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', bookingId)
+          .select(
+              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
+          .single();
+      return Booking.fromJson(response);
+    } catch (e) {
+      _logger.e('Error returning booking: $e');
+      rethrow;
+    }
+  }
+
+  /// Mark booking as arrived at destination (geolocation + notification).
+  Future<Booking?> markAsArrived(String bookingId,
+      {double? latitude, double? longitude, String? location}) async {
+    try {
+      final updated = await updateBookingStatus(bookingId, 'arrived');
+      await TrackingService().addTrackingUpdate(
+        bookingId: bookingId,
+        status: 'arrived_destination',
+        latitude: latitude,
+        longitude: longitude,
+        location: location,
+        notes: location != null
+            ? 'Colis arrivé à destination ($location)'
+            : 'Colis arrivé à destination',
+      );
+      return updated;
+    } catch (e) {
+      _logger.e('Error marking booking as arrived: $e');
+      rethrow;
+    }
+  }
+
+  /// The shipper records the parcel deposit at a local courier (delivery
+  /// method = courier). The client is then notified with the tracking code.
+  Future<Booking?> depositCourier({
+    required String bookingId,
+    required String courierName,
+    required String courierPhone,
+    required String courierTrackingCode,
+  }) async {
+    try {
+      _logger.i('Depositing booking at courier: $bookingId');
+      final response = await _supabase
+          .from('bookings')
+          .update({
+            'status': 'out_for_delivery',
+            'delivery_method': 'courier',
+            'courier_name': courierName,
+            'courier_phone': courierPhone,
+            'courier_tracking_code': courierTrackingCode,
+            'courier_deposited_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', bookingId)
+          .select(
+              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
+          .single();
+      return Booking.fromJson(response);
+    } catch (e) {
+      _logger.e('Error depositing booking at courier: $e');
+      rethrow;
+    }
+  }
+
+  /// The shipper confirms the in-person handover after scanning the client QR
+  /// (delivery method = in_person).
+  Future<Booking?> confirmInPersonPickup(String bookingId,
+      {String? scanPhotoUrl}) async {
+    try {
+      _logger.i('Confirming in-person pickup: $bookingId');
+      final response = await _supabase
+          .from('bookings')
+          .update({
+            'status': 'delivered',
+            'delivery_method': 'in_person',
+            'pickup_scan_photo_url': scanPhotoUrl,
+            'pickup_confirmed_at': DateTime.now().toIso8601String(),
+            'delivered_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', bookingId)
+          .select(
+              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
+          .single();
+      return Booking.fromJson(response);
+    } catch (e) {
+      _logger.e('Error confirming in-person pickup: $e');
       rethrow;
     }
   }
@@ -449,16 +641,24 @@ class PaymentService {
     required String bookingId,
     required double amount,
     String currency = 'DZD',
+    double discountPercent = 0,
+    double? originalAmount,
   }) async {
     try {
       _logger.i('Creating payment for booking: $bookingId');
+
+      final finalAmount = discountPercent > 0
+          ? amount - (amount * discountPercent / 100)
+          : amount;
 
       final response = await _supabase
           .from('payments')
           .insert({
             'id': const Uuid().v4(),
             'booking_id': bookingId,
-            'amount': amount,
+            'amount': finalAmount,
+            'original_amount': originalAmount ?? amount,
+            'discount_percent': discountPercent,
             'currency': currency,
             'status': 'pending',
             'created_at': DateTime.now().toIso8601String(),
@@ -633,20 +833,25 @@ class PaymentService {
     return (amount * settings.commissionPercent) / 100;
   }
 
-  /// Get shipper earnings (chiffre d'affaires encaissé : commandes payées,
-  /// non annulées — indépendamment de la date de livraison).
+  /// Get shipper earnings (chiffre d'affaires encaissé : gain de l'expéditeur
+/// = poids alloué × prix/kg expéditeur, commandes payées non annulées).
   Future<double> getShipperEarnings(String shipperId) async {
     try {
       final bookings = await _supabase
           .from('bookings')
-          .select('total_price, shipments(shipper_id)')
+          .select('allocated_weight_kg, shipments(price_per_kg, shipper_id)')
           .eq('shipments.shipper_id', shipperId)
           .eq('payment_status', 'paid')
           .neq('status', 'cancelled');
 
       return (bookings as List).fold<double>(
         0,
-        (sum, b) => sum + (b['total_price'] as num).toDouble(),
+        (sum, b) => sum +
+            ((b['allocated_weight_kg'] as num?)?.toDouble() ?? 0) *
+                (((b['shipments'] as Map<String, dynamic>?)?['price_per_kg']
+                        as num?)
+                    ?.toDouble() ??
+                    0),
       );
     } catch (e) {
       _logger.e('Error getting shipper earnings: $e');
@@ -747,7 +952,8 @@ class PaymentService {
     try {
       final bookings = await _supabase
           .from('bookings')
-          .select('total_price, status, payment_status, created_at, shipments(shipper_id)')
+          .select(
+              'allocated_weight_kg, status, payment_status, created_at, shipments(price_per_kg, shipper_id)')
           .eq('shipments.shipper_id', shipperId);
       final bookingList = bookings as List;
 
@@ -755,19 +961,23 @@ class PaymentService {
       var receivable = 0.0;
       final byMonth = <int, double>{};
       for (final b in bookingList) {
-        final price = (b['total_price'] as num).toDouble();
+        final shipment = b['shipments'] as Map<String, dynamic>?;
+        final shipperPrice = (shipment?['price_per_kg'] as num?)?.toDouble() ?? 0;
+        final allocated = (b['allocated_weight_kg'] as num?)?.toDouble() ?? 0;
+        // Gain expéditeur = poids alloué × prix/kg expéditeur (commission exclue).
+        final gain = allocated * shipperPrice;
         final status = b['status'] as String? ?? '';
         final payment = b['payment_status'] as String? ?? '';
         if (status == 'cancelled') continue;
         if (payment == 'paid') {
-          revenue += price;
+          revenue += gain;
           final created = DateTime.tryParse(b['created_at'] as String? ?? '');
           if (created != null) {
             final month = created.month;
-            byMonth[month] = (byMonth[month] ?? 0) + price;
+            byMonth[month] = (byMonth[month] ?? 0) + gain;
           }
         } else {
-          receivable += price;
+          receivable += gain;
         }
       }
 
@@ -903,13 +1113,36 @@ class PaymentService {
 
   /// Shipper requests payment of their pending platform dues. The fees move to
   /// `awaiting_confirmation`; only an admin/super_admin can then confirm them.
-  Future<void> payPlatformFees(String shipperId) async {
+  /// `discountPercent` applies a Visa Card reduction (-30%) on the dues, and
+  /// `dueAt` sets the 7-day payment deadline.
+  Future<void> payPlatformFees(String shipperId,
+      {String paymentMethod = 'baridimob', double discountPercent = 0}) async {
     try {
-      await _supabase
+      final now = DateTime.now();
+      final dueAt = now.add(const Duration(days: 7));
+
+      // Fetch pending fees so we can store the discounted amount & deadline.
+      final pendingFees = await _supabase
           .from('platform_fees')
-          .update({'status': 'awaiting_confirmation'})
+          .select('id, amount')
           .eq('shipper_id', shipperId)
           .eq('status', 'pending');
+
+      for (final fee in (pendingFees as List)) {
+        final original = (fee['amount'] as num).toDouble();
+        final paid = discountPercent > 0
+            ? original - (original * discountPercent / 100)
+            : original;
+        await _supabase
+            .from('platform_fees')
+            .update({
+              'status': 'awaiting_confirmation',
+              'payment_method': paymentMethod,
+              'due_at': dueAt.toIso8601String(),
+              'amount': paid,
+            })
+            .eq('id', fee['id'] as String);
+      }
       _logger.i('Platform fee payment requested for shipper: $shipperId');
     } catch (e) {
       _logger.e('Error requesting platform fee payment: $e');
@@ -933,6 +1166,46 @@ class PaymentService {
     } catch (e) {
       _logger.e('Error confirming platform fee: $e');
       rethrow;
+    }
+  }
+
+  /// Admin/super_admin flags overdue dues and escalates to justice after the
+  /// 7-day deadline (the shipper must also provide passport + CNI).
+  Future<void> escalateFeeToJustice(String feeId) async {
+    try {
+      await _supabase
+          .from('platform_fees')
+          .update({
+            'escalation_status': 'justice_filed',
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', feeId)
+          .eq('status', 'awaiting_confirmation');
+      _logger.i('Platform fee escalated to justice: $feeId');
+    } catch (e) {
+      _logger.e('Error escalating platform fee: $e');
+      rethrow;
+    }
+  }
+
+  /// Get overdue platform fees (admin / super_admin) — past their 7-day due.
+  Future<List<PlatformFee>> getOverdueFees({int limit = 200}) async {
+    try {
+      final response = await _supabase
+          .from('platform_fees')
+          .select(
+            '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*)))',
+          )
+          .eq('status', 'awaiting_confirmation')
+          .lt('due_at', DateTime.now().toIso8601String())
+          .order('due_at', ascending: true)
+          .limit(limit);
+      return (response as List)
+          .map((item) => PlatformFee.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting overdue fees: $e');
+      return [];
     }
   }
 }

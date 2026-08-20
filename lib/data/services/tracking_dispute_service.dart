@@ -832,4 +832,119 @@ class NotificationService {
       _logger.e('Error notifying shipper of receipt: $e');
     }
   }
+
+  /// Notify the client that their parcel was physically collected + is being
+  /// verified by the shipper (forbidden items / weight).
+  Future<void> notifyClientCollected({
+    required String clientId,
+    required String bookingId,
+    required String productName,
+  }) async {
+    try {
+      await createNotification(
+        userId: clientId,
+        type: 'collected',
+        title: 'Colis récupéré',
+        message:
+            'Votre colis "$productName" a été récupéré par l\'expéditeur et '
+            'est en cours de vérification (articles autorisés et poids).',
+        relatedBookingId: bookingId,
+      );
+      await _sendPush(
+        userId: clientId,
+        title: 'Colis récupéré 📦',
+        message: 'Votre colis "$productName" est en vérification',
+        data: {'bookingId': bookingId, 'type': 'collected'},
+      );
+    } catch (e) {
+      _logger.e('Error notifying client of collection: $e');
+    }
+  }
+
+  /// Notify the client that the parcel verification failed (forbidden item /
+  /// damage) and the shipper asked for an explanation / a re-submission.
+  Future<void> notifyClientVerificationReturned({
+    required String clientId,
+    required String bookingId,
+    String? reason,
+  }) async {
+    try {
+      await createNotification(
+        userId: clientId,
+        type: 'verification_returned',
+        title: 'Vérification : action requise',
+        message: reason != null && reason.isNotEmpty
+            ? 'Votre colis a été signalé : $reason. Contactez votre expéditeur '
+                'pour régulariser.'
+            : 'Votre colis a été signalé par l\'expéditeur. Contactez-le pour '
+                'régulariser.',
+        relatedBookingId: bookingId,
+      );
+      await _sendPush(
+        userId: clientId,
+        title: 'Vérification : action requise ⚠️',
+        message: 'Votre colis nécessite votre attention',
+        data: {'bookingId': bookingId, 'type': 'verification_returned'},
+      );
+    } catch (e) {
+      _logger.e('Error notifying client of returned verification: $e');
+    }
+  }
+
+  /// Notify the client that the parcel arrived at destination.
+  Future<void> notifyClientArrived({
+    required String clientId,
+    required String bookingId,
+    required String destination,
+  }) async {
+    try {
+      await createNotification(
+        userId: clientId,
+        type: 'arrived',
+        title: 'Colis arrivé à destination',
+        message: 'Votre colis est arrivé à $destination. Préparez votre '
+            'réception (remise en main propre ou courrier local).',
+        relatedBookingId: bookingId,
+      );
+      await _sendPush(
+        userId: clientId,
+        title: 'Colis arrivé 🛬',
+        message: 'Votre colis est arrivé à $destination',
+        data: {'bookingId': bookingId, 'type': 'arrived'},
+      );
+    } catch (e) {
+      _logger.e('Error notifying client of arrival: $e');
+    }
+  }
+
+  /// Notify the client that their parcel was deposited at a local courier,
+  /// with the courier tracking code to follow the final delivery.
+  Future<void> notifyClientCourierDeposited({
+    required String clientId,
+    required String bookingId,
+    required String courierName,
+    String? trackingCode,
+  }) async {
+    try {
+      await createNotification(
+        userId: clientId,
+        type: 'courier_deposited',
+        title: 'Remise au courrier local',
+        message: trackingCode != null && trackingCode.isNotEmpty
+            ? 'Votre colis a été déposé chez $courierName. Suivez-le avec le '
+                'code $trackingCode.'
+            : 'Votre colis a été déposé chez $courierName pour la livraison '
+                'finale.',
+        relatedBookingId: bookingId,
+      );
+      await _sendPush(
+        userId: clientId,
+        title: 'Colis chez le courrier 📬',
+        message: 'Déposé chez $courierName',
+        data: {'bookingId': bookingId, 'type': 'courier_deposited'},
+      );
+    } catch (e) {
+      _logger.e('Error notifying client of courier deposit: $e');
+    }
+  }
 }

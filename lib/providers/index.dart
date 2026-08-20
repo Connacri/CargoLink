@@ -283,6 +283,28 @@ final awaitingCommissionCountProvider = FutureProvider<int>((ref) async {
   return paymentService.countAwaitingConfirmationFees();
 });
 
+/// Offers whose publication fee has not been confirmed yet (founder
+/// dashboard) — the founder validates the payment to make them visible.
+final awaitingPublicationShipmentsProvider =
+    FutureProvider<List<Shipment>>((ref) async {
+  final shipmentService = ref.watch(shipmentServiceProvider);
+  return shipmentService.getAwaitingPublicationShipments();
+});
+
+/// Count of offers awaiting publication confirmation — founder badge.
+final awaitingPublicationCountProvider = FutureProvider<int>((ref) async {
+  final shipmentService = ref.watch(shipmentServiceProvider);
+  return shipmentService.countAwaitingPublicationShipments();
+});
+
+/// Overdue platform fees (past their 7-day due date) — founder escalation to
+/// justice.
+final overduePlatformFeesProvider =
+    FutureProvider<List<PlatformFee>>((ref) async {
+  final paymentService = ref.watch(paymentServiceProvider);
+  return paymentService.getOverdueFees();
+});
+
 final shipperEarningsProvider =
     FutureProvider.family<double, String>((ref, shipperId) async {
   final paymentService = ref.watch(paymentServiceProvider);
@@ -811,6 +833,7 @@ final navigationIndexProvider = StateProvider<int>((ref) => 0);
 
 final destinationFilterProvider = StateProvider<String?>((ref) => null);
 final originFilterProvider = StateProvider<String?>((ref) => null);
+final shipperTypeFilterProvider = StateProvider<String?>((ref) => null);
 final priceFilterProvider = StateProvider<({double min, double max})?>(
   (ref) => null,
 );
