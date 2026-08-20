@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/ui_kit.dart';
+import '../core/widgets/micro_badge.dart';
 
 /// Reusable shipper offer card used on the client search feed.
 ///
@@ -30,6 +31,8 @@ class ShipperCard extends StatefulWidget {
     this.shipmentsCount,
     this.isAvailable = true,
     this.isVerified = false,
+    this.isMicroImportateur = false,
+    this.clientPricePerKg,
     this.currency = 'DZD',
     this.onTap,
     this.onAvatarTap,
@@ -60,6 +63,11 @@ class ShipperCard extends StatefulWidget {
   final int? shipmentsCount;
   final bool isAvailable;
   final bool isVerified;
+  final bool isMicroImportateur;
+
+  /// Prix affiché au client (prix/kg expéditeur + commission plateforme).
+  /// Lorsqu'il est fourni, il remplace [pricePerKg] dans l'affichage.
+  final double? clientPricePerKg;
   final String currency;
   final VoidCallback? onTap;
   final VoidCallback? onAvatarTap;
@@ -147,6 +155,10 @@ class _ShipperCardState extends State<ShipperCard> {
                       size: 16,
                       color: AppTheme.primaryColor,
                     ),
+                  ],
+                  if (widget.isMicroImportateur) ...[
+                    const SizedBox(width: 6),
+                    const MicroImportateurBadge(compact: true),
                   ],
                   if (!widget.isAvailable) ...[
                     const SizedBox(width: 6),
@@ -274,7 +286,7 @@ class _ShipperCardState extends State<ShipperCard> {
             children: [
               const Text('Prix', style: AppTheme.caption),
               Text(
-                '${widget.pricePerKg.toStringAsFixed(0)} '
+                '${(widget.clientPricePerKg ?? widget.pricePerKg).toStringAsFixed(0)} '
                 '${widget.currency}/kg',
                 style: TextStyle(
                   fontSize: 14,
@@ -284,6 +296,14 @@ class _ShipperCardState extends State<ShipperCard> {
                       : AppTheme.textMutedColor,
                 ),
               ),
+              if (widget.clientPricePerKg != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'dont ${widget.pricePerKg.toStringAsFixed(0)} '
+                  '${widget.currency} transporteur',
+                  style: AppTheme.caption,
+                ),
+              ],
             ],
           ),
         ),

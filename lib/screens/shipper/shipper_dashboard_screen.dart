@@ -270,7 +270,8 @@ class _ShipperDashboardScreenState
             GradientSliverHeader(
               title: 'Tableau de bord',
               subtitle:
-                  '${shipper.user?.fullName ?? 'Espace expéditeur'}  •  ★ ${shipper.ratingDisplay}',
+                  '${shipper.user?.fullName ?? 'Espace expéditeur'}  •  ★ ${shipper.ratingDisplay}'
+                  '${shipper.isMicroImportateur ? '  •  Micro-importateur' : ''}',
               icon: Icons.flight_takeoff_rounded,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -785,6 +786,99 @@ class _ShipperDashboardScreenState
     );
   }
 
+  /// Panneau de calcul real-time dans le formulaire de publication : gain de
+  /// l'expéditeur, dus plateforme (avec -30% Visa), et prix/kg payé par le
+  /// client (prix expéditeur + commission plateforme).
+  Widget _buildPricingPanel({
+    required double weight,
+    required double pricePerKg,
+    required double commissionPercent,
+    required String currency,
+    required bool payByVisa,
+    required ValueChanged<bool?> onToggleVisa,
+  }) {
+    final gain = weight * pricePerKg;
+    final dues = gain * commissionPercent / 100;
+    final discountedDues = payByVisa ? dues * 0.7 : dues;
+    final clientPricePerKg =
+        pricePerKg + (pricePerKg * commissionPercent / 100);
+
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spaceMd),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryLighter,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        border: Border.all(color: AppTheme.dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.calculate_rounded,
+                  size: 18, color: AppTheme.primaryColor),
+              SizedBox(width: AppTheme.spaceXs),
+              Text(
+                'Calcul en temps réel',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimaryColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
+          if (pricePerKg <= 0)
+            const Text(
+              'Entrez votre prix par kg pour voir votre gain, les dus '
+              'plateforme et le prix affiché au client.',
+              style: AppTheme.caption,
+            )
+          else ...[
+            _PricingRow(
+              label: 'Votre gain (${weight.toStringAsFixed(1)} kg × '
+                  '${pricePerKg.toStringAsFixed(0)} $currency)',
+              value: '${gain.toStringAsFixed(0)} $currency',
+            ),
+            const SizedBox(height: AppTheme.spaceXs),
+            _PricingRow(
+              label: 'Dus plateforme (${commissionPercent.toStringAsFixed(0)}%)',
+              value: '${discountedDues.toStringAsFixed(0)} $currency',
+              highlight: true,
+              strikethrough: payByVisa ? '${dues.toStringAsFixed(0)} $currency' : null,
+            ),
+            const SizedBox(height: AppTheme.spaceXs),
+            _PricingRow(
+              label: 'Prix/kg payé par le client',
+              value: '${clientPricePerKg.toStringAsFixed(0)} $currency',
+              bold: true,
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              controlAffinity: ListTileControlAffinity.leading,
+              value: payByVisa,
+              onChanged: onToggleVisa,
+              title: const Text(
+                'Payer par carte Visa (-30% sur les dus)',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: const Text(
+                'L\'offre ne sera visible des clients qu\'après confirmation '
+                'du paiement par le fondateur.',
+                style: TextStyle(fontSize: 11),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   String _formatCompact(double value) {
     if (value >= 1000000) {
       return '${(value / 1000000).toStringAsFixed(1)}M';
@@ -807,12 +901,15 @@ class _ShipperDashboardScreenState
     DateTime departure = DateTime.now().add(const Duration(days: 3));
     DateTime arrival = DateTime.now().add(const Duration(days: 7));
     bool submitting = false;
+    bool payByVisa = false;
 
     final settings = ref.read(platformSettingsProvider).valueOrNull;
     final minWeight = settings?.minWeightKg ?? AppConstants.minWeightKg;
     final maxWeight = settings?.maxWeightKg ?? AppConstants.maxWeightKg;
     final minPrice = settings?.minPricePerKg ?? AppConstants.minPricePerKg;
     final currency = settings?.defaultCurrency ?? AppConstants.defaultCurrency;
+    final commissionPercent =
+        settings?.commissionPercent ?? AppConstants.platformCommissionPercent;
 
     await showModalBottomSheet(
       context: context,
@@ -870,6 +967,7 @@ class _ShipperDashboardScreenState
                       controller: weightController,
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) => setSheetState(() {}),
                       decoration: const InputDecoration(
                         labelText: 'Poids disponible (kg)',
                         prefixIcon: Icon(Icons.scale),
@@ -890,8 +988,10 @@ class _ShipperDashboardScreenState
                       controller: priceController,
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) => setSheetState(() {}),
                       decoration: const InputDecoration(
-                        labelText: 'Prix par kg (DZD)',
+                        labelText: 'Votre prix par kg (DZD)',
+                        hintText: 'Votre gain par kg',
                         prefixIcon: Icon(Icons.attach_money),
                       ),
                       validator: (v) {
@@ -901,6 +1001,16 @@ class _ShipperDashboardScreenState
                         }
                         return null;
                       },
+                    ),
+                    const SizedBox(height: 12),
+                    _buildPricingPanel(
+                      weight: double.tryParse(weightController.text) ?? 0,
+                      pricePerKg: double.tryParse(priceController.text) ?? 0,
+                      commissionPercent: commissionPercent,
+                      currency: currency,
+                      payByVisa: payByVisa,
+                      onToggleVisa: (v) =>
+                          setSheetState(() => payByVisa = v ?? false),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -987,16 +1097,22 @@ class _ShipperDashboardScreenState
                               if (!formKey.currentState!.validate()) return;
                               setSheetState(() => submitting = true);
                               try {
-                                await ref
+                                final weight =
+                                    double.parse(weightController.text);
+                                final price =
+                                    double.parse(priceController.text);
+                                final publicationFee =
+                                    (weight * price * commissionPercent) / 100;
+                                final discount = payByVisa ? 30.0 : 0.0;
+
+                                final shipment = await ref
                                     .read(shipmentServiceProvider)
                                     .publishShipment(
                                       shipperId: shipperId,
                                       originCountry: originCountry,
                                       destinationCity: destinationCity,
-                                      availableWeightKg:
-                                          double.parse(weightController.text),
-                                      pricePerKg:
-                                          double.parse(priceController.text),
+                                      availableWeightKg: weight,
+                                      pricePerKg: price,
                                       departureDate: departure,
                                       arrivalDate: arrival,
                                       airline:
@@ -1011,7 +1127,21 @@ class _ShipperDashboardScreenState
                                           descriptionController.text.isEmpty
                                               ? null
                                               : descriptionController.text,
+                                      publicationFee: publicationFee,
+                                      publicationFeeDiscount: discount,
                                     );
+                                // Le paiement par carte Visa (-30%) fait passer
+                                // l'offre en attente de confirmation fondateur :
+                                // elle reste cachée des clients tant que le
+                                // fondateur n'a pas confirmé le paiement.
+                                if (payByVisa && shipment != null) {
+                                  await ref
+                                      .read(shipmentServiceProvider)
+                                      .payShipmentPublicationFee(
+                                        shipment.id,
+                                        discount: discount,
+                                      );
+                                }
                                 await ref
                                     .read(
                                         shipperShipmentsPagerProvider(shipperId)
@@ -1025,9 +1155,14 @@ class _ShipperDashboardScreenState
                                 }
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content:
-                                          Text('Offre publiée avec succès'),
+                                    SnackBar(
+                                      content: Text(
+                                        payByVisa
+                                            ? 'Offre publiée — paiement Visa en '
+                                                'attente de confirmation du fondateur'
+                                            : 'Offre publiée — visible des clients '
+                                                'après confirmation du fondateur',
+                                      ),
                                       backgroundColor: AppTheme.accentColor,
                                     ),
                                   );
@@ -1259,6 +1394,59 @@ class _FinanceMini extends StatelessWidget {
   }
 }
 
+class _PricingRow extends StatelessWidget {
+  const _PricingRow({
+    required this.label,
+    required this.value,
+    this.highlight = false,
+    this.bold = false,
+    this.strikethrough,
+  });
+
+  final String label;
+  final String value;
+  final bool highlight;
+  final bool bold;
+  final String? strikethrough;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: AppTheme.caption.copyWith(fontWeight: FontWeight.w500),
+          ),
+        ),
+        if (strikethrough != null) ...[
+          Text(
+            strikethrough!,
+            style: AppTheme.caption.copyWith(
+              decoration: TextDecoration.lineThrough,
+              color: AppTheme.textMutedColor,
+            ),
+          ),
+          const SizedBox(width: AppTheme.spaceXs),
+        ],
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: bold ? FontWeight.w800 : FontWeight.w700,
+            color: highlight
+                ? AppTheme.warningColor
+                : bold
+                    ? AppTheme.primaryColor
+                    : AppTheme.textPrimaryColor,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // ============================================================================
 // SHIPMENT CARD
 // ============================================================================
@@ -1356,6 +1544,14 @@ class _ShipmentMiniCard extends ConsumerWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
+                    if (!shipment.isPublished) ...[
+                      const GradientBadge(
+                        label: 'Validation en attente',
+                        gradient: AppTheme.warningGradient,
+                        compact: true,
+                      ),
+                      const SizedBox(height: AppTheme.spaceXs),
+                    ],
                     GradientBadge(
                       label: _shipmentStatusLabel(shipment.status),
                       gradient: _shipmentStatusGradient(shipment.status),

@@ -5,6 +5,7 @@ import '../../components/revenue_bar_chart.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
@@ -119,6 +120,8 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
             ),
             SliverToBoxAdapter(child: _buildProfitHeader(currency, profit)),
             SliverToBoxAdapter(child: _buildStatGrid(shipper.id, currency)),
+            SliverToBoxAdapter(
+                child: _buildPlatformFeesSection(shipper.id, currency)),
             SliverToBoxAdapter(
                 child: _buildRevenueChart(shipper.id, currency, revenue)),
             const SliverToBoxAdapter(
@@ -251,6 +254,103 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPlatformFeesSection(String shipperId, String currency) {
+    final fees = ref.watch(shipperPlatformFeesProvider(shipperId));
+    final pendingFees =
+        fees.valueOrNull?.where((f) => !f.isPaid).toList() ?? [];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        0,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: GlassCard(
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                AnimatedIconDot(
+                  icon: Icons.account_balance_wallet_rounded,
+                  color: AppTheme.warningColor,
+                ),
+                SizedBox(width: AppTheme.spaceSm),
+                Expanded(
+                  child: Text('Dûs plateforme', style: AppTheme.h3),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceXs),
+            const Text(
+              'Commission due à la plateforme sur vos offres. Le paiement '
+              'lance un délai de 7 jours pour régulariser ; passé ce délai, '
+              'le dossier peut être transmis à la justice.',
+              style: AppTheme.caption,
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            fees.when(
+              data: (list) {
+                if (list.isEmpty) {
+                  return const Text(
+                    'Aucun dû enregistré pour le moment.',
+                    style: AppTheme.caption,
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final fee in list)
+                      _PlatformFeeTile(fee: fee, currency: currency),
+                  ],
+                );
+              },
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppTheme.spaceMd),
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ),
+              error: (_, __) => const Text(
+                'Impossible de charger les dûs.',
+                style: AppTheme.caption,
+              ),
+            ),
+            if (pendingFees.isNotEmpty) ...[
+              const SizedBox(height: AppTheme.spaceMd),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => _showPayFeesSheet(context, shipperId, currency),
+                  icon: const Icon(Icons.payment_rounded, size: 18),
+                  label: const Text('Payer mes dûs'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPayFeesSheet(BuildContext context, String shipperId,
+      String currency) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.backgroundColor,
+      builder: (sheetContext) => _PayFeesSheet(
+        shipperId: shipperId,
+        currency: currency,
+      ),
     );
   }
 
@@ -529,3 +629,226 @@ class _EmptyFinance extends StatelessWidget {
 
 String _formatFinanceDate(DateTime d) =>
     '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+
+// ============================================================================
+// DÛS PLATEFORME
+// ============================================================================
+
+class _PlatformFeeTile extends StatelessWidget {
+  final PlatformFee fee;
+  final String currency;
+
+  const _PlatformFeeTile({required this.fee, required this.currency});
+
+  @override
+  Widget build(BuildContext context) {
+    final overdue = fee.isOverdue;
+    final statusLabel = switch (fee.status) {
+      'paid' => 'Payé',
+      'awaiting_confirmation' =>
+        overdue ? 'En retard' : 'En attente de confirmation',
+      _ => 'En attente de paiement',
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppTheme.spaceSm),
+      child: Row(
+        children: [
+          Icon(
+            fee.isPaid
+                ? Icons.check_circle_rounded
+                : overdue
+                    ? Icons.error_outline_rounded
+                    : Icons.hourglass_top_rounded,
+            size: 20,
+            color: fee.isPaid
+                ? AppTheme.accentColor
+                : overdue
+                    ? AppTheme.errorColor
+                    : AppTheme.warningColor,
+          ),
+          const SizedBox(width: AppTheme.spaceSm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${fee.amount.toStringAsFixed(0)} $currency',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+                Text(statusLabel, style: AppTheme.caption),
+                if (fee.dueAt != null)
+                  Text(
+                    fee.isPaid
+                        ? 'Réglée le ${_formatFinanceDate(fee.dueAt!)}'
+                        : overdue
+                            ? 'Échéance dépassée (${_formatFinanceDate(fee.dueAt!)})'
+                            : 'À régler avant le ${_formatFinanceDate(fee.dueAt!)}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: overdue
+                          ? AppTheme.errorColor
+                          : AppTheme.textSecondaryColor,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (fee.escalationStatus == 'justice_filed')
+            const Tooltip(
+              message: 'Dossier transmis à la justice',
+              child: Icon(Icons.gavel_rounded,
+                  color: AppTheme.errorColor, size: 20),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PayFeesSheet extends ConsumerStatefulWidget {
+  final String shipperId;
+  final String currency;
+
+  const _PayFeesSheet({required this.shipperId, required this.currency});
+
+  @override
+  ConsumerState<_PayFeesSheet> createState() => _PayFeesSheetState();
+}
+
+class _PayFeesSheetState extends ConsumerState<_PayFeesSheet> {
+  String _method = 'baridimob';
+  bool _useVisa = false;
+  bool _busy = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final fees = ref.watch(shipperPlatformFeesProvider(widget.shipperId));
+    final pending =
+        fees.valueOrNull?.where((f) => !f.isPaid).toList() ?? [];
+
+    var total = 0.0;
+    for (final f in pending) {
+      total += f.amount;
+    }
+    final discounted = _useVisa ? total * 0.7 : total;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppTheme.spaceMd,
+        right: AppTheme.spaceMd,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppTheme.spaceLg,
+        top: AppTheme.spaceMd,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('Payer mes dûs', style: AppTheme.h2),
+            const SizedBox(height: AppTheme.spaceXs),
+            Text(
+              'Total dû : ${total.toStringAsFixed(0)} ${widget.currency}',
+              style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            RadioGroup<String>(
+              groupValue: _method,
+              onChanged: (v) => setState(() => _method = v ?? 'baridimob'),
+              child: const Column(
+                children: [
+                  RadioListTile<String>(
+                    value: 'baridimob',
+                    title: Text('Baridimob / virement'),
+                    subtitle:
+                        Text('Paiement par virement bancaire ou CCP'),
+                    secondary: Icon(Icons.account_balance_rounded),
+                  ),
+                  RadioListTile<String>(
+                    value: 'visa',
+                    title: Text('Carte Visa (-30%)'),
+                    subtitle:
+                        Text('Paiement en ligne par carte bancaire'),
+                    secondary: Icon(Icons.credit_card_rounded),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceXs),
+            CheckboxListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              value: _useVisa,
+              onChanged: (v) => setState(() => _useVisa = v ?? false),
+              title: const Text(
+                'Bénéficier de la remise Visa -30%',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: const Text(
+                'Le montant dû sera réduit de 30%.',
+                style: TextStyle(fontSize: 11),
+              ),
+            ),
+            if (_useVisa) ...[
+              const SizedBox(height: AppTheme.spaceXs),
+              Text(
+                'Montant avec remise : ${discounted.toStringAsFixed(0)} '
+                '${widget.currency}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.accentColor,
+                ),
+              ),
+            ],
+            const SizedBox(height: AppTheme.spaceLg),
+            FilledButton.icon(
+              onPressed: _busy ? null : _submit,
+              icon: const Icon(Icons.payment_rounded, size: 18),
+              label: Text(
+                _busy
+                    ? 'Envoi en cours…'
+                    : 'Demander le paiement (échéance 7 jours)',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    setState(() => _busy = true);
+    try {
+      final paymentMethod = _method == 'visa' ? 'visa' : 'baridimob';
+      final discount = _useVisa || _method == 'visa' ? 30.0 : 0.0;
+      await ref.read(paymentServiceProvider).payPlatformFees(
+            widget.shipperId,
+            paymentMethod: paymentMethod,
+            discountPercent: discount,
+          );
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Demande envoyée. Le fondateur doit confirmer le paiement.',
+            ),
+            backgroundColor: AppTheme.accentColor,
+          ),
+        );
+      }
+      ref.invalidate(shipperPlatformFeesProvider(widget.shipperId));
+      ref.invalidate(shipperFinanceSummaryProvider(widget.shipperId));
+    } catch (e) {
+      if (mounted) {
+        setState(() => _busy = false);
+        await showAppErrorDialog(context, message: 'Erreur: $e');
+      }
+    }
+  }
+}

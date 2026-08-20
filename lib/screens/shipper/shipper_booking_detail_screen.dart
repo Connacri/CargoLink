@@ -6,9 +6,12 @@ import '../../core/constants/app_constants.dart';
 import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/utils/geolocation.dart';
 import '../../core/utils/profile_navigation.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/micro_badge.dart';
 import '../chat/chat_screen.dart';
+import '../shared/qr_scan_screen.dart';
 
 // ============================================================================
 // SHIPPER BOOKING DETAIL — reviews the order (photos, description, client)
@@ -94,6 +97,9 @@ class _ShipperBookingDetailScreenState
                   child: _buildSection('Le client', _buildClient(data)),
                 ),
                 SliverToBoxAdapter(
+                  child: _buildSection('Livraison', _buildDelivery(data)),
+                ),
+                SliverToBoxAdapter(
                   child: _buildSection(
                       'Résumé de la commande', _buildSummary(data)),
                 ),
@@ -101,6 +107,18 @@ class _ShipperBookingDetailScreenState
                   SliverToBoxAdapter(
                     child:
                         _buildSection('Trajet & offre', _buildShipment(data)),
+                  ),
+                if (_refusalReason(data) != null)
+                  SliverToBoxAdapter(
+                    child: _buildSection(
+                      'Motif du refus',
+                      _buildRefusalReason(_refusalReason(data)!),
+                    ),
+                  ),
+                if (data.verificationStatus == 'returned')
+                  SliverToBoxAdapter(
+                    child: _buildSection(
+                        'Colis en attente de correction', _buildVerificationReturned()),
                   ),
                 SliverToBoxAdapter(
                   child: _buildActionsSection(data),
@@ -407,6 +425,134 @@ class _ShipperBookingDetailScreenState
     );
   }
 
+  Widget _buildDelivery(Booking booking) {
+    final cniPhoto = booking.cniPhotoUrl;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.phone_outlined,
+              size: 16,
+              color: AppTheme.primaryColor,
+            ),
+            const SizedBox(width: AppTheme.spaceXs),
+            Expanded(
+              child: Text(
+                booking.deliveryPhone?.isNotEmpty == true
+                    ? booking.deliveryPhone!
+                    : '—',
+                style: AppTheme.body.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        if (booking.deliveryAddress?.isNotEmpty == true) ...[
+          const SizedBox(height: AppTheme.spaceSm),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.location_on_outlined,
+                size: 16,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(width: AppTheme.spaceXs),
+              Expanded(
+                child: Text(
+                  booking.deliveryAddress!,
+                  style: AppTheme.bodySecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+        if (cniPhoto != null && cniPhoto.isNotEmpty) ...[
+          const SizedBox(height: AppTheme.spaceMd),
+          const Text('Photo de la CNI du client', style: AppTheme.label),
+          const SizedBox(height: AppTheme.spaceSm),
+          GestureDetector(
+            onTap: () => showFullScreenImage(
+              context,
+              imageUrl: cniPhoto,
+              title: 'CNI du client',
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+              child: Image.network(
+                cniPhoto,
+                height: 150,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                errorBuilder: (_, __, ___) => Container(
+                  height: 150,
+                  color: AppTheme.surfaceMuted,
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.badge_outlined,
+                    color: AppTheme.textSecondaryColor,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  String? _refusalReason(Booking booking) {
+    if (booking.refusalReason?.isNotEmpty == true) {
+      return booking.refusalReason;
+    }
+    if (booking.cancellationReason?.isNotEmpty == true) {
+      return booking.cancellationReason;
+    }
+    return null;
+  }
+
+  Widget _buildRefusalReason(String reason) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(
+          Icons.error_outline_rounded,
+          color: AppTheme.errorColor,
+          size: 20,
+        ),
+        const SizedBox(width: AppTheme.spaceSm),
+        Expanded(
+          child: Text(
+            reason,
+            style: AppTheme.body.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVerificationReturned() {
+    return const Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.warning_amber_rounded,
+          color: AppTheme.warningColor,
+          size: 20,
+        ),
+        SizedBox(width: AppTheme.spaceSm),
+        Expanded(
+          child: Text(
+            'Le colis a été refusé pendant la vérification. '
+            'Le client doit être informé avant toute nouvelle action.',
+            style: AppTheme.bodySecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
   List<Widget> _socials(User? client) {
     final result = <Widget>[];
     if (client == null) return result;
@@ -436,6 +582,14 @@ class _ShipperBookingDetailScreenState
           label: 'Poids alloué',
           value: '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
         ),
+        if (booking.verifiedWeightKg != null) ...[
+          const SizedBox(height: AppTheme.spaceSm),
+          _SummaryRow(
+            label: 'Poids vérifié',
+            value: '${booking.verifiedWeightKg!.toStringAsFixed(1)} kg',
+            valueColor: AppTheme.accentColor,
+          ),
+        ],
         const SizedBox(height: AppTheme.spaceSm),
         _SummaryRow(
           label: 'Prix total',
@@ -459,6 +613,40 @@ class _ShipperBookingDetailScreenState
             ),
           ],
         ),
+        if (booking.deliveryMethod != null) ...[
+          const SizedBox(height: AppTheme.spaceSm),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Mode de livraison', style: AppTheme.bodySecondary),
+              Text(
+                booking.deliveryMethod == 'courier'
+                    ? 'Courrier local'
+                    : 'Remise en main propre',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+        if (booking.courierName != null) ...[
+          const SizedBox(height: AppTheme.spaceSm),
+          _SummaryRow(label: 'Courrier', value: booking.courierName!),
+          if (booking.courierPhone != null) ...[
+            const SizedBox(height: AppTheme.spaceSm),
+            _SummaryRow(label: 'Tél. courrier', value: booking.courierPhone!),
+          ],
+          if (booking.courierTrackingCode != null) ...[
+            const SizedBox(height: AppTheme.spaceSm),
+            _SummaryRow(
+              label: 'Tracking courrier',
+              value: booking.courierTrackingCode!,
+              valueColor: AppTheme.primaryColor,
+            ),
+          ],
+        ],
       ],
     );
   }
@@ -483,6 +671,13 @@ class _ShipperBookingDetailScreenState
             ),
           ],
         ),
+        if (shipment.shipper?.isMicroImportateur == true) ...[
+          const SizedBox(height: AppTheme.spaceSm),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: MicroImportateurBadge(),
+          ),
+        ],
         const SizedBox(height: AppTheme.spaceSm),
         _SummaryRow(
           label: 'Départ',
@@ -542,9 +737,9 @@ class _ShipperBookingDetailScreenState
         );
         actions.add(
           OutlinedButton.icon(
-            onPressed: disabled ? null : () => _cancel(booking),
+            onPressed: disabled ? null : () => _refuse(booking),
             icon: const Icon(Icons.close_rounded, size: 18),
-            label: const Text('Refuser'),
+            label: const Text('Refuser avec motif'),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.errorColor,
             ),
@@ -554,28 +749,71 @@ class _ShipperBookingDetailScreenState
       case 'confirmed':
         actions.add(
           FilledButton.icon(
-            onPressed: disabled ? null : () => _markShipped(booking),
-            icon: const Icon(Icons.flight_takeoff_rounded, size: 18),
-            label: const Text('Marquer expédié'),
+            onPressed: disabled ? null : () => _collect(booking),
+            icon: const Icon(Icons.inventory_2_rounded, size: 18),
+            label: const Text('Collecter le colis'),
           ),
         );
         actions.add(
           OutlinedButton.icon(
-            onPressed: disabled ? null : () => _cancel(booking),
+            onPressed: disabled ? null : () => _refuse(booking),
             icon: const Icon(Icons.close_rounded, size: 18),
-            label: const Text('Annuler'),
+            label: const Text('Refuser'),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.errorColor,
             ),
           ),
         );
         break;
+      case 'collected':
+        actions.add(
+          FilledButton.icon(
+            onPressed: disabled ? null : () => _startVerification(booking),
+            icon: const Icon(Icons.fact_check_rounded, size: 18),
+            label: const Text('Vérifier le colis'),
+          ),
+        );
+        break;
+      case 'verifying':
+        actions.add(
+          FilledButton.icon(
+            onPressed: disabled ? null : () => _verify(booking),
+            icon: const Icon(Icons.scale_rounded, size: 18),
+            label: const Text('Finaliser la vérification'),
+          ),
+        );
+        break;
+      case 'accepted':
+        actions.add(
+          FilledButton.icon(
+            onPressed: disabled ? null : () => _markShipped(booking),
+            icon: const Icon(Icons.flight_takeoff_rounded, size: 18),
+            label: const Text('Marquer expédié'),
+          ),
+        );
+        break;
       case 'shipped':
         actions.add(
           FilledButton.icon(
-            onPressed: disabled ? null : () => _markDelivered(booking),
-            icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-            label: const Text('Marquer livré'),
+            onPressed: disabled ? null : () => _markArrived(booking),
+            icon: const Icon(Icons.place_rounded, size: 18),
+            label: const Text('Colis arrivé à destination'),
+          ),
+        );
+        break;
+      case 'arrived':
+        actions.add(
+          FilledButton.icon(
+            onPressed: disabled ? null : () => _depositCourier(booking),
+            icon: const Icon(Icons.local_shipping_rounded, size: 18),
+            label: const Text('Déposer chez un courrier'),
+          ),
+        );
+        actions.add(
+          FilledButton.icon(
+            onPressed: disabled ? null : () => _inPersonPickup(booking),
+            icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+            label: const Text('Remise en main propre'),
           ),
         );
         break;
@@ -614,6 +852,182 @@ class _ShipperBookingDetailScreenState
       () => ref.read(bookingServiceProvider).confirmBooking(booking.id),
       'Commande confirmée');
 
+  /// Refus de la commande avec motif (obligatoire côté expéditeur).
+  Future<void> _refuse(Booking booking) async {
+    final reason = await _promptText(
+      title: 'Motif du refus',
+      hint: 'Expliquez pourquoi vous refusez cette commande',
+      confirmLabel: 'Refuser la commande',
+      isError: true,
+    );
+    if (reason == null) return;
+    await _run(
+      () => ref.read(bookingServiceProvider).cancelBooking(
+            booking.id,
+            reason: reason,
+          ),
+      'Commande refusée',
+    );
+  }
+
+  /// Réception physique du colis : photo obligatoire puis passage en
+  /// « collecté » (en attente de vérification).
+  Future<void> _collect(Booking booking) async {
+    final photo =
+        await pickProofPhoto(context, title: 'Photo du colis collecté');
+    if (photo == null) return;
+    await _run(() async {
+      final url = await ref
+          .read(storageServiceProvider)
+          .uploadBookingProofPhoto(
+            file: photo,
+            bookingId: booking.id,
+            type: 'collect',
+          );
+      await ref
+          .read(bookingServiceProvider)
+          .collectBooking(booking.id, collectedPhotoUrl: url);
+      await ref.read(trackingServiceProvider).addTrackingUpdate(
+            bookingId: booking.id,
+            status: 'collected',
+            notes: 'Colis collecté dans le pays d\'origine',
+            location: booking.shipment?.originCountry,
+          );
+      await ref.read(notificationServiceProvider).notifyClientCollected(
+            clientId: booking.clientId,
+            bookingId: booking.id,
+            productName: booking.productName,
+          );
+    }, 'Colis collecté, vérification en attente');
+  }
+
+  Future<void> _startVerification(Booking booking) => _run(
+      () => ref.read(bookingServiceProvider).startVerification(booking.id),
+      'Vérification en cours');
+
+  /// Vérification : articles interdits + pesée réelle. Accepte ou renvoie le
+  /// colis au client avec un motif.
+  Future<void> _verify(Booking booking) async {
+    final result = await showModalBottomSheet<_VerifyResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.backgroundColor,
+      builder: (sheetContext) => const SafeArea(child: _VerificationSheet()),
+    );
+    if (result == null) return;
+
+    if (result.accepted) {
+      await _run(() async {
+        await ref.read(bookingServiceProvider).acceptBooking(
+              booking.id,
+              verifiedWeightKg: result.weight,
+            );
+        await ref.read(trackingServiceProvider).addTrackingUpdate(
+              bookingId: booking.id,
+              status: 'verified',
+              notes:
+                  'Colis vérifié : ${result.weight.toStringAsFixed(1)} kg, articles conformes',
+              location: booking.shipment?.originCountry,
+            );
+      }, 'Colis vérifié et accepté');
+    } else {
+      await _run(() async {
+        await ref.read(bookingServiceProvider).returnBooking(
+              booking.id,
+              reason: result.reason,
+            );
+        await ref
+            .read(trackingServiceProvider)
+            .addTrackingUpdate(
+              bookingId: booking.id,
+              status: 'verification_returned',
+              notes: 'Colis renvoyé : ${result.reason}',
+              location: booking.shipment?.originCountry,
+            );
+        await ref
+            .read(notificationServiceProvider)
+            .notifyClientVerificationReturned(
+              clientId: booking.clientId,
+              bookingId: booking.id,
+              reason: result.reason,
+            );
+      }, 'Colis renvoyé au client');
+    }
+  }
+
+  /// Arrivée à destination : géolocalisation automatique (GPS) avec repli sur
+  /// la ville de destination.
+  Future<void> _markArrived(Booking booking) async {
+    final location = await getCurrentLocation();
+    if (location == null) {
+      final ok = await _promptConfirm(
+        title: 'Colis arrivé à destination',
+        message:
+            'Impossible d\'obtenir votre position GPS. Confirmer l\'arrivée à '
+            '${booking.shipment?.destinationCity ?? 'destination'} ?',
+        confirmLabel: 'Confirmer l\'arrivée',
+      );
+      if (!ok) return;
+    }
+    await _run(() async {
+      await ref.read(bookingServiceProvider).markAsArrived(
+            booking.id,
+            latitude: location?.latitude,
+            longitude: location?.longitude,
+            location: location?.label ??
+                booking.shipment?.destinationCity ??
+                'destination',
+          );
+      await ref.read(notificationServiceProvider).notifyClientArrived(
+            clientId: booking.clientId,
+            bookingId: booking.id,
+            destination: booking.shipment?.destinationCity ?? 'destination',
+          );
+    }, 'Colis arrivé à destination');
+  }
+
+  /// Dépôt chez un courrier local : coordonnées du courrier + code de suivi.
+  Future<void> _depositCourier(Booking booking) async {
+    final info = await showModalBottomSheet<({String name, String phone, String tracking})>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.backgroundColor,
+      builder: (sheetContext) => const SafeArea(child: _CourierDepositSheet()),
+    );
+    if (info == null) return;
+    await _run(() async {
+      await ref.read(bookingServiceProvider).depositCourier(
+            bookingId: booking.id,
+            courierName: info.name,
+            courierPhone: info.phone,
+            courierTrackingCode: info.tracking,
+          );
+      await ref.read(trackingServiceProvider).addTrackingUpdate(
+            bookingId: booking.id,
+            status: 'out_for_delivery',
+            notes:
+                'Colis déposé chez ${info.name} (suivi ${info.tracking})',
+            location: booking.shipment?.destinationCity,
+          );
+      await ref.read(notificationServiceProvider).notifyClientCourierDeposited(
+            clientId: booking.clientId,
+            bookingId: booking.id,
+            courierName: info.name,
+            trackingCode: info.tracking,
+          );
+    }, 'Colis déposé chez le courrier');
+  }
+
+  /// Remise en main propre : ouvre le scanner QR pour confirmer la remise au
+  /// client (comparaison CNI faite visuellement).
+  void _inPersonPickup(Booking booking) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const QrScanScreen(mode: QrScanMode.shipperPickup),
+      ),
+    );
+  }
+
   Future<void> _markShipped(Booking booking) => _run(() async {
         await ref.read(bookingServiceProvider).markAsShipped(booking.id);
         await ref.read(trackingServiceProvider).addTrackingUpdate(
@@ -631,41 +1045,73 @@ class _ShipperBookingDetailScreenState
             );
       }, 'Commande marquée comme expédiée');
 
-  Future<void> _markDelivered(Booking booking) async {
-    final photo = await pickProofPhoto(
-      context,
-      title: 'Preuve de livraison',
+  /// Saisie d'un texte libre (motif) dans une boîte de dialogue.
+  Future<String?> _promptText({
+    required String title,
+    required String hint,
+    required String confirmLabel,
+    bool isError = false,
+  }) {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 3,
+          maxLength: 500,
+          decoration: InputDecoration(
+            hintText: hint,
+            alignLabelWithHint: true,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            style: isError
+                ? FilledButton.styleFrom(backgroundColor: AppTheme.errorColor)
+                : null,
+            onPressed: () {
+              final text = controller.text.trim();
+              if (text.isEmpty) return;
+              Navigator.pop(dialogContext, text);
+            },
+            child: Text(confirmLabel),
+          ),
+        ],
+      ),
     );
-    if (photo == null) return;
-    await _run(() async {
-      final url = await ref
-          .read(storageServiceProvider)
-          .uploadBookingProofPhoto(
-            file: photo,
-            bookingId: booking.id,
-            type: 'delivery',
-          );
-      await ref
-          .read(bookingServiceProvider)
-          .markAsDelivered(booking.id, deliveryPhotoUrl: url);
-      await ref.read(trackingServiceProvider).addTrackingUpdate(
-            bookingId: booking.id,
-            status: 'delivered',
-            notes: 'Colis livré à ${booking.shipment?.destinationCity}',
-            location: booking.shipment?.destinationCity,
-          );
-      await ref
-          .read(notificationServiceProvider)
-          .notifyClientShipmentDelivered(
-            clientId: booking.clientId,
-            bookingId: booking.id,
-          );
-    }, 'Commande marquée comme livrée');
   }
 
-  Future<void> _cancel(Booking booking) => _run(
-      () => ref.read(bookingServiceProvider).cancelBooking(booking.id),
-      'Commande annulée');
+  Future<bool> _promptConfirm({
+    required String title,
+    required String message,
+    required String confirmLabel,
+  }) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(confirmLabel),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
+  }
 
   String _formatDate(DateTime d) => '${d.day}/${d.month}/${d.year}';
 }
@@ -739,5 +1185,286 @@ LinearGradient _statusGradient(String status) {
       return AppTheme.errorGradient;
     default:
       return AppTheme.primaryGradient;
+  }
+}
+
+// ============================================================================
+// VÉRIFICATION DU COLIS (articles interdits + pesée)
+// ============================================================================
+
+/// Résultat de la feuille de vérification : colis accepté (poids réel) ou
+/// renvoyé (motif).
+typedef _VerifyResult = ({bool accepted, double weight, String reason});
+
+class _VerificationSheet extends StatefulWidget {
+  const _VerificationSheet();
+
+  @override
+  State<_VerificationSheet> createState() => _VerificationSheetState();
+}
+
+class _VerificationSheetState extends State<_VerificationSheet> {
+  static const _forbiddenItems = <String>[
+    'Drogues et substances illicites',
+    'Médicaments sans ordonnance / produits de santé',
+    'Armes, couteaux et objets tranchants',
+    'Alcool et tabac',
+    'Contrefaçons et articles de marque',
+    'Liquides, aérosols et gaz inflammables',
+    'Produits périssables',
+    'Batteries lithium endommagées / électroniques interdites',
+  ];
+
+  final _weightController = TextEditingController();
+  final _reasonController = TextEditingController();
+  final _checked = <bool>[];
+  bool _hasForbidden = false;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checked.addAll(List.filled(_forbiddenItems.length, false));
+  }
+
+  @override
+  void dispose() {
+    _weightController.dispose();
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  double? get _weight => double.tryParse(_weightController.text);
+
+  void _submit({required bool accepted}) {
+    setState(() => _busy = true);
+    final reason = _reasonController.text.trim();
+    if (accepted) {
+      final weight = _weight;
+      if (weight == null || weight <= 0) {
+        setState(() => _busy = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Saisissez le poids réel du colis')),
+        );
+        return;
+      }
+      Navigator.of(context).pop(
+        (accepted: true, weight: weight, reason: ''),
+      );
+    } else {
+      if (reason.isEmpty) {
+        setState(() => _busy = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Indiquez le motif du renvoi du colis'),
+          ),
+        );
+        return;
+      }
+      Navigator.of(context).pop(
+        (accepted: false, weight: 0, reason: reason),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppTheme.spaceMd,
+        right: AppTheme.spaceMd,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppTheme.spaceLg,
+        top: AppTheme.spaceMd,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('Vérification du colis', style: AppTheme.h2),
+            const SizedBox(height: AppTheme.spaceXs),
+            const Text(
+              'Confirmez l\'absence d\'articles interdits, puis saisissez '
+              'le poids réel mesuré.',
+              style: AppTheme.bodySecondary,
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            const Text('Articles interdits', style: AppTheme.h3),
+            const SizedBox(height: AppTheme.spaceXs),
+            ...List.generate(_forbiddenItems.length, (i) {
+              return CheckboxListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                value: _checked[i],
+                onChanged: (v) => setState(() => _checked[i] = v ?? false),
+                title: Text(
+                  _forbiddenItems[i],
+                  style: AppTheme.bodySecondary,
+                ),
+              );
+            }),
+            const SizedBox(height: AppTheme.spaceSm),
+            CheckboxListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              value: _hasForbidden,
+              onChanged: (v) => setState(() => _hasForbidden = v ?? false),
+              title: const Text(
+                'Un article interdit est présent',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.errorColor,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            TextField(
+              controller: _weightController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Poids réel (kg)',
+                prefixIcon: Icon(Icons.scale_rounded),
+              ),
+            ),
+            if (_hasForbidden) ...[
+              const SizedBox(height: AppTheme.spaceMd),
+              TextField(
+                controller: _reasonController,
+                maxLines: 3,
+                maxLength: 500,
+                decoration: const InputDecoration(
+                  labelText: 'Motif du renvoi',
+                  hintText:
+                      'Expliquez au client quel article pose problème',
+                  alignLabelWithHint: true,
+                ),
+              ),
+            ],
+            const SizedBox(height: AppTheme.spaceLg),
+            FilledButton.icon(
+              onPressed: _busy ? null : () => _submit(accepted: true),
+              icon: const Icon(Icons.check_rounded, size: 18),
+              label: const Text('Accepter le colis'),
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            OutlinedButton.icon(
+              onPressed:
+                  _busy ? null : () => _submit(accepted: _hasForbidden),
+              icon: const Icon(Icons.reply_rounded, size: 18),
+              label: const Text('Renvoyer au client'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.errorColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// DÉPÔT COURRIER LOCAL
+// ============================================================================
+
+class _CourierDepositSheet extends StatefulWidget {
+  const _CourierDepositSheet();
+
+  @override
+  State<_CourierDepositSheet> createState() => _CourierDepositSheetState();
+}
+
+class _CourierDepositSheetState extends State<_CourierDepositSheet> {
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _trackingController = TextEditingController();
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _trackingController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
+    final tracking = _trackingController.text.trim();
+    if (name.isEmpty || phone.isEmpty || tracking.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nom, téléphone et code de suivi sont requis'),
+        ),
+      );
+      return;
+    }
+    setState(() => _busy = true);
+    Navigator.of(context).pop(
+      (name: name, phone: phone, tracking: tracking),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppTheme.spaceMd,
+        right: AppTheme.spaceMd,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppTheme.spaceLg,
+        top: AppTheme.spaceMd,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('Dépôt chez un courrier', style: AppTheme.h2),
+            const SizedBox(height: AppTheme.spaceXs),
+            const Text(
+              'Le colis sera livré par un courrier local. '
+              'Le client recevra le code de suivi.',
+              style: AppTheme.bodySecondary,
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            TextField(
+              controller: _nameController,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                labelText: 'Nom du courrier',
+                prefixIcon: Icon(Icons.local_shipping_rounded),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Téléphone du courrier',
+                prefixIcon: Icon(Icons.phone_rounded),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            TextField(
+              controller: _trackingController,
+              textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(
+                labelText: 'Code de suivi du courrier',
+                prefixIcon: Icon(Icons.pin_outlined),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceLg),
+            FilledButton.icon(
+              onPressed: _busy ? null : _submit,
+              icon: const Icon(Icons.check_rounded, size: 18),
+              label: const Text('Enregistrer le dépôt'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

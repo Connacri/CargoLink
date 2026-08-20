@@ -97,6 +97,7 @@ class _SuperAdminDashboardScreenState
             ),
             const SliverToBoxAdapter(child: _StatsOverview()),
             const SliverToBoxAdapter(child: _PendingVerificationSection()),
+            const SliverToBoxAdapter(child: _PendingPublicationSection()),
             const SliverToBoxAdapter(child: _PendingCommissionSection()),
             const SliverToBoxAdapter(child: _PendingDeletionSection()),
             const SliverToBoxAdapter(child: _FeedbackSection()),
@@ -380,18 +381,124 @@ class _PendingCommissionSection extends ConsumerWidget {
   }
 }
 
-class _CommissionConfirmationTile extends ConsumerWidget {
-  const _CommissionConfirmationTile({required this.fee});
+/// Offres dont le dû de publication n'a pas encore été confirmé par le
+/// fondateur : elles restent invisibles côté clients tant que le paiement
+/// n'est pas validé.
+class _PendingPublicationSection extends ConsumerWidget {
+  const _PendingPublicationSection();
 
-  final PlatformFee fee;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final shipments = ref.watch(awaitingPublicationShipmentsProvider);
+    final count = ref.watch(awaitingPublicationCountProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        0,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: GlassCard(
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const AnimatedIconDot(
+                  icon: Icons.publish_rounded,
+                  color: AppTheme.infoColor,
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                const Expanded(
+                  child: Text(
+                    'Publications à valider',
+                    style: AppTheme.h3,
+                  ),
+                ),
+                count.when(
+                  data: (n) => n > 0
+                      ? GradientBadge(
+                          label: '$n en attente',
+                          gradient: AppTheme.warningGradient,
+                          compact: true,
+                        )
+                      : const SizedBox.shrink(),
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceXs),
+            const Text(
+              'Les offres restent cachées des clients tant que le dû de '
+              'publication n\'est pas confirmé.',
+              style: AppTheme.caption,
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            shipments.when(
+              data: (list) {
+                if (list.isEmpty) {
+                  return const Text(
+                    'Aucune publication en attente.',
+                    style: AppTheme.caption,
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final shipment in list.take(10))
+                      _PublicationConfirmationTile(shipment: shipment),
+                  ],
+                );
+              },
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppTheme.spaceMd),
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ),
+              error: (_, __) => const Text(
+                'Impossible de charger les publications.',
+                style: AppTheme.caption,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PublicationConfirmationTile extends ConsumerWidget {
+  const _PublicationConfirmationTile({required this.shipment});
+
+  final Shipment shipment;
+
+  String get _statusLabel {
+    switch (shipment.publicationFeeStatus) {
+      case 'awaiting_confirmation':
+        return 'En attente de paiement (carte)';
+      case 'pending':
+        return 'Dû de publication non réglé';
+      default:
+        return shipment.publicationFeeStatus;
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final shipperName =
-        fee.shipment?.shipper?.user?.fullName ?? 'Expéditeur inconnu';
-    final route = fee.shipment == null
-        ? ''
-        : '${fee.shipment!.originCountry} → ${fee.shipment!.destinationCity}';
+        shipment.shipper?.user?.fullName ?? 'Expéditeur inconnu';
+    final route =
+        '${shipment.originCountry} → ${shipment.destinationCity}';
+    final fee = shipment.publicationFee ?? 0;
+    final discount = shipment.publicationFeeDiscount;
+    final payable = discount > 0 ? fee * (1 - discount / 100) : fee;
 
     return Padding(
       padding: const EdgeInsets.only(top: AppTheme.spaceSm),
@@ -406,14 +513,18 @@ class _CommissionConfirmationTile extends ConsumerWidget {
                   style: const TextStyle(fontWeight: FontWeight.w700),
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (route.isNotEmpty)
-                  Text(route, style: AppTheme.caption),
+                Text(route, style: AppTheme.caption),
                 Text(
-                  '${fee.amount.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+                  '${payable.toStringAsFixed(0)} ${AppConstants.defaultCurrency}'
+                  '${discount > 0 ? ' (-$discount% Visa)' : ''}',
                   style: const TextStyle(
                     fontWeight: FontWeight.w800,
                     color: AppTheme.primaryColor,
                   ),
+                ),
+                Text(
+                  _statusLabel,
+                  style: AppTheme.caption,
                 ),
               ],
             ),
@@ -430,6 +541,131 @@ class _CommissionConfirmationTile extends ConsumerWidget {
 
   Future<void> _confirm(BuildContext context, WidgetRef ref) async {
     try {
+      await ref
+          .read(shipmentServiceProvider)
+          .confirmShipmentPublication(shipment.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Publication validée')),
+        );
+      }
+      ref.invalidate(awaitingPublicationShipmentsProvider);
+      ref.invalidate(awaitingPublicationCountProvider);
+    } catch (e) {
+      if (context.mounted) {
+        await showAppErrorDialog(context, message: 'Erreur: $e');
+      }
+    }
+  }
+}
+
+class _CommissionConfirmationTile extends ConsumerWidget {
+  const _CommissionConfirmationTile({required this.fee});
+
+  final PlatformFee fee;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final shipperName =
+        fee.shipment?.shipper?.user?.fullName ?? 'Expéditeur inconnu';
+    final route = fee.shipment == null
+        ? ''
+        : '${fee.shipment!.originCountry} → ${fee.shipment!.destinationCity}';
+    final isOverdue = fee.isOverdue;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppTheme.spaceSm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      shipperName,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (route.isNotEmpty)
+                      Text(route, style: AppTheme.caption),
+                    Text(
+                      '${fee.amount.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                    if (fee.dueAt != null)
+                      Text(
+                        isOverdue
+                            ? 'Dû le ${_formatDate(fee.dueAt!)} — EN RETARD'
+                            : 'À régler avant le ${_formatDate(fee.dueAt!)}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: isOverdue
+                              ? AppTheme.errorColor
+                              : AppTheme.warningColor,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  FilledButton.icon(
+                    onPressed: () => _confirm(context, ref),
+                    icon: const Icon(Icons.check_rounded, size: 18),
+                    label: const Text('Paiement confirmé'),
+                  ),
+                  if (isOverdue &&
+                      fee.escalationStatus != 'justice_filed') ...[
+                    const SizedBox(height: AppTheme.spaceXs),
+                    OutlinedButton.icon(
+                      onPressed: () => _escalate(context, ref),
+                      icon: const Icon(Icons.gavel_rounded, size: 16),
+                      label: const Text('Escalade justice'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.errorColor,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+          if (fee.escalationStatus == 'justice_filed') ...[
+            const SizedBox(height: AppTheme.spaceXs),
+            const Row(
+              children: [
+                Icon(Icons.gavel_rounded,
+                    size: 14, color: AppTheme.errorColor),
+                SizedBox(width: 4),
+                Text(
+                  'Dossier transmis à la justice',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.errorColor,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static String _formatDate(DateTime d) =>
+      '${d.day}/${d.month}/${d.year}';
+
+  Future<void> _confirm(BuildContext context, WidgetRef ref) async {
+    try {
       await ref.read(paymentServiceProvider).confirmPlatformFee(fee.id);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -438,12 +674,54 @@ class _CommissionConfirmationTile extends ConsumerWidget {
       }
       ref.invalidate(awaitingCommissionFeesProvider);
       ref.invalidate(awaitingCommissionCountProvider);
+      ref.invalidate(overduePlatformFeesProvider);
       ref.invalidate(platformFeeSummaryProvider);
       ref.invalidate(allPlatformFeesProvider);
       ref.invalidate(shipperFinanceSummaryProvider(fee.shipperId));
       ref.invalidate(shipperPlatformFeesProvider(fee.shipperId));
       ref.invalidate(shipperEarningsProvider(fee.shipperId));
       ref.invalidate(shipperStatsProvider(fee.shipperId));
+    } catch (e) {
+      if (context.mounted) {
+        await showAppErrorDialog(context, message: 'Erreur: $e');
+      }
+    }
+  }
+
+  Future<void> _escalate(BuildContext context, WidgetRef ref) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Escalade à la justice'),
+        content: const Text(
+          'Le délai de 7 jours est dépassé. Transmettre ce dossier '
+          'd\'impayé à la justice (passeport + CNI requis) ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.errorColor),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Escalader'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.read(paymentServiceProvider).escalateFeeToJustice(fee.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Dossier transmis à la justice')),
+        );
+      }
+      ref.invalidate(awaitingCommissionFeesProvider);
+      ref.invalidate(awaitingCommissionCountProvider);
+      ref.invalidate(overduePlatformFeesProvider);
+      ref.invalidate(allPlatformFeesProvider);
     } catch (e) {
       if (context.mounted) {
         await showAppErrorDialog(context, message: 'Erreur: $e');

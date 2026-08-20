@@ -12,8 +12,13 @@ import '../../core/widgets/ui_kit.dart';
 
 /// What the person scanning the QR code wants to confirm.
 enum QrScanMode {
-  /// Shipper confirms they collected the parcel (reception in origin country).
+  /// Shipper confirms they physically collected the parcel in the origin
+  /// country (takes a photo as proof of reception).
   shipperCollect,
+
+  /// Shipper confirms the in-person handover at the destination airport after
+  /// scanning the client's QR (delivery method = in_person).
+  shipperPickup,
 
   /// Client confirms the final reception of the parcel.
   clientReceipt,
@@ -42,7 +47,31 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
   bool _busy = false;
   String? _error;
 
-  bool get _isShipper => widget.mode == QrScanMode.shipperCollect;
+  bool get _isShipper =>
+      widget.mode == QrScanMode.shipperCollect ||
+      widget.mode == QrScanMode.shipperPickup;
+
+  String get _actionLabel {
+    switch (widget.mode) {
+      case QrScanMode.shipperCollect:
+        return 'Confirmer la collecte';
+      case QrScanMode.shipperPickup:
+        return 'Remise en main propre';
+      case QrScanMode.clientReceipt:
+        return 'Confirmer la réception';
+    }
+  }
+
+  String get _actionSubtitle {
+    switch (widget.mode) {
+      case QrScanMode.shipperCollect:
+        return 'Scannez le code de suivi du client';
+      case QrScanMode.shipperPickup:
+        return 'Scannez le QR du client à la remise du colis';
+      case QrScanMode.clientReceipt:
+        return 'Scannez le code de suivi de votre colis';
+    }
+  }
 
   /// `mobile_scanner` has no implementation on desktop (Windows/Linux): on
   /// those platforms we skip the camera entirely and only show the manual
@@ -138,7 +167,11 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     setState(() => _busy = true);
     try {
       if (_isShipper) {
-        await _confirmShipperCollect(booking);
+        if (widget.mode == QrScanMode.shipperPickup) {
+          await _confirmShipperPickup(booking);
+        } else {
+          await _confirmShipperCollect(booking);
+        }
       } else {
         await _confirmClientReceipt(booking);
       }
@@ -147,7 +180,9 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
         SnackBar(
           content: Text(
             _isShipper
-                ? 'Collecte confirmée. Merci !'
+                ? (widget.mode == QrScanMode.shipperPickup
+                    ? 'Remise confirmée. Merci !'
+                    : 'Collecte confirmée. Merci !')
                 : 'Réception confirmée. Merci !',
           ),
           backgroundColor: AppTheme.accentColor,
@@ -162,18 +197,47 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
   }
 
   Future<void> _confirmShipperCollect(Booking booking) async {
+    final photo =
+        await pickProofPhoto(context, title: 'Photo du colis collecté');
+    if (photo == null) {
+      setState(() => _busy = false);
+      return;
+    }
+    if (!mounted) return;
+    final url = await ref.read(storageServiceProvider).uploadBookingProofPhoto(
+          file: photo,
+          bookingId: booking.id,
+          type: 'collect',
+        );
     final bookingService = ref.read(bookingServiceProvider);
-    await bookingService.confirmBooking(booking.id);
+    await bookingService.collectBooking(booking.id, collectedPhotoUrl: url);
     await ref.read(trackingServiceProvider).addTrackingUpdate(
           bookingId: booking.id,
           status: 'collected',
           notes: 'Colis collecté dans le pays d\'origine',
           location: booking.shipment?.originCountry,
         );
-    await ref.read(notificationServiceProvider).notifyClientBookingConfirmed(
+    await ref.read(notificationServiceProvider).notifyClientCollected(
           clientId: booking.clientId,
           bookingId: booking.id,
           productName: booking.productName,
+        );
+  }
+
+  /// Remise en main propre : le colis est marqué livré, la comparaison CNI a
+  /// été faite visuellement par l'expéditeur.
+  Future<void> _confirmShipperPickup(Booking booking) async {
+    final bookingService = ref.read(bookingServiceProvider);
+    await bookingService.confirmInPersonPickup(booking.id);
+    await ref.read(trackingServiceProvider).addTrackingUpdate(
+          bookingId: booking.id,
+          status: 'delivered',
+          notes: 'Colis remis en main propre au client',
+          location: booking.shipment?.destinationCity,
+        );
+    await ref.read(notificationServiceProvider).notifyClientShipmentDelivered(
+          clientId: booking.clientId,
+          bookingId: booking.id,
         );
   }
 
@@ -254,15 +318,11 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _isShipper
-                      ? 'Confirmer la collecte'
-                      : 'Confirmer la réception',
+                  _actionLabel,
                   style: AppTheme.h3,
                 ),
                 Text(
-                  _isShipper
-                      ? 'Scannez le code de suivi du client'
-                      : 'Scannez le code de suivi de votre colis',
+                  _actionSubtitle,
                   style: AppTheme.caption,
                 ),
               ],
@@ -452,7 +512,9 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
             _busy
                 ? 'Confirmation…'
                 : (_isShipper
-                    ? 'Confirmer la collecte'
+                    ? (widget.mode == QrScanMode.shipperPickup
+                        ? 'Confirmer la remise en main propre'
+                        : 'Confirmer la collecte')
                     : 'Confirmer la réception'),
           ),
         ),

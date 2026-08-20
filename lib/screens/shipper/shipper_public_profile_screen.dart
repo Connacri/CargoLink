@@ -5,6 +5,7 @@ import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/micro_badge.dart';
 
 /// Public profile of a shipper, shown when tapping their avatar on an offer.
 class ShipperPublicProfileScreen extends ConsumerWidget {
@@ -95,6 +96,10 @@ class _ShipperProfileBody extends ConsumerWidget {
                                       const SizedBox(width: 6),
                                       const VerifiedBadge(),
                                     ],
+                                    if (shipper.isMicroImportateur) ...[
+                                      const SizedBox(width: 6),
+                                      const MicroImportateurBadge(),
+                                    ],
                                   ],
                                 ),
                                 const SizedBox(height: 4),
@@ -118,6 +123,14 @@ class _ShipperProfileBody extends ConsumerWidget {
                         _MetaRow(
                           icon: Icons.flight_takeoff_outlined,
                           label: '${shipper.totalShipments} offres publiées',
+                        ),
+                      ],
+                      if (shipper.isMicroImportateur) ...[
+                        const SizedBox(height: AppTheme.spaceXs),
+                        const _MetaRow(
+                          icon: Icons.storefront_rounded,
+                          label:
+                              'Micro-importateur : carte de commerce vérifiée',
                         ),
                       ],
                       ..._contactTiles(user),

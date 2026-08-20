@@ -27,11 +27,15 @@ class _ShipperRegistrationScreenState
   final _passportNumberController = TextEditingController();
   Uint8List? _passportBytes;
   Uint8List? _liveBytes;
+  Uint8List? _microCardBytes;
   String? _passportFileName;
   String? _liveFileName;
+  String? _microCardFileName;
   String? _existingShipperId;
   String? _existingPassportUrl;
   String? _existingLiveUrl;
+  String? _existingMicroCardUrl;
+  String _shipperType = 'voyageur_ordinaire';
   bool _isSubmitting = false;
   bool _submitted = false;
   bool _editingVerified = false;
@@ -98,6 +102,29 @@ class _ShipperRegistrationScreenState
     }
   }
 
+  Future<void> _pickMicroCard() async {
+    try {
+      final xfile = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 92,
+      );
+      if (xfile != null) {
+        final bytes = await xfile.readAsBytes();
+        if (!mounted) return;
+        setState(() {
+          _microCardBytes = bytes;
+          _microCardFileName = p.basename(xfile.name);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        _showMessage('Impossible d\'ouvrir la caméra: $e', isError: true);
+      }
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -111,6 +138,15 @@ class _ShipperRegistrationScreenState
     }
     if (_liveBytes == null && (!hasExisting || _existingLiveUrl == null)) {
       _showMessage('Veuillez prendre une photo en direct', isError: true);
+      return;
+    }
+    if (_shipperType == 'micro_importateur' &&
+        _microCardBytes == null &&
+        (!hasExisting || _existingMicroCardUrl == null)) {
+      _showMessage(
+        'Veuillez joindre la photo de votre carte de micro-importateur',
+        isError: true,
+      );
       return;
     }
 
@@ -141,12 +177,26 @@ class _ShipperRegistrationScreenState
         );
       }
 
+      String? microCardUrl = _existingMicroCardUrl;
+      if (_microCardBytes != null) {
+        microCardUrl = await storage.uploadImageBytes(
+          bytes: _microCardBytes!,
+          fileName: _microCardFileName ?? 'micro_card.jpg',
+          path: 'micro/$userId/${DateTime.now().millisecondsSinceEpoch}',
+          bucket: StorageService.documentsBucket,
+        );
+      }
+
       if (hasExisting) {
         await ref.read(shipperServiceProvider).updateShipperDocuments(
               shipperId: _existingShipperId!,
               passportNumber: _passportNumberController.text.trim(),
               passportPhotoUrl: passportUrl!,
               livePhotoUrl: liveUrl!,
+              shipperType: _shipperType,
+              microCardPhotoUrl: _shipperType == 'micro_importateur'
+                  ? microCardUrl
+                  : null,
             );
       } else {
         await ref.read(shipperServiceProvider).registerShipper(
@@ -154,6 +204,10 @@ class _ShipperRegistrationScreenState
               passportNumber: _passportNumberController.text.trim(),
               passportPhotoUrl: passportUrl!,
               livePhotoUrl: liveUrl!,
+              shipperType: _shipperType,
+              microCardPhotoUrl: _shipperType == 'micro_importateur'
+                  ? microCardUrl
+                  : null,
             );
       }
 
@@ -197,6 +251,9 @@ class _ShipperRegistrationScreenState
     _existingShipperId = shipper.valueOrNull?.id;
     _existingPassportUrl = shipper.valueOrNull?.passportPhotoUrl;
     _existingLiveUrl = shipper.valueOrNull?.livePhotoUrl;
+    _existingMicroCardUrl = shipper.valueOrNull?.microCardPhotoUrl;
+    final existingType = shipper.valueOrNull?.shipperType;
+    if (existingType != null) _shipperType = existingType;
 
     return Scaffold(
       body: shipper.when(
@@ -348,6 +405,26 @@ class _ShipperRegistrationScreenState
                       },
                     ),
                     const SizedBox(height: AppTheme.spaceMd),
+                    const Text('Type d\'expéditeur', style: AppTheme.label),
+                    const SizedBox(height: AppTheme.spaceSm),
+                    _buildTypeSelector(),
+                    if (_shipperType == 'micro_importateur') ...[
+                      const SizedBox(height: AppTheme.spaceMd),
+                      _buildUploadTile(
+                        title: 'Photo de la carte de micro-importateur',
+                        subtitle: _microCardBytes != null
+                            ? (_microCardFileName ?? 'Photo prise')
+                            : (_existingMicroCardUrl != null
+                                ? 'Image actuelle — toucher pour changer'
+                                : 'Prendre une photo (caméra)'),
+                        icon: Icons.storefront_outlined,
+                        hasFile: _microCardBytes != null,
+                        previewBytes: _microCardBytes,
+                        previewUrl: _existingMicroCardUrl,
+                        onTap: _pickMicroCard,
+                      ),
+                    ],
+                    const SizedBox(height: AppTheme.spaceMd),
                     _buildUploadTile(
                       title: 'Photo du passeport',
                       subtitle: _passportBytes != null
@@ -424,6 +501,94 @@ class _ShipperRegistrationScreenState
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTypeSelector() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildTypeOption(
+            value: 'voyageur_ordinaire',
+            title: 'Voyageur ordinaire',
+            subtitle: 'Transport de colis lors de vos voyages',
+            icon: Icons.flight_takeoff_rounded,
+          ),
+        ),
+        const SizedBox(width: AppTheme.spaceSm),
+        Expanded(
+          child: _buildTypeOption(
+            value: 'micro_importateur',
+            title: 'Micro-Importateur',
+            subtitle: 'Import + vente (carte requise)',
+            icon: Icons.storefront_rounded,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTypeOption({
+    required String value,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+  }) {
+    final selected = _shipperType == value;
+    return GestureDetector(
+      onTap: () => setState(() => _shipperType = value),
+      child: Container(
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          border: Border.all(
+            color: selected ? AppTheme.primaryColor : AppTheme.dividerColor,
+            width: selected ? 2 : 1,
+          ),
+          color: selected ? AppTheme.primaryLighter : AppTheme.surfaceColor,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon,
+                    color:
+                        selected ? AppTheme.primaryColor : AppTheme.textMutedColor,
+                    size: 20),
+                const Spacer(),
+                Icon(
+                  selected
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_off_rounded,
+                  size: 18,
+                  color: selected
+                      ? AppTheme.primaryColor
+                      : AppTheme.textMutedColor,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: selected
+                    ? AppTheme.textPrimaryColor
+                    : AppTheme.textSecondaryColor,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: AppTheme.caption,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
