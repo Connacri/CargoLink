@@ -530,6 +530,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       );
 
       if (booking != null) {
+        // Deterministic feed reload: the reserved weight changed server-side,
+        // so the offers list must reflect it even if the realtime event is
+        // missed while this screen is on top.
+        ref
+            .read(shipmentsFeedRefreshTickProvider.notifier)
+            .update((tick) => tick + 1);
         // Show success and navigate to payment
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

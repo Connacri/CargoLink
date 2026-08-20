@@ -123,7 +123,34 @@ class AuthService {
 
   /// Exchange the current Firebase user's ID token for a Supabase access token
   /// (minted by the Edge Function) and point every Supabase call at it.
+  ///
+  /// Serialized: `authStateChanges` restores the session at startup AND
+  /// `idTokenChanges` re-emits the same user immediately, and sign-up/sign-in
+  /// also call this — so two exchanges can otherwise run concurrently. For a
+  /// brand-new user, two concurrent exchanges both pass the "does the mirror
+  /// exist?" check and then both `createUser` with the SAME deterministic id:
+  /// the loser gets the GoTrue "Database error creating new user" 500. The edge
+  /// function is now race-tolerant too, but never firing the duplicate request
+  /// is cleaner. If an exchange is already in-flight, join it.
+  Future<void>? _authInFlight;
+
   Future<void> _onAuthenticated(fbauth.User user) async {
+    final inFlight = _authInFlight;
+    if (inFlight != null) {
+      // _logger.i('_onAuthenticated: joining in-flight exchange');
+      await inFlight;
+      return;
+    }
+    final future = _doAuthenticated(user);
+    _authInFlight = future;
+    try {
+      await future;
+    } finally {
+      _authInFlight = null;
+    }
+  }
+
+  Future<void> _doAuthenticated(fbauth.User user) async {
     // _logger.i('_onAuthenticated: exchanging Firebase token for Supabase JWT');
     final token = await _exchangeForSupabaseToken(user);
     // _logger.i('_onAuthenticated: received Supabase access token');

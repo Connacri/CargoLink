@@ -216,6 +216,21 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
     });
 
+    // Deterministic reload after a booking is created (realtime is the live
+    // path, but an event can be missed while the booking wizard is open).
+    ref.listen(shipmentsFeedRefreshTickProvider, (_, next) {
+      if (next == 0) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref
+            .read(
+              clientShipmentsPagerProvider(
+                (destination: destination, origin: origin),
+              ).notifier,
+            )
+            .refresh();
+      });
+    });
+
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
@@ -672,8 +687,13 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       pricePerKg: shipment.pricePerKg,
       arrivalDate: shipment.arrivalDate,
       isAvailable: shipment.isActive && !shipment.isFull,
-      onTap:
-          shipper?.id != null ? () => _openShipperProfile(shipper!.id) : null,
+      onTap: () => Navigator.of(context).pushNamed(
+        '/booking-wizard',
+        arguments: shipment.id,
+      ),
+      onAvatarTap: shipper?.id != null
+          ? () => _openShipperProfile(shipper!.id)
+          : null,
       onBook: () => Navigator.of(context).pushNamed(
         '/booking-wizard',
         arguments: shipment.id,

@@ -814,6 +814,11 @@ final priceFilterProvider = StateProvider<({double min, double max})?>(
 // ============================================================================
 
 final searchQueryProvider = StateProvider<String>((ref) => '');
+
+/// Incremented after a booking is created so the client offers feed reloads
+/// deterministically (realtime is the live path, but an event can be missed
+/// while the booking wizard is open — e.g. during a token refresh/reconnect).
+final shipmentsFeedRefreshTickProvider = StateProvider<int>((ref) => 0);
 final isSearchingProvider = StateProvider<bool>((ref) => false);
 
 // ============================================================================

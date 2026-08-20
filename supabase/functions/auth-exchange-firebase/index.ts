@@ -177,6 +177,17 @@ async function ensureSupabaseUser(
 
   if (createError) {
     const msg = createError.message ?? "";
+    // Race-safe: two concurrent exchanges (startup restore + idTokenChanges)
+    // can both pass the getUserById check above and then both call createUser
+    // with the SAME deterministic id. The loser gets a primary-key conflict
+    // which GoTrue surfaces as the generic "Database error creating new user"
+    // (not the email-specific "already registered" message). Before giving up,
+    // re-check: if the mirror now exists the other request won the race and we
+    // can proceed as if WE had created it.
+    const { data: raced } = await supabase.auth.admin.getUserById(userUuid);
+    if (raced?.user) {
+      return { email: raced.user.email ?? createEmail };
+    }
     if (!/already/i.test(msg)) {
       console.error("createUser error", createError);
       throw createError;

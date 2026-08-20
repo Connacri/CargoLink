@@ -1121,6 +1121,12 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
           )));
         }
         ref.invalidate(bookingByIdProvider(booking.id));
+        // Deterministic feed reload: the reserved weight changed server-side,
+        // so the offers list must reflect it even if the realtime event is
+        // missed while this wizard is on screen.
+        ref
+            .read(shipmentsFeedRefreshTickProvider.notifier)
+            .update((tick) => tick + 1);
         setState(() {
           _createdBookingId = booking.id;
           _createdTrackingCode = booking.trackingNumber ??
