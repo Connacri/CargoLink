@@ -6,6 +6,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/user_avatar.dart';
 import '../../core/widgets/chat_widgets.dart';
 import 'entity_list_screen.dart';
 import 'user_details_screen.dart';
@@ -1195,7 +1196,8 @@ class _UserManagementCardState extends ConsumerState<_UserManagementCard> {
           children: [
             Row(
               children: [
-                GradientAvatar(
+                UserAvatar(
+                  userId: widget.user.id,
                   initial: widget.user.fullName,
                   imageUrl: widget.user.profilePictureUrl,
                   radius: 16,

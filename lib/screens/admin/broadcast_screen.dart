@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/profile_navigation.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/user_avatar.dart';
 import '../../data/models/models.dart';
 
 /// Announcements sent to every user. Admins / super admins can compose a new
@@ -382,6 +384,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
                     initial: user.fullName,
                     imageUrl: user.profilePictureUrl,
                     radius: 12,
+                    onTap: () => openUserProfile(context, ref, user.id),
                   ),
                   label: Text(user.fullName, overflow: TextOverflow.ellipsis),
                   deleteIconColor: AppTheme.textSecondaryColor,
@@ -689,7 +692,8 @@ class _UserPickerSheetState extends State<_UserPickerSheet> {
                               _selected.remove(user.id);
                             }
                           }),
-                          secondary: GradientAvatar(
+                          secondary: UserAvatar(
+                            userId: user.id,
                             initial: user.fullName,
                             imageUrl: user.profilePictureUrl,
                             radius: 20,

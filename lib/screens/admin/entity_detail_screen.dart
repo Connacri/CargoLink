@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/models.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/user_avatar.dart';
 import 'user_details_screen.dart';
 
 /// Full, read-only detail page for a shipment (vol) or a booking (commande),
@@ -134,7 +135,8 @@ class _ShipmentDetail extends StatelessWidget {
                           else
                             ListTile(
                               contentPadding: EdgeInsets.zero,
-                              leading: GradientAvatar(
+                              leading: UserAvatar(
+                                userId: shipperUser.id,
                                 initial: shipperUser.fullName,
                                 imageUrl: shipperUser.profilePictureUrl,
                                 radius: 18,
@@ -408,7 +410,8 @@ class _BookingDetail extends StatelessWidget {
                             const SizedBox(height: AppTheme.spaceSm + 4),
                             ListTile(
                               contentPadding: EdgeInsets.zero,
-                              leading: GradientAvatar(
+                              leading: UserAvatar(
+                                userId: client.id,
                                 initial: client.fullName,
                                 imageUrl: client.profilePictureUrl,
                                 radius: 18,

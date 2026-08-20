@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/profile_navigation.dart';
 import '../../core/widgets/ui_kit.dart';
 import 'user_details_screen.dart';
 import 'entity_detail_screen.dart';
@@ -381,6 +382,7 @@ class _UserGridCard extends ConsumerWidget {
             initial: user.fullName,
             imageUrl: user.profilePictureUrl,
             radius: 22,
+            onTap: () => openUserProfile(context, ref, user.id),
           ),
           const SizedBox(height: AppTheme.spaceSm),
           Text(
@@ -484,11 +486,8 @@ class _ShipmentCard extends ConsumerWidget {
             ),
             if (s.shipper?.user != null)
               GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => UserDetailsScreen(user: s.shipper!.user!),
-                  ),
-                ),
+                onTap: () => openUserProfileFromUser(
+                    context, ref, s.shipper!.user!),
                 child: Padding(
                   padding: const EdgeInsets.only(left: AppTheme.spaceSm + 4),
                   child: GradientAvatar(
@@ -583,11 +582,7 @@ class _BookingCard extends ConsumerWidget {
             ),
             if (b.client != null)
               GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => UserDetailsScreen(user: b.client!),
-                  ),
-                ),
+                onTap: () => openUserProfileFromUser(context, ref, b.client!),
                 child: Padding(
                   padding: const EdgeInsets.only(left: AppTheme.spaceSm + 4),
                   child: GradientAvatar(
