@@ -785,6 +785,66 @@ class Broadcast {
 }
 
 // ============================================================================
+// AD MODEL (Bannière publicitaire affichée sur l'accueil client)
+// ============================================================================
+
+class Ad {
+  final String id;
+  final String imageUrl;
+  final String linkUrl;
+  final bool isActive;
+  final String? createdBy;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  Ad({
+    required this.id,
+    required this.imageUrl,
+    required this.linkUrl,
+    this.isActive = true,
+    this.createdBy,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory Ad.fromJson(Map<String, dynamic> json) {
+    return Ad(
+      id: json['id'] as String,
+      imageUrl: json['image_url'] as String,
+      linkUrl: json['link_url'] as String,
+      isActive: json['is_active'] as bool? ?? true,
+      createdBy: json['created_by'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'image_url': imageUrl,
+      'link_url': linkUrl,
+      'is_active': isActive,
+      'created_by': createdBy,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+
+  Ad copyWith({bool? isActive}) {
+    return Ad(
+      id: id,
+      imageUrl: imageUrl,
+      linkUrl: linkUrl,
+      isActive: isActive ?? this.isActive,
+      createdBy: createdBy,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+}
+
+// ============================================================================
 // CONVERSATION MODEL (Chat expéditeur ↔ client)
 // ============================================================================
 

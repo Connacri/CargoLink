@@ -4,6 +4,7 @@ import '../core/widgets/paginated_list.dart';
 import '../data/models/models.dart';
 import '../data/models/v2_models.dart';
 import '../data/services/auth_service.dart';
+import '../data/services/ads_service.dart';
 import '../data/services/broadcast_service.dart';
 import '../data/services/shipper_shipment_service.dart';
 import '../data/services/booking_payment_service.dart';
@@ -630,6 +631,25 @@ final broadcastsProvider = FutureProvider<List<Broadcast>>((ref) async {
   final broadcastService = ref.watch(broadcastServiceProvider);
   final user = await ref.watch(currentUserProvider.future);
   return broadcastService.getBroadcasts(role: user?.role, userId: user?.id);
+});
+
+// ============================================================================
+// ADS PROVIDERS (bannières publicitaires accueil client)
+// ============================================================================
+
+final adsServiceProvider = Provider<AdsService>((ref) {
+  return AdsService();
+});
+
+/// Active ads shown on the client home (newest first). Invalide après chaque
+/// création/modification/suppression par le fondateur.
+final activeAdsProvider = FutureProvider<List<Ad>>((ref) async {
+  return ref.watch(adsServiceProvider).getActiveAds();
+});
+
+/// All ads for the founder management screen.
+final allAdsProvider = FutureProvider<List<Ad>>((ref) async {
+  return ref.watch(adsServiceProvider).getAllAds();
 });
 
 // ============================================================================

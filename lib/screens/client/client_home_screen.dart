@@ -6,6 +6,7 @@ import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/ad_sliver_header.dart';
 import '../../core/widgets/notification_widgets.dart';
 import '../../core/widgets/chat_widgets.dart';
 import '../../components/shipper_card.dart';
@@ -184,6 +185,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     );
     final searchPager =
         ref.watch(clientSearchPagerProvider(searchQuery.trim()));
+    final activeAds = ref.watch(activeAdsProvider).valueOrNull ?? [];
+    final currentAd = activeAds.isNotEmpty ? activeAds.first : null;
 
     final isSearching = searchQuery.trim().isNotEmpty;
     final sort = ref.watch(clientSortProvider);
@@ -252,37 +255,67 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            GradientSliverHeader(
-              title: 'CargoLink',
-              subtitle:
-                  'Trouvez les meilleurs micro-importateurs pour vos commandes',
-              icon: Icons.airplanemode_active,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const ChatInboxBadge(),
-                  IconButton(
-                    onPressed: () =>
-                        ref.read(navigationIndexProvider.notifier).state = 1,
-                    tooltip: 'Mes colis',
-                    icon: const Icon(Icons.connecting_airports_rounded),
-                  ),
-                  IconButton(
-                    onPressed: () => _openQrScanner(context),
-                    tooltip: 'Scanner un colis',
-                    icon: const Icon(Icons.qr_code_scanner_rounded),
-                  ),
-                  GestureDetector(
-                    onTap: () => _showNotificationsSheet(context),
-                    child: const Padding(
-                      padding: EdgeInsets.only(right: 8),
-                      child: UnreadNotificationBadge(),
+            if (currentAd != null)
+              AdSliverHeader(
+                ad: currentAd,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const ChatInboxBadge(),
+                    IconButton(
+                      onPressed: () =>
+                          ref.read(navigationIndexProvider.notifier).state = 1,
+                      tooltip: 'Mes colis',
+                      icon: const Icon(Icons.connecting_airports_rounded),
                     ),
-                  ),
-                  const LogoutIconButton(),
-                ],
+                    IconButton(
+                      onPressed: () => _openQrScanner(context),
+                      tooltip: 'Scanner un colis',
+                      icon: const Icon(Icons.qr_code_scanner_rounded),
+                    ),
+                    GestureDetector(
+                      onTap: () => _showNotificationsSheet(context),
+                      child: const Padding(
+                        padding: EdgeInsets.only(right: 8),
+                        child: UnreadNotificationBadge(),
+                      ),
+                    ),
+                    const LogoutIconButton(),
+                  ],
+                ),
+              )
+            else
+              GradientSliverHeader(
+                title: 'CargoLink',
+                subtitle:
+                    'Trouvez les meilleurs micro-importateurs pour vos commandes',
+                icon: Icons.airplanemode_active,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const ChatInboxBadge(),
+                    IconButton(
+                      onPressed: () =>
+                          ref.read(navigationIndexProvider.notifier).state = 1,
+                      tooltip: 'Mes colis',
+                      icon: const Icon(Icons.connecting_airports_rounded),
+                    ),
+                    IconButton(
+                      onPressed: () => _openQrScanner(context),
+                      tooltip: 'Scanner un colis',
+                      icon: const Icon(Icons.qr_code_scanner_rounded),
+                    ),
+                    GestureDetector(
+                      onTap: () => _showNotificationsSheet(context),
+                      child: const Padding(
+                        padding: EdgeInsets.only(right: 8),
+                        child: UnreadNotificationBadge(),
+                      ),
+                    ),
+                    const LogoutIconButton(),
+                  ],
+                ),
               ),
-            ),
             SliverToBoxAdapter(
               child: _buildGreeting(currentUser),
             ),

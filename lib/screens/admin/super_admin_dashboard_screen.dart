@@ -490,6 +490,8 @@ class _FounderMenuButton extends ConsumerWidget {
             );
           case _FounderMenuAction.broadcast:
             Navigator.of(context).pushNamed('/broadcast');
+          case _FounderMenuAction.ads:
+            Navigator.of(context).pushNamed('/ads');
           case _FounderMenuAction.feedback:
             Navigator.of(context).pushNamed('/feedback-inbox');
           case _FounderMenuAction.chat:
@@ -521,6 +523,11 @@ class _FounderMenuButton extends ConsumerWidget {
           label: 'Annonces',
         ),
         _founderMenuItem(
+          action: _FounderMenuAction.ads,
+          icon: Icons.ad_units_rounded,
+          label: 'Publicités',
+        ),
+        _founderMenuItem(
           action: _FounderMenuAction.feedback,
           icon: Icons.feedback_outlined,
           label: 'Feedback',
@@ -548,6 +555,7 @@ enum _FounderMenuAction {
   commission,
   deletion,
   broadcast,
+  ads,
   feedback,
   chat,
 }
