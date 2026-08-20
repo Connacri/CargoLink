@@ -7,6 +7,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/utils/profile_navigation.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/notification_widgets.dart';
 import '../../core/widgets/chat_widgets.dart';
@@ -1927,13 +1928,32 @@ class _DashboardBookingCard extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: AppTheme.spaceXs),
-                      Text(
-                        '${booking.client?.fullName ?? 'Client'} • '
-                        '${booking.allocatedWeightKg.toStringAsFixed(1)} kg '
-                        '• ${booking.shipment?.originCountry ?? ''} → '
-                        '${booking.shipment?.destinationCity ?? ''}',
-                        style: AppTheme.caption,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          if (booking.client != null) ...[
+                            GradientAvatar(
+                              initial: booking.client!.fullName,
+                              imageUrl: booking.client!.profilePictureUrl,
+                              radius: 11,
+                              onTap: () => openUserProfileFromUser(
+                                context,
+                                ref,
+                                booking.client!,
+                              ),
+                            ),
+                            const SizedBox(width: AppTheme.spaceSm),
+                          ],
+                          Expanded(
+                            child: Text(
+                              '${booking.client?.fullName ?? 'Client'} • '
+                              '${booking.allocatedWeightKg.toStringAsFixed(1)} kg '
+                              '• ${booking.shipment?.originCountry ?? ''} → '
+                              '${booking.shipment?.destinationCity ?? ''}',
+                              style: AppTheme.caption,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -2103,10 +2123,30 @@ class _ManageBookingCard extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: AppTheme.spaceXs),
-                      Text(
-                        '${booking.client?.fullName ?? 'Client'} • '
-                        '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
-                        style: AppTheme.caption,
+                      Row(
+                        children: [
+                          if (booking.client != null) ...[
+                            GradientAvatar(
+                              initial: booking.client!.fullName,
+                              imageUrl: booking.client!.profilePictureUrl,
+                              radius: 11,
+                              onTap: () => openUserProfileFromUser(
+                                context,
+                                ref,
+                                booking.client!,
+                              ),
+                            ),
+                            const SizedBox(width: AppTheme.spaceSm),
+                          ],
+                          Expanded(
+                            child: Text(
+                              '${booking.client?.fullName ?? 'Client'} • '
+                              '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
+                              style: AppTheme.caption,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

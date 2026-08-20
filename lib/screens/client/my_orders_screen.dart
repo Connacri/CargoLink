@@ -405,6 +405,7 @@ class _BookingCard extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
       child: GlassCard(
+        onTap: onTrack,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

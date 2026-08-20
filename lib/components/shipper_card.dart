@@ -5,10 +5,12 @@ import '../core/widgets/ui_kit.dart';
 /// Reusable shipper offer card used on the client search feed.
 ///
 /// Compact on first render. Tapping the card fires [onTap] (e.g. open the
-/// shipper detail/profile); a dedicated expand/collapse icon toggles the
-/// animated expandable section with shipper statistics + a direct message
-/// action. The two gestures are fully separated. Follows the design
-/// tokens defined in [AppTheme] and the shared kit inside `core/widgets`.
+/// offer/detail); a dedicated expand/collapse icon toggles the animated
+/// expandable section with shipper statistics + a direct message action.
+/// Tapping the avatar fires [onAvatarTap] (e.g. open the shipper's public
+/// profile) and falls back to [onTap] when not provided. The two gestures are
+/// fully separated. Follows the design tokens defined in [AppTheme] and the
+/// shared kit inside `core/widgets`.
 class ShipperCard extends StatefulWidget {
   const ShipperCard({
     super.key,
@@ -30,6 +32,7 @@ class ShipperCard extends StatefulWidget {
     this.isVerified = false,
     this.currency = 'DZD',
     this.onTap,
+    this.onAvatarTap,
     required this.onBook,
     this.onChat,
   });
@@ -59,6 +62,7 @@ class ShipperCard extends StatefulWidget {
   final bool isVerified;
   final String currency;
   final VoidCallback? onTap;
+  final VoidCallback? onAvatarTap;
   final VoidCallback onBook;
   final VoidCallback? onChat;
 
@@ -119,7 +123,7 @@ class _ShipperCardState extends State<ShipperCard> {
           initial: widget.name,
           imageUrl: widget.avatarUrl,
           radius: 24,
-          onTap: widget.onTap,
+          onTap: widget.onAvatarTap ?? widget.onTap,
         ),
         const SizedBox(width: AppTheme.spaceMd),
         Expanded(
