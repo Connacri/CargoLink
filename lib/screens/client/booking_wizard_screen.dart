@@ -35,7 +35,13 @@ class BookingWizardScreen extends ConsumerStatefulWidget {
 }
 
 class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
-  static const _stepLabels = ['Produit', 'Photos', 'Paiement', 'Terminé'];
+  static const _stepLabels = [
+    'Produit',
+    'Photos',
+    'Livraison',
+    'Paiement',
+    'Terminé',
+  ];
 
   int _currentStep = 0;
   bool _submitting = false;
@@ -54,7 +60,12 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
   final _productNameCtrl = TextEditingController();
   final _productDescCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _addressCtrl = TextEditingController();
   final List<_ProductImage> _productImages = [];
+  Uint8List? _cniBytes;
+  String? _cniFileName;
+  bool _uploadingCni = false;
   String _paymentMethod = 'cash';
 
   @override
@@ -62,6 +73,8 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
     _productNameCtrl.dispose();
     _productDescCtrl.dispose();
     _weightCtrl.dispose();
+    _phoneCtrl.dispose();
+    _addressCtrl.dispose();
     super.dispose();
   }
 
@@ -86,8 +99,12 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
     return allocated > available ? available : allocated;
   }
 
-  double _estimatedTotal(Shipment shipment) =>
-      _allocatedWeight(shipment.remainingWeightKg) * shipment.pricePerKg;
+  double _estimatedTotal(Shipment shipment) {
+    final allocated = _allocatedWeight(shipment.remainingWeightKg);
+    final commissionPerKg = shipment.pricePerKg * _commissionPercent / 100;
+    // Prix au kg affiché au client = prix de l'expéditeur + commission plateforme
+    return allocated * (shipment.pricePerKg + commissionPerKg);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -128,6 +145,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
                   children: [
                     _buildStepProduct(shipmentData),
                     _buildStepPhotos(),
+                    _buildStepDelivery(shipmentData),
                     _buildStepPayment(shipmentData),
                     _buildStepConfirmation(shipmentData),
                   ],
@@ -301,7 +319,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
                       icon: Icons.payments_outlined,
                       label: 'Prix / kg',
                       value:
-                          '${shipment.pricePerKg.toStringAsFixed(0)} $_currency',
+                          '${(shipment.pricePerKg + (shipment.pricePerKg * _commissionPercent / 100)).toStringAsFixed(0)} $_currency',
                       valueColor: AppTheme.primaryColor,
                     ),
                   ),
@@ -589,7 +607,164 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
   }
 
   // ---------------------------------------------------------------------------
-  // STEP 3 — REVIEW & PAYMENT
+  // STEP 3 — DELIVERY (téléphone, adresse, photo CNI)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildStepDelivery(Shipment shipment) {
+    return ListView(
+      padding: const EdgeInsets.all(AppTheme.spaceMd),
+      children: [
+        const Text('Livraison & Identité', style: AppTheme.h2),
+        const SizedBox(height: 4),
+        const Text(
+          'Ces informations permettent à l\'expéditeur de vous remettre '
+          'le colis en toute sécurité à l\'arrivée.',
+          style: AppTheme.bodySecondary,
+        ),
+        const SizedBox(height: AppTheme.spaceMd),
+        GlassCard(
+          padding: const EdgeInsets.all(AppTheme.spaceMd),
+          child: Column(
+            children: [
+              TextField(
+                controller: _phoneCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Téléphone de livraison',
+                  hintText: 'ex: 0550 12 34 56',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                ),
+              ),
+              const SizedBox(height: AppTheme.spaceMd),
+              TextField(
+                controller: _addressCtrl,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Adresse de livraison (optionnel)',
+                  hintText: 'ex: Cité 5 juillet, Alger',
+                  prefixIcon: Icon(Icons.home_outlined),
+                  alignLabelWithHint: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppTheme.spaceMd),
+        const Text('Photo de votre pièce d\'identité (CNI)', style: AppTheme.h3),
+        const SizedBox(height: 4),
+        const Text(
+          'Obligatoire si vous choisissez la remise en main propre à l\'arrivée '
+          '— l\'expéditeur la comparera à votre visage lors de la remise.',
+          style: AppTheme.bodySecondary,
+        ),
+        const SizedBox(height: AppTheme.spaceMd),
+        Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+          child: InkWell(
+            onTap: _uploadingCni ? null : _pickCni,
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+            child: Ink(
+              padding: const EdgeInsets.all(AppTheme.spaceMd),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceMuted,
+                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                border: Border.all(color: AppTheme.dividerColor),
+              ),
+              child: Row(
+                children: [
+                  if (_cniBytes != null)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusXs),
+                      child: Image.memory(
+                        _cniBytes!,
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  else
+                    Icon(
+                      _uploadingCni
+                          ? Icons.hourglass_top_rounded
+                          : Icons.badge_outlined,
+                      color: _cniBytes != null
+                          ? AppTheme.accentColor
+                          : AppTheme.primaryColor,
+                      size: 32,
+                    ),
+                  const SizedBox(width: AppTheme.spaceMd),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _cniBytes != null ? 'CNI ajoutée ✓' : 'Photo de la CNI',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: AppTheme.spaceXs),
+                        Text(
+                          _cniBytes != null
+                              ? 'Toucher pour remplacer'
+                              : 'Prendre une photo (caméra)',
+                          style: AppTheme.caption,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppTheme.textMutedColor,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppTheme.spaceSm),
+        const Text(
+          'La CNI est exigée pour la remise en main propre à l\'arrivée.',
+          style: AppTheme.caption,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickCni() async {
+    setState(() => _uploadingCni = true);
+    try {
+      final xfile = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 92,
+      );
+      if (xfile != null) {
+        final bytes = await xfile.readAsBytes();
+        if (bytes.length > AppConstants.maxFileSize) {
+          if (mounted) _toast('Image trop lourde (max 5MB)');
+          return;
+        }
+        if (!mounted) return;
+        setState(() {
+          _cniBytes = bytes;
+          _cniFileName = xfile.name.isNotEmpty
+              ? xfile.name
+              : 'cni_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        });
+      }
+    } catch (e) {
+      if (mounted) _toast('Erreur lors de la capture de la CNI');
+    } finally {
+      if (mounted) setState(() => _uploadingCni = false);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // STEP 4 — REVIEW & PAYMENT
   // ---------------------------------------------------------------------------
 
   Widget _buildStepPayment(Shipment shipment) {
@@ -597,6 +772,9 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
     final allocated = _allocatedWeight(available);
     final subtotal = allocated * shipment.pricePerKg;
     final commission = subtotal * _commissionPercent / 100;
+    final clientTotal = subtotal + commission;
+    final clientPricePerKg =
+        shipment.pricePerKg + (shipment.pricePerKg * _commissionPercent / 100);
 
     return ListView(
       padding: const EdgeInsets.all(AppTheme.spaceMd),
@@ -616,15 +794,9 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
               ),
               const Divider(),
               _SummaryRow(
-                label: 'Prix / kg',
+                label: 'Prix / kg (expéditeur)',
                 value: '${shipment.pricePerKg.toStringAsFixed(0)} '
                     '$_currency',
-              ),
-              const Divider(),
-              _SummaryRow(
-                label: 'Sous-total',
-                value: '${subtotal.toStringAsFixed(0)} $_currency',
-                bold: true,
               ),
               _SummaryRow(
                 label:
@@ -632,17 +804,24 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
                 value: '${commission.toStringAsFixed(0)} $_currency',
                 subtle: true,
               ),
+              _SummaryRow(
+                label: 'Prix / kg payé par le client',
+                value: '${clientPricePerKg.toStringAsFixed(0)} $_currency',
+                bold: true,
+              ),
               const SizedBox(height: AppTheme.spaceSm),
               const Divider(),
               const SizedBox(height: AppTheme.spaceSm),
               _SummaryRow(
                 label: 'Total à payer',
-                value: '${subtotal.toStringAsFixed(0)} $_currency',
+                value: '${clientTotal.toStringAsFixed(0)} $_currency',
                 total: true,
               ),
               const SizedBox(height: AppTheme.spaceSm),
-              const Text(
-                'La commission plateforme est prélevée sur l\'expéditeur.',
+              Text(
+                'Le prix affiché inclut la commission plateforme. '
+                'L\'expéditeur perçoit '
+                '${shipment.pricePerKg.toStringAsFixed(0)} $_currency/kg.',
                 style: AppTheme.caption,
               ),
             ],
@@ -955,7 +1134,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
                             ),
                           )
                         : Text(
-                            _currentStep == 2
+                            _currentStep == 3
                                 ? 'Confirmer la réservation'
                                 : 'Suivant',
                           ),
@@ -1020,7 +1199,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
   }
 
   Future<void> _nextStep(Shipment shipment) async {
-    if (_currentStep == 2) {
+    if (_currentStep == 3) {
       await _submitBooking();
       return;
     }
@@ -1050,6 +1229,17 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
     }
     if (_currentStep == 1) {
       // Photos facultatives : on peut passer cette étape sans image.
+      return true;
+    }
+    if (_currentStep == 2) {
+      if (_phoneCtrl.text.trim().isEmpty) {
+        _toast('Renseignez le téléphone de livraison');
+        return false;
+      }
+      if (_cniBytes == null) {
+        _toast('Ajoutez la photo de votre CNI (remise en main propre)');
+        return false;
+      }
       return true;
     }
     return true;
@@ -1098,6 +1288,15 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
       }
       if (mounted) setState(() => _uploadingPhotos = false);
 
+      String? cniUrl;
+      if (_cniBytes != null) {
+        cniUrl = await storageService.uploadImageBytes(
+          bytes: _cniBytes!,
+          fileName: _cniFileName ?? 'cni.jpg',
+          path: 'bookings/$userId/cni/${DateTime.now().millisecondsSinceEpoch}',
+        );
+      }
+
       final booking = await bookingService.createBooking(
         shipmentId: widget.shipmentId,
         clientId: userId,
@@ -1107,6 +1306,11 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
             : _productDescCtrl.text.trim(),
         productPhotosUrl: imageUrls,
         requestedWeightKg: _requestedWeight,
+        cniPhotoUrl: cniUrl,
+        deliveryPhone: _phoneCtrl.text.trim(),
+        deliveryAddress: _addressCtrl.text.trim().isEmpty
+            ? null
+            : _addressCtrl.text.trim(),
       );
 
       if (!mounted) return;

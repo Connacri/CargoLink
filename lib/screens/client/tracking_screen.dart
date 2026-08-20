@@ -32,6 +32,10 @@ class TrackingScreen extends ConsumerWidget {
         return 'Commande traitée';
       case 'collected':
         return 'Colis récupéré';
+      case 'verified':
+        return 'Colis vérifié';
+      case 'verification_returned':
+        return 'Vérification : action requise';
       case 'departed_origin':
         return 'Départ du pays d\'origine';
       case 'in_transit':
@@ -131,6 +135,42 @@ class TrackingScreen extends ConsumerWidget {
                         0,
                       ),
                       child: _buildShipperCard(context, bookingData),
+                    ),
+                  ),
+                if (_refusalReason(bookingData) != null)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        0,
+                      ),
+                      child: _buildRefusalBanner(bookingData),
+                    ),
+                  ),
+                if (bookingData.verificationStatus == 'returned')
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        0,
+                      ),
+                      child: _buildVerificationReturnedBanner(bookingData),
+                    ),
+                  ),
+                if (bookingData.deliveryMethod == 'courier')
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        0,
+                      ),
+                      child: _buildCourierInfo(bookingData),
                     ),
                   ),
                 if (bookingData.status == 'delivered')
@@ -421,6 +461,136 @@ class TrackingScreen extends ConsumerWidget {
     );
   }
 
+  String? _refusalReason(Booking booking) {
+    if (booking.refusalReason?.isNotEmpty == true) {
+      return booking.refusalReason;
+    }
+    if (booking.cancellationReason?.isNotEmpty == true) {
+      return booking.cancellationReason;
+    }
+    return null;
+  }
+
+  Widget _buildRefusalBanner(Booking booking) {
+    return GlassCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            color: AppTheme.errorColor,
+            size: 20,
+          ),
+          const SizedBox(width: AppTheme.spaceSm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  booking.status == 'cancelled'
+                      ? 'Commande refusée'
+                      : 'Refus signalé',
+                  style: AppTheme.body.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.errorColor,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spaceXs),
+                Text(
+                  _refusalReason(booking)!,
+                  style: AppTheme.bodySecondary,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerificationReturnedBanner(Booking booking) {
+    return const GlassCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.warning_amber_rounded,
+            color: AppTheme.warningColor,
+            size: 20,
+          ),
+          SizedBox(width: AppTheme.spaceSm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Colis signalé pendant la vérification',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.warningColor,
+                  ),
+                ),
+                SizedBox(height: AppTheme.spaceXs),
+                Text(
+                  'L\'expéditeur a détecté un problème (article interdit, '
+                  'dégât…). Contactez-le pour régulariser la situation.',
+                  style: AppTheme.bodySecondary,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCourierInfo(Booking booking) {
+    return GlassCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.local_shipping_rounded,
+            color: AppTheme.primaryColor,
+            size: 20,
+          ),
+          const SizedBox(width: AppTheme.spaceSm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Livraison par courrier local',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+                if (booking.courierName != null) ...[
+                  const SizedBox(height: AppTheme.spaceXs),
+                  Text(
+                    'Courrier : ${booking.courierName}',
+                    style: AppTheme.bodySecondary,
+                  ),
+                ],
+                if (booking.courierTrackingCode != null) ...[
+                  const SizedBox(height: AppTheme.spaceXs),
+                  Text(
+                    'Code de suivi : ${booking.courierTrackingCode}',
+                    style: AppTheme.body.copyWith(
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeader(Booking booking) {
     final status = BookingStatusExt.fromString(booking.status);
     return GlassCard(
@@ -508,6 +678,27 @@ class TrackingScreen extends ConsumerWidget {
               ),
             ],
           ),
+          if (booking.verificationStatus == 'awaiting_verification' ||
+              booking.verificationStatus == 'verifying') ...[
+            const SizedBox(height: AppTheme.spaceSm),
+            const Row(
+              children: [
+                Icon(
+                  Icons.fact_check_outlined,
+                  size: 16,
+                  color: AppTheme.infoColor,
+                ),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Colis en cours de vérification (articles autorisés et '
+                    'poids) par l\'expéditeur.',
+                    style: AppTheme.caption,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -780,9 +971,16 @@ LinearGradient _bookingGradient(String status) {
     case 'pending':
       return AppTheme.warningGradient;
     case 'confirmed':
+    case 'accepted':
       return AppTheme.primaryGradient;
+    case 'collected':
+    case 'verifying':
+      return AppTheme.infoGradient;
     case 'shipped':
       return AppTheme.infoGradient;
+    case 'arrived':
+    case 'out_for_delivery':
+      return AppTheme.warningGradient;
     case 'delivered':
       return AppTheme.successGradient;
     case 'cancelled':

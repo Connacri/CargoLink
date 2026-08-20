@@ -24,12 +24,13 @@ final clientSortProvider = StateProvider<ClientSort>((ref) => ClientSort.none);
 final clientShipmentsPagerProvider = StateNotifierProvider.family<
     PaginatedListNotifier<Shipment>,
     PaginatedList<Shipment>,
-    ({String? destination, String? origin})>(
+    ({String? destination, String? origin, String? shipperType})>(
   (ref, params) {
     return createPaginatedNotifier(
       (limit, offset) => ref.read(shipmentServiceProvider).getActiveShipments(
             destinationCity: params.destination,
             originCountry: params.origin,
+            shipperType: params.shipperType,
             limit: limit,
             offset: offset,
           ),
@@ -85,12 +86,16 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   void _syncPager() {
     final destination = ref.read(destinationFilterProvider);
     final origin = ref.read(originFilterProvider);
-    final key = '$destination|$origin';
+    final shipperType = ref.read(shipperTypeFilterProvider);
+    final key = '$destination|$origin|$shipperType';
     if (key == _lastFilterKey) return;
     _lastFilterKey = key;
     final notifier = ref.read(
-      clientShipmentsPagerProvider((destination: destination, origin: origin))
-          .notifier,
+      clientShipmentsPagerProvider((
+        destination: destination,
+        origin: origin,
+        shipperType: shipperType,
+      )).notifier,
     );
     notifier.loadInitial();
   }
@@ -99,6 +104,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   bool _matchesFeedFilters(Shipment shipment) {
     final destination = ref.read(destinationFilterProvider);
     final origin = ref.read(originFilterProvider);
+    final shipperType = ref.read(shipperTypeFilterProvider);
     if (destination != null &&
         !shipment.destinationCity.toLowerCase().contains(destination.toLowerCase())) {
       return false;
@@ -106,6 +112,11 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     if (origin != null &&
         !shipment.originCountry.toLowerCase().contains(origin.toLowerCase())) {
       return false;
+    }
+    if (shipperType != null) {
+      final shipperMatches = shipment.shipper?.isMicroImportateur ==
+          (shipperType == 'micro_importateur');
+      if (!shipperMatches) return false;
     }
     return true;
   }
@@ -122,6 +133,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         (
           destination: ref.read(destinationFilterProvider),
           origin: ref.read(originFilterProvider),
+          shipperType: ref.read(shipperTypeFilterProvider),
         ),
       ).notifier,
     );
@@ -179,9 +191,14 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     final currentUser = ref.watch(currentUserProvider);
     final destination = ref.watch(destinationFilterProvider);
     final origin = ref.watch(originFilterProvider);
+    final shipperType = ref.watch(shipperTypeFilterProvider);
     final searchQuery = ref.watch(searchQueryProvider);
     final pager = ref.watch(
-      clientShipmentsPagerProvider((destination: destination, origin: origin)),
+      clientShipmentsPagerProvider((
+        destination: destination,
+        origin: origin,
+        shipperType: shipperType,
+      )),
     );
     final searchPager =
         ref.watch(clientSearchPagerProvider(searchQuery.trim()));
@@ -218,6 +235,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     ref.listen(originFilterProvider, (_, __) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
     });
+    ref.listen(shipperTypeFilterProvider, (_, __) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
+    });
 
     // Deterministic reload after a booking is created (realtime is the live
     // path, but an event can be missed while the booking wizard is open).
@@ -226,9 +246,11 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref
             .read(
-              clientShipmentsPagerProvider(
-                (destination: destination, origin: origin),
-              ).notifier,
+              clientShipmentsPagerProvider((
+                destination: destination,
+                origin: origin,
+                shipperType: shipperType,
+              )).notifier,
             )
             .refresh();
       });
@@ -245,9 +267,11 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
           }
           await ref
               .read(
-                clientShipmentsPagerProvider(
-                  (destination: destination, origin: origin),
-                ).notifier,
+                clientShipmentsPagerProvider((
+                  destination: destination,
+                  origin: origin,
+                  shipperType: shipperType,
+                )).notifier,
               )
               .refresh();
         },
@@ -327,6 +351,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             ),
             SliverToBoxAdapter(
               child: _buildFilters(),
+            ),
+            SliverToBoxAdapter(
+              child: _buildTypeFilters(),
             ),
             SliverToBoxAdapter(
               child: _buildSmartFilters(sort),
@@ -547,6 +574,51 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     );
   }
 
+  /// Filtre par type d'expéditeur (voyageur ordinaire / micro-importateur).
+  Widget _buildTypeFilters() {
+    final selected = ref.watch(shipperTypeFilterProvider);
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceXs,
+        AppTheme.spaceMd,
+        AppTheme.spaceXs,
+      ),
+      child: Row(
+        children: [
+          ChoiceChip(
+            label: const Text('Tous'),
+            selected: selected == null,
+            showCheckmark: false,
+            avatar: const Icon(Icons.group_rounded, size: 18),
+            onSelected: (_) =>
+                ref.read(shipperTypeFilterProvider.notifier).state = null,
+          ),
+          const SizedBox(width: AppTheme.spaceSm),
+          ChoiceChip(
+            label: const Text('Voyageurs'),
+            selected: selected == 'voyageur',
+            showCheckmark: false,
+            avatar: const Icon(Icons.flight_takeoff_rounded, size: 18),
+            onSelected: (_) =>
+                ref.read(shipperTypeFilterProvider.notifier).state = 'voyageur',
+          ),
+          const SizedBox(width: AppTheme.spaceSm),
+          ChoiceChip(
+            label: const Text('Micro-importateurs'),
+            selected: selected == 'micro_importateur',
+            showCheckmark: false,
+            avatar: const Icon(Icons.storefront_rounded, size: 18),
+            onSelected: (_) => ref
+                .read(shipperTypeFilterProvider.notifier)
+                .state = 'micro_importateur',
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showDestinationPicker() {
     showModalBottomSheet(
       context: context,
@@ -704,6 +776,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
 
   Widget _buildShipmentCard(Shipment shipment) {
     final shipper = shipment.shipper;
+    final settings = ref.watch(platformSettingsProvider).valueOrNull;
+    final commissionPercent = settings?.commissionPercent ?? 5.0;
+    final commission = shipment.pricePerKg * commissionPercent / 100;
     return ShipperCard(
       shipperId: shipper?.id ?? shipment.shipperId,
       name: shipper?.user?.fullName ?? 'Expéditeur',
@@ -711,6 +786,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       rating: shipper?.rating ?? 0,
       shipmentsCount: shipper?.totalShipments,
       isVerified: shipper?.isVerified ?? false,
+      isMicroImportateur: shipper?.isMicroImportateur ?? false,
       origin: shipment.originCountry,
       destination: shipment.destinationCity,
       airline: shipment.airline,
@@ -718,6 +794,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       availableKg: shipment.remainingWeightKg,
       totalKg: shipment.availableWeightKg,
       pricePerKg: shipment.pricePerKg,
+      clientPricePerKg: shipment.pricePerKg + commission,
       arrivalDate: shipment.arrivalDate,
       isAvailable: shipment.isActive && !shipment.isFull,
       onTap: () => Navigator.of(context).pushNamed(
