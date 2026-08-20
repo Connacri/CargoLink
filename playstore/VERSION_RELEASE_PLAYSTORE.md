@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.0** |
-| Code de version (versionCode) | **118** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `eb11171` |
-| Statut CI | À publier au prochain push → release `v1.0.0` sur GitHub |
+| Version (versionName) | **1.0.5** |
+| Code de version (versionCode) | **123** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `bb3688f` |
+| Statut CI | À publier au prochain push → release `v1.0.5` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.0** → workflow `release.yml` (job `android-aab`) |
@@ -32,6 +32,38 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Workflow complet de livraison en 7 phases** (du dépôt du colis à la remise finale) :
+  - **Type d'expéditeur voyageur / micro-importateur** : à l'inscription, l'expéditeur
+    choisit son type ; un micro-importateur doit fournir sa **carte de commerce**
+    (photo) pour être vérifié. Un **badge « Micro-importateur »** apparaît partout
+    (cartes d'offres, profil public, dashboard, écran expéditeur, filtres) et des
+    **filtres « Voyageurs / Micro-importateurs »** trient l'accueil client.
+  - **Confirmation fondateur des publications** : chaque offre publiée par un
+    expéditeur déclenche un **dû de publication** (commission de publication). Tant
+    que le fondateur n'a pas confirmé le paiement, **l'offre reste cachée des
+    clients** (badge « Validation en attente » côté expéditeur). Paiement par carte
+    Visa = -30 % de remise (passage en « attente de confirmation ») ; le fondateur
+    confirme depuis son dashboard.
+  - **Réservation enrichie (client)** : le client renseigne son **téléphone, adresse
+    de livraison et une photo de sa pièce d'identité (CNI)** avant d'envoyer sa
+    commande.
+  - **Refus avec motif** : l'expéditeur peut refuser une commande avec une raison ;
+    une bannière dédiée s'affiche chez le client avec le motif.
+  - **Réception physique + vérification** : à la collecte, l'expéditeur prend une
+    **photo du colis** ; il lance ensuite la **vérification** (feuille de vérification
+    : liste d'articles interdits + poids réel). Si un article est interdit ou le poids
+    différent, le colis est **renvoyé au client** qui doit corriger avant un second
+    essai.
+  - **Livraison finale** : à l'arrivée, l'expéditeur valide la **géolocalisation**
+    (repli sur la ville de destination si le GPS est indisponible). Il choisit de
+    **déposer le colis chez un courrier local** (nom + code de suivi, partagés au
+    client) ou de le **remettre en main propre** au client en **scannant son QR code**
+    de collecte (client notifié instantanément).
+  - **Dûs plateforme (échéance 7 jours)** : l'écran Finance de l'expéditeur liste ses
+    **dûs** (montant, échéance à 7 jours, indicateur « En retard » passé le délai).
+    Paiement par **Baridimob/virement** ou **carte Visa (-30 %)** ; après la demande,
+    le fondateur confirme le règlement. Passé l'échéance, le fondateur peut
+    **transmettre le dossier à la justice** (statut visible des deux côtés).
 - **Liste des commandes client mise à jour instantanément (définitif)** : le pager
   « Mes Commandes » du client appelle directement le service (`getClientBookings`)
   à chaque rechargement — onglet ré-entré, changement de filtre ou événement
