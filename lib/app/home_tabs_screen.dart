@@ -24,6 +24,17 @@ class HomeTabsScreen extends ConsumerWidget {
     final navIndex = ref.watch(navigationIndexProvider);
     final currentUser = ref.watch(currentUserProvider);
 
+    // Quand l'utilisateur change de rôle, le nombre d'onglets change (client 3,
+    // expéditeur 4) : remettre l'onglet actif à zéro pour ne jamais garder un
+    // index hors limites (crash BottomNavigationBar).
+    ref.listen(currentUserProvider, (prev, next) {
+      final oldRole = prev?.valueOrNull?.role;
+      final newRole = next.valueOrNull?.role;
+      if (oldRole != null && oldRole != newRole) {
+        ref.read(navigationIndexProvider.notifier).state = 0;
+      }
+    });
+
     return currentUser.when(
       data: (user) {
         if (user == null) {
@@ -54,9 +65,11 @@ class HomeTabsScreen extends ConsumerWidget {
     WidgetRef ref,
     int navIndex,
   ) {
+    // Borne défensive : 3 onglets client (0..2).
+    final index = navIndex.clamp(0, 2);
     return Scaffold(
       body: IndexedStack(
-        index: navIndex,
+        index: index,
         children: const [
           ClientHomeScreen(),
           MyOrdersScreen(),
@@ -64,7 +77,7 @@ class HomeTabsScreen extends ConsumerWidget {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: navIndex,
+        currentIndex: index,
         onTap: (index) {
           ref.read(navigationIndexProvider.notifier).state = index;
         },
@@ -91,9 +104,11 @@ class HomeTabsScreen extends ConsumerWidget {
     WidgetRef ref,
     int navIndex,
   ) {
+    // Borne défensive : 4 onglets expéditeur (0..3).
+    final index = navIndex.clamp(0, 3);
     return Scaffold(
       body: IndexedStack(
-        index: navIndex,
+        index: index,
         children: const [
           ShipperDashboardScreen(),
           ActiveShipmentsScreen(),
@@ -102,7 +117,7 @@ class HomeTabsScreen extends ConsumerWidget {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: navIndex,
+        currentIndex: index,
         onTap: (index) {
           ref.read(navigationIndexProvider.notifier).state = index;
         },

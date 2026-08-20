@@ -85,18 +85,20 @@ class ShipperService {
     }
   }
 
-  /// Get shipper profile by user ID
+  /// Get shipper profile by user ID. Returns null when the user has no shipper
+  /// profile yet (e.g. they just switched their role to shipper) instead of
+  /// throwing a PGRST116 "0 rows" exception.
   Future<Shipper?> getShipperByUserId(String userId) async {
     try {
       final response = await _supabase
           .from('shippers')
           .select('*, users!shippers_user_id_fkey(*)')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle();
 
-      return Shipper.fromJson(response);
+      return response == null ? null : Shipper.fromJson(response);
     } catch (e) {
-      _logger.e('Error getting shipper: $e');
+      _logger.w('Error getting shipper: $e');
       return null;
     }
   }
@@ -108,11 +110,11 @@ class ShipperService {
           .from('shippers')
           .select('*, users!shippers_user_id_fkey(*)')
           .eq('id', shipperId)
-          .single();
+          .maybeSingle();
 
-      return Shipper.fromJson(response);
+      return response == null ? null : Shipper.fromJson(response);
     } catch (e) {
-      _logger.e('Error getting shipper by ID: $e');
+      _logger.w('Error getting shipper by ID: $e');
       return null;
     }
   }
