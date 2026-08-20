@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **0.1.100** |
-| Code de version (versionCode) | **115** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `8bd3707` |
-| Statut CI | À publier au prochain push → release `v0.1.100` sur GitHub |
+| Version (versionName) | **1.0.0** |
+| Code de version (versionCode) | **118** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `eb11171` |
+| Statut CI | À publier au prochain push → release `v1.0.0` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v0.1.95** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.0** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,16 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Liste des commandes client mise à jour instantanément (définitif)** : le pager
+  « Mes Commandes » du client appelle directement le service (`getClientBookings`)
+  à chaque rechargement — onglet ré-entré, changement de filtre ou événement
+  realtime — au lieu d'un `FutureProvider` mis en cache qui renvoyait l'ancien
+  résultat. Une commande créée ailleurs (ex. depuis la réservation) apparaît donc
+  immédiatement sous « Toutes », comme dans l'Historique du profil.
+- **Versioning 1.{MINOR}.{PATCH}** : passage du schéma de numérotation au
+  `1.{MINOR}.{PATCH}` (le patch s'incrémente de 0 à 99 puis bascule à 0 en
+  incrémentant la mineure) ; `versionCode` = nombre total de commits. Première
+  release : `1.0.0`.
 - **Système de publicités** : le fondateur ou un admin peut ajouter une publicité
   (image paysage + lien) depuis l'écran « Publicités » du menu fondateur, l'activer
   ou la désactiver, et la supprimer. La bannière s'affiche sur l'accueil des
@@ -111,8 +121,6 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
   direct des octets via ImagePicker).
 - QR code de collecte/réception avec **référence de suivi courte et unique**
   (10 caractères alphanumériques, sans caractères ambigus) — même code QR/suivi.
-- **Liste des commandes client** mise à jour instantanément (réel-time + rechargement
-  à la ré-entrée de l'onglet, comme l'Historique).
 - **Upload de photos produit avec progression** (spinner au choix + barre de progression).
 - **Téléchargement du ticket de confirmation en PNG sur le web** (plus d'échec).
 - **SafeArea** appliquée sur tous les écrans scrollables, bottom sheets et dialogs.
