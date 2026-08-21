@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.6** |
-| Code de version (versionCode) | **125** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `aed0be1` |
-| Statut CI | À publier au prochain push → release `v1.0.6` sur GitHub |
+| Version (versionName) | **1.0.7** |
+| Code de version (versionCode) | **127** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `e98aea5` |
+| Statut CI | À publier au prochain push → release `v1.0.7` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.0** → workflow `release.yml` (job `android-aab`) |
@@ -31,6 +31,35 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+- **QR de réservation ré-enregistrable** : nouveau bouton « QR » sur chaque
+  commande client — réaffiche le billet et réenregistre **le même code QR**
+  généré à la création (jamais régénéré) dans la galerie (PNG sur web).
+- **Refus de commande redessiné** : feuille modale avec motifs rapides
+  (articles interdits, poids, emballage, client injoignable, paiement, place)
+  + champ libre, au lieu d'une boîte de dialogue brute.
+- **Confirmation de commande enrichie** : le client reçoit la notification et
+  sa frise de suivi affiche immédiatement « Commande confirmée — en attente de
+  collecte du colis ou marchandises » à la place de « Paiement en attente ».
+- **Type d'expéditeur visible partout** : badge « Voyageur ordinaire » ou
+  « Micro-Importateur » sur les cartes d'offres, profils public, écran de suivi,
+  commandes client et statut du profil.
+- **Poids disponible toujours exact dans la réservation** : resynchronisation à
+  l'ouverture + toutes les 10 s en plus du temps réel — impossible de réserver
+  sur un poids périmé.
+- **Adresse de livraison obligatoire** : validée dans le wizard ET côté service
+  (l'écran de réservation historique a aussi son champ adresse).
+- **Offres masquées si le compte expéditeur est désactivé** (RLS) : les offres
+  actives d'un compte désactivé disparaissent du fil client ; les clients ayant
+  déjà une réservation conservent l'accès au suivi. Réactivation = offres de
+  nouveau visibles ; suppression définitive après 30 jours via la fonction
+  `delete-account` existante.
+- **Dashboard expéditeur temps réel renforcé** : les cartes de statistiques et
+  la liste des commandes se mettent à jour à chaque événement, et tout est
+  rechargé au retour sur l'onglet (filet de sécurité si un événement est manqué).
+- **Erreurs `AuthException` corrigées** : les services (annulation de commande,
+  publicités) n'accèdent plus à `supabase.auth` (interdit avec l'option
+  `accessToken`) mais passent par l'identifiant déterministe `AuthService`.
 
 - **Règle Visa -30 % assouplie** : seules les offres dont l'expéditeur a coché
   « Payer par carte Visa (-30 %) » passent en attente de confirmation du
