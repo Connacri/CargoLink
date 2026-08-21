@@ -983,20 +983,35 @@ class PaymentService {
 
       final fees = await _supabase
           .from('platform_fees')
-          .select('amount,status')
+          .select('amount,status,currency')
           .eq('shipper_id', shipperId);
       var feesPaid = 0.0;
       var feesAwaiting = 0.0;
       var feesPending = 0.0;
+      var feesRefunded = 0.0;
+      final feesByCurrency = <String, Map<String, double>>{};
+      void add(String currency, String key, double amount) {
+        final bucket =
+            feesByCurrency.putIfAbsent(currency, () => <String, double>{});
+        bucket[key] = (bucket[key] ?? 0) + amount;
+      }
+
       for (final f in fees as List) {
         final amount = (f['amount'] as num).toDouble();
         final status = f['status'] as String? ?? '';
+        final currency = f['currency'] as String? ?? 'DZD';
         if (status == 'paid') {
           feesPaid += amount;
+          add(currency, 'paid', amount);
         } else if (status == 'awaiting_confirmation') {
           feesAwaiting += amount;
+          add(currency, 'awaiting', amount);
+        } else if (status == 'refunded') {
+          feesRefunded += amount;
+          add(currency, 'refunded', amount);
         } else {
           feesPending += amount;
+          add(currency, 'pending', amount);
         }
       }
 
@@ -1009,13 +1024,16 @@ class PaymentService {
         'fees_paid': feesPaid,
         'fees_awaiting': feesAwaiting,
         'fees_pending': feesPending,
+        'fees_refunded': feesRefunded,
         'fees_total': feesTotal,
         // Bénéfice net = chiffre d'affaires encaissé moins la commission
         // plateforme totale (réglée ou non) : la commission est une charge
-        // réelle de l'expéditeur, qu'elle ait déjà été versée ou pas.
+        // réelle de l'expéditeur, qu'elle ait déjà été versée ou pas. Un dû
+        // remboursé ne compte plus comme une charge.
         'profit': revenue - feesTotal,
         'due': due,
         'monthly': byMonth,
+        'fees_by_currency': feesByCurrency,
       };
     } catch (e) {
       _logger.e('Error getting shipper finance summary: $e');
@@ -1023,24 +1041,41 @@ class PaymentService {
     }
   }
 
-  /// Global platform commission summary (admin): collected vs outstanding debt.
+  /// Global platform fees summary (admin): collected vs outstanding debt vs
+  /// refunded, with per-currency totals (DZD, EUR, USD, RMB, ...).
   Future<Map<String, dynamic>?> getPlatformFeeSummary() async {
     try {
-      final fees =
-          await _supabase.from('platform_fees').select('amount,status');
+      final fees = await _supabase
+          .from('platform_fees')
+          .select('amount,status,currency');
       final list = fees as List;
       var collected = 0.0;
       var awaiting = 0.0;
       var pending = 0.0;
+      var refunded = 0.0;
+      final byCurrency = <String, Map<String, double>>{};
+      void add(String currency, String key, double amount) {
+        final bucket =
+            byCurrency.putIfAbsent(currency, () => <String, double>{});
+        bucket[key] = (bucket[key] ?? 0) + amount;
+      }
+
       for (final f in list) {
         final amount = (f['amount'] as num).toDouble();
         final status = f['status'] as String? ?? '';
+        final currency = f['currency'] as String? ?? 'DZD';
         if (status == 'paid') {
           collected += amount;
+          add(currency, 'collected', amount);
         } else if (status == 'awaiting_confirmation') {
           awaiting += amount;
+          add(currency, 'awaiting', amount);
+        } else if (status == 'refunded') {
+          refunded += amount;
+          add(currency, 'refunded', amount);
         } else {
           pending += amount;
+          add(currency, 'pending', amount);
         }
       }
       final due = awaiting + pending;
@@ -1048,7 +1083,9 @@ class PaymentService {
         'collected': collected,
         'awaiting': awaiting,
         'pending': due,
+        'refunded': refunded,
         'total': collected + due,
+        'by_currency': byCurrency,
       };
     } catch (e) {
       _logger.e('Error getting platform fee summary: $e');
@@ -1159,12 +1196,32 @@ class PaymentService {
           .update({
             'status': 'paid',
             'paid_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
           })
           .eq('id', feeId)
           .eq('status', 'awaiting_confirmation');
       _logger.i('Platform fee confirmed: $feeId');
     } catch (e) {
       _logger.e('Error confirming platform fee: $e');
+      rethrow;
+    }
+  }
+
+  /// Admin/super_admin marks a paid fee as refunded (e.g. offer cancelled).
+  /// (`paid` -> `refunded`).
+  Future<void> refundPlatformFee(String feeId) async {
+    try {
+      await _supabase
+          .from('platform_fees')
+          .update({
+            'status': 'refunded',
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', feeId)
+          .eq('status', 'paid');
+      _logger.i('Platform fee refunded: $feeId');
+    } catch (e) {
+      _logger.e('Error refunding platform fee: $e');
       rethrow;
     }
   }

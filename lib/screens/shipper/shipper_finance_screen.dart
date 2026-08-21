@@ -187,6 +187,8 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
         (summary.valueOrNull?['fees_awaiting'] as num?)?.toDouble() ?? 0;
     final feesPending =
         (summary.valueOrNull?['fees_pending'] as num?)?.toDouble() ?? 0;
+    final feesRefunded =
+        (summary.valueOrNull?['fees_refunded'] as num?)?.toDouble() ?? 0;
     final feesDue = feesAwaiting + feesPending;
 
     return Column(
@@ -253,6 +255,36 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
             ],
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.spaceMd,
+            0,
+            AppTheme.spaceMd,
+            AppTheme.spaceSm,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _FinanceStatCard(
+                  label: 'Commission remboursée',
+                  value:
+                      '${feesRefunded.toStringAsFixed(0)} $currency',
+                  icon: Icons.assignment_return_rounded,
+                  color: AppTheme.textSecondaryColor,
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceSm),
+              Expanded(
+                child: _FinanceStatCard(
+                  label: 'Dûs payés',
+                  value: '${feesPaid.toStringAsFixed(0)} $currency',
+                  icon: Icons.receipt_long_rounded,
+                  color: AppTheme.accentColor,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -305,7 +337,7 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
                 return Column(
                   children: [
                     for (final fee in list)
-                      _PlatformFeeTile(fee: fee, currency: currency),
+                      _PlatformFeeTile(fee: fee),
                   ],
                 );
               },
@@ -636,17 +668,18 @@ String _formatFinanceDate(DateTime d) =>
 
 class _PlatformFeeTile extends StatelessWidget {
   final PlatformFee fee;
-  final String currency;
 
-  const _PlatformFeeTile({required this.fee, required this.currency});
+  const _PlatformFeeTile({required this.fee});
 
   @override
   Widget build(BuildContext context) {
     final overdue = fee.isOverdue;
+    final isRefunded = fee.status == 'refunded';
     final statusLabel = switch (fee.status) {
       'paid' => 'Payé',
       'awaiting_confirmation' =>
         overdue ? 'En retard' : 'En attente de confirmation',
+      'refunded' => 'Remboursé',
       _ => 'En attente de paiement',
     };
 
@@ -655,17 +688,21 @@ class _PlatformFeeTile extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            fee.isPaid
-                ? Icons.check_circle_rounded
-                : overdue
-                    ? Icons.error_outline_rounded
-                    : Icons.hourglass_top_rounded,
+            isRefunded
+                ? Icons.assignment_return_rounded
+                : fee.isPaid
+                    ? Icons.check_circle_rounded
+                    : overdue
+                        ? Icons.error_outline_rounded
+                        : Icons.hourglass_top_rounded,
             size: 20,
-            color: fee.isPaid
-                ? AppTheme.accentColor
-                : overdue
-                    ? AppTheme.errorColor
-                    : AppTheme.warningColor,
+            color: isRefunded
+                ? AppTheme.textSecondaryColor
+                : fee.isPaid
+                    ? AppTheme.accentColor
+                    : overdue
+                        ? AppTheme.errorColor
+                        : AppTheme.warningColor,
           ),
           const SizedBox(width: AppTheme.spaceSm),
           Expanded(
@@ -673,7 +710,8 @@ class _PlatformFeeTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${fee.amount.toStringAsFixed(0)} $currency',
+                  // Chaque dû porte sa propre devise (DZD, EUR, USD, RMB…).
+                  '${fee.amount.toStringAsFixed(0)} ${fee.currency}',
                   style: const TextStyle(
                     fontWeight: FontWeight.w800,
                     color: AppTheme.primaryColor,

@@ -308,9 +308,13 @@ class ShipmentService {
             'flight_number': flightNumber,
             'status': 'active',
             'publication_fee': publicationFee,
-            'publication_fee_status': publicationFee == null
-                ? 'paid'
-                : 'pending',
+            // Paiement par carte Visa (-30%) → l'offre reste cachée des
+            // clients tant que le fondateur n'a pas confirmé le paiement.
+            // Toute autre publication est visible immédiatement.
+            'publication_fee_status':
+                publicationFee != null && publicationFeeDiscount > 0
+                    ? 'awaiting_confirmation'
+                    : 'paid',
             'publication_fee_discount': publicationFeeDiscount,
             'description': description,
             'created_at': DateTime.now().toIso8601String(),
@@ -318,6 +322,29 @@ class ShipmentService {
           })
           .select('*, shippers(*, users!shippers_user_id_fkey(*))')
           .single();
+
+      // Le dû de publication est enregistré comme platform_fee (portefeuille
+      // fondateur) : Visa → awaiting_confirmation (paiement à confirmer),
+      // sinon pending avec échéance 7 jours.
+      if (publicationFee != null && publicationFee > 0) {
+        final discounted = publicationFeeDiscount > 0
+            ? publicationFee - (publicationFee * publicationFeeDiscount / 100)
+            : publicationFee;
+        await _supabase.from('platform_fees').insert({
+          'shipment_id': response['id'],
+          'shipper_id': shipperId,
+          'amount': discounted,
+          'currency': 'DZD',
+          'type': 'publication',
+          'status': publicationFeeDiscount > 0
+              ? 'awaiting_confirmation'
+              : 'pending',
+          if (publicationFeeDiscount > 0) 'payment_method': 'visa',
+          if (publicationFeeDiscount <= 0)
+            'due_at':
+                DateTime.now().add(const Duration(days: 7)).toIso8601String(),
+        });
+      }
 
       _logger.i('Shipment published successfully');
       return Shipment.fromJson(response);
@@ -352,7 +379,8 @@ class ShipmentService {
   }
 
   /// Founder confirms the publication payment → the offer becomes visible to
-  /// clients (publication_fee_status = paid).
+  /// clients (publication_fee_status = paid) and the publication platform fee
+  /// is marked paid in the founder wallet.
   Future<Shipment?> confirmShipmentPublication(String shipmentId) async {
     try {
       final response = await _supabase
@@ -365,6 +393,16 @@ class ShipmentService {
           .eq('id', shipmentId)
           .select('*, shippers(*, users!shippers_user_id_fkey(*))')
           .single();
+      await _supabase
+          .from('platform_fees')
+          .update({
+            'status': 'paid',
+            'paid_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('shipment_id', shipmentId)
+          .eq('type', 'publication')
+          .eq('status', 'awaiting_confirmation');
       _logger.i('Shipment publication confirmed: $shipmentId');
       return Shipment.fromJson(response);
     } catch (e) {
@@ -573,6 +611,10 @@ class ShipmentService {
             'origin_country.ilike.%$query%,destination_city.ilike.%$query%',
           )
           .eq('status', 'active')
+          // Même filtre que getActiveShipments : une offre dont le paiement
+          // Visa n'a pas été confirmé par le fondateur ne doit pas fuiter
+          // dans les résultats de recherche.
+          .eq('publication_fee_status', 'paid')
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
 

@@ -801,10 +801,12 @@ class TransactionItem {
 
 class PlatformFee {
   final String id;
-  final String bookingId;
+  final String? bookingId; // null pour les frais de publication
   final String shipmentId;
   final String shipperId;
   final double amount;
+  final String currency; // DZD, EUR, USD, RMB, ...
+  final String type; // commission, publication
   final String status; // pending, awaiting_confirmation, paid
   final DateTime? paidAt;
   final DateTime? dueAt; // échéance (délai de 7 jours)
@@ -815,10 +817,12 @@ class PlatformFee {
 
   PlatformFee({
     required this.id,
-    required this.bookingId,
+    this.bookingId,
     required this.shipmentId,
     required this.shipperId,
     required this.amount,
+    this.currency = 'DZD',
+    this.type = 'commission',
     required this.status,
     this.paidAt,
     this.dueAt,
@@ -831,10 +835,12 @@ class PlatformFee {
   factory PlatformFee.fromJson(Map<String, dynamic> json) {
     return PlatformFee(
       id: json['id'] as String,
-      bookingId: json['booking_id'] as String,
+      bookingId: json['booking_id'] as String?,
       shipmentId: json['shipment_id'] as String,
       shipperId: json['shipper_id'] as String,
       amount: (json['amount'] as num).toDouble(),
+      currency: json['currency'] as String? ?? 'DZD',
+      type: json['type'] as String? ?? 'commission',
       status: json['status'] as String,
       paidAt: json['paid_at'] != null
           ? DateTime.tryParse(json['paid_at'] as String)

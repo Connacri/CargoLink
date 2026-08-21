@@ -1091,7 +1091,9 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
   // ---------------------------------------------------------------------------
 
   Widget _buildActions(Shipment shipment) {
-    if (_currentStep >= 3) return const SizedBox.shrink();
+    // L'étape 4 (Confirmation) affiche le QR : plus d'actions. Les étapes 0-3
+    // (dont Paiement) doivent toujours proposer Précédent / Suivant.
+    if (_currentStep >= 4) return const SizedBox.shrink();
     return SafeArea(
       top: false,
       child: Padding(
@@ -1335,7 +1337,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
           _createdBookingId = booking.id;
           _createdTrackingCode = booking.trackingNumber ??
               QrBookingPayload.refCodeFor(booking.id);
-          _currentStep = 3;
+          _currentStep = 4; // étape Confirmation (QR + récap)
           _submitting = false;
         });
       }

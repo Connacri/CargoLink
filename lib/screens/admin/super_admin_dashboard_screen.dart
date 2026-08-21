@@ -29,6 +29,7 @@ class SuperAdminDashboardScreen extends ConsumerStatefulWidget {
 
 class _SuperAdminDashboardScreenState
     extends ConsumerState<SuperAdminDashboardScreen> {
+  int _tabIndex = 0;
   String? _roleFilter;
   String _lastKey = '';
 
@@ -41,11 +42,6 @@ class _SuperAdminDashboardScreenState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Defer to the first idle frame so we never touch a pager provider while
-    // the widget tree is building. Calling loadInitial synchronously here
-    // poisons the shared pagedUsersProvider((role: null)) instance (loading
-    // stays true forever) and leaves the list stuck on its shimmer skeleton —
-    // seen on desktop/Windows.
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
   }
 
@@ -72,57 +68,133 @@ class _SuperAdminDashboardScreenState
     ref.invalidate(awaitingCommissionFeesProvider);
     ref.invalidate(pendingDeletionRequestsProvider);
     ref.invalidate(pendingDeletionRequestsCountProvider);
+    ref.invalidate(awaitingPublicationCountProvider);
+    ref.invalidate(awaitingPublicationShipmentsProvider);
+    ref.invalidate(platformFeeSummaryProvider);
+    ref.invalidate(allPlatformFeesProvider);
     await _refreshUsers();
   }
 
   @override
   Widget build(BuildContext context) {
+    final pendingCommissions = ref.watch(awaitingCommissionCountProvider);
+    final pendingPublications = ref.watch(awaitingPublicationCountProvider);
+    final pendingDeletions = ref.watch(pendingDeletionRequestsCountProvider);
+    final pendingVerifications = ref.watch(pendingShippersCountProvider);
+
+    final totalBadges = (pendingCommissions.valueOrNull ?? 0) +
+        (pendingPublications.valueOrNull ?? 0) +
+        (pendingDeletions.valueOrNull ?? 0) +
+        (pendingVerifications.valueOrNull ?? 0);
+
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: _refreshAll,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            const GradientSliverHeader(
-              title: 'Fondateur',
-              subtitle: 'Contrôle total de la plateforme',
-              icon: Icons.admin_panel_settings_outlined,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _FounderMenuButton(),
-                  LogoutIconButton(),
-                ],
-              ),
+      body: IndexedStack(
+        index: _tabIndex,
+        children: [
+          RefreshIndicator(
+            onRefresh: _refreshAll,
+            child: const CustomScrollView(
+              physics: AlwaysScrollableScrollPhysics(),
+              slivers: [
+                GradientSliverHeader(
+                  title: 'Tableau de bord',
+                  subtitle: 'Vue d\'ensemble de la plateforme',
+                  icon: Icons.dashboard_outlined,
+                  trailing: LogoutIconButton(),
+                ),
+                SliverToBoxAdapter(child: _StatsOverview()),
+                SliverToBoxAdapter(child: _FounderWalletSection()),
+                SliverToBoxAdapter(child: _PendingVerificationSection()),
+                SliverToBoxAdapter(child: _PendingPublicationSection()),
+                SliverToBoxAdapter(child: _PendingCommissionSection()),
+                SliverToBoxAdapter(child: _PendingDeletionSection()),
+                SliverToBoxAdapter(child: _FeedbackSection()),
+                SliverToBoxAdapter(
+                  child: SizedBox(height: AppTheme.spaceXxl),
+                ),
+              ],
             ),
-            const SliverToBoxAdapter(child: _StatsOverview()),
-            const SliverToBoxAdapter(child: _PendingVerificationSection()),
-            const SliverToBoxAdapter(child: _PendingPublicationSection()),
-            const SliverToBoxAdapter(child: _PendingCommissionSection()),
-            const SliverToBoxAdapter(child: _PendingDeletionSection()),
-            const SliverToBoxAdapter(child: _FeedbackSection()),
-            const SliverToBoxAdapter(
-              child: _SectionTitle(title: 'Gestion des comptes'),
+          ),
+          RefreshIndicator(
+            onRefresh: _refreshAll,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                const GradientSliverHeader(
+                  title: 'Comptes',
+                  subtitle: 'Gérer les utilisateurs',
+                  icon: Icons.people_alt_outlined,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _FounderMenuButton(),
+                      LogoutIconButton(),
+                    ],
+                  ),
+                ),
+                SliverToBoxAdapter(child: _buildRoleFilter()),
+                ..._buildUsersSliver(),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: AppTheme.spaceXxl),
+                ),
+              ],
             ),
-            SliverToBoxAdapter(child: _buildRoleFilter()),
-            ..._buildUsersSliver(),
-            const SliverToBoxAdapter(
-              child: _SectionTitle(title: 'Modération'),
+          ),
+          RefreshIndicator(
+            onRefresh: _refreshAll,
+            child: const CustomScrollView(
+              physics: AlwaysScrollableScrollPhysics(),
+              slivers: [
+                GradientSliverHeader(
+                  title: 'Outils',
+                  subtitle: 'Paramètres et modération',
+                  icon: Icons.settings_outlined,
+                  trailing: LogoutIconButton(),
+                ),
+                SliverToBoxAdapter(
+                  child: _SectionTitle(title: 'Modération'),
+                ),
+                SliverToBoxAdapter(child: _AdminShortcuts()),
+                SliverToBoxAdapter(
+                  child: _SectionTitle(title: 'Paramètres plateforme'),
+                ),
+                SliverToBoxAdapter(child: _PlatformSettingsShortcut()),
+                SliverToBoxAdapter(
+                  child: _SectionTitle(title: 'Zone de danger'),
+                ),
+                SliverToBoxAdapter(child: _DangerZone()),
+                SliverToBoxAdapter(
+                  child: SizedBox(height: AppTheme.spaceXxl),
+                ),
+              ],
             ),
-            const SliverToBoxAdapter(child: _AdminShortcuts()),
-            const SliverToBoxAdapter(
-              child: _SectionTitle(title: 'Paramètres plateforme'),
+          ),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _tabIndex,
+        onDestinationSelected: (i) => setState(() => _tabIndex = i),
+        destinations: [
+          const NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard),
+            label: 'Tableau',
+          ),
+          NavigationDestination(
+            icon: Badge(
+              label: Text('$totalBadges'),
+              isLabelVisible: totalBadges > 0,
+              child: const Icon(Icons.people_outline),
             ),
-            const SliverToBoxAdapter(child: _PlatformSettingsShortcut()),
-            const SliverToBoxAdapter(
-              child: _SectionTitle(title: 'Zone de danger'),
-            ),
-            const SliverToBoxAdapter(child: _DangerZone()),
-            const SliverToBoxAdapter(
-              child: SizedBox(height: AppTheme.spaceXxl),
-            ),
-          ],
-        ),
+            selectedIcon: const Icon(Icons.people),
+            label: 'Comptes',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Outils',
+          ),
+        ],
       ),
     );
   }
@@ -222,6 +294,327 @@ class _SectionTitle extends StatelessWidget {
         AppTheme.spaceSm,
       ),
       child: Text(title, style: AppTheme.h2),
+    );
+  }
+}
+
+// ============================================================================
+// PORTEFEUILLE FONDATEUR (dus / payés / remboursés, totaux par devise)
+// ============================================================================
+
+/// Wallet du fondateur : totaux par devise (DZD, EUR, USD, RMB…) puis liste
+/// des dus plateforme par expéditeur avec actions Confirmer / Rembourser.
+class _FounderWalletSection extends ConsumerStatefulWidget {
+  const _FounderWalletSection();
+
+  @override
+  ConsumerState<_FounderWalletSection> createState() =>
+      _FounderWalletSectionState();
+}
+
+class _FounderWalletSectionState extends ConsumerState<_FounderWalletSection> {
+  int _filter = 0; // 0 = à payer, 1 = payés, 2 = remboursés
+
+  void _invalidateWallet() {
+    ref.invalidate(platformFeeSummaryProvider);
+    ref.invalidate(allPlatformFeesProvider);
+    ref.invalidate(awaitingCommissionFeesProvider);
+    ref.invalidate(awaitingCommissionCountProvider);
+  }
+
+  Future<void> _confirmFee(PlatformFee fee) async {
+    try {
+      await ref.read(paymentServiceProvider).confirmPlatformFee(fee.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Paiement confirmé')),
+      );
+      _invalidateWallet();
+      ref.invalidate(shipperFinanceSummaryProvider(fee.shipperId));
+      ref.invalidate(shipperPlatformFeesProvider(fee.shipperId));
+    } catch (e) {
+      if (mounted) await showAppErrorDialog(context, message: 'Erreur: $e');
+    }
+  }
+
+  Future<void> _refundFee(PlatformFee fee) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Rembourser ce dû ?'),
+        content: Text(
+          '${fee.amount.toStringAsFixed(0)} ${fee.currency} — le dû sera '
+          'marqué comme remboursé.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Rembourser'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.read(paymentServiceProvider).refundPlatformFee(fee.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Dû marqué remboursé')),
+      );
+      _invalidateWallet();
+      ref.invalidate(shipperFinanceSummaryProvider(fee.shipperId));
+      ref.invalidate(shipperPlatformFeesProvider(fee.shipperId));
+    } catch (e) {
+      if (mounted) await showAppErrorDialog(context, message: 'Erreur: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final summary = ref.watch(platformFeeSummaryProvider);
+    final fees = ref.watch(allPlatformFeesProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        0,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: GlassCard(
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                AnimatedIconDot(
+                  icon: Icons.account_balance_wallet_outlined,
+                  color: AppTheme.primaryColor,
+                ),
+                SizedBox(width: AppTheme.spaceSm),
+                Expanded(child: Text('Portefeuille', style: AppTheme.h3)),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            summary.when(
+              data: _buildCurrencyTotals,
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppTheme.spaceSm),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+              error: (_, __) => const Text(
+                'Totaux indisponibles',
+                style: AppTheme.caption,
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            Wrap(
+              spacing: AppTheme.spaceSm,
+              children: [
+                ChoiceChip(
+                  label: const Text('À payer'),
+                  selected: _filter == 0,
+                  showCheckmark: false,
+                  onSelected: (_) => setState(() => _filter = 0),
+                ),
+                ChoiceChip(
+                  label: const Text('Payés'),
+                  selected: _filter == 1,
+                  showCheckmark: false,
+                  onSelected: (_) => setState(() => _filter = 1),
+                ),
+                ChoiceChip(
+                  label: const Text('Remboursés'),
+                  selected: _filter == 2,
+                  showCheckmark: false,
+                  onSelected: (_) => setState(() => _filter = 2),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            fees.when(
+              data: (list) {
+                final filtered = list.where((f) {
+                  switch (_filter) {
+                    case 0:
+                      return f.status == 'pending' ||
+                          f.status == 'awaiting_confirmation';
+                    case 1:
+                      return f.status == 'paid';
+                    default:
+                      return f.status == 'refunded';
+                  }
+                }).toList();
+                if (filtered.isEmpty) {
+                  return const Text(
+                    'Aucun dû dans cette catégorie.',
+                    style: AppTheme.caption,
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final fee in filtered.take(30))
+                      _WalletFeeTile(
+                        fee: fee,
+                        onConfirm: () => _confirmFee(fee),
+                        onRefund: () => _refundFee(fee),
+                      ),
+                  ],
+                );
+              },
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppTheme.spaceSm),
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ),
+              error: (_, __) => const Text(
+                'Impossible de charger les dus.',
+                style: AppTheme.caption,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrencyTotals(Map<String, dynamic>? s) {
+    if (s == null) {
+      return const Text('Totaux indisponibles', style: AppTheme.caption);
+    }
+    final byCurrency = (s['by_currency'] as Map?) ?? const {};
+    if (byCurrency.isEmpty) {
+      return Text(
+        'Encaissé ${_num(s['collected'])} · À confirmer ${_num(s['awaiting'])} '
+        '· Dû ${_num(s['pending'])} · Remboursé ${_num(s['refunded'])}',
+        style: AppTheme.caption,
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final entry in byCurrency.entries)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppTheme.spaceXs),
+            child: Text(
+              '${entry.key} — Encaissé ${_num((entry.value as Map)['collected'])}'
+              ' · À confirmer ${_num((entry.value as Map)['awaiting'])}'
+              ' · Dû ${_num((entry.value as Map)['pending'])}'
+              ' · Remboursé ${_num((entry.value as Map)['refunded'])}',
+              style: AppTheme.body.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+      ],
+    );
+  }
+
+  static String _num(Object? v) => ((v as num?) ?? 0).toStringAsFixed(0);
+}
+
+/// Libellés affichables des types de dû plateforme.
+const _feeTypeLabels = {
+  'commission': 'Commission',
+  'publication': 'Publication',
+};
+
+/// Une ligne de dû dans le portefeuille fondateur.
+class _WalletFeeTile extends StatelessWidget {
+  const _WalletFeeTile({
+    required this.fee,
+    required this.onConfirm,
+    required this.onRefund,
+  });
+
+  final PlatformFee fee;
+  final VoidCallback onConfirm;
+  final VoidCallback onRefund;
+
+  @override
+  Widget build(BuildContext context) {
+    final shipperName =
+        fee.shipment?.shipper?.user?.fullName ?? 'Expéditeur inconnu';
+    final route = fee.shipment == null
+        ? ''
+        : '${fee.shipment!.originCountry} → ${fee.shipment!.destinationCity}';
+    final typeLabel = _feeTypeLabels[fee.type] ?? fee.type;
+    final isAwaiting = fee.status == 'awaiting_confirmation';
+    final isPaid = fee.status == 'paid';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppTheme.spaceSm),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  shipperName,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  typeLabel + (route.isEmpty ? '' : ' · $route'),
+                  style: AppTheme.caption,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '${fee.amount.toStringAsFixed(0)} ${fee.currency}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+                if (fee.dueAt != null && !isPaid)
+                  Text(
+                    fee.isOverdue
+                        ? 'Échéance dépassée (${fee.dueAt!.day}/${fee.dueAt!.month})'
+                        : 'À régler avant le ${fee.dueAt!.day}/${fee.dueAt!.month}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: fee.isOverdue
+                          ? AppTheme.errorColor
+                          : AppTheme.warningColor,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (isAwaiting)
+            FilledButton.icon(
+              onPressed: onConfirm,
+              icon: const Icon(Icons.check_rounded, size: 18),
+              label: const Text('Confirmer'),
+            )
+          else if (isPaid)
+            OutlinedButton.icon(
+              onPressed: onRefund,
+              icon: const Icon(Icons.undo_rounded, size: 16),
+              label: const Text('Rembourser'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.errorColor,
+              ),
+            )
+          else
+            const Icon(Icons.money_off_rounded,
+                color: AppTheme.textMutedColor),
+        ],
+      ),
     );
   }
 }

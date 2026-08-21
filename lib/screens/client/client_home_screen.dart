@@ -598,11 +598,13 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
           const SizedBox(width: AppTheme.spaceSm),
           ChoiceChip(
             label: const Text('Voyageurs'),
-            selected: selected == 'voyageur',
+            // Valeur stockée en base : shipper_type = 'voyageur_ordinaire'.
+            selected: selected == 'voyageur_ordinaire',
             showCheckmark: false,
             avatar: const Icon(Icons.flight_takeoff_rounded, size: 18),
-            onSelected: (_) =>
-                ref.read(shipperTypeFilterProvider.notifier).state = 'voyageur',
+            onSelected: (_) => ref
+                .read(shipperTypeFilterProvider.notifier)
+                .state = 'voyageur_ordinaire',
           ),
           const SizedBox(width: AppTheme.spaceSm),
           ChoiceChip(

@@ -1105,7 +1105,7 @@ class _ShipperDashboardScreenState
                                     (weight * price * commissionPercent) / 100;
                                 final discount = payByVisa ? 30.0 : 0.0;
 
-                                final shipment = await ref
+                                await ref
                                     .read(shipmentServiceProvider)
                                     .publishShipment(
                                       shipperId: shipperId,
@@ -1130,18 +1130,10 @@ class _ShipperDashboardScreenState
                                       publicationFee: publicationFee,
                                       publicationFeeDiscount: discount,
                                     );
-                                // Le paiement par carte Visa (-30%) fait passer
-                                // l'offre en attente de confirmation fondateur :
-                                // elle reste cachée des clients tant que le
-                                // fondateur n'a pas confirmé le paiement.
-                                if (payByVisa && shipment != null) {
-                                  await ref
-                                      .read(shipmentServiceProvider)
-                                      .payShipmentPublicationFee(
-                                        shipment.id,
-                                        discount: discount,
-                                      );
-                                }
+                                // Le paiement par carte Visa (-30%) place
+                                // l'offre en attente de confirmation
+                                // fondateur (géré par publishShipment) ;
+                                // sans Visa l'offre est visible immédiatement.
                                 await ref
                                     .read(
                                         shipperShipmentsPagerProvider(shipperId)
@@ -1157,11 +1149,11 @@ class _ShipperDashboardScreenState
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        payByVisa
-                                            ? 'Offre publiée — paiement Visa en '
-                                                'attente de confirmation du fondateur'
-                                            : 'Offre publiée — visible des clients '
-                                                'après confirmation du fondateur',
+                                          payByVisa
+                                              ? 'Offre publiée — paiement Visa en '
+                                                  'attente de confirmation du fondateur'
+                                              : 'Offre publiée — visible des '
+                                                  'clients immédiatement',
                                       ),
                                       backgroundColor: AppTheme.accentColor,
                                     ),
