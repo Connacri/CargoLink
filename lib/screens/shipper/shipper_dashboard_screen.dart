@@ -153,6 +153,23 @@ class _ShipperDashboardScreenState
       }
     });
 
+    // Filet de sécurité temps réel : si un événement Postgres Changes a été
+    // manqué (socket coupé, app en arrière-plan), le retour sur l'onglet
+    // recharge la première page des deux pagers + les cartes de stats, comme
+    // le fait l'écran « Mes commandes » côté client.
+    ref.listen<int>(navigationIndexProvider, (prev, next) {
+      if (next == 0 && prev != 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final id = ref.read(currentShipperProvider).valueOrNull?.id;
+          if (id == null || id != _lastShipperId) return;
+          ref.read(shipperShipmentsPagerProvider(id).notifier).loadInitial();
+          ref.read(shipperBookingsPagerProvider(id).notifier).loadInitial();
+          ref.invalidate(shipperStatsProvider(id));
+          ref.invalidate(shipperEarningsProvider(id));
+        });
+      }
+    });
+
     return shipper.when(
       data: (shipperData) {
         if (shipperData == null || !shipperData.isVerified) {
@@ -2454,6 +2471,15 @@ class _ManageBookingCard extends ConsumerWidget {
   Future<void> _confirmBooking(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(bookingServiceProvider).confirmBooking(booking.id);
+      // Étape de suivi : la commande est validée, le colis attend d'être
+      // remis à l'expéditeur.
+      await ref.read(trackingServiceProvider).addTrackingUpdate(
+            bookingId: booking.id,
+            status: 'order_processed',
+            notes: 'Commande confirmée — en attente de collecte du colis '
+                'ou marchandises',
+            location: booking.shipment?.originCountry,
+          );
       if (!context.mounted) return;
       _reload(context, ref);
       _notifyClient(context, ref);

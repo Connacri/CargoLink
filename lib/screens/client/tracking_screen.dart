@@ -5,6 +5,7 @@ import '../../providers/index.dart';
 import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/micro_badge.dart';
 import '../../components/tracking_timeline.dart';
 import '../chat/chat_screen.dart';
 import '../shipper/shipper_public_profile_screen.dart';
@@ -445,6 +446,14 @@ class TrackingScreen extends ConsumerWidget {
                           style: AppTheme.caption,
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 4),
+                    // Type d'expéditeur toujours visible.
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ShipperTypeBadge(
+                        isMicroImportateur: shipper?.isMicroImportateur ?? false,
+                      ),
                     ),
                   ],
                 ),

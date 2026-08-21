@@ -47,6 +47,20 @@ class FeedbackItem {
           DateTime.now(),
     );
   }
+
+  /// Serializes only persisted columns; sender details come from a joined
+  /// `users` row and do not belong to `feedbacks`.
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'role': role,
+      'message': message,
+      'screenshot_url': screenshotUrl,
+      'is_read': isRead,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
 }
 
 class FeedbackService {

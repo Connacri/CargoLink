@@ -440,7 +440,7 @@ class V2Service {
   // --------------------------------------------------------------------------
 
   Future<ShipmentProof?> addProof({
-    String? shipmentId,
+    required String shipmentId,
     String? packageId,
     String? transferId,
     String? eventId,
@@ -494,12 +494,12 @@ class V2Service {
   // --------------------------------------------------------------------------
 
   Future<TrackingPoint?> addTrackingPoint({
-    String? shipmentId,
+    required String shipmentId,
     String? packageId,
     String? legId,
     String? shipperId,
-    double? latitude,
-    double? longitude,
+    required double latitude,
+    required double longitude,
     double? accuracy,
   }) async {
     try {

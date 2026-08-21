@@ -54,3 +54,56 @@ class MicroImportateurBadge extends StatelessWidget {
     return GestureDetector(onTap: onTap, child: child);
   }
 }
+
+/// Badge du type d'expéditeur visible par les clients : « Voyageur ordinaire »
+/// ou « Micro-Importateur ». Affiché sur les cartes d'offre, les profils
+/// publics et toutes les listes où l'expéditeur apparaît.
+class ShipperTypeBadge extends StatelessWidget {
+  const ShipperTypeBadge({
+    super.key,
+    required this.isMicroImportateur,
+    this.compact = false,
+  });
+
+  final bool isMicroImportateur;
+
+  /// Compact : icône seule (utilisé dans les lignes denses).
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isMicroImportateur) return MicroImportateurBadge(compact: compact);
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 6 : 8,
+        vertical: compact ? 2 : 3,
+      ),
+      decoration: BoxDecoration(
+        color: AppTheme.infoColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppTheme.infoColor.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.work_outline_rounded,
+            size: compact ? 12 : 13,
+            color: AppTheme.infoColor,
+          ),
+          if (!compact) ...[
+            const SizedBox(width: 4),
+            const Text(
+              'Voyageur ordinaire',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.infoColor,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

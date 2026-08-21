@@ -25,6 +25,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   late final _productNameController = TextEditingController();
   late final _productDescController = TextEditingController();
   late final _weightController = TextEditingController();
+  late final _deliveryAddressController = TextEditingController();
 
   final List<File> _productImages = [];
   bool _isLoading = false;
@@ -46,6 +47,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     _productNameController.dispose();
     _productDescController.dispose();
     _weightController.dispose();
+    _deliveryAddressController.dispose();
     super.dispose();
   }
 
@@ -269,6 +271,20 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               }
               if (weight > shipment.remainingWeightKg) {
                 return 'Poids supérieur au disponible';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: AppTheme.spaceMd),
+          TextFormField(
+            controller: _deliveryAddressController,
+            decoration: const InputDecoration(
+              labelText: 'Adresse de livraison',
+              hintText: 'Quartier, rue, point de repère…',
+            ),
+            validator: (value) {
+              if (value?.trim().isEmpty ?? true) {
+                return 'L\'adresse de livraison est requise';
               }
               return null;
             },
@@ -527,6 +543,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         productDescription: _productDescController.text,
         productPhotosUrl: imageUrls,
         requestedWeightKg: double.parse(_weightController.text),
+        deliveryAddress: _deliveryAddressController.text.trim(),
       );
 
       if (booking != null) {

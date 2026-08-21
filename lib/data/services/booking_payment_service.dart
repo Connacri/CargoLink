@@ -5,6 +5,7 @@ import '../../core/utils/qr_booking.dart';
 import './shipper_shipment_service.dart';
 import './tracking_dispute_service.dart';
 import './settings_service.dart';
+import './auth_service.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
 
@@ -28,7 +29,7 @@ class BookingService {
     required double requestedWeightKg,
     String? cniPhotoUrl,
     String? deliveryPhone,
-    String? deliveryAddress,
+    required String deliveryAddress,
   }) async {
     try {
       _logger.i('Creating booking for shipment: $shipmentId');
@@ -39,6 +40,11 @@ class BookingService {
       // Validate requested weight
       if (requestedWeightKg <= 0 || requestedWeightKg > settings.maxWeightKg) {
         throw Exception('Invalid weight requested');
+      }
+
+      // Adresse de livraison obligatoire (remise en main propre au client).
+      if (deliveryAddress.trim().isEmpty) {
+        throw Exception('Delivery address is required');
       }
 
       // Get shipment
@@ -361,11 +367,14 @@ class BookingService {
         final payload = <String, dynamic>{
           'updated_at': DateTime.now().toIso8601String(),
         };
+        // Le client Supabase est configuré avec l'option `accessToken` (pont
+        // Firebase) : `supabase.auth` n'est pas accessible. On passe donc par
+        // l'ID utilisateur déterministe dérivé de Firebase.
+        final currentUserId = AuthService().currentUserId;
         final isShipperSide =
             booking.shipment?.shipperId != null &&
-                _supabase.auth.currentUser?.id != null &&
-                booking.shipment!.shipper!.userId ==
-                    _supabase.auth.currentUser!.id;
+                currentUserId != null &&
+                booking.shipment!.shipper!.userId == currentUserId;
         payload[isShipperSide ? 'refusal_reason' : 'cancellation_reason'] =
             reason.trim();
         try {

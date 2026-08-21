@@ -465,23 +465,23 @@ class ShipmentEvent {
 
 class TrackingPoint {
   final String id;
-  final String? shipmentId;
+  final String shipmentId;
   final String? packageId;
   final String? legId;
   final String? shipperId;
-  final double? latitude;
-  final double? longitude;
+  final double latitude;
+  final double longitude;
   final double? accuracy;
   final DateTime createdAt;
 
   TrackingPoint({
     required this.id,
-    this.shipmentId,
+    required this.shipmentId,
     this.packageId,
     this.legId,
     this.shipperId,
-    this.latitude,
-    this.longitude,
+    required this.latitude,
+    required this.longitude,
     this.accuracy,
     required this.createdAt,
   });
@@ -489,12 +489,12 @@ class TrackingPoint {
   factory TrackingPoint.fromJson(Map<String, dynamic> json) {
     return TrackingPoint(
       id: json['id'] as String,
-      shipmentId: json['shipment_id'] as String?,
+      shipmentId: json['shipment_id'] as String,
       packageId: json['package_id'] as String?,
       legId: json['leg_id'] as String?,
       shipperId: json['shipper_id'] as String?,
-      latitude: (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['longitude'] as num?)?.toDouble(),
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
       accuracy: (json['accuracy'] as num?)?.toDouble(),
       createdAt: DateTime.parse(json['created_at'] as String),
     );
@@ -521,7 +521,7 @@ class TrackingPoint {
 
 class ShipmentProof {
   final String id;
-  final String? shipmentId;
+  final String shipmentId;
   final String? packageId;
   final String? transferId;
   final String? eventId;
@@ -532,7 +532,7 @@ class ShipmentProof {
 
   ShipmentProof({
     required this.id,
-    this.shipmentId,
+    required this.shipmentId,
     this.packageId,
     this.transferId,
     this.eventId,
@@ -545,7 +545,7 @@ class ShipmentProof {
   factory ShipmentProof.fromJson(Map<String, dynamic> json) {
     return ShipmentProof(
       id: json['id'] as String,
-      shipmentId: json['shipment_id'] as String?,
+      shipmentId: json['shipment_id'] as String,
       packageId: json['package_id'] as String?,
       transferId: json['transfer_id'] as String?,
       eventId: json['event_id'] as String?,
@@ -577,25 +577,25 @@ class ShipmentProof {
 
 class PaymentAllocation {
   final String id;
-  final String? shipmentId;
+  final String shipmentId;
   final String? legId;
   final String? bookingId;
-  final String? shipperId;
+  final String shipperId;
   final double amount;
   final String status; // pending, released, frozen, refunded
-  final String? payoutStatus;
+  final String payoutStatus;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   PaymentAllocation({
     required this.id,
-    this.shipmentId,
+    required this.shipmentId,
     this.legId,
     this.bookingId,
-    this.shipperId,
+    required this.shipperId,
     required this.amount,
     required this.status,
-    this.payoutStatus,
+    required this.payoutStatus,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -603,13 +603,13 @@ class PaymentAllocation {
   factory PaymentAllocation.fromJson(Map<String, dynamic> json) {
     return PaymentAllocation(
       id: json['id'] as String,
-      shipmentId: json['shipment_id'] as String?,
+      shipmentId: json['shipment_id'] as String,
       legId: json['leg_id'] as String?,
       bookingId: json['booking_id'] as String?,
-      shipperId: json['shipper_id'] as String?,
+      shipperId: json['shipper_id'] as String,
       amount: (json['amount'] as num).toDouble(),
       status: json['status'] as String,
-      payoutStatus: json['payout_status'] as String?,
+      payoutStatus: json['payout_status'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -639,20 +639,20 @@ class PaymentAllocation {
 
 class Payout {
   final String id;
-  final String? allocationId;
-  final String? shipperId;
+  final String allocationId;
+  final String shipperId;
   final double amount;
-  final double? platformFee;
+  final double platformFee;
   final String status; // pending, released, frozen, paid, failed
   final DateTime? releasedAt;
   final DateTime createdAt;
 
   Payout({
     required this.id,
-    this.allocationId,
-    this.shipperId,
+    required this.allocationId,
+    required this.shipperId,
     required this.amount,
-    this.platformFee,
+    required this.platformFee,
     required this.status,
     this.releasedAt,
     required this.createdAt,
@@ -661,10 +661,10 @@ class Payout {
   factory Payout.fromJson(Map<String, dynamic> json) {
     return Payout(
       id: json['id'] as String,
-      allocationId: json['allocation_id'] as String?,
-      shipperId: json['shipper_id'] as String?,
+      allocationId: json['allocation_id'] as String,
+      shipperId: json['shipper_id'] as String,
       amount: (json['amount'] as num).toDouble(),
-      platformFee: (json['platform_fee'] as num?)?.toDouble(),
+      platformFee: (json['platform_fee'] as num).toDouble(),
       status: json['status'] as String,
       releasedAt: json['released_at'] != null
           ? DateTime.tryParse(json['released_at'] as String)
@@ -693,7 +693,7 @@ class Payout {
 
 class ShipmentException {
   final String id;
-  final String? shipmentId;
+  final String shipmentId;
   final String? packageId;
   final String? legId;
   final String type; // SHIPPER_DELAY, MISSED_FLIGHT, ... SLA_BREACH
@@ -710,7 +710,7 @@ class ShipmentException {
 
   ShipmentException({
     required this.id,
-    this.shipmentId,
+    required this.shipmentId,
     this.packageId,
     this.legId,
     required this.type,
@@ -729,7 +729,7 @@ class ShipmentException {
   factory ShipmentException.fromJson(Map<String, dynamic> json) {
     return ShipmentException(
       id: json['id'] as String,
-      shipmentId: json['shipment_id'] as String?,
+      shipmentId: json['shipment_id'] as String,
       packageId: json['package_id'] as String?,
       legId: json['leg_id'] as String?,
       type: json['type'] as String,
@@ -775,7 +775,7 @@ class ShipmentException {
 
 class Claim {
   final String id;
-  final String disputeId;
+  final String? disputeId;
   final String claimantUserId;
   final String? shipmentId;
   final String? packageId;
@@ -790,7 +790,7 @@ class Claim {
 
   Claim({
     required this.id,
-    required this.disputeId,
+    this.disputeId,
     required this.claimantUserId,
     this.shipmentId,
     this.packageId,
@@ -807,7 +807,7 @@ class Claim {
   factory Claim.fromJson(Map<String, dynamic> json) {
     return Claim(
       id: json['id'] as String,
-      disputeId: json['dispute_id'] as String,
+      disputeId: json['dispute_id'] as String?,
       claimantUserId: json['claimant_user_id'] as String,
       shipmentId: json['shipment_id'] as String?,
       packageId: json['package_id'] as String?,
@@ -850,14 +850,14 @@ class Claim {
 class ClaimDocument {
   final String id;
   final String claimId;
-  final String? url;
+  final String url;
   final String? docType;
   final DateTime createdAt;
 
   ClaimDocument({
     required this.id,
     required this.claimId,
-    this.url,
+    required this.url,
     this.docType,
     required this.createdAt,
   });
@@ -866,7 +866,7 @@ class ClaimDocument {
     return ClaimDocument(
       id: json['id'] as String,
       claimId: json['claim_id'] as String,
-      url: json['url'] as String?,
+      url: json['url'] as String,
       docType: json['doc_type'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
     );

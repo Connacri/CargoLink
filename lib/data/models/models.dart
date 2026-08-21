@@ -8,7 +8,7 @@ class User {
   final String phone;
   final String fullName;
   final String? profilePictureUrl;
-  final String role; // client, shipper, admin
+  final String role; // client, shipper, admin, super_admin
   final String? wechat;
   final String? whatsapp;
   final String? telegram;
@@ -225,6 +225,8 @@ class Shipper {
 class Shipment {
   final String id;
   final String shipperId;
+  final String? trackingNumber;
+  final int maxHopCount;
   final String originCountry;
   final String destinationCity;
   final double availableWeightKg;
@@ -255,6 +257,8 @@ class Shipment {
   Shipment({
     required this.id,
     required this.shipperId,
+    this.trackingNumber,
+    this.maxHopCount = 5,
     required this.originCountry,
     required this.destinationCity,
     required this.availableWeightKg,
@@ -279,6 +283,8 @@ class Shipment {
     return Shipment(
       id: json['id'] as String,
       shipperId: json['shipper_id'] as String,
+      trackingNumber: json['tracking_number'] as String?,
+      maxHopCount: (json['max_hop_count'] as num?)?.toInt() ?? 5,
       originCountry: json['origin_country'] as String,
       destinationCity: json['destination_city'] as String,
       availableWeightKg: (json['available_weight_kg'] as num).toDouble(),
@@ -309,6 +315,8 @@ class Shipment {
     return {
       'id': id,
       'shipper_id': shipperId,
+      'tracking_number': trackingNumber,
+      'max_hop_count': maxHopCount,
       'origin_country': originCountry,
       'destination_city': destinationCity,
       'available_weight_kg': availableWeightKg,
@@ -338,6 +346,9 @@ class Booking {
   final String id;
   final String shipmentId;
   final String clientId;
+  final String? packageId;
+  final String? tripId;
+  final String? idempotencyKey;
   final String productName;
   final String productDescription;
   final List<String>? productPhotosUrl;
@@ -375,6 +386,9 @@ class Booking {
     required this.id,
     required this.shipmentId,
     required this.clientId,
+    this.packageId,
+    this.tripId,
+    this.idempotencyKey,
     required this.productName,
     required this.productDescription,
     this.productPhotosUrl,
@@ -414,6 +428,9 @@ class Booking {
       id: json['id'] as String,
       shipmentId: json['shipment_id'] as String,
       clientId: json['client_id'] as String,
+      packageId: json['package_id'] as String?,
+      tripId: json['trip_id'] as String?,
+      idempotencyKey: json['idempotency_key'] as String?,
       productName: json['product_name'] as String,
       productDescription: json['product_description'] as String,
       productPhotosUrl: (json['product_photos_url'] as List<dynamic>?)
@@ -467,6 +484,9 @@ class Booking {
       'id': id,
       'shipment_id': shipmentId,
       'client_id': clientId,
+      'package_id': packageId,
+      'trip_id': tripId,
+      'idempotency_key': idempotencyKey,
       'product_name': productName,
       'product_description': productDescription,
       'product_photos_url': productPhotosUrl,
@@ -519,6 +539,9 @@ class ShipmentTracking {
   final DateTime timestamp;
   final String? notes;
   final String? location;
+  final DateTime? expectedBy;
+  final String? chainHash;
+  final Map<String, dynamic>? metadata;
 
   ShipmentTracking({
     required this.id,
@@ -529,6 +552,9 @@ class ShipmentTracking {
     required this.timestamp,
     this.notes,
     this.location,
+    this.expectedBy,
+    this.chainHash,
+    this.metadata,
   });
 
   factory ShipmentTracking.fromJson(Map<String, dynamic> json) {
@@ -541,6 +567,11 @@ class ShipmentTracking {
       timestamp: DateTime.parse(json['timestamp'] as String),
       notes: json['notes'] as String?,
       location: json['location'] as String?,
+      expectedBy: json['expected_by'] != null
+          ? DateTime.tryParse(json['expected_by'] as String)
+          : null,
+      chainHash: json['chain_hash'] as String?,
+      metadata: (json['metadata'] as Map?)?.cast<String, dynamic>(),
     );
   }
 
@@ -554,6 +585,9 @@ class ShipmentTracking {
       'timestamp': timestamp.toIso8601String(),
       'notes': notes,
       'location': location,
+      'expected_by': expectedBy?.toIso8601String(),
+      'chain_hash': chainHash,
+      'metadata': metadata,
     };
   }
 }
@@ -813,6 +847,7 @@ class PlatformFee {
   final String? paymentMethod; // visa, baridimob, cash
   final String escalationStatus; // none, overdue, justice_filed
   final DateTime createdAt;
+  final DateTime updatedAt;
   final Shipment? shipment; // Related shipment (route + shipper) for admin lists
 
   PlatformFee({
@@ -829,6 +864,7 @@ class PlatformFee {
     this.paymentMethod,
     this.escalationStatus = 'none',
     required this.createdAt,
+    required this.updatedAt,
     this.shipment,
   });
 
@@ -851,10 +887,30 @@ class PlatformFee {
       paymentMethod: json['payment_method'] as String?,
       escalationStatus: json['escalation_status'] as String? ?? 'none',
       createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
       shipment: json['shipments'] != null
           ? Shipment.fromJson(json['shipments'])
           : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'booking_id': bookingId,
+      'shipment_id': shipmentId,
+      'shipper_id': shipperId,
+      'amount': amount,
+      'currency': currency,
+      'type': type,
+      'status': status,
+      'paid_at': paidAt?.toIso8601String(),
+      'due_at': dueAt?.toIso8601String(),
+      'payment_method': paymentMethod,
+      'escalation_status': escalationStatus,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
   }
 
   bool get isPaid => status == 'paid';
@@ -1326,6 +1382,7 @@ class AccountDeletionRequest {
   final DateTime requestedAt;
   final DateTime? reviewedAt;
   final String? reviewedBy;
+  final DateTime createdAt;
 
   AccountDeletionRequest({
     required this.id,
@@ -1337,6 +1394,7 @@ class AccountDeletionRequest {
     required this.requestedAt,
     this.reviewedAt,
     this.reviewedBy,
+    required this.createdAt,
   });
 
   factory AccountDeletionRequest.fromJson(Map<String, dynamic> json) {
@@ -1352,7 +1410,23 @@ class AccountDeletionRequest {
           ? DateTime.tryParse(json['reviewed_at'] as String)
           : null,
       reviewedBy: json['reviewed_by'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'email': email,
+      'full_name': fullName,
+      'role': role,
+      'status': status,
+      'requested_at': requestedAt.toIso8601String(),
+      'reviewed_at': reviewedAt?.toIso8601String(),
+      'reviewed_by': reviewedBy,
+      'created_at': createdAt.toIso8601String(),
+    };
   }
 
   bool get isPending => status == 'pending';
@@ -1372,6 +1446,7 @@ class DeletedAccount {
   final DateTime deletedAt;
   final String? deletedBy;
   final Map<String, dynamic> history;
+  final DateTime createdAt;
 
   DeletedAccount({
     required this.id,
@@ -1383,6 +1458,7 @@ class DeletedAccount {
     required this.deletedAt,
     this.deletedBy,
     this.history = const {},
+    required this.createdAt,
   });
 
   factory DeletedAccount.fromJson(Map<String, dynamic> json) {
@@ -1396,6 +1472,22 @@ class DeletedAccount {
       deletedAt: DateTime.parse(json['deleted_at'] as String),
       deletedBy: json['deleted_by'] as String?,
       history: (json['history'] as Map?)?.cast<String, dynamic>() ?? const {},
+      createdAt: DateTime.parse(json['created_at'] as String),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'email': email,
+      'full_name': fullName,
+      'role': role,
+      'account_created_at': accountCreatedAt.toIso8601String(),
+      'deleted_at': deletedAt.toIso8601String(),
+      'deleted_by': deletedBy,
+      'history': history,
+      'created_at': createdAt.toIso8601String(),
+    };
   }
 }

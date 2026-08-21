@@ -156,10 +156,6 @@ class _ShipperCardState extends State<ShipperCard> {
                       color: AppTheme.primaryColor,
                     ),
                   ],
-                  if (widget.isMicroImportateur) ...[
-                    const SizedBox(width: 6),
-                    const MicroImportateurBadge(compact: true),
-                  ],
                   if (!widget.isAvailable) ...[
                     const SizedBox(width: 6),
                     const Icon(
@@ -169,6 +165,15 @@ class _ShipperCardState extends State<ShipperCard> {
                     ),
                   ],
                 ],
+              ),
+              const SizedBox(height: 4),
+              // Type d'expéditeur toujours visible (voyageur ordinaire ou
+              // micro-importateur).
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ShipperTypeBadge(
+                  isMicroImportateur: widget.isMicroImportateur,
+                ),
               ),
               const SizedBox(height: 2),
               Row(

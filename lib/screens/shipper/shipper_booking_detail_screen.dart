@@ -848,17 +848,34 @@ class _ShipperBookingDetailScreenState
     }
   }
 
-  Future<void> _confirm(Booking booking) => _run(
-      () => ref.read(bookingServiceProvider).confirmBooking(booking.id),
-      'Commande confirmée');
+  Future<void> _confirm(Booking booking) => _run(() async {
+        await ref.read(bookingServiceProvider).confirmBooking(booking.id);
+        // Étape de suivi : la commande est validée, le colis attend d'être
+        // remis à l'expéditeur.
+        await ref.read(trackingServiceProvider).addTrackingUpdate(
+              bookingId: booking.id,
+              status: 'order_processed',
+              notes: 'Commande confirmée — en attente de collecte du colis '
+                  'ou marchandises',
+              location: booking.shipment?.originCountry,
+            );
+        await ref.read(notificationServiceProvider).notifyClientBookingConfirmed(
+              clientId: booking.clientId,
+              bookingId: booking.id,
+              productName: booking.productName,
+            );
+      }, 'Commande confirmée');
 
   /// Refus de la commande avec motif (obligatoire côté expéditeur).
   Future<void> _refuse(Booking booking) async {
-    final reason = await _promptText(
-      title: 'Motif du refus',
-      hint: 'Expliquez pourquoi vous refusez cette commande',
-      confirmLabel: 'Refuser la commande',
-      isError: true,
+    final reason = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.backgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => const SafeArea(child: _RefusalSheet()),
     );
     if (reason == null) return;
     await _run(
@@ -1044,49 +1061,6 @@ class _ShipperBookingDetailScreenState
               destination: booking.shipment?.destinationCity ?? 'destination',
             );
       }, 'Commande marquée comme expédiée');
-
-  /// Saisie d'un texte libre (motif) dans une boîte de dialogue.
-  Future<String?> _promptText({
-    required String title,
-    required String hint,
-    required String confirmLabel,
-    bool isError = false,
-  }) {
-    final controller = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: 3,
-          maxLength: 500,
-          decoration: InputDecoration(
-            hintText: hint,
-            alignLabelWithHint: true,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            style: isError
-                ? FilledButton.styleFrom(backgroundColor: AppTheme.errorColor)
-                : null,
-            onPressed: () {
-              final text = controller.text.trim();
-              if (text.isEmpty) return;
-              Navigator.pop(dialogContext, text);
-            },
-            child: Text(confirmLabel),
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<bool> _promptConfirm({
     required String title,
@@ -1461,6 +1435,180 @@ class _CourierDepositSheetState extends State<_CourierDepositSheet> {
               onPressed: _busy ? null : _submit,
               icon: const Icon(Icons.check_rounded, size: 18),
               label: const Text('Enregistrer le dépôt'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// REFUS DE COMMANDE (motif obligatoire)
+// ============================================================================
+
+/// Feuille de refus : motifs rapides en un tap + champ libre pour préciser.
+class _RefusalSheet extends StatefulWidget {
+  const _RefusalSheet();
+
+  @override
+  State<_RefusalSheet> createState() => _RefusalSheetState();
+}
+
+class _RefusalSheetState extends State<_RefusalSheet> {
+  static const _quickReasons = <(String, IconData)>[
+    ('Articles interdits dans le colis', Icons.block_rounded),
+    ('Poids ou dimensions non conformes', Icons.scale_rounded),
+    ('Emballage endommagé', Icons.inventory_2_rounded),
+    ('Client injoignable', Icons.phone_missed_rounded),
+    ('Paiement non reçu', Icons.payments_rounded),
+    ('Plus de place dans la valise', Icons.luggage_rounded),
+  ];
+
+  final _reasonController = TextEditingController();
+  int? _selectedReason;
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  bool get _hasReason => _reasonController.text.trim().isNotEmpty;
+
+  void _submit() {
+    final reason = _reasonController.text.trim();
+    if (reason.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sélectionnez ou saisissez le motif du refus'),
+        ),
+      );
+      return;
+    }
+    Navigator.of(context).pop(reason);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppTheme.spaceMd,
+        right: AppTheme.spaceMd,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppTheme.spaceLg,
+        top: AppTheme.spaceMd,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppTheme.spaceSm),
+                  decoration: BoxDecoration(
+                    color: AppTheme.errorColor.withValues(alpha: 0.1),
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.radiusXs),
+                  ),
+                  child: const Icon(
+                    Icons.cancel_rounded,
+                    color: AppTheme.errorColor,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Refuser la commande', style: AppTheme.h2),
+                      SizedBox(height: 2),
+                      Text(
+                        'Le client sera remboursé et notifié',
+                        style: AppTheme.bodySecondary,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            const Text('Motif le plus fréquent', style: AppTheme.h3),
+            const SizedBox(height: AppTheme.spaceXs),
+            Wrap(
+              spacing: AppTheme.spaceSm,
+              runSpacing: AppTheme.spaceSm,
+              children: List.generate(_quickReasons.length, (i) {
+                final selected = _selectedReason == i;
+                return FilterChip(
+                  selected: selected,
+                  onSelected: (_) {
+                    setState(() {
+                      _selectedReason = selected ? null : i;
+                      if (!selected) {
+                        _reasonController.text = _quickReasons[i].$1;
+                      }
+                    });
+                  },
+                  avatar: Icon(
+                    _quickReasons[i].$2,
+                    size: 16,
+                    color: selected
+                        ? Colors.white
+                        : AppTheme.textSecondaryColor,
+                  ),
+                  label: Text(_quickReasons[i].$1),
+                  labelStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight:
+                        selected ? FontWeight.w600 : FontWeight.w500,
+                    color: selected
+                        ? Colors.white
+                        : AppTheme.textPrimaryColor,
+                  ),
+                  backgroundColor: AppTheme.surfaceColor,
+                  selectedColor: AppTheme.errorColor,
+                  checkmarkColor: Colors.white,
+                  side: BorderSide(
+                    color: selected
+                        ? AppTheme.errorColor
+                        : AppTheme.dividerColor,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+                  ),
+                  showCheckmark: false,
+                );
+              }),
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            TextField(
+              controller: _reasonController,
+              autofocus: true,
+              maxLines: 3,
+              maxLength: 500,
+              onChanged: (_) => setState(() {}),
+              decoration: const InputDecoration(
+                labelText: 'Précisez le motif (visible par le client)',
+                hintText: 'Expliquez pourquoi vous refusez cette commande',
+                alignLabelWithHint: true,
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceLg),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.errorColor,
+              ),
+              onPressed: _hasReason ? _submit : null,
+              icon: const Icon(Icons.cancel_rounded, size: 18),
+              label: const Text('Confirmer le refus'),
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Annuler'),
             ),
           ],
         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:gal/gal.dart';
@@ -67,9 +68,28 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
   String? _cniFileName;
   bool _uploadingCni = false;
   String _paymentMethod = 'cash';
+  Timer? _weightRefreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Poids disponible TOUJOURS frais : rechargement immédiat à l'ouverture
+    // (le FutureProvider peut avoir été mis en cache avant l'entrée dans le
+    // wizard) puis resynchronisation légère toutes les 10 s tant que la
+    // réservation n'est pas créée — en complément du temps réel Postgres
+    // Changes, pour ne jamais réserver sur un poids périmé.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.invalidate(shipmentByIdProvider(widget.shipmentId));
+    });
+    _weightRefreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (!mounted || _createdBookingId != null) return;
+      ref.invalidate(shipmentByIdProvider(widget.shipmentId));
+    });
+  }
 
   @override
   void dispose() {
+    _weightRefreshTimer?.cancel();
     _productNameCtrl.dispose();
     _productDescCtrl.dispose();
     _weightCtrl.dispose();
@@ -1238,6 +1258,10 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
         _toast('Renseignez le téléphone de livraison');
         return false;
       }
+      if (_addressCtrl.text.trim().isEmpty) {
+        _toast('Renseignez l\'adresse de livraison');
+        return false;
+      }
       if (_cniBytes == null) {
         _toast('Ajoutez la photo de votre CNI (remise en main propre)');
         return false;
@@ -1310,9 +1334,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
         requestedWeightKg: _requestedWeight,
         cniPhotoUrl: cniUrl,
         deliveryPhone: _phoneCtrl.text.trim(),
-        deliveryAddress: _addressCtrl.text.trim().isEmpty
-            ? null
-            : _addressCtrl.text.trim(),
+        deliveryAddress: _addressCtrl.text.trim(),
       );
 
       if (!mounted) return;

@@ -8,6 +8,8 @@ import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/micro_badge.dart';
+import '../../core/widgets/qr_ticket_dialog.dart';
 import '../chat/chat_screen.dart';
 import '../shipper/shipper_public_profile_screen.dart';
 
@@ -398,6 +400,19 @@ class _BookingCard extends ConsumerWidget {
 
     final shipper = booking.shipment?.shipper;
     final shipperUser = shipper?.user;
+    const postConfirmationStatuses = [
+      'confirmed',
+      'collected',
+      'verifying',
+      'accepted',
+      'shipped',
+      'arrived',
+      'out_for_delivery',
+    ];
+    // Une fois la commande confirmée par l'expéditeur, la tuile affiche
+    // l'attente de collecte du colis plutôt que le paiement.
+    final awaitingCollection =
+        !booking.isPaid && postConfirmationStatuses.contains(booking.status);
     final shipperConfirmed = booking.status == 'confirmed' ||
         booking.status == 'shipped' ||
         booking.status == 'delivered';
@@ -488,6 +503,14 @@ class _BookingCard extends ConsumerWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 2),
+              // Type d'expéditeur toujours visible.
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ShipperTypeBadge(
+                  isMicroImportateur: shipper.isMicroImportateur,
+                ),
+              ),
             ],
             const SizedBox(height: AppTheme.spaceMd),
             Row(
@@ -529,10 +552,19 @@ class _BookingCard extends ConsumerWidget {
                 _StatusChip(
                   icon: booking.isPaid
                       ? Icons.paid_rounded
-                      : Icons.schedule_rounded,
-                  label: booking.isPaid ? 'Paiement reçu' : 'Paiement en attente',
-                  color:
-                      booking.isPaid ? AppTheme.accentColor : AppTheme.warningColor,
+                      : awaitingCollection
+                          ? Icons.move_to_inbox_rounded
+                          : Icons.schedule_rounded,
+                  label: booking.isPaid
+                      ? 'Paiement reçu'
+                      : awaitingCollection
+                          ? 'Attente de collecte du colis ou marchandises'
+                          : 'Paiement en attente',
+                  color: booking.isPaid
+                      ? AppTheme.accentColor
+                      : awaitingCollection
+                          ? AppTheme.infoColor
+                          : AppTheme.warningColor,
                 ),
               ],
             ),
@@ -560,6 +592,16 @@ class _BookingCard extends ConsumerWidget {
                     onPressed: onTrack,
                     icon: const Icon(Icons.connecting_airports_rounded, size: 18),
                     label: const Text('Suivre'),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    // Ré-affiche / ré-enregistre le MÊME QR code que celui
+                    // généré à la réservation (jamais régénéré).
+                    onPressed: () => showQrTicketDialog(context, booking),
+                    icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+                    label: const Text('QR'),
                   ),
                 ),
                 if (onChat != null) ...[

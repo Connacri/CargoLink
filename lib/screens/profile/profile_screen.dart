@@ -1120,7 +1120,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         Color color;
         switch (shipperData.verificationStatus) {
           case 'verified':
-            text = 'Expéditeur vérifié';
+            // Mention du type d'expéditeur sur son propre profil.
+            text = shipperData.isMicroImportateur
+                ? 'Expéditeur vérifié · Micro-Importateur'
+                : 'Expéditeur vérifié · Voyageur ordinaire';
             color = AppTheme.accentColor;
             break;
           case 'rejected':

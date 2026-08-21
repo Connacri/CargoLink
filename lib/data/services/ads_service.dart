@@ -1,5 +1,6 @@
 import '../models/models.dart';
 import '../../core/config/supabase_config.dart';
+import './auth_service.dart';
 import 'package:logger/logger.dart';
 
 // ============================================================================
@@ -50,7 +51,9 @@ class AdsService {
     required String linkUrl,
   }) async {
     try {
-      final userId = SupabaseConfig.client.auth.currentUser?.id;
+      // Le client Supabase est configuré avec l'option `accessToken` (pont
+      // Firebase) : on récupère l'ID via Firebase, pas via supabase.auth.
+      final userId = AuthService().currentUserId;
       final response = await SupabaseConfig.client
           .from('ads')
           .insert({

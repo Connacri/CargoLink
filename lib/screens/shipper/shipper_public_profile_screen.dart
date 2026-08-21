@@ -96,10 +96,12 @@ class _ShipperProfileBody extends ConsumerWidget {
                                       const SizedBox(width: 6),
                                       const VerifiedBadge(),
                                     ],
-                                    if (shipper.isMicroImportateur) ...[
-                                      const SizedBox(width: 6),
-                                      const MicroImportateurBadge(),
-                                    ],
+                                    // Type d'expéditeur toujours visible.
+                                    const SizedBox(width: 6),
+                                    ShipperTypeBadge(
+                                      isMicroImportateur:
+                                          shipper.isMicroImportateur,
+                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 4),
