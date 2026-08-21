@@ -9,16 +9,39 @@ import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/ad_sliver_header.dart';
 import '../../core/widgets/notification_widgets.dart';
 import '../../core/widgets/chat_widgets.dart';
+import '../../core/utils/qr_booking.dart';
 import '../../components/shipper_card.dart';
 import '../../components/workflow_slider.dart';
 import '../shipper/shipper_public_profile_screen.dart';
 import '../chat/chat_screen.dart';
 import '../shared/qr_scan_screen.dart';
+import 'tracking_screen.dart';
 
 /// Smart sort applied to the (server-side filtered) search feed.
 enum ClientSort { none, price, fastest, topRated }
 
 final clientSortProvider = StateProvider<ClientSort>((ref) => ClientSort.none);
+
+/// Commande à mettre en avant sur la carte de suivi de l'accueil : la plus
+/// récente non terminée (en cours de livraison) ; à défaut, la dernière
+/// livrée (badge vert « Livré avec succès »). autoDispose → recalculée à
+/// chaque retour sur l'accueil.
+final homeTrackingBookingProvider =
+    FutureProvider.autoDispose<Booking?>((ref) async {
+  final clientId = ref.watch(authServiceProvider).currentUserId;
+  if (clientId == null) return null;
+  final bookings = await ref
+      .read(bookingServiceProvider)
+      .getClientBookings(clientId: clientId, limit: 20);
+  if (bookings.isEmpty) return null;
+  for (final b in bookings) {
+    if (b.status != 'delivered' && b.status != 'cancelled') return b;
+  }
+  return bookings.firstWhere(
+    (b) => b.status == 'delivered',
+    orElse: () => bookings.first,
+  );
+});
 
 /// Lazy paged source for active shipments, keyed by the active filters.
 final clientShipmentsPagerProvider = StateNotifierProvider.family<
@@ -342,6 +365,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               ),
             SliverToBoxAdapter(
               child: _buildGreeting(currentUser),
+            ),
+            const SliverToBoxAdapter(
+              child: _HomeTrackingCard(),
             ),
             SliverToBoxAdapter(
               child: _buildHowItWorks(),
@@ -830,6 +856,160 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       MaterialPageRoute(
         builder: (_) => ShipperPublicProfileScreen(shipperId: shipperId),
       ),
+    );
+  }
+}
+
+/// Carte d'accueil « Suivi de colis » : dernière commande en cours (ou
+/// dernièrement livrée), étape actuelle, barre de progression et badge vert
+/// « Livré avec succès ». Un appui ouvre l'écran de suivi complet.
+class _HomeTrackingCard extends ConsumerWidget {
+  const _HomeTrackingCard();
+
+  static const int _stageCount = 8;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookingAsync = ref.watch(homeTrackingBookingProvider);
+    return bookingAsync.maybeWhen(
+      data: (booking) {
+        if (booking == null) return const SizedBox.shrink();
+        final delivered = booking.status == 'delivered';
+        final events =
+            ref.watch(trackingHistoryProvider(booking.id)).valueOrNull ??
+                const <ShipmentTracking>[];
+        final latest = events.isEmpty ? null : events.last;
+        final progress = delivered
+            ? 1.0
+            : (TrackingScreen.stageIndex(latest?.status ?? 'order_processed') +
+                    1) /
+                _stageCount;
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.spaceMd,
+            AppTheme.spaceSm,
+            AppTheme.spaceMd,
+            0,
+          ),
+          child: GlassCard(
+            onTap: () => Navigator.of(context)
+                .pushNamed('/tracking', arguments: booking.id),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    AnimatedIconDot(
+                      icon: Icons.local_shipping_rounded,
+                      color: delivered
+                          ? AppTheme.accentColor
+                          : AppTheme.primaryColor,
+                    ),
+                    const SizedBox(width: AppTheme.spaceMd),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Suivi de colis', style: AppTheme.h3),
+                            Text(
+                            booking.productName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppTheme.textSecondaryColor,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spaceSm),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'N° ${booking.trackingNumber?.isNotEmpty ?? false ? booking.trackingNumber : QrBookingPayload.refCodeFor(booking.id)}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                          color: AppTheme.primaryDark,
+                        ),
+                      ),
+                    ),
+                    if (delivered)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color:
+                                AppTheme.accentColor.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_circle_rounded,
+                                size: 13, color: AppTheme.accentColor),
+                            SizedBox(width: 4),
+                            Text(
+                              'Livré avec succès',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.accentColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (latest != null)
+                      Text(
+                        TrackingScreen.statusLabel(latest.status),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.infoColor,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spaceSm),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    backgroundColor: AppTheme.surfaceMuted,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppTheme.accentColor,
+                    ),
+                  ),
+                ),
+                if (!delivered && latest != null) ...[
+                  const SizedBox(height: AppTheme.spaceXs),
+                  Text(
+                    'Dernière mise à jour : '
+                    '${TrackingScreen.statusLabel(latest.status)}'
+                    '${latest.location != null && latest.location!.isNotEmpty ? ' • ${latest.location}' : ''}',
+                    style: AppTheme.caption,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
     );
   }
 }

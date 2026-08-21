@@ -687,6 +687,39 @@ class TrackingScreen extends ConsumerWidget {
               ),
             ],
           ),
+          if (booking.status == 'delivered') ...[
+            const SizedBox(height: AppTheme.spaceSm),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spaceMd,
+                vertical: AppTheme.spaceSm,
+              ),
+              decoration: BoxDecoration(
+                color: AppTheme.accentColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                border:
+                    Border.all(color: AppTheme.accentColor.withValues(alpha: 0.4)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.verified_rounded,
+                      size: 18, color: AppTheme.accentColor),
+                  SizedBox(width: AppTheme.spaceSm),
+                  Expanded(
+                    child: Text(
+                      'Livré avec succès',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.accentColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (booking.verificationStatus == 'awaiting_verification' ||
               booking.verificationStatus == 'verifying') ...[
             const SizedBox(height: AppTheme.spaceSm),

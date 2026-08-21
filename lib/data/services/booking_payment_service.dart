@@ -583,11 +583,20 @@ class BookingService {
   Future<Booking?> confirmReceipt(String bookingId,
       {required String receiptPhotoUrl}) async {
     try {
-      return await updateBookingStatus(
+      final updated = await updateBookingStatus(
         bookingId,
         'delivered',
         receiptPhotoUrl: receiptPhotoUrl,
       );
+      // Événement de suivi « Livré avec succès » — visible sur toutes les
+      // timelines (confirmation par QR / code de suivi ou depuis l'écran de
+      // suivi). Le badge vert de validation en découle côté client.
+      await TrackingService().addTrackingUpdate(
+        bookingId: bookingId,
+        status: 'delivered',
+        notes: 'Livré avec succès — réception confirmée par le client',
+      );
+      return updated;
     } catch (e) {
       _logger.e('Error confirming receipt: $e');
       rethrow;
