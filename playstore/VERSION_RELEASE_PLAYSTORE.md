@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.13** |
-| Code de version (versionCode) | **140** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `85beb5e` |
-| Statut CI | À publier au prochain push → release `v1.0.13` sur GitHub |
+| Version (versionName) | **1.0.14** |
+| Code de version (versionCode) | **141** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `068725a` |
+| Statut CI | À publier au prochain push → release `v1.0.14` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.0** → workflow `release.yml` (job `android-aab`) |
@@ -31,6 +31,14 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+- **Filtre Voyageurs / Micro-importateurs corrigé** : sur l'accueil client,
+  les chips filtrent désormais réellement les offres par type d'expéditeur
+  (toutes les offres s'affichaient quel que soit le choix) ; la recherche
+  respecte aussi la chip active, et changer de chip pendant une recherche
+  relance celle-ci avec le même filtre.
+
+### Version 1.0.13
 
 - **Suivi multi-colis sur l'accueil client** : la carte « Suivi de colis »
   affiche désormais **tous les colis pas encore livrés** (et non plus une
