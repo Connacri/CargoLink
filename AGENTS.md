@@ -27,19 +27,14 @@
 - Les builds web (`flutter build web --release`) et Android (`flutter build apk --debug`)
   doivent compiler.
 
-## Splash & icônes (flutter_adaptive_studio)
+## Splash & icônes (flutter_native_splash + flutter_launcher_icons)
 
-- Générés par l'outil CLI **flutter_adaptive_studio 0.28.11** activé globalement
-  (`dart pub global activate flutter_adaptive_studio`) — PAS en dépendance pubspec
-  (ses deps `archive ^4`/`xml ^7` entrent en conflit avec flutter_local_notifications).
-- Config : `flutter_adaptive_studio.yaml`. Commande : `fas generate`.
-- **Après chaque `fas generate`, re-appliquer les 3 patches documentés en tête du yaml**
-  (supprimer le logo centré en doublon : launch_background.xml ×2, splash_icon_legacy*,
-  `logo: null` dans lib/fas_splash.g.dart) — splash2.png est une image plein écran
-  qui contient déjà le logo.
-- Le fichier généré `lib/fas_splash.g.dart` importe `dart:ffi` (indisponible sur web) :
-  ne jamais l'importer directement — passer par `lib/core/widgets/app_splash_gate.dart`
-  (import conditionnel io/web).
+- Configs dans `pubspec.yaml` (sections `flutter_launcher_icons` et `flutter_native_splash`),
+  source unique du logo : `assets/icons/icon2.png`, splash plein écran : `assets/icons/splash2.png`.
+- Icônes : `dart run flutter_launcher_icons`.
+- Splash : `dart run flutter_native_splash:create`.
+- NE PAS utiliser flutter_adaptive_studio : tenté en v1.0.11 puis retiré (icône/splash
+  déformés — foreground non adapté au masque, logo dupliqué sur Android 12+).
 
 ## Diagnostics Supabase
 
