@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.8** |
-| Code de version (versionCode) | **130** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `c3e5fa8` |
-| Statut CI | À publier au prochain push → release `v1.0.8` sur GitHub |
+| Version (versionName) | **1.0.9** |
+| Code de version (versionCode) | **132** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `f81b938` |
+| Statut CI | À publier au prochain push → release `v1.0.9` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.0** → workflow `release.yml` (job `android-aab`) |
@@ -32,6 +32,19 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Type d'expéditeur sur le profil et les listes admin/fondateur** : le badge
+  « Voyageur ordinaire » / « Micro-Importateur » apparaît désormais sous le
+  badge de rôle sur le profil expéditeur, sur chaque carte de la grille
+  utilisateurs (admin/fondateur) et dans le détail utilisateur (badge + ligne
+  « Type » du dossier expéditeur).
+- **Dashboard fondateur : répartition par type d'expéditeur** : deux cartes
+  « Voyageurs ordinaires » et « Micro-Importateurs » avec l'effectif, le CA
+  encaissé, les commissions réglées et les commissions restant dues pour
+  chaque type.
+- **Erreur 23514 au flux de vérification corrigée** : la contrainte CHECK de
+  `shipment_tracking` accepte maintenant les événements `verified` et
+  `verification_returned` émis lors de la vérification du colis (poids,
+  articles) et de son renvoi éventuel.
 - **Commandes annulées épurées (dashboard expéditeur)** : une commande annulée
   n'affiche plus les puces « Paiement en attente » ni « En attente de
   confirmation » — le badge « Annulée » de l'en-tête suffit.
