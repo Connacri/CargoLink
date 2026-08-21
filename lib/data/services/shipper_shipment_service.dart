@@ -485,6 +485,19 @@ class ShipmentService {
     }
   }
 
+  /// Résout les ids des expéditeurs d'un type donné. La table `shippers`
+  /// étant petite, ce pré-filtre explicite est plus fiable qu'un filtre
+  /// embedded (`shippers.shipper_type=eq.…`) côté PostgREST, dont la
+  /// sémantique semi-jointure s'est révélée non fiable ici (les chips de
+  /// filtre affichaient toutes les offres quel que soit le type choisi).
+  Future<List<String>> _shipperIdsOfType(String shipperType) async {
+    final rows = await _supabase
+        .from('shippers')
+        .select('id')
+        .eq('shipper_type', shipperType);
+    return (rows as List).map((r) => r['id'] as String).toList();
+  }
+
   /// Get active shipments with filters. Only offers whose publication fee was
   /// confirmed by the founder (publication_fee_status = 'paid') are shown to
   /// clients.
@@ -496,6 +509,14 @@ class ShipmentService {
     int offset = 0,
   }) async {
     try {
+      // Filtre par type d'expéditeur : ids résolus en amont puis `inFilter`,
+      // jamais via un filtre embedded (voir _shipperIdsOfType).
+      List<String>? shipperIds;
+      if (shipperType != null) {
+        shipperIds = await _shipperIdsOfType(shipperType);
+        if (shipperIds.isEmpty) return const [];
+      }
+
       var query = _supabase
           .from('shipments')
           .select('*, shippers(*, users!shippers_user_id_fkey(*))')
@@ -511,8 +532,8 @@ class ShipmentService {
         query = query.ilike('origin_country', originCountry);
       }
 
-      if (shipperType != null) {
-        query = query.eq('shippers.shipper_type', shipperType);
+      if (shipperIds != null) {
+        query = query.inFilter('shipper_id', shipperIds);
       }
 
       final response = await query
@@ -615,14 +636,23 @@ class ShipmentService {
     return allocatedWeight;
   }
 
-  /// Search shipments (server-side, paginated)
+  /// Search shipments (server-side, paginated). [shipperType] restreint les
+  /// résultats au même filtre que les chips de l'accueil (voir
+  /// getActiveShipments pour le choix du pré-filtre explicite).
   Future<List<Shipment>> searchShipments({
     required String query,
+    String? shipperType,
     int limit = 50,
     int offset = 0,
   }) async {
     try {
-      final response = await _supabase
+      List<String>? shipperIds;
+      if (shipperType != null) {
+        shipperIds = await _shipperIdsOfType(shipperType);
+        if (shipperIds.isEmpty) return const [];
+      }
+
+      var searchQuery = _supabase
           .from('shipments')
           .select('*, shippers(*, users!shippers_user_id_fkey(*))')
           .or(
@@ -632,7 +662,13 @@ class ShipmentService {
           // Même filtre que getActiveShipments : une offre dont le paiement
           // Visa n'a pas été confirmé par le fondateur ne doit pas fuiter
           // dans les résultats de recherche.
-          .eq('publication_fee_status', 'paid')
+          .eq('publication_fee_status', 'paid');
+
+      if (shipperIds != null) {
+        searchQuery = searchQuery.inFilter('shipper_id', shipperIds);
+      }
+
+      final response = await searchQuery
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
 

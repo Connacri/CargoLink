@@ -82,14 +82,17 @@ final clientShipmentsPagerProvider = StateNotifierProvider.family<
   },
 );
 
-/// Lazy paged server-side search source, keyed by the search query.
+/// Lazy paged server-side search source, keyed by the query AND the active
+/// shipper-type chip (changer de chip pendant une recherche relance la
+/// recherche avec le même filtre que le feed).
 final clientSearchPagerProvider = StateNotifierProvider.family<
     PaginatedListNotifier<Shipment>,
     PaginatedList<Shipment>,
-    String>((ref, query) {
+    ({String query, String? shipperType})>((ref, params) {
   return createPaginatedNotifier(
     (limit, offset) => ref.read(shipmentServiceProvider).searchShipments(
-          query: query,
+          query: params.query,
+          shipperType: params.shipperType,
           limit: limit,
           offset: offset,
         ),
@@ -203,8 +206,10 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               shipment.destinationCity.toLowerCase().contains(searchQuery);
       if (matchesQuery) {
         ref
-            .read(clientSearchPagerProvider(ref.read(searchQueryProvider).trim())
-                .notifier)
+            .read(clientSearchPagerProvider((
+              query: ref.read(searchQueryProvider).trim(),
+              shipperType: ref.read(shipperTypeFilterProvider),
+            )).notifier)
             .upsertItem(shipment);
       } else {
         _removeFromSearch(id);
@@ -215,17 +220,40 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   void _removeFromSearch(String id) {
     final searchQuery = ref.read(searchQueryProvider).trim();
     if (searchQuery.isEmpty) return;
-    ref.read(clientSearchPagerProvider(searchQuery).notifier).removeItem(id);
+    ref
+        .read(clientSearchPagerProvider((
+          query: searchQuery,
+          shipperType: ref.read(shipperTypeFilterProvider),
+        )).notifier)
+        .removeItem(id);
   }
 
-  /// (Re)load server-side search results when the query changes.
+  /// (Re)load server-side search results when the query or the type chip
+  /// changes.
   void _syncSearch() {
     final query = ref.read(searchQueryProvider).trim();
     if (query.isEmpty) return;
-    if (query == _lastSearchKey) return;
-    _lastSearchKey = query;
-    final notifier = ref.read(clientSearchPagerProvider(query).notifier);
+    final key = '$query|${ref.read(shipperTypeFilterProvider)}';
+    if (key == _lastSearchKey) return;
+    _lastSearchKey = key;
+    final notifier = ref
+        .read(clientSearchPagerProvider((
+          query: query,
+          shipperType: ref.read(shipperTypeFilterProvider),
+        )).notifier);
     notifier.loadInitial();
+  }
+
+  /// Filet de sécurité local : même si le filtre serveur régressait, aucune
+  /// offre hors critères ne doit jamais s'afficher. Vérifie le type
+  /// d'expéditeur sur les données embarquées de chaque offre.
+  bool _passesLocalFilters(Shipment shipment, String? shipperType) {
+    if (shipperType != null) {
+      final matches = shipment.shipper?.isMicroImportateur ==
+          (shipperType == 'micro_importateur');
+      if (!matches) return false;
+    }
+    return true;
   }
 
   @override
@@ -242,8 +270,10 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         shipperType: shipperType,
       )),
     );
-    final searchPager =
-        ref.watch(clientSearchPagerProvider(searchQuery.trim()));
+    final searchPager = ref.watch(clientSearchPagerProvider((
+      query: searchQuery.trim(),
+      shipperType: shipperType,
+    )));
     final activeAds = ref.watch(activeAdsProvider).valueOrNull ?? [];
     final currentAd = activeAds.isNotEmpty ? activeAds.first : null;
 
@@ -252,10 +282,25 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
 
     // Smart sort applied locally on top of the server-side filters. Keeping
     // the same PaginatedList (via copyWith) preserves infinite scrolling and
-    // pull-to-refresh callbacks.
-    final sortedFeed = pager.copyWith(items: _applySort(pager.items, sort));
-    final sortedSearch =
-        searchPager.copyWith(items: _applySort(searchPager.items, sort));
+    // pull-to-refresh callbacks. Le filtre local du type d'expéditeur est
+    // réappliqué en dernier recours : l'UI ne doit jamais montrer une offre
+    // hors critères, même si le filtre serveur régressait.
+    final sortedFeed = pager.copyWith(
+      items: _applySort(
+        pager.items
+            .where((s) => _passesLocalFilters(s, shipperType))
+            .toList(),
+        sort,
+      ),
+    );
+    final sortedSearch = searchPager.copyWith(
+      items: _applySort(
+        searchPager.items
+            .where((s) => _passesLocalFilters(s, shipperType))
+            .toList(),
+        sort,
+      ),
+    );
 
     // Live refresh: a newly published shipment appears in the feed without a
     // manual pull-to-refresh. Only the touched tile is patched in place.
@@ -278,7 +323,10 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
     });
     ref.listen(shipperTypeFilterProvider, (_, __) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _syncPager());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _syncPager();
+        _syncSearch();
+      });
     });
 
     // Deterministic reload after a booking is created (realtime is the live
@@ -316,7 +364,10 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         onRefresh: () async {
           if (isSearching) {
             await ref
-                .read(clientSearchPagerProvider(searchQuery.trim()).notifier)
+                .read(clientSearchPagerProvider((
+                  query: searchQuery.trim(),
+                  shipperType: shipperType,
+                )).notifier)
                 .refresh();
             return;
           }
