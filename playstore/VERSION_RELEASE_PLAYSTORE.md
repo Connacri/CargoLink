@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.7** |
-| Code de version (versionCode) | **127** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `e98aea5` |
-| Statut CI | À publier au prochain push → release `v1.0.7` sur GitHub |
+| Version (versionName) | **1.0.8** |
+| Code de version (versionCode) | **130** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `c3e5fa8` |
+| Statut CI | À publier au prochain push → release `v1.0.8` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.0** → workflow `release.yml` (job `android-aab`) |
@@ -32,6 +32,9 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Commandes annulées épurées (dashboard expéditeur)** : une commande annulée
+  n'affiche plus les puces « Paiement en attente » ni « En attente de
+  confirmation » — le badge « Annulée » de l'en-tête suffit.
 - **QR de réservation ré-enregistrable** : nouveau bouton « QR » sur chaque
   commande client — réaffiche le billet et réenregistre **le même code QR**
   généré à la création (jamais régénéré) dans la galerie (PNG sur web).
