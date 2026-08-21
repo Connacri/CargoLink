@@ -2182,33 +2182,37 @@ class _DashboardBookingCard extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: AppTheme.spaceSm),
-            Wrap(
-              children: [
-                _DashboardStatusChip(
-                  icon: booking.isPaid
-                      ? Icons.paid_rounded
-                      : Icons.schedule_rounded,
-                  label:
-                      booking.isPaid ? 'Paiement reçu' : 'Paiement en attente',
-                  color: booking.isPaid
-                      ? AppTheme.accentColor
-                      : AppTheme.warningColor,
-                ),
-                const SizedBox(width: AppTheme.spaceSm),
-                _DashboardStatusChip(
-                  icon: booking.status == 'confirmed'
-                      ? Icons.task_alt_rounded
-                      : Icons.pending_actions_rounded,
-                  label: booking.status == 'confirmed'
-                      ? 'Commande confirmée'
-                      : 'En attente de confirmation',
-                  color: booking.status == 'confirmed'
-                      ? AppTheme.infoColor
-                      : AppTheme.warningColor,
-                ),
-              ],
-            ),
+            // Commande annulée : pas de chips « en attente » (paiement /
+            // confirmation) — le badge « Annulée » de l'en-tête suffit.
+            if (!booking.isCancelled) ...[
+              const SizedBox(height: AppTheme.spaceSm),
+              Wrap(
+                children: [
+                  _DashboardStatusChip(
+                    icon: booking.isPaid
+                        ? Icons.paid_rounded
+                        : Icons.schedule_rounded,
+                    label:
+                        booking.isPaid ? 'Paiement reçu' : 'Paiement en attente',
+                    color: booking.isPaid
+                        ? AppTheme.accentColor
+                        : AppTheme.warningColor,
+                  ),
+                  const SizedBox(width: AppTheme.spaceSm),
+                  _DashboardStatusChip(
+                    icon: booking.status == 'confirmed'
+                        ? Icons.task_alt_rounded
+                        : Icons.pending_actions_rounded,
+                    label: booking.status == 'confirmed'
+                        ? 'Commande confirmée'
+                        : 'En attente de confirmation',
+                    color: booking.status == 'confirmed'
+                        ? AppTheme.infoColor
+                        : AppTheme.warningColor,
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: AppTheme.spaceSm),
             Row(
               children: [
