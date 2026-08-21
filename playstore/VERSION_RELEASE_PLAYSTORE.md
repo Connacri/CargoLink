@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.10** |
-| Code de version (versionCode) | **134** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `f438472` |
-| Statut CI | À publier au prochain push → release `v1.0.10` sur GitHub |
+| Version (versionName) | **1.0.11** |
+| Code de version (versionCode) | **136** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `2b67c12` |
+| Statut CI | À publier au prochain push → release `v1.0.11` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.0** → workflow `release.yml` (job `android-aab`) |
@@ -31,6 +31,24 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+- **Nouveau splash natif plein écran** : écran de démarrage redessiné — image
+  plein écran sans logo dupliqué, animation vectorielle animée du logo
+  CargoLink (anneaux pulsants) sur Android 12+, mode immersif bord-à-bord
+  (cutout géré), fond indigo cohérent jour/nuit sur Android et iOS.
+- **Icône d'application et favicon web régénérés** aux couleurs de la marque :
+  icônes rondes Android ajoutées, favicon et icônes PWA web remplacés,
+  manifest web aux couleurs indigo.
+- **Preview caméra selfie corrigée** : l'aperçu de la caméra dans
+  l'enregistrement vidéo n'est plus déformé (étiré en largeur) en mode
+  portrait — le ratio capteur est inversé automatiquement.
+- **Pied de page profil** : la version exacte de l'app (ex. « CargoLink
+  v1.0.11 ») et la mention « Développé par FORSLOG ltd » s'affichent en bas
+  du profil, pour tous les rôles.
+- **Durcissement sécurité côté base** : politiques RLS restreintes aux
+  utilisateurs connectés, fonctions trigger isolées (search_path figé,
+  exécution retirée au public), index ajoutés sur toutes les clés
+  étrangères, doublons d'index supprimés.
 
 - **Réception confirmée = « Livré avec succès » partout** : quand le client
   confirme la réception (scan QR, saisie du code de suivi ou bouton dans
