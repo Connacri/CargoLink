@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.9** |
-| Code de version (versionCode) | **132** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `f81b938` |
-| Statut CI | À publier au prochain push → release `v1.0.9` sur GitHub |
+| Version (versionName) | **1.0.10** |
+| Code de version (versionCode) | **134** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `f438472` |
+| Statut CI | À publier au prochain push → release `v1.0.10` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.0** → workflow `release.yml` (job `android-aab`) |
@@ -32,6 +32,16 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Réception confirmée = « Livré avec succès » partout** : quand le client
+  confirme la réception (scan QR, saisie du code de suivi ou bouton dans
+  l'écran de suivi), un événement « Livré avec succès — réception confirmée
+  par le client » est ajouté à la frise, la timeline passe en validation
+  verte et une bannière verte « Livré avec succès » s'affiche sur l'écran de
+  suivi.
+- **Carte « Suivi de colis » sur l'accueil client** : sous la salutation, une
+  carte affiche la commande en cours (ou la dernière livrée) — produit,
+  numéro de suivi, étape actuelle, barre de progression et badge vert
+  « Livré avec succès ». Un appui ouvre le suivi détaillé.
 - **Type d'expéditeur sur le profil et les listes admin/fondateur** : le badge
   « Voyageur ordinaire » / « Micro-Importateur » apparaît désormais sous le
   badge de rôle sur le profil expéditeur, sur chaque carte de la grille
