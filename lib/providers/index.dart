@@ -85,6 +85,13 @@ final pendingShippersProvider =
   );
 });
 
+/// Tous les expéditeurs (avec profil utilisateur) — dashboard fondateur :
+/// répartition voyageurs ordinaires / micro-importateurs et finances par type.
+final allShippersProvider = FutureProvider<List<Shipper>>((ref) async {
+  final shipperService = ref.watch(shipperServiceProvider);
+  return shipperService.getAllShippers();
+});
+
 /// Count of shippers awaiting verification — powers the founder dashboard
 /// notification badge.
 final pendingShippersCountProvider = FutureProvider<int>((ref) async {

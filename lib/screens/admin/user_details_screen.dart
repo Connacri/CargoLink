@@ -4,6 +4,7 @@ import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/widgets/micro_badge.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../chat/chat_screen.dart';
 
@@ -349,6 +350,15 @@ class _ProfileTab extends ConsumerWidget {
                                       : AppTheme.errorGradient,
                                   compact: true,
                                 ),
+                                if (isShipper)
+                                  shipper.maybeWhen(
+                                    data: (s) => s == null
+                                        ? const SizedBox.shrink()
+                                        : ShipperTypeBadge(
+                                            isMicroImportateur:
+                                                s.isMicroImportateur),
+                                    orElse: () => const SizedBox.shrink(),
+                                  ),
                               ],
                             ),
                           ],
@@ -380,6 +390,8 @@ class _ProfileTab extends ConsumerWidget {
                         const Text('Aucun dossier expéditeur',
                             style: AppTheme.bodySecondary)
                       else ...[
+                        _row('Type',
+                            s.isMicroImportateur ? 'Micro-Importateur' : 'Voyageur ordinaire'),
                         _row('Statut', _verificationLabel(s.verificationStatus)),
                         _row('Passeport', s.passportNumber),
                         _row('Note', s.ratingDisplay),

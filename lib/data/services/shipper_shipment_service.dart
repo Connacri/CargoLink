@@ -149,9 +149,27 @@ class ShipperService {
     }
   }
 
-  /// Count shippers awaiting verification (founder notification badge).
-  Future<int> countPendingShippers() async {
+  /// Tous les expéditeurs avec leur profil utilisateur (dashboard fondateur :
+  /// répartition voyageurs ordinaires / micro-importateurs et finances).
+  Future<List<Shipper>> getAllShippers({int limit = 500, int offset = 0}) async {
     try {
+      final response = await _supabase
+          .from('shippers')
+          .select('*, users!shippers_user_id_fkey(*)')
+          .range(offset, offset + limit - 1)
+          .order('created_at', ascending: false);
+
+      return (response as List)
+          .map((item) => Shipper.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting all shippers: $e');
+      return [];
+    }
+  }
+
+  /// Count shippers awaiting verification (founder notification badge).
+  Future<int> countPendingShippers() async {    try {
       final response = await _supabase
           .from('shippers')
           .select('id')

@@ -1602,7 +1602,9 @@ class _StatsOverview extends ConsumerWidget {
         final cardWidth = isWide ? 170.0 : (screenWidth - 56) / 3;
         return Padding(
           padding: const EdgeInsets.all(AppTheme.spaceMd),
-          child: Wrap(
+          child: Column(
+            children: [
+              Wrap(
             alignment: WrapAlignment.center,
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: AppTheme.spaceSm + 4,
@@ -1640,6 +1642,10 @@ class _StatsOverview extends ConsumerWidget {
                   AppTheme.primaryColor,
                   cardWidth,
                   onTap: () => _openList(context, EntityListType.bookings)),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            _buildShipperTypeBreakdown(context, ref),
             ],
           ),
         );
@@ -1664,6 +1670,155 @@ class _StatsOverview extends ConsumerWidget {
       MaterialPageRoute(
         builder: (_) => EntityListScreen(type: type, roleFilter: role),
       ),
+    );
+  }
+
+  /// Répartition voyageurs ordinaires / micro-importateurs : effectifs et
+  /// finances agrégées par type (CA encaissé, commissions réglées et dues).
+  Widget _buildShipperTypeBreakdown(BuildContext context, WidgetRef ref) {
+    final shippers =
+        ref.watch(allShippersProvider).valueOrNull ?? const <Shipper>[];
+    final bookings =
+        ref.watch(allBookingsProvider).valueOrNull ?? const <Booking>[];
+    final fees =
+        ref.watch(allPlatformFeesProvider).valueOrNull ?? const <PlatformFee>[];
+
+    final voyageurs =
+        shippers.where((s) => !s.isMicroImportateur).toList(growable: false);
+    final micros =
+        shippers.where((s) => s.isMicroImportateur).toList(growable: false);
+
+    return Column(
+      children: [
+        _shipperTypeCard(
+          icon: Icons.work_outline_rounded,
+          title: 'Voyageurs ordinaires',
+          subtitle: 'Expéditeurs particuliers transportant des colis',
+          group: voyageurs,
+          bookings: bookings,
+          fees: fees,
+          color: AppTheme.infoColor,
+        ),
+        const SizedBox(height: AppTheme.spaceSm + 4),
+        _shipperTypeCard(
+          icon: Icons.storefront_rounded,
+          title: 'Micro-Importateurs',
+          subtitle: 'Expéditeurs professionnels (carte de commerce)',
+          group: micros,
+          bookings: bookings,
+          fees: fees,
+          color: AppTheme.accentColor,
+        ),
+      ],
+    );
+  }
+
+  Widget _shipperTypeCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required List<Shipper> group,
+    required List<Booking> bookings,
+    required List<PlatformFee> fees,
+    required Color color,
+  }) {
+    final ids = group.map((s) => s.id).toSet();
+
+    var ca = 0.0;
+    for (final b in bookings) {
+      if (b.paymentStatus != 'paid' || b.status == 'cancelled') continue;
+      final sid = b.shipment?.shipper?.id;
+      if (sid != null && ids.contains(sid)) ca += b.totalPrice;
+    }
+
+    var paid = 0.0;
+    var due = 0.0;
+    for (final f in fees) {
+      if (!ids.contains(f.shipperId)) continue;
+      if (f.isPaid) {
+        paid += f.amount;
+      } else {
+        due += f.amount;
+      }
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppTheme.spaceMd),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+        boxShadow: AppTheme.shadowSm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              AnimatedIconDot(icon: icon, color: color, size: 20),
+              const SizedBox(width: AppTheme.spaceSm),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTheme.h3.copyWith(fontSize: 15),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                '${group.length}',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Text('expéditeurs', style: AppTheme.caption),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(subtitle, style: AppTheme.caption),
+          const SizedBox(height: AppTheme.spaceSm),
+          Row(
+            children: [
+              Expanded(
+                child: _typeStat('CA encaissé', '${ca.toStringAsFixed(0)} DZD'),
+              ),
+              Expanded(
+                child:
+                    _typeStat('Commissions réglées', '${paid.toStringAsFixed(0)} DZD'),
+              ),
+              Expanded(
+                child: due > 0
+                    ? _typeStat('Commissions dues', '${due.toStringAsFixed(0)} DZD',
+                        valueColor: AppTheme.warningColor)
+                    : _typeStat('Pas de dettes', '—',
+                        valueColor: AppTheme.accentColor),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _typeStat(String label, String value, {Color? valueColor}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 13,
+            color: valueColor ?? AppTheme.textPrimaryColor,
+          ),
+        ),
+        Text(label, style: AppTheme.caption),
+      ],
     );
   }
 

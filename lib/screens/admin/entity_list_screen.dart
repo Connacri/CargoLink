@@ -4,6 +4,7 @@ import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/profile_navigation.dart';
+import '../../core/widgets/micro_badge.dart';
 import '../../core/widgets/ui_kit.dart';
 import 'user_details_screen.dart';
 import 'entity_detail_screen.dart';
@@ -399,6 +400,17 @@ class _UserGridCard extends ConsumerWidget {
             overflow: TextOverflow.ellipsis,
             style: AppTheme.caption,
           ),
+          if (user.role == 'shipper')
+            ref.watch(shipperByUserIdProvider(user.id)).maybeWhen(
+                  data: (s) => s == null
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: ShipperTypeBadge(
+                              isMicroImportateur: s.isMicroImportateur),
+                        ),
+                  orElse: () => const SizedBox.shrink(),
+                ),
           const SizedBox(height: AppTheme.spaceSm),
           GradientBadge(
             label: user.isActive ? 'Actif' : 'Désactivé',

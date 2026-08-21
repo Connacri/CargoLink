@@ -11,6 +11,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/widgets/micro_badge.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../auth/role_selection_screen.dart';
 import '../shipper/live_selfie_screen.dart';
@@ -629,6 +630,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               gradient: _roleGradient(userData.role),
             ),
           ),
+          if (userData.role == 'shipper') ...[
+            const SizedBox(height: AppTheme.spaceXs),
+            Center(
+              child: ref.watch(currentShipperProvider).maybeWhen(
+                    data: (s) => s == null
+                        ? const SizedBox.shrink()
+                        : ShipperTypeBadge(
+                            isMicroImportateur: s.isMicroImportateur),
+                    orElse: () => const SizedBox.shrink(),
+                  ),
+            ),
+          ],
         ],
       ),
     );
