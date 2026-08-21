@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.5** |
-| Code de version (versionCode) | **123** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `bb3688f` |
-| Statut CI | À publier au prochain push → release `v1.0.5` sur GitHub |
+| Version (versionName) | **1.0.6** |
+| Code de version (versionCode) | **125** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `aed0be1` |
+| Statut CI | À publier au prochain push → release `v1.0.6` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.0** → workflow `release.yml` (job `android-aab`) |
@@ -31,6 +31,24 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+- **Règle Visa -30 % assouplie** : seules les offres dont l'expéditeur a coché
+  « Payer par carte Visa (-30 %) » passent en attente de confirmation du
+  fondateur ; toutes les autres sont **publiées immédiatement** et visibles des
+  clients (dû marqué payé, échéance de régularisation à 7 jours). La recherche
+  client n'affiche plus que les offres au dû réglé ou confirmé.
+- **Portefeuille fondateur** : nouvelle section « Portefeuille » du dashboard —
+  totaux multi-devises (DZD, EUR, USD, RMB…), filtres À payer / Payés /
+  Remboursés, actions « Confirmer » et « Rembourser » sur chaque dû.
+- **Portefeuille expéditeur** : cartes « Commission remboursée » et « Dûs payés »,
+  statut « Remboursé » affiché sur les dûs concernés, et devise propre à chaque
+  dû (plus d'amalgame DZD/EUR/USD).
+- **Réservation débloquée** : le bouton d'action du wizard ne reste plus bloqué
+  à l'étape paiement — la confirmation (QR) est atteignable.
+- **Filtres accueil client corrigés** : les puces « Voyageurs / Micro-importateurs »
+  filtrent de nouveau correctement le fil d'offres.
+- Plus d'erreur `PGRST116` lors de la confirmation fondateur d'une publication
+  (politique UPDATE admin ajoutée côté base).
 
 - **Workflow complet de livraison en 7 phases** (du dépôt du colis à la remise finale) :
   - **Type d'expéditeur voyageur / micro-importateur** : à l'inscription, l'expéditeur
