@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.12** |
-| Code de version (versionCode) | **138** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `72ec825` |
-| Statut CI | À publier au prochain push → release `v1.0.12` sur GitHub |
+| Version (versionName) | **1.0.13** |
+| Code de version (versionCode) | **140** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `85beb5e` |
+| Statut CI | À publier au prochain push → release `v1.0.13` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.0** → workflow `release.yml` (job `android-aab`) |
@@ -31,6 +31,44 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+- **Suivi multi-colis sur l'accueil client** : la carte « Suivi de colis »
+  affiche désormais **tous les colis pas encore livrés** (et non plus une
+  seule commande), chacun avec son avancement en temps réel ; « Voir tout »
+  ouvre le nouvel écran **Mes colis** où chaque colis se déplie avec ses
+  détails et sa frise de suivi complète.
+- **« Commandes en cours » côté expéditeur** : une carte de synthèse sur le
+  tableau de bord recense les commandes reçues pas encore livrées ; un appui
+  ouvre la liste dédiée avec, pour chaque commande, les détails du dossier,
+  la frise de suivi et le billet QR.
+- **Billet QR réutilisé partout** : l'icône QR dans les listes de colis
+  (client et expéditeur) rouvre le même billet de réservation que dans le
+  parcours de réservation.
+- **Photos de preuve en caméra arrière** : « Collecter le colis », preuves de
+  livraison et photo de la carte micro-importateur ouvrent désormais la
+  caméra arrière (le selfie reste en caméra frontale pour l'identité).
+- **Portefeuille calculé comme un comptable** : profit net = chiffre
+  d'affaires total (encaissé + à recevoir) moins les charges réelles — les
+  commissions des commandes annulées et remboursées sont exclues ; la
+  trésorerie nette (encaissé − commissions réglées) est aussi disponible.
+- **Carte Portefeuille sur les écrans d'accueil** : gros montant principal
+  (profit net côté expéditeur, total dépensé côté client), pastille des dus /
+  restes à payer, et un appui ouvre les détails financiers ou la liste des
+  colis.
+- **Changement de type d'expéditeur depuis l'écran de rôle** : un expéditeur
+  vérifié peut basculer entre voyageur ordinaire et micro-importateur ;
+  passer en micro-importateur demande la photo de la carte, et le dossier est
+  renvoyé en vérification administration.
+- **Retour à l'accueil facilité** : bouton « Aller à l'accueil » après
+  l'envoi du dossier d'inscription expéditeur et quand le dossier est déjà
+  vérifié.
+- **Affichage confortable sur tous les écrans** : SafeArea généralisée sur
+  les écrans principaux (client, expéditeur, admin) pour respecter les
+  encoches et les barres système.
+
+---
+
+### Version 1.0.12
 
 - **Splash et icônes : retour à la normale** : l'essai de nouvelle génération
   publié en v1.0.11 déformait l'icône de l'app et l'écran de démarrage — la
