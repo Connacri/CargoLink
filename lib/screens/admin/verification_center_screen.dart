@@ -35,35 +35,38 @@ class VerificationCenterScreen extends ConsumerWidget {
     final pager = ref.watch(verificationCenterPagerProvider);
 
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () =>
-            ref.read(verificationCenterPagerProvider.notifier).refresh(),
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            GradientSliverHeader(
-              title: 'Vérification des expéditeurs',
-              subtitle: 'Dossiers en attente — photos en grand écran',
-              icon: Icons.fact_check_outlined,
-              trailing: IconButton(
-                tooltip: 'Recharger',
-                icon: const Icon(Icons.refresh, color: Colors.white),
-                onPressed: () =>
-                    ref.read(verificationCenterPagerProvider.notifier).refresh(),
+      body: SafeArea(
+        top: false,
+        child: RefreshIndicator(
+          onRefresh: () =>
+              ref.read(verificationCenterPagerProvider.notifier).refresh(),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              GradientSliverHeader(
+                title: 'Vérification des expéditeurs',
+                subtitle: 'Dossiers en attente — photos en grand écran',
+                icon: Icons.fact_check_outlined,
+                trailing: IconButton(
+                  tooltip: 'Recharger',
+                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  onPressed: () => ref
+                      .read(verificationCenterPagerProvider.notifier)
+                      .refresh(),
+                ),
               ),
-            ),
-            PagedSliverList<Shipper>(
-              paginatedList: pager,
-              padding: const EdgeInsets.fromLTRB(
-                  AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceMd,
-                  AppTheme.spaceXxl),
-              emptyState: const _EmptyVerifications(),
-              itemBuilder: (context, shipper, index) => StaggeredEntrance(
-                delay: Duration(milliseconds: (index % 10) * 40),
-                child: _VerificationCard(shipper: shipper),
+              PagedSliverList<Shipper>(
+                paginatedList: pager,
+                padding: const EdgeInsets.fromLTRB(AppTheme.spaceMd,
+                    AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceXxl),
+                emptyState: const _EmptyVerifications(),
+                itemBuilder: (context, shipper, index) => StaggeredEntrance(
+                  delay: Duration(milliseconds: (index % 10) * 40),
+                  child: _VerificationCard(shipper: shipper),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -78,7 +81,8 @@ class _EmptyVerifications extends StatelessWidget {
     return const Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.verified_user_outlined, size: 56, color: AppTheme.textMutedColor),
+        Icon(Icons.verified_user_outlined,
+            size: 56, color: AppTheme.textMutedColor),
         SizedBox(height: AppTheme.spaceMd),
         Text('Aucun dossier en attente', style: AppTheme.h3),
         SizedBox(height: AppTheme.spaceXs),
@@ -124,8 +128,8 @@ class _VerificationCard extends ConsumerWidget {
                         shipper.user?.fullName ?? 'Utilisateur',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTheme.body
-                            .copyWith(fontWeight: FontWeight.w700),
+                        style:
+                            AppTheme.body.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -194,7 +198,8 @@ class _VerificationCard extends ConsumerWidget {
           Text(label, style: AppTheme.caption),
           const SizedBox(height: AppTheme.spaceXs),
           GestureDetector(
-            onTap: () => showFullScreenImage(context, imageUrl: url, title: label),
+            onTap: () =>
+                showFullScreenImage(context, imageUrl: url, title: label),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(AppTheme.radiusSm),
               child: AspectRatio(
@@ -224,7 +229,7 @@ class _VerificationCard extends ConsumerWidget {
   }
 
   Future<void> _verify(
-    BuildContext context, WidgetRef ref, String adminId) async {
+      BuildContext context, WidgetRef ref, String adminId) async {
     try {
       await ref.read(shipperServiceProvider).verifyShipper(
             shipperId: shipper.id,
@@ -248,7 +253,7 @@ class _VerificationCard extends ConsumerWidget {
   }
 
   Future<void> _reject(
-    BuildContext context, WidgetRef ref, String adminId) async {
+      BuildContext context, WidgetRef ref, String adminId) async {
     final reasonController = TextEditingController();
     final reason = await showDialog<String>(
       context: context,

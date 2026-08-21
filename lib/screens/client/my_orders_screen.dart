@@ -90,11 +90,10 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
     final id = (event.newRecord['id'] ?? event.oldRecord['id']) as String?;
     if (id == null) return;
 
-    final notifier = ref
-        .read(clientBookingsPagerProvider((
-          clientId: userId,
-          status: _statusFilter,
-        )).notifier);
+    final notifier = ref.read(clientBookingsPagerProvider((
+      clientId: userId,
+      status: _statusFilter,
+    )).notifier);
 
     if (event.eventType == PostgresChangeEvent.delete) {
       notifier.removeItem(id);
@@ -213,10 +212,12 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
 
     if (userId == null) {
       return const Scaffold(
-        body: Center(
-          child: Text(
-            'Utilisateur non identifié',
-            style: AppTheme.bodySecondary,
+        body: SafeArea(
+          child: Center(
+            child: Text(
+              'Utilisateur non identifié',
+              style: AppTheme.bodySecondary,
+            ),
           ),
         ),
       );
@@ -228,51 +229,54 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
     )));
 
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await ref
-              .read(clientBookingsPagerProvider((
-                clientId: userId,
-                status: _statusFilter,
-              )).notifier)
-              .refresh();
-        },
-        child: CustomScrollView(
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            const GradientSliverHeader(
-              title: 'Mes Commandes',
-              subtitle: 'Suis et gère tes réservations',
-              icon: Icons.receipt_long_rounded,
-            ),
-            SliverToBoxAdapter(
-              child: _buildStatusFilters(),
-            ),
-            PagedSliverList<Booking>(
-              paginatedList: pager,
-              padding: const EdgeInsets.fromLTRB(
-                AppTheme.spaceMd,
-                AppTheme.spaceSm,
-                AppTheme.spaceMd,
-                AppTheme.spaceXxl,
+      body: SafeArea(
+        top: false,
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await ref
+                .read(clientBookingsPagerProvider((
+                  clientId: userId,
+                  status: _statusFilter,
+                )).notifier)
+                .refresh();
+          },
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              const GradientSliverHeader(
+                title: 'Mes Commandes',
+                subtitle: 'Suis et gère tes réservations',
+                icon: Icons.receipt_long_rounded,
               ),
-              emptyState: const _EmptyOrders(),
-              itemBuilder: (context, booking, index) => StaggeredEntrance(
-                delay: Duration(milliseconds: (index % 10) * 40),
-                child: _BookingCard(
-                  booking: booking,
-                  onTrack: () => Navigator.of(context)
-                      .pushNamed('/tracking', arguments: booking.id),
-                  onCancel: (booking.status == 'pending' ||
-                          booking.paymentStatus == 'pending')
-                      ? () => _cancelBooking(booking.id)
-                      : null,
-                  onChat: _canChat(booking) ? () => _openChat(booking) : null,
+              SliverToBoxAdapter(
+                child: _buildStatusFilters(),
+              ),
+              PagedSliverList<Booking>(
+                paginatedList: pager,
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd,
+                  AppTheme.spaceSm,
+                  AppTheme.spaceMd,
+                  AppTheme.spaceXxl,
+                ),
+                emptyState: const _EmptyOrders(),
+                itemBuilder: (context, booking, index) => StaggeredEntrance(
+                  delay: Duration(milliseconds: (index % 10) * 40),
+                  child: _BookingCard(
+                    booking: booking,
+                    onTrack: () => Navigator.of(context)
+                        .pushNamed('/tracking', arguments: booking.id),
+                    onCancel: (booking.status == 'pending' ||
+                            booking.paymentStatus == 'pending')
+                        ? () => _cancelBooking(booking.id)
+                        : null,
+                    onChat: _canChat(booking) ? () => _openChat(booking) : null,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -590,7 +594,8 @@ class _BookingCard extends ConsumerWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: onTrack,
-                    icon: const Icon(Icons.connecting_airports_rounded, size: 18),
+                    icon:
+                        const Icon(Icons.connecting_airports_rounded, size: 18),
                     label: const Text('Suivre'),
                   ),
                 ),
@@ -741,7 +746,8 @@ class _EmptyOrders extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Column(
       mainAxisSize: MainAxisSize.min,
-      children: [SizedBox(height: 50),
+      children: [
+        SizedBox(height: 50),
         Icon(
           Icons.receipt_long_outlined,
           size: 64,

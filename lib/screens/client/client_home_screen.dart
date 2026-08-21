@@ -22,25 +22,44 @@ enum ClientSort { none, price, fastest, topRated }
 
 final clientSortProvider = StateProvider<ClientSort>((ref) => ClientSort.none);
 
-/// Commande à mettre en avant sur la carte de suivi de l'accueil : la plus
-/// récente non terminée (en cours de livraison) ; à défaut, la dernière
-/// livrée (badge vert « Livré avec succès »). autoDispose → recalculée à
-/// chaque retour sur l'accueil.
-final homeTrackingBookingProvider =
-    FutureProvider.autoDispose<Booking?>((ref) async {
+/// Colis du client **pas encore livrés** (hors annulés) pour la section
+/// « Suivi de colis » de l'accueil : chaque colis en cours apparaît avec son
+/// avancement ; les colis livrés restent accessibles via « Voir tout »
+/// (écran Mes colis). autoDispose → recalculée à chaque retour sur l'accueil.
+final activeTrackingBookingsProvider =
+    FutureProvider.autoDispose<List<Booking>>((ref) async {
   final clientId = ref.watch(authServiceProvider).currentUserId;
-  if (clientId == null) return null;
+  if (clientId == null) return const [];
   final bookings = await ref
       .read(bookingServiceProvider)
-      .getClientBookings(clientId: clientId, limit: 20);
-  if (bookings.isEmpty) return null;
+      .getClientBookings(clientId: clientId, limit: 50);
+  return bookings
+      .where((b) => b.status != 'delivered' && b.status != 'cancelled')
+      .toList();
+});
+
+/// Portefeuille client : total réglé et restant à payer, calculés sur les
+/// réservations valides (annulées exclues). autoDispose comme les autres
+/// providers d'accueil.
+final clientWalletProvider =
+    FutureProvider.autoDispose<({double paid, double due})>((ref) async {
+  final clientId = ref.watch(authServiceProvider).currentUserId;
+  if (clientId == null) return (paid: 0.0, due: 0.0);
+  final bookings = await ref
+      .read(bookingServiceProvider)
+      .getClientBookings(clientId: clientId, limit: 100);
+  var paid = 0.0;
+  var due = 0.0;
   for (final b in bookings) {
-    if (b.status != 'delivered' && b.status != 'cancelled') return b;
+    if (b.status == 'cancelled') continue;
+    final amount = b.allocatedWeightKg * (b.shipment?.pricePerKg ?? 0);
+    if (b.paymentStatus == 'paid') {
+      paid += amount;
+    } else {
+      due += amount;
+    }
   }
-  return bookings.firstWhere(
-    (b) => b.status == 'delivered',
-    orElse: () => bookings.first,
-  );
+  return (paid: paid, due: due);
 });
 
 /// Lazy paged source for active shipments, keyed by the active filters.
@@ -279,6 +298,19 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       });
     });
 
+    // Live refresh du portefeuille et du suivi : tout changement sur bookings
+    // (paiement, statut, nouvelle réservation) invalide les providers.
+    ref.listen(
+      tableChangesProvider(('bookings', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(clientWalletProvider);
+          ref.invalidate(activeTrackingBookingsProvider);
+        });
+      },
+    );
+
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
@@ -365,6 +397,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               ),
             SliverToBoxAdapter(
               child: _buildGreeting(currentUser),
+            ),
+            const SliverToBoxAdapter(
+              child: _ClientWalletCard(),
             ),
             const SliverToBoxAdapter(
               child: _HomeTrackingCard(),
@@ -860,31 +895,60 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   }
 }
 
-/// Carte d'accueil « Suivi de colis » : dernière commande en cours (ou
-/// dernièrement livrée), étape actuelle, barre de progression et badge vert
-/// « Livré avec succès ». Un appui ouvre l'écran de suivi complet.
-class _HomeTrackingCard extends ConsumerWidget {
-  const _HomeTrackingCard();
-
-  static const int _stageCount = 8;
+/// Carte « Portefeuille » de l'accueil client : total réglé, restant à payer,
+/// un appui ouvre la liste des colis (Mes colis) pour le détail par commande.
+class _ClientWalletCard extends ConsumerWidget {
+  const _ClientWalletCard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bookingAsync = ref.watch(homeTrackingBookingProvider);
-    return bookingAsync.maybeWhen(
-      data: (booking) {
-        if (booking == null) return const SizedBox.shrink();
-        final delivered = booking.status == 'delivered';
-        final events =
-            ref.watch(trackingHistoryProvider(booking.id)).valueOrNull ??
-                const <ShipmentTracking>[];
-        final latest = events.isEmpty ? null : events.last;
-        final progress = delivered
-            ? 1.0
-            : (TrackingScreen.stageIndex(latest?.status ?? 'order_processed') +
-                    1) /
-                _stageCount;
+    final wallet = ref.watch(clientWalletProvider);
+    final settings = ref.watch(platformSettingsProvider);
+    final currency =
+        settings.valueOrNull?.defaultCurrency ?? AppConstants.defaultCurrency;
+    final data = wallet.valueOrNull ?? (paid: 0.0, due: 0.0);
 
+    return WalletCard(
+      title: 'Portefeuille',
+      mainLabel: 'Total dépensé',
+      mainValue: '${data.paid.toStringAsFixed(0)} $currency',
+      badgeLabel: data.due > 0
+          ? 'À payer : ${data.due.toStringAsFixed(0)} $currency'
+          : 'Tout est réglé',
+      badgePositive: data.due <= 0,
+      onTap: () => Navigator.of(context).pushNamed('/my-parcels'),
+    );
+  }
+}
+
+/// Section d'accueil « Suivi de colis » : liste des colis **pas encore
+/// livrés**, chacun avec son avancement ; un appui ouvre le suivi détaillé,
+/// « Voir tout » ouvre la liste complète (écran Mes colis, timelines incluses).
+class _HomeTrackingCard extends ConsumerWidget {
+  const _HomeTrackingCard();
+
+  static const int _maxRows = 4;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookingsAsync = ref.watch(activeTrackingBookingsProvider);
+
+    // Live refresh : création / changement de statut d'une commande → la
+    // section se met à jour sans attendre un pull-to-refresh.
+    ref.listen(
+      tableChangesProvider(('bookings', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(activeTrackingBookingsProvider);
+        });
+      },
+    );
+
+    return bookingsAsync.maybeWhen(
+      data: (bookings) {
+        if (bookings.isEmpty) return const SizedBox.shrink();
+        final extra = bookings.length - _maxRows;
         return Padding(
           padding: const EdgeInsets.fromLTRB(
             AppTheme.spaceMd,
@@ -893,123 +957,145 @@ class _HomeTrackingCard extends ConsumerWidget {
             0,
           ),
           child: GlassCard(
-            onTap: () => Navigator.of(context)
-                .pushNamed('/tracking', arguments: booking.id),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    AnimatedIconDot(
+                    const AnimatedIconDot(
                       icon: Icons.local_shipping_rounded,
-                      color: delivered
-                          ? AppTheme.accentColor
-                          : AppTheme.primaryColor,
+                      color: AppTheme.primaryColor,
                     ),
                     const SizedBox(width: AppTheme.spaceMd),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Suivi de colis', style: AppTheme.h3),
-                            Text(
-                            booking.productName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        children: [
+                          const Text('Suivi de colis', style: AppTheme.h3),
+                          Text(
+                            '${bookings.length} '
+                            '${bookings.length == 1 ? 'colis en cours' : 'colis en cours'}',
                             style: AppTheme.caption,
                           ),
                         ],
                       ),
                     ),
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppTheme.textSecondaryColor,
+                    TextButton.icon(
+                      onPressed: () =>
+                          Navigator.of(context).pushNamed('/my-parcels'),
+                      icon: const Icon(Icons.list_rounded, size: 18),
+                      label: const Text('Voir tout'),
                     ),
                   ],
                 ),
-                const SizedBox(height: AppTheme.spaceSm),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'N° ${booking.trackingNumber?.isNotEmpty ?? false ? booking.trackingNumber : QrBookingPayload.refCodeFor(booking.id)}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                          color: AppTheme.primaryDark,
-                        ),
-                      ),
+                ...bookings.take(_maxRows).map(
+                      (b) => _ParcelProgressRow(booking: b),
                     ),
-                    if (delivered)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.accentColor.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color:
-                                AppTheme.accentColor.withValues(alpha: 0.4),
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.check_circle_rounded,
-                                size: 13, color: AppTheme.accentColor),
-                            SizedBox(width: 4),
-                            Text(
-                              'Livré avec succès',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.accentColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else if (latest != null)
-                      Text(
-                        TrackingScreen.statusLabel(latest.status),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.infoColor,
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: AppTheme.spaceSm),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 6,
-                    backgroundColor: AppTheme.surfaceMuted,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppTheme.accentColor,
+                if (extra > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppTheme.spaceXs),
+                    child: Text(
+                      '+ $extra autre${extra > 1 ? 's' : ''} colis en cours — '
+                      '« Voir tout » pour la liste complète',
+                      style: AppTheme.caption,
                     ),
                   ),
-                ),
-                if (!delivered && latest != null) ...[
-                  const SizedBox(height: AppTheme.spaceXs),
-                  Text(
-                    'Dernière mise à jour : '
-                    '${TrackingScreen.statusLabel(latest.status)}'
-                    '${latest.location != null && latest.location!.isNotEmpty ? ' • ${latest.location}' : ''}',
-                    style: AppTheme.caption,
-                  ),
-                ],
               ],
             ),
           ),
         );
       },
       orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// Une ligne par colis en cours : produit, N° de suivi, statut courant et
+/// barre de progression. Un appui ouvre le suivi détaillé du colis.
+class _ParcelProgressRow extends ConsumerWidget {
+  final Booking booking;
+
+  const _ParcelProgressRow({required this.booking});
+
+  static const int _stageCount = 8;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final events =
+        ref.watch(trackingHistoryProvider(booking.id)).valueOrNull ??
+            const <ShipmentTracking>[];
+    final latest = events.isEmpty ? null : events.last;
+    final progress =
+        (TrackingScreen.stageIndex(latest?.status ?? 'order_processed') + 1) /
+            _stageCount;
+
+    return InkWell(
+      onTap: () =>
+          Navigator.of(context).pushNamed('/tracking', arguments: booking.id),
+      borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceSm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    booking.productName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                if (latest != null)
+                  Text(
+                    TrackingScreen.statusLabel(latest.status),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.infoColor,
+                    ),
+                  ),
+                const SizedBox(width: AppTheme.spaceXs),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: AppTheme.textSecondaryColor,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceXs),
+            Row(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 5,
+                      backgroundColor: AppTheme.surfaceMuted,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppTheme.accentColor,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                Text(
+                  'N° ${booking.trackingNumber?.isNotEmpty ?? false ? booking.trackingNumber : QrBookingPayload.refCodeFor(booking.id)}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                    color: AppTheme.primaryDark,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

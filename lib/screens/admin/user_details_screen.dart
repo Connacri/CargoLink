@@ -111,7 +111,8 @@ class _UserDetailsScreenState extends ConsumerState<UserDetailsScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(user.isActive ? 'Compte désactivé' : 'Compte réactivé'),
+            content:
+                Text(user.isActive ? 'Compte désactivé' : 'Compte réactivé'),
             backgroundColor: AppTheme.accentColor,
           ),
         );
@@ -170,89 +171,94 @@ class _UserDetailsScreenState extends ConsumerState<UserDetailsScreen>
     final isShipper = user.role == 'shipper';
 
     return Scaffold(
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          GradientSliverHeader(
-            title: 'Dossier',
-            subtitle: user.fullName,
-            icon: Icons.folder_shared_outlined,
-            trailing: PopupMenuButton<_AdminAction>(
-              icon: const Icon(Icons.more_vert, color: Colors.white),
-              onSelected: (action) async {
-                switch (action) {
-                  case _AdminAction.chat:
-                    await _openChat();
-                    break;
-                  case _AdminAction.toggleActive:
-                    await _toggleActive();
-                    break;
-                  case _AdminAction.delete:
-                    await _deleteUser();
-                    break;
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: _AdminAction.chat,
-                  child: Row(
-                    children: [
-                      Icon(Icons.chat_bubble_outline_rounded,
-                          color: AppTheme.infoColor),
-                      SizedBox(width: 8),
-                      Text('Contacter'),
-                    ],
+      body: SafeArea(
+        top: false,
+        child: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            GradientSliverHeader(
+              title: 'Dossier',
+              subtitle: user.fullName,
+              icon: Icons.folder_shared_outlined,
+              trailing: PopupMenuButton<_AdminAction>(
+                icon: const Icon(Icons.more_vert, color: Colors.white),
+                onSelected: (action) async {
+                  switch (action) {
+                    case _AdminAction.chat:
+                      await _openChat();
+                      break;
+                    case _AdminAction.toggleActive:
+                      await _toggleActive();
+                      break;
+                    case _AdminAction.delete:
+                      await _deleteUser();
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: _AdminAction.chat,
+                    child: Row(
+                      children: [
+                        Icon(Icons.chat_bubble_outline_rounded,
+                            color: AppTheme.infoColor),
+                        SizedBox(width: 8),
+                        Text('Contacter'),
+                      ],
+                    ),
                   ),
-                ),
-                PopupMenuItem(
-                  value: _AdminAction.toggleActive,
-                  child: Text(
-                    user.isActive ? 'Désactiver le compte' : 'Réactiver le compte',
+                  PopupMenuItem(
+                    value: _AdminAction.toggleActive,
+                    child: Text(
+                      user.isActive
+                          ? 'Désactiver le compte'
+                          : 'Réactiver le compte',
+                    ),
                   ),
-                ),
-                const PopupMenuItem(
-                  value: _AdminAction.delete,
-                  child: Text(
-                    'Supprimer définitivement',
-                    style: TextStyle(color: AppTheme.errorColor),
+                  const PopupMenuItem(
+                    value: _AdminAction.delete,
+                    child: Text(
+                      'Supprimer définitivement',
+                      style: TextStyle(color: AppTheme.errorColor),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _TabBarDelegate(
-              TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                tabAlignment: TabAlignment.start,
-                labelColor: AppTheme.primaryColor,
-                unselectedLabelColor: AppTheme.textSecondaryColor,
-                indicatorColor: AppTheme.primaryColor,
-                indicatorWeight: 3,
-                tabs: const [
-                  Tab(text: 'Profil'),
-                  Tab(text: 'Expéditions'),
-                  Tab(text: 'Commandes'),
-                  Tab(text: 'Finance'),
-                  Tab(text: 'Litiges'),
                 ],
               ),
             ),
-          ),
-        ],
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            _ProfileTab(user: user),
-            isShipper
-                ? _ShipmentsTab(user: user)
-                : const _EmptyTab(
-                    message: 'Aucune expédition (rôle non-expéditeur)'),
-            _OrdersTab(user: user),
-            _FinanceTab(user: user),
-            _DisputesTab(user: user),
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _TabBarDelegate(
+                TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  labelColor: AppTheme.primaryColor,
+                  unselectedLabelColor: AppTheme.textSecondaryColor,
+                  indicatorColor: AppTheme.primaryColor,
+                  indicatorWeight: 3,
+                  tabs: const [
+                    Tab(text: 'Profil'),
+                    Tab(text: 'Expéditions'),
+                    Tab(text: 'Commandes'),
+                    Tab(text: 'Finance'),
+                    Tab(text: 'Litiges'),
+                  ],
+                ),
+              ),
+            ),
           ],
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              _ProfileTab(user: user),
+              isShipper
+                  ? _ShipmentsTab(user: user)
+                  : const _EmptyTab(
+                      message: 'Aucune expédition (rôle non-expéditeur)'),
+              _OrdersTab(user: user),
+              _FinanceTab(user: user),
+              _DisputesTab(user: user),
+            ],
+          ),
         ),
       ),
     );
@@ -343,8 +349,7 @@ class _ProfileTab extends ConsumerWidget {
                                   compact: true,
                                 ),
                                 GradientBadge(
-                                  label:
-                                      user.isActive ? 'Actif' : 'Désactivé',
+                                  label: user.isActive ? 'Actif' : 'Désactivé',
                                   gradient: user.isActive
                                       ? AppTheme.successGradient
                                       : AppTheme.errorGradient,
@@ -390,9 +395,13 @@ class _ProfileTab extends ConsumerWidget {
                         const Text('Aucun dossier expéditeur',
                             style: AppTheme.bodySecondary)
                       else ...[
-                        _row('Type',
-                            s.isMicroImportateur ? 'Micro-Importateur' : 'Voyageur ordinaire'),
-                        _row('Statut', _verificationLabel(s.verificationStatus)),
+                        _row(
+                            'Type',
+                            s.isMicroImportateur
+                                ? 'Micro-Importateur'
+                                : 'Voyageur ordinaire'),
+                        _row(
+                            'Statut', _verificationLabel(s.verificationStatus)),
                         _row('Passeport', s.passportNumber),
                         _row('Note', s.ratingDisplay),
                         _row('Expéditions', '${s.totalShipments}'),
@@ -622,8 +631,7 @@ class _FinanceTab extends ConsumerWidget {
     return payments.when(
       data: (items) {
         final completed = items.where((p) => p.isCompleted).toList();
-        final totalPaid =
-            completed.fold<double>(0, (sum, p) => sum + p.amount);
+        final totalPaid = completed.fold<double>(0, (sum, p) => sum + p.amount);
         final totalAll = items.fold<double>(0, (sum, p) => sum + p.amount);
         final pending = items.where((p) => p.status == 'pending').length;
         final refunded = items.where((p) => p.status == 'refunded').length;
@@ -663,10 +671,7 @@ class _FinanceTab extends ConsumerWidget {
             else
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppTheme.spaceMd,
-                    0,
-                    AppTheme.spaceMd,
-                    AppTheme.spaceXxl),
+                    AppTheme.spaceMd, 0, AppTheme.spaceMd, AppTheme.spaceXxl),
                 sliver: SliverList.builder(
                   itemCount: items.length,
                   itemBuilder: (context, index) => StaggeredEntrance(
@@ -1072,7 +1077,8 @@ class _PaymentRow extends StatelessWidget {
               icon: p.isCompleted
                   ? Icons.check_circle_rounded
                   : Icons.pending_rounded,
-              color: p.isCompleted ? AppTheme.accentColor : AppTheme.warningColor,
+              color:
+                  p.isCompleted ? AppTheme.accentColor : AppTheme.warningColor,
             ),
             const SizedBox(width: AppTheme.spaceSm + 4),
             Expanded(
@@ -1145,9 +1151,8 @@ class _DisputeRow extends StatelessWidget {
             ),
             GradientBadge(
               label: d.isOpen ? 'Ouvert' : 'Fermé',
-              gradient: d.isOpen
-                  ? AppTheme.errorGradient
-                  : AppTheme.successGradient,
+              gradient:
+                  d.isOpen ? AppTheme.errorGradient : AppTheme.successGradient,
               compact: true,
             ),
           ],

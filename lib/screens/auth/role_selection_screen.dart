@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/index.dart';
+import '../../data/models/models.dart';
+import '../../data/services/storage_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
@@ -30,6 +34,72 @@ class RoleSelectionScreen extends ConsumerStatefulWidget {
 class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
   String? _selectedRole;
   bool _saving = false;
+
+  // --- Type d'expéditeur (switch voyageur_ordinaire ↔ micro_importateur) ---
+  String? _shipperType; // null = inchangé (valeur actuelle du dossier)
+  File? _microCardFile;
+  bool _savingType = false;
+
+  Future<void> _pickMicroCard() async {
+    final file = await pickProofPhoto(
+      context,
+      title: 'Carte de micro-importateur',
+    );
+    if (file == null) return;
+    setState(() => _microCardFile = file);
+  }
+
+  Future<void> _saveShipperType() async {
+    final shipper = ref.read(currentShipperProvider).valueOrNull;
+    if (shipper == null) return;
+    final type = _shipperType ?? shipper.shipperType;
+    final needsCard = type == 'micro_importateur' &&
+        shipper.microCardPhotoUrl == null &&
+        _microCardFile == null;
+    if (needsCard) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(
+            'Veuillez joindre la photo de votre carte de micro-importateur'),
+        backgroundColor: AppTheme.errorColor,
+      ));
+      return;
+    }
+    setState(() => _savingType = true);
+    try {
+      String? cardUrl;
+      if (_microCardFile != null) {
+        final userId = ref.read(authServiceProvider).currentUserId;
+        if (userId == null) throw Exception('Utilisateur non identifié');
+        final storage = ref.read(storageServiceProvider);
+        cardUrl = await storage.uploadImageBytes(
+          bytes: await _microCardFile!.readAsBytes(),
+          fileName: 'micro_card.jpg',
+          path: 'micro/$userId/${DateTime.now().millisecondsSinceEpoch}',
+          bucket: StorageService.documentsBucket,
+        );
+      }
+      await ref.read(shipperServiceProvider).updateShipperDocuments(
+            shipperId: shipper.id,
+            shipperType: type,
+            microCardPhotoUrl: cardUrl,
+          );
+      ref.invalidate(currentShipperProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(
+            'Type mis à jour — dossier renvoyé pour vérification'),
+        backgroundColor: AppTheme.accentColor,
+      ));
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil('/home', (route) => false);
+    } catch (e) {
+      if (mounted) {
+        await showAppErrorDialog(context, message: 'Erreur: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _savingType = false);
+    }
+  }
 
   Future<void> _confirm() async {
     final role = _selectedRole;
@@ -136,6 +206,11 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final shipperAsync = ref.watch(currentShipperProvider);
+    final shipper = widget.currentRole == 'shipper'
+        ? shipperAsync.valueOrNull
+        : null;
+    final showTypeSection = shipper != null && shipper.isVerified;
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
@@ -201,6 +276,13 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                         value: 'shipper',
                       ),
                     ),
+                    if (showTypeSection) ...[
+                      const SizedBox(height: AppTheme.spaceMd),
+                      StaggeredEntrance(
+                        delay: const Duration(milliseconds: 280),
+                        child: _buildShipperTypeSection(shipper),
+                      ),
+                    ],
                     const SizedBox(height: AppTheme.spaceXl),
                     StaggeredEntrance(
                       delay: const Duration(milliseconds: 320),
@@ -316,6 +398,180 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
             color: selected ? AppTheme.primaryColor : AppTheme.dividerColor,
           ),
         ],
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Type d'expéditeur — permet à un expéditeur vérifié de basculer entre
+  // voyageur_ordinaire et micro_importateur. Le changement renvoie le dossier
+  // en vérification (updateShipperDocuments remet verification_status à
+  // pending), et le passage en micro-importateur exige la photo de la carte.
+  // -------------------------------------------------------------------------
+
+  bool _isTypeDirty(Shipper shipper) {
+    if (_microCardFile != null) return true;
+    final type = _shipperType;
+    return type != null && type != shipper.shipperType;
+  }
+
+  Widget _buildShipperTypeSection(Shipper shipper) {
+    final effective = _shipperType ?? shipper.shipperType;
+    final needsCard = effective == 'micro_importateur' &&
+        (shipper.microCardPhotoUrl == null || _microCardFile != null);
+    return GlassCard(
+      padding: const EdgeInsets.all(AppTheme.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Row(
+            children: [
+              AnimatedIconDot(
+                icon: Icons.badge_outlined,
+                color: AppTheme.primaryColor,
+                size: 20,
+              ),
+              SizedBox(width: AppTheme.spaceSm),
+              Text('Type d\'expéditeur', style: AppTheme.h3),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceXs),
+          const Text(
+            'Changer de type renvoie votre dossier pour une nouvelle '
+            'vérification par l\'administration.',
+            style: AppTheme.caption,
+          ),
+          const SizedBox(height: AppTheme.spaceMd),
+          _buildTypeOption(
+            title: 'Voyageur ordinaire',
+            subtitle: 'Je porte des colis lors de mes voyages.',
+            icon: Icons.luggage_rounded,
+            value: 'voyageur_ordinaire',
+            selectedValue: effective,
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
+          _buildTypeOption(
+            title: 'Micro-importateur',
+            subtitle:
+                'J\'importe de petites marchandises (carte de '
+                'micro-importateur requise).',
+            icon: Icons.storefront_outlined,
+            value: 'micro_importateur',
+            selectedValue: effective,
+          ),
+          if (needsCard) ...[
+            const SizedBox(height: AppTheme.spaceSm),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                _microCardFile != null
+                    ? Icons.check_circle_rounded
+                    : Icons.add_a_photo_rounded,
+                color: _microCardFile != null
+                    ? AppTheme.accentColor
+                    : AppTheme.primaryColor,
+              ),
+              title: Text(
+                _microCardFile != null
+                    ? 'Carte jointe ✓'
+                    : 'Joindre la photo de la carte',
+                style:
+                    AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+              ),
+              subtitle: Text(
+                _microCardFile != null
+                    ? _microCardFile!.path
+                        .split(Platform.pathSeparator)
+                        .last
+                    : 'Caméra arrière ou galerie',
+                style: AppTheme.caption,
+              ),
+              onTap: _savingType ? null : _pickMicroCard,
+            ),
+          ],
+          const SizedBox(height: AppTheme.spaceMd),
+          FilledButton.tonalIcon(
+            onPressed:
+                (!_isTypeDirty(shipper) || _savingType) ? null : _saveShipperType,
+            icon: _savingType
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child:
+                        CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.save_outlined),
+            label: Text(_savingType
+                ? 'Enregistrement…'
+                : 'Enregistrer le type'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTypeOption({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required String value,
+    required String selectedValue,
+  }) {
+    final selected = selectedValue == value;
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        setState(() => _shipperType = value);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(AppTheme.spaceSm + 2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          border: Border.all(
+            color: selected
+                ? AppTheme.primaryColor.withValues(alpha: 0.6)
+                : AppTheme.dividerColor,
+          ),
+          color: selected
+              ? AppTheme.primaryColor.withValues(alpha: 0.06)
+              : Colors.transparent,
+        ),
+        child: Row(
+          children: [
+            AnimatedIconDot(
+              icon: icon,
+              color: selected ? AppTheme.primaryColor : AppTheme.textMutedColor,
+              size: 18,
+            ),
+            const SizedBox(width: AppTheme.spaceSm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTheme.body.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: selected
+                          ? AppTheme.primaryColor
+                          : AppTheme.textPrimaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: AppTheme.caption),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppTheme.spaceXs),
+            Icon(
+              selected ? Icons.check_circle : Icons.radio_button_unchecked,
+              size: 20,
+              color:
+                  selected ? AppTheme.primaryColor : AppTheme.dividerColor,
+            ),
+          ],
+        ),
       ),
     );
   }

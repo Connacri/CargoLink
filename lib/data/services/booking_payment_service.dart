@@ -962,21 +962,27 @@ class PaymentService {
     }
   }
 
-  /// Full finance summary for a shipper: revenue (paid bookings), receivable
-  /// (bookings not yet paid), platform commission (cost) and the resulting net
-  /// profit. Also returns the monthly revenue breakdown for the chart.
+  /// Full finance summary for a shipper, computed like an accountant:
+  ///  - Chiffre d'affaires total (accrual) = commandes valides livrables
+  ///    (encaissées + à recevoir), annulées exclues ;
+  ///  - Charges = commissions plateforme réellement dues (remboursées et
+  ///    commissions liées à des commandes annulées exclues) ;
+  ///  - Profit net = CA total − charges ;
+  ///  - Trésorerie nette (cash) = encaissé − commissions réglées.
+  /// Also returns the monthly revenue breakdown for the chart.
   Future<Map<String, dynamic>?> getShipperFinanceSummary(
       String shipperId) async {
     try {
       final bookings = await _supabase
           .from('bookings')
           .select(
-              'allocated_weight_kg, status, payment_status, created_at, shipments(price_per_kg, shipper_id)')
+              'id, allocated_weight_kg, status, payment_status, created_at, shipments(price_per_kg, shipper_id)')
           .eq('shipments.shipper_id', shipperId);
       final bookingList = bookings as List;
 
       var revenue = 0.0;
       var receivable = 0.0;
+      final cancelledBookingIds = <String>{};
       final byMonth = <int, double>{};
       for (final b in bookingList) {
         final shipment = b['shipments'] as Map<String, dynamic>?;
@@ -986,7 +992,11 @@ class PaymentService {
         final gain = allocated * shipperPrice;
         final status = b['status'] as String? ?? '';
         final payment = b['payment_status'] as String? ?? '';
-        if (status == 'cancelled') continue;
+        if (status == 'cancelled') {
+          final id = b['id'] as String?;
+          if (id != null) cancelledBookingIds.add(id);
+          continue;
+        }
         if (payment == 'paid') {
           revenue += gain;
           final created = DateTime.tryParse(b['created_at'] as String? ?? '');
@@ -1001,12 +1011,13 @@ class PaymentService {
 
       final fees = await _supabase
           .from('platform_fees')
-          .select('amount,status,currency')
+          .select('amount,status,currency,booking_id')
           .eq('shipper_id', shipperId);
       var feesPaid = 0.0;
       var feesAwaiting = 0.0;
       var feesPending = 0.0;
       var feesRefunded = 0.0;
+      var feesCancelled = 0.0;
       final feesByCurrency = <String, Map<String, double>>{};
       void add(String currency, String key, double amount) {
         final bucket =
@@ -1018,6 +1029,14 @@ class PaymentService {
         final amount = (f['amount'] as num).toDouble();
         final status = f['status'] as String? ?? '';
         final currency = f['currency'] as String? ?? 'DZD';
+        final feeBookingId = f['booking_id'] as String?;
+        // Commission rattachée à une commande annulée : charge annulée avec
+        // l'opération, on la sort des charges comme un remboursement.
+        if (feeBookingId != null && cancelledBookingIds.contains(feeBookingId)) {
+          feesCancelled += amount;
+          add(currency, 'cancelled', amount);
+          continue;
+        }
         if (status == 'paid') {
           feesPaid += amount;
           add(currency, 'paid', amount);
@@ -1035,20 +1054,26 @@ class PaymentService {
 
       final feesTotal = feesPaid + feesAwaiting + feesPending;
       final due = feesAwaiting + feesPending;
+      // Comptabilité (engagement) : CA total = encaissé + créances clients.
+      final grossRevenue = revenue + receivable;
 
       return {
         'revenue': revenue,
         'receivable': receivable,
+        'gross_revenue': grossRevenue,
         'fees_paid': feesPaid,
         'fees_awaiting': feesAwaiting,
         'fees_pending': feesPending,
         'fees_refunded': feesRefunded,
+        'fees_cancelled': feesCancelled,
         'fees_total': feesTotal,
-        // Bénéfice net = chiffre d'affaires encaissé moins la commission
-        // plateforme totale (réglée ou non) : la commission est une charge
-        // réelle de l'expéditeur, qu'elle ait déjà été versée ou pas. Un dû
-        // remboursé ne compte plus comme une charge.
-        'profit': revenue - feesTotal,
+        // Profit net comptable = chiffre d'affaires total (encaissé + à
+        // recevoir) moins les charges réelles (commissions dues, hors
+        // remboursées et hors commandes annulées).
+        'profit': grossRevenue - feesTotal,
+        // Trésorerie nette : seulement ce qui est réellement rentré moins ce
+        // qui est réellement sorti.
+        'cash_profit': revenue - feesPaid,
         'due': due,
         'monthly': byMonth,
         'fees_by_currency': feesByCurrency,

@@ -16,44 +16,46 @@ class TransactionsScreen extends ConsumerWidget {
     final transactions = ref.watch(allTransactionsProvider);
 
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(allTransactionsProvider),
-        child: transactions.when(
-          data: (items) => CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              const GradientSliverHeader(
-                title: 'Transactions',
-                subtitle: 'Toutes les opérations financières',
-                icon: Icons.swap_horiz_rounded,
-                expandedHeight: 140,
-              ),
-              if (items.isEmpty)
-                const SliverToBoxAdapter(
-                  child: _EmptyTransactions(),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppTheme.spaceMd,
-                    AppTheme.spaceMd,
-                    AppTheme.spaceMd,
-                    AppTheme.spaceXxl,
-                  ),
-                  sliver: SliverList.builder(
-                    itemCount: items.length,
-                    itemBuilder: (context, index) => StaggeredEntrance(
-                      delay: Duration(milliseconds: (index % 10) * 50),
-                      child: _TransactionCard(item: items[index]),
+      body: SafeArea(
+        top: false,
+        child: RefreshIndicator(
+          onRefresh: () async => ref.invalidate(allTransactionsProvider),
+          child: transactions.when(
+            data: (items) => CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                const GradientSliverHeader(
+                  title: 'Transactions',
+                  subtitle: 'Toutes les opérations financières',
+                  icon: Icons.swap_horiz_rounded,
+                  expandedHeight: 140,
+                ),
+                if (items.isEmpty)
+                  const SliverToBoxAdapter(
+                    child: _EmptyTransactions(),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceXxl,
+                    ),
+                    sliver: SliverList.builder(
+                      itemCount: items.length,
+                      itemBuilder: (context, index) => StaggeredEntrance(
+                        delay: Duration(milliseconds: (index % 10) * 50),
+                        child: _TransactionCard(item: items[index]),
+                      ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          loading: () =>
-              const Center(child: CircularProgressIndicator()),
-          error: (e, s) => Center(
-            child: Text('Erreur: $e', style: AppTheme.bodySecondary),
+              ],
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, s) => Center(
+              child: Text('Erreur: $e', style: AppTheme.bodySecondary),
+            ),
           ),
         ),
       ),
@@ -190,7 +192,9 @@ class _TransactionCard extends StatelessWidget {
     final date = DateTime(d.year, d.month, d.day);
     final today = DateTime(now.year, now.month, now.day);
     final diff = today.difference(date).inDays;
-    if (diff == 0) return "Aujourd'hui à ${d.hour}:${d.minute.toString().padLeft(2, '0')}";
+    if (diff == 0) {
+      return "Aujourd'hui à ${d.hour}:${d.minute.toString().padLeft(2, '0')}";
+    }
     if (diff == 1) return 'Hier';
     return '${d.day}/${d.month}/${d.year}';
   }

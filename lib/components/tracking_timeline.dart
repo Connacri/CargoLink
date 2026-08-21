@@ -1,6 +1,68 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/ui_kit.dart';
+import '../data/models/models.dart';
+
+/// Libellés FR des statuts bruts de `shipment_tracking` (partagés par tous les
+/// écrans qui affichent une frise : suivi détaillé, cartes d'accueil, listes).
+String shipmentStatusLabel(String status) {
+  switch (status) {
+    case 'order_processed':
+      return 'Commande traitée';
+    case 'collected':
+      return 'Colis récupéré';
+    case 'verified':
+      return 'Colis vérifié';
+    case 'verification_returned':
+      return 'Vérification : action requise';
+    case 'departed_origin':
+      return 'Départ du pays d\'origine';
+    case 'in_transit':
+      return 'En transit';
+    case 'arrived_destination':
+      return 'Arrivé à destination';
+    case 'customs_cleared':
+      return 'Douane passée';
+    case 'out_for_delivery':
+      return 'En cours de livraison';
+    case 'delivered':
+      return 'Livré';
+    default:
+      return status;
+  }
+}
+
+/// Convertit les lignes brutes (chronologiques) de `shipment_tracking` en
+/// [TrackingEvent] prêts pour la frise : dernière entrée = en cours (ou
+/// terminée si livré), précédentes = complétées.
+List<TrackingEvent> mapShipmentTrackingToTimeline(
+  List<ShipmentTracking> events, {
+  required bool delivered,
+}) {
+  final mapped = <TrackingEvent>[];
+  for (var i = events.length - 1; i >= 0; i--) {
+    final event = events[i];
+    final isLatest = i == events.length - 1;
+    final description = <String>[
+      if (event.location != null && event.location!.isNotEmpty)
+        '${event.location}',
+      if (event.notes != null && event.notes!.isNotEmpty) '${event.notes}',
+    ].join(' • ');
+    mapped.add(
+      TrackingEvent(
+        title: shipmentStatusLabel(event.status),
+        timestamp: event.timestamp,
+        status: isLatest
+            ? (delivered
+                ? TrackingStatus.completed
+                : TrackingStatus.inProgress)
+            : TrackingStatus.completed,
+        description: description.isEmpty ? null : description,
+      ),
+    );
+  }
+  return mapped;
+}
 
 /// Logical status of a tracking step (used to pick color + icon).
 enum TrackingStatus { pending, inProgress, completed, failed }

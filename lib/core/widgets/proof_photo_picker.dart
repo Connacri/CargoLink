@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:camera/camera.dart' show CameraLensDirection;
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -68,7 +69,11 @@ Future<File?> pickProofPhoto(BuildContext context, {String title = 'Photo de pre
       if (xfile == null) return null;
       picked = File(xfile.path);
     case _ProofSource.camera:
-      final path = await LiveSelfieScreen.capture(context);
+      // Photos de preuve = colis physique : caméra arrière (pas selfie).
+      final path = await LiveSelfieScreen.capture(
+        context,
+        lens: CameraLensDirection.back,
+      );
       if (path == null) return null;
       picked = File(path);
   }

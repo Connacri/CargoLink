@@ -30,16 +30,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   final List<File> _productImages = [];
   bool _isLoading = false;
 
-  int get _roundingPrecision => ref
-          .watch(platformSettingsProvider)
-          .valueOrNull
-          ?.roundingPrecision ??
+  int get _roundingPrecision =>
+      ref.watch(platformSettingsProvider).valueOrNull?.roundingPrecision ??
       AppConstants.roundingPrecision;
 
-  String get _currency => ref
-          .watch(platformSettingsProvider)
-          .valueOrNull
-          ?.defaultCurrency ??
+  String get _currency =>
+      ref.watch(platformSettingsProvider).valueOrNull?.defaultCurrency ??
       AppConstants.defaultCurrency;
 
   @override
@@ -65,75 +61,78 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         }
 
         return Scaffold(
-          body: Form(
-            key: _formKey,
-            child: CustomScrollView(
-              slivers: [
-                GradientSliverHeader(
-                  title: 'Nouvelle Réservation',
-                  subtitle:
-                      '${shipmentData.originCountry} → ${shipmentData.destinationCity}',
-                  icon: Icons.assignment_turned_in_rounded,
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppTheme.spaceMd,
-                      AppTheme.spaceMd,
-                      AppTheme.spaceMd,
-                      0,
-                    ),
-                    child: _buildShipmentSummary(shipmentData),
+          body: SafeArea(
+            top: false,
+            child: Form(
+              key: _formKey,
+              child: CustomScrollView(
+                slivers: [
+                  GradientSliverHeader(
+                    title: 'Nouvelle Réservation',
+                    subtitle:
+                        '${shipmentData.originCountry} → ${shipmentData.destinationCity}',
+                    icon: Icons.assignment_turned_in_rounded,
                   ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppTheme.spaceMd,
-                      AppTheme.spaceMd,
-                      AppTheme.spaceMd,
-                      0,
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        0,
+                      ),
+                      child: _buildShipmentSummary(shipmentData),
                     ),
-                    child: _buildProductForm(shipmentData),
                   ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppTheme.spaceMd,
-                      AppTheme.spaceMd,
-                      AppTheme.spaceMd,
-                      0,
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        0,
+                      ),
+                      child: _buildProductForm(shipmentData),
                     ),
-                    child: _buildImageSection(),
                   ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppTheme.spaceMd,
-                      AppTheme.spaceMd,
-                      AppTheme.spaceMd,
-                      0,
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        0,
+                      ),
+                      child: _buildImageSection(),
                     ),
-                    child: _buildWeightCalculation(shipmentData),
                   ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppTheme.spaceMd,
-                      AppTheme.spaceLg,
-                      AppTheme.spaceMd,
-                      0,
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        0,
+                      ),
+                      child: _buildWeightCalculation(shipmentData),
                     ),
-                    child: _buildSummary(shipmentData),
                   ),
-                ),
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: AppTheme.spaceXxl),
-                ),
-              ],
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.spaceMd,
+                        AppTheme.spaceLg,
+                        AppTheme.spaceMd,
+                        0,
+                      ),
+                      child: _buildSummary(shipmentData),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: AppTheme.spaceXxl),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -169,7 +168,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                   children: [
                     Text(
                       '${shipment.originCountry} → ${shipment.destinationCity}',
-                      style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+                      style:
+                          AppTheme.body.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 2),
                     Row(
@@ -206,8 +206,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 child: _InfoTile(
                   icon: Icons.payments_outlined,
                   label: 'Prix / kg',
-                  value:
-                      '${shipment.pricePerKg.toStringAsFixed(0)} $_currency',
+                  value: '${shipment.pricePerKg.toStringAsFixed(0)} $_currency',
                   valueColor: AppTheme.primaryColor,
                 ),
               ),
@@ -317,7 +316,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusXs),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusXs),
                           image: DecorationImage(
                             image: FileImage(_productImages[index]),
                             fit: BoxFit.cover,
@@ -417,14 +417,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           const Divider(height: AppTheme.spaceMd),
           _PriceRow(
             label: 'Prix par kg',
-            value:
-                '${shipment.pricePerKg.toStringAsFixed(0)} $_currency',
+            value: '${shipment.pricePerKg.toStringAsFixed(0)} $_currency',
           ),
           const SizedBox(height: AppTheme.spaceSm),
           _PriceRow(
             label: 'Prix total',
-            value:
-                '${totalPrice.toStringAsFixed(0)} $_currency',
+            value: '${totalPrice.toStringAsFixed(0)} $_currency',
             highlight: true,
             color: AppTheme.accentColor,
           ),
@@ -476,8 +474,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   }
 
   double _calculateAllocation(double requested, double available) {
-    double allocated = (requested / _roundingPrecision).ceil() *
-        _roundingPrecision.toDouble();
+    double allocated =
+        (requested / _roundingPrecision).ceil() * _roundingPrecision.toDouble();
     return allocated > available ? available : allocated;
   }
 

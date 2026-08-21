@@ -88,88 +88,91 @@ class _SuperAdminDashboardScreenState
         (pendingVerifications.valueOrNull ?? 0);
 
     return Scaffold(
-      body: IndexedStack(
-        index: _tabIndex,
-        children: [
-          RefreshIndicator(
-            onRefresh: _refreshAll,
-            child: const CustomScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
-              slivers: [
-                GradientSliverHeader(
-                  title: 'Tableau de bord',
-                  subtitle: 'Vue d\'ensemble de la plateforme',
-                  icon: Icons.dashboard_outlined,
-                  trailing: LogoutIconButton(),
-                ),
-                SliverToBoxAdapter(child: _StatsOverview()),
-                SliverToBoxAdapter(child: _FounderWalletSection()),
-                SliverToBoxAdapter(child: _PendingVerificationSection()),
-                SliverToBoxAdapter(child: _PendingPublicationSection()),
-                SliverToBoxAdapter(child: _PendingCommissionSection()),
-                SliverToBoxAdapter(child: _PendingDeletionSection()),
-                SliverToBoxAdapter(child: _FeedbackSection()),
-                SliverToBoxAdapter(
-                  child: SizedBox(height: AppTheme.spaceXxl),
-                ),
-              ],
-            ),
-          ),
-          RefreshIndicator(
-            onRefresh: _refreshAll,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                const GradientSliverHeader(
-                  title: 'Comptes',
-                  subtitle: 'Gérer les utilisateurs',
-                  icon: Icons.people_alt_outlined,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _FounderMenuButton(),
-                      LogoutIconButton(),
-                    ],
+      body: SafeArea(
+        top: false,
+        child: IndexedStack(
+          index: _tabIndex,
+          children: [
+            RefreshIndicator(
+              onRefresh: _refreshAll,
+              child: const CustomScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  GradientSliverHeader(
+                    title: 'Tableau de bord',
+                    subtitle: 'Vue d\'ensemble de la plateforme',
+                    icon: Icons.dashboard_outlined,
+                    trailing: LogoutIconButton(),
                   ),
-                ),
-                SliverToBoxAdapter(child: _buildRoleFilter()),
-                ..._buildUsersSliver(),
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: AppTheme.spaceXxl),
-                ),
-              ],
+                  SliverToBoxAdapter(child: _StatsOverview()),
+                  SliverToBoxAdapter(child: _FounderWalletSection()),
+                  SliverToBoxAdapter(child: _PendingVerificationSection()),
+                  SliverToBoxAdapter(child: _PendingPublicationSection()),
+                  SliverToBoxAdapter(child: _PendingCommissionSection()),
+                  SliverToBoxAdapter(child: _PendingDeletionSection()),
+                  SliverToBoxAdapter(child: _FeedbackSection()),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: AppTheme.spaceXxl),
+                  ),
+                ],
+              ),
             ),
-          ),
-          RefreshIndicator(
-            onRefresh: _refreshAll,
-            child: const CustomScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
-              slivers: [
-                GradientSliverHeader(
-                  title: 'Outils',
-                  subtitle: 'Paramètres et modération',
-                  icon: Icons.settings_outlined,
-                  trailing: LogoutIconButton(),
-                ),
-                SliverToBoxAdapter(
-                  child: _SectionTitle(title: 'Modération'),
-                ),
-                SliverToBoxAdapter(child: _AdminShortcuts()),
-                SliverToBoxAdapter(
-                  child: _SectionTitle(title: 'Paramètres plateforme'),
-                ),
-                SliverToBoxAdapter(child: _PlatformSettingsShortcut()),
-                SliverToBoxAdapter(
-                  child: _SectionTitle(title: 'Zone de danger'),
-                ),
-                SliverToBoxAdapter(child: _DangerZone()),
-                SliverToBoxAdapter(
-                  child: SizedBox(height: AppTheme.spaceXxl),
-                ),
-              ],
+            RefreshIndicator(
+              onRefresh: _refreshAll,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  const GradientSliverHeader(
+                    title: 'Comptes',
+                    subtitle: 'Gérer les utilisateurs',
+                    icon: Icons.people_alt_outlined,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _FounderMenuButton(),
+                        LogoutIconButton(),
+                      ],
+                    ),
+                  ),
+                  SliverToBoxAdapter(child: _buildRoleFilter()),
+                  ..._buildUsersSliver(),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: AppTheme.spaceXxl),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            RefreshIndicator(
+              onRefresh: _refreshAll,
+              child: const CustomScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  GradientSliverHeader(
+                    title: 'Outils',
+                    subtitle: 'Paramètres et modération',
+                    icon: Icons.settings_outlined,
+                    trailing: LogoutIconButton(),
+                  ),
+                  SliverToBoxAdapter(
+                    child: _SectionTitle(title: 'Modération'),
+                  ),
+                  SliverToBoxAdapter(child: _AdminShortcuts()),
+                  SliverToBoxAdapter(
+                    child: _SectionTitle(title: 'Paramètres plateforme'),
+                  ),
+                  SliverToBoxAdapter(child: _PlatformSettingsShortcut()),
+                  SliverToBoxAdapter(
+                    child: _SectionTitle(title: 'Zone de danger'),
+                  ),
+                  SliverToBoxAdapter(child: _DangerZone()),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: AppTheme.spaceXxl),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tabIndex,
@@ -611,8 +614,7 @@ class _WalletFeeTile extends StatelessWidget {
               ),
             )
           else
-            const Icon(Icons.money_off_rounded,
-                color: AppTheme.textMutedColor),
+            const Icon(Icons.money_off_rounded, color: AppTheme.textMutedColor),
         ],
       ),
     );
@@ -654,8 +656,8 @@ class _PendingVerificationSection extends ConsumerWidget {
               style: AppTheme.caption,
             ),
             loading: () => const Text('Chargement…', style: AppTheme.caption),
-            error: (_, __) =>
-                const Text('Vérification indisponible', style: AppTheme.caption),
+            error: (_, __) => const Text('Vérification indisponible',
+                style: AppTheme.caption),
           ),
           trailing: count.when(
             data: (n) => n > 0
@@ -674,8 +676,8 @@ class _PendingVerificationSection extends ConsumerWidget {
               height: 20,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
-            error: (_, __) => const Icon(Icons.help_outline,
-                color: AppTheme.textMutedColor),
+            error: (_, __) =>
+                const Icon(Icons.help_outline, color: AppTheme.textMutedColor),
           ),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
@@ -887,8 +889,7 @@ class _PublicationConfirmationTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final shipperName =
         shipment.shipper?.user?.fullName ?? 'Expéditeur inconnu';
-    final route =
-        '${shipment.originCountry} → ${shipment.destinationCity}';
+    final route = '${shipment.originCountry} → ${shipment.destinationCity}';
     final fee = shipment.publicationFee ?? 0;
     final discount = shipment.publicationFeeDiscount;
     final payable = discount > 0 ? fee * (1 - discount / 100) : fee;
@@ -982,8 +983,7 @@ class _CommissionConfirmationTile extends ConsumerWidget {
                       style: const TextStyle(fontWeight: FontWeight.w700),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (route.isNotEmpty)
-                      Text(route, style: AppTheme.caption),
+                    if (route.isNotEmpty) Text(route, style: AppTheme.caption),
                     Text(
                       '${fee.amount.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
                       style: const TextStyle(
@@ -1015,8 +1015,7 @@ class _CommissionConfirmationTile extends ConsumerWidget {
                     icon: const Icon(Icons.check_rounded, size: 18),
                     label: const Text('Paiement confirmé'),
                   ),
-                  if (isOverdue &&
-                      fee.escalationStatus != 'justice_filed') ...[
+                  if (isOverdue && fee.escalationStatus != 'justice_filed') ...[
                     const SizedBox(height: AppTheme.spaceXs),
                     OutlinedButton.icon(
                       onPressed: () => _escalate(context, ref),
@@ -1035,8 +1034,7 @@ class _CommissionConfirmationTile extends ConsumerWidget {
             const SizedBox(height: AppTheme.spaceXs),
             const Row(
               children: [
-                Icon(Icons.gavel_rounded,
-                    size: 14, color: AppTheme.errorColor),
+                Icon(Icons.gavel_rounded, size: 14, color: AppTheme.errorColor),
                 SizedBox(width: 4),
                 Text(
                   'Dossier transmis à la justice',
@@ -1054,8 +1052,7 @@ class _CommissionConfirmationTile extends ConsumerWidget {
     );
   }
 
-  static String _formatDate(DateTime d) =>
-      '${d.day}/${d.month}/${d.year}';
+  static String _formatDate(DateTime d) => '${d.day}/${d.month}/${d.year}';
 
   Future<void> _confirm(BuildContext context, WidgetRef ref) async {
     try {
@@ -1335,7 +1332,8 @@ class _PendingDeletionSection extends ConsumerWidget {
                 }
                 return Column(
                   children: [
-                    for (final req in list.take(5)) _DeletionRequestTile(req: req),
+                    for (final req in list.take(5))
+                      _DeletionRequestTile(req: req),
                   ],
                 );
               },
@@ -1505,8 +1503,7 @@ class AccountDeletionRequestsScreen extends ConsumerWidget {
             return ListView.builder(
               padding: const EdgeInsets.all(AppTheme.spaceMd),
               itemCount: list.length,
-              itemBuilder: (context, index) =>
-                  Padding(
+              itemBuilder: (context, index) => Padding(
                 padding: const EdgeInsets.only(bottom: AppTheme.spaceSm),
                 child: _DeletionRequestTile(req: list[index]),
               ),
@@ -1573,8 +1570,8 @@ class _FeedbackSection extends ConsumerWidget {
               height: 20,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
-            error: (_, __) => const Icon(Icons.help_outline,
-                color: AppTheme.textMutedColor),
+            error: (_, __) =>
+                const Icon(Icons.help_outline, color: AppTheme.textMutedColor),
           ),
           onTap: () => Navigator.of(context).pushNamed('/feedback-inbox'),
         ),
@@ -1605,47 +1602,62 @@ class _StatsOverview extends ConsumerWidget {
           child: Column(
             children: [
               Wrap(
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: AppTheme.spaceSm + 4,
-            runSpacing: AppTheme.spaceSm + 4,
-            children: [
-              _statCard(context, Icons.people_alt_outlined, 'Utilisateurs',
-                  '${data['total_users'] ?? 0}', AppTheme.primaryColor,
-                  cardWidth,
-                  onTap: () => _openList(context, EntityListType.users)),
-              _statCard(context, Icons.person_outline, 'Clients',
-                  '${data['clients'] ?? 0}', AppTheme.primaryDark, cardWidth,
-                  onTap: () =>
-                      _openList(context, EntityListType.users, role: 'client')),
-              _statCard(context, Icons.verified_user, 'Expéditeurs',
-                  '${data['shippers'] ?? 0}', AppTheme.warningColor, cardWidth,
-                  onTap: () =>
-                      _openList(context, EntityListType.users, role: 'shipper')),
-              _statCard(context, Icons.admin_panel_settings, 'Admins',
-                  '${data['admins'] ?? 0}', AppTheme.errorColor, cardWidth,
-                  onTap: () =>
-                      _openList(context, EntityListType.users, role: 'admin')),
-              _statCard(
-                  context,
-                  Icons.flight_rounded,
-                  'Vols',
-                  '${data['total_shipments'] ?? 0}',
-                  AppTheme.accentColor,
-                  cardWidth,
-                  onTap: () => _openList(context, EntityListType.shipments)),
-              _statCard(
-                  context,
-                  Icons.receipt_long_rounded,
-                  'Commandes',
-                  '${data['total_bookings'] ?? 0}',
-                  AppTheme.primaryColor,
-                  cardWidth,
-                  onTap: () => _openList(context, EntityListType.bookings)),
-              ],
-            ),
-            const SizedBox(height: AppTheme.spaceMd),
-            _buildShipperTypeBreakdown(context, ref),
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: AppTheme.spaceSm + 4,
+                runSpacing: AppTheme.spaceSm + 4,
+                children: [
+                  _statCard(
+                      context,
+                      Icons.people_alt_outlined,
+                      'Utilisateurs',
+                      '${data['total_users'] ?? 0}',
+                      AppTheme.primaryColor,
+                      cardWidth,
+                      onTap: () => _openList(context, EntityListType.users)),
+                  _statCard(
+                      context,
+                      Icons.person_outline,
+                      'Clients',
+                      '${data['clients'] ?? 0}',
+                      AppTheme.primaryDark,
+                      cardWidth,
+                      onTap: () => _openList(context, EntityListType.users,
+                          role: 'client')),
+                  _statCard(
+                      context,
+                      Icons.verified_user,
+                      'Expéditeurs',
+                      '${data['shippers'] ?? 0}',
+                      AppTheme.warningColor,
+                      cardWidth,
+                      onTap: () => _openList(context, EntityListType.users,
+                          role: 'shipper')),
+                  _statCard(context, Icons.admin_panel_settings, 'Admins',
+                      '${data['admins'] ?? 0}', AppTheme.errorColor, cardWidth,
+                      onTap: () => _openList(context, EntityListType.users,
+                          role: 'admin')),
+                  _statCard(
+                      context,
+                      Icons.flight_rounded,
+                      'Vols',
+                      '${data['total_shipments'] ?? 0}',
+                      AppTheme.accentColor,
+                      cardWidth,
+                      onTap: () =>
+                          _openList(context, EntityListType.shipments)),
+                  _statCard(
+                      context,
+                      Icons.receipt_long_rounded,
+                      'Commandes',
+                      '${data['total_bookings'] ?? 0}',
+                      AppTheme.primaryColor,
+                      cardWidth,
+                      onTap: () => _openList(context, EntityListType.bookings)),
+                ],
+              ),
+              const SizedBox(height: AppTheme.spaceMd),
+              _buildShipperTypeBreakdown(context, ref),
             ],
           ),
         );
@@ -1786,12 +1798,13 @@ class _StatsOverview extends ConsumerWidget {
                 child: _typeStat('CA encaissé', '${ca.toStringAsFixed(0)} DZD'),
               ),
               Expanded(
-                child:
-                    _typeStat('Commissions réglées', '${paid.toStringAsFixed(0)} DZD'),
+                child: _typeStat(
+                    'Commissions réglées', '${paid.toStringAsFixed(0)} DZD'),
               ),
               Expanded(
                 child: due > 0
-                    ? _typeStat('Commissions dues', '${due.toStringAsFixed(0)} DZD',
+                    ? _typeStat(
+                        'Commissions dues', '${due.toStringAsFixed(0)} DZD',
                         valueColor: AppTheme.warningColor)
                     : _typeStat('Pas de dettes', '—',
                         valueColor: AppTheme.accentColor),
@@ -2045,8 +2058,8 @@ class _UserManagementCardState extends ConsumerState<_UserManagementCard> {
                         widget.user.fullName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTheme.body
-                            .copyWith(fontWeight: FontWeight.w700),
+                        style:
+                            AppTheme.body.copyWith(fontWeight: FontWeight.w700),
                       ),
                       Text(
                         widget.user.email,
@@ -2090,13 +2103,12 @@ class _UserManagementCardState extends ConsumerState<_UserManagementCard> {
                 const Spacer(),
                 IconButton(
                   tooltip: 'Changer le rôle',
-                  icon: const Icon(Icons.admin_panel_settings_outlined,
-                      size: 20),
+                  icon:
+                      const Icon(Icons.admin_panel_settings_outlined, size: 20),
                   onPressed: _busy ? null : _changeRole,
                 ),
                 IconButton(
-                  tooltip:
-                      widget.user.isActive ? 'Désactiver' : 'Réactiver',
+                  tooltip: widget.user.isActive ? 'Désactiver' : 'Réactiver',
                   icon: Icon(
                     widget.user.isActive
                         ? Icons.pause_circle_outline
@@ -2161,19 +2173,18 @@ class _AdminShortcuts extends ConsumerWidget {
               ),
               trailing: const Icon(Icons.chevron_right,
                   color: AppTheme.textSecondaryColor),
-              onTap: () => Navigator.of(context).pushNamed('/founder-analytics'),
+              onTap: () =>
+                  Navigator.of(context).pushNamed('/founder-analytics'),
             ),
             const Divider(height: 1, indent: AppTheme.spaceXxl),
             ListTile(
-              leading:
-                  const AnimatedIconDot(
-                      icon: Icons.verified_user, color: AppTheme.primaryColor),
+              leading: const AnimatedIconDot(
+                  icon: Icons.verified_user, color: AppTheme.primaryColor),
               title: const Text('Vérification des expéditeurs'),
               subtitle: const Text('Valider ou rejeter les dossiers'),
               trailing: const Icon(Icons.chevron_right,
                   color: AppTheme.textSecondaryColor),
-              onTap: () =>
-                  Navigator.of(context).pushNamed('/admin-dashboard'),
+              onTap: () => Navigator.of(context).pushNamed('/admin-dashboard'),
             ),
             const Divider(height: 1, indent: AppTheme.spaceXxl),
             ListTile(
@@ -2183,8 +2194,7 @@ class _AdminShortcuts extends ConsumerWidget {
               subtitle: const Text('Gérer les litiges ouverts'),
               trailing: const Icon(Icons.chevron_right,
                   color: AppTheme.textSecondaryColor),
-              onTap: () =>
-                  Navigator.of(context).pushNamed('/admin-dashboard'),
+              onTap: () => Navigator.of(context).pushNamed('/admin-dashboard'),
             ),
             const Divider(height: 1, indent: AppTheme.spaceXxl),
             ListTile(
@@ -2241,8 +2251,8 @@ class _PlatformSettingsShortcut extends StatelessWidget {
             'Commission, devise (DZD, EUR, USD, yuan), poids, prix',
             style: AppTheme.caption,
           ),
-          trailing:
-              const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
+          trailing: const Icon(Icons.chevron_right,
+              color: AppTheme.textSecondaryColor),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => const PlatformSettingsScreen(),
@@ -2295,8 +2305,8 @@ class _DangerZoneState extends ConsumerState<_DangerZone> {
   }
 
   Future<void> _runReset(String mode, String title, String message) async {
-    final confirmed =
-        await _confirm(title: title, message: message, confirmLabel: 'Continuer');
+    final confirmed = await _confirm(
+        title: title, message: message, confirmLabel: 'Continuer');
     if (confirmed != true) return;
 
     setState(() => _busy = true);

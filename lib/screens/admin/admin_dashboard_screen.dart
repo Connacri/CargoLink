@@ -68,53 +68,58 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          GradientSliverHeader(
-            title: '',
-            subtitle: 'Vérification, litiges et revenus',
-            icon: Icons.shield_outlined,
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const ChatInboxBadge(),
-                IconButton(
-                  tooltip: 'Annonces',
-                  icon: const Icon(Icons.campaign, color: Colors.white),
-                  onPressed: () =>
-                      Navigator.of(context).pushNamed('/broadcast'),
-                ),
-                const LogoutIconButton(),
-              ],
-            ),
-          ),
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _TabBarDelegate(
-              TabBar(
-                controller: _tabController,
-                labelColor: AppTheme.primaryColor,
-                unselectedLabelColor: AppTheme.textSecondaryColor,
-                indicatorColor: AppTheme.primaryColor,
-                indicatorWeight: 3,
-                tabs: const [
-                  Tab(icon: Icon(Icons.verified_user), text: 'Expéditeurs'),
-                  Tab(icon: Icon(Icons.gavel), text: 'Litiges'),
-                  Tab(icon: Icon(Icons.monetization_on), text: 'Revenus'),
-                  Tab(icon: Icon(Icons.warehouse_outlined), text: 'Inventaire'),
+      body: SafeArea(
+        top: false,
+        child: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            GradientSliverHeader(
+              title: '',
+              subtitle: 'Vérification, litiges et revenus',
+              icon: Icons.shield_outlined,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const ChatInboxBadge(),
+                  IconButton(
+                    tooltip: 'Annonces',
+                    icon: const Icon(Icons.campaign, color: Colors.white),
+                    onPressed: () =>
+                        Navigator.of(context).pushNamed('/broadcast'),
+                  ),
+                  const LogoutIconButton(),
                 ],
               ),
             ),
-          ),
-        ],
-        body: TabBarView(
-          controller: _tabController,
-          children: const [
-            _ShippersTab(),
-            _DisputesTab(),
-            _RevenueTab(),
-            _InventoryTab(),
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _TabBarDelegate(
+                TabBar(
+                  controller: _tabController,
+                  labelColor: AppTheme.primaryColor,
+                  unselectedLabelColor: AppTheme.textSecondaryColor,
+                  indicatorColor: AppTheme.primaryColor,
+                  indicatorWeight: 3,
+                  tabs: const [
+                    Tab(icon: Icon(Icons.verified_user), text: 'Expéditeurs'),
+                    Tab(icon: Icon(Icons.gavel), text: 'Litiges'),
+                    Tab(icon: Icon(Icons.monetization_on), text: 'Revenus'),
+                    Tab(
+                        icon: Icon(Icons.warehouse_outlined),
+                        text: 'Inventaire'),
+                  ],
+                ),
+              ),
+            ),
           ],
+          body: TabBarView(
+            controller: _tabController,
+            children: const [
+              _ShippersTab(),
+              _DisputesTab(),
+              _RevenueTab(),
+              _InventoryTab(),
+            ],
+          ),
         ),
       ),
     );
@@ -537,8 +542,7 @@ class _DisputeCard extends ConsumerWidget {
             child: const Text('Annuler'),
           ),
           TextButton(
-            onPressed: () =>
-                Navigator.pop(context, controller.text.trim()),
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
             child: const Text('Confirmer'),
           ),
         ],
@@ -590,8 +594,8 @@ class _RevenueTab extends ConsumerWidget {
     final settings = ref.watch(platformSettingsProvider);
     final rate = settings.valueOrNull?.commissionPercent ??
         AppConstants.platformCommissionPercent;
-    final currency = settings.valueOrNull?.defaultCurrency ??
-        AppConstants.defaultCurrency;
+    final currency =
+        settings.valueOrNull?.defaultCurrency ?? AppConstants.defaultCurrency;
 
     return revenue.when(
       data: (stats) {
@@ -643,11 +647,8 @@ class _RevenueTab extends ConsumerWidget {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    AppTheme.spaceMd,
-                    AppTheme.spaceSm,
-                    AppTheme.spaceMd,
-                    AppTheme.spaceXxl),
+                padding: const EdgeInsets.fromLTRB(AppTheme.spaceMd,
+                    AppTheme.spaceSm, AppTheme.spaceMd, AppTheme.spaceXxl),
                 child: _RevenueRow(
                   icon: Icons.percent_rounded,
                   color: AppTheme.warningColor,
@@ -689,8 +690,7 @@ class _RevenueHero extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Icon(Icons.trending_up_rounded,
-              color: Colors.white, size: 40),
+          const Icon(Icons.trending_up_rounded, color: Colors.white, size: 40),
           const SizedBox(height: AppTheme.spaceSm),
           Text(
             '${total.toStringAsFixed(0)} $currency',

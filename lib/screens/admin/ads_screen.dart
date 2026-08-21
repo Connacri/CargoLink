@@ -64,8 +64,7 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
     }
     final uri = Uri.tryParse(link);
     if (uri == null || !uri.hasScheme) {
-      _snack('Lien invalide (ex: https://monsite.com)',
-          AppTheme.errorColor);
+      _snack('Lien invalide (ex: https://monsite.com)', AppTheme.errorColor);
       return;
     }
 
@@ -151,49 +150,52 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
     final ads = ref.watch(allAdsProvider);
 
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(allAdsProvider),
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            const GradientSliverHeader(
-              title: 'Publicités',
-              subtitle: 'Bannières affichées sur l\'accueil client',
-              icon: Icons.campaign_outlined,
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(AppTheme.spaceMd),
-                child: _buildComposer(),
+      body: SafeArea(
+        top: false,
+        child: RefreshIndicator(
+          onRefresh: () async => ref.invalidate(allAdsProvider),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              const GradientSliverHeader(
+                title: 'Publicités',
+                subtitle: 'Bannières affichées sur l\'accueil client',
+                icon: Icons.campaign_outlined,
               ),
-            ),
-            ...ads.when(
-              data: (items) => _buildListSlivers(items),
-              loading: () => [
-                SliverPadding(
+              SliverToBoxAdapter(
+                child: Padding(
                   padding: const EdgeInsets.all(AppTheme.spaceMd),
-                  sliver: SliverList.builder(
-                    itemCount: 3,
-                    itemBuilder: (_, i) => const ShimmerCard(lines: 2),
-                  ),
+                  child: _buildComposer(),
                 ),
-              ],
-              error: (e, s) => [
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(
-                    child: Text(
-                      'Erreur de chargement: $e',
-                      style: AppTheme.bodySecondary,
+              ),
+              ...ads.when(
+                data: (items) => _buildListSlivers(items),
+                loading: () => [
+                  SliverPadding(
+                    padding: const EdgeInsets.all(AppTheme.spaceMd),
+                    sliver: SliverList.builder(
+                      itemCount: 3,
+                      itemBuilder: (_, i) => const ShimmerCard(lines: 2),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SliverToBoxAdapter(
-              child: SizedBox(height: AppTheme.spaceXxl),
-            ),
-          ],
+                ],
+                error: (e, s) => [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Text(
+                        'Erreur de chargement: $e',
+                        style: AppTheme.bodySecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppTheme.spaceXxl),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -395,16 +397,14 @@ class _AdCard extends StatelessWidget {
                   child: const Icon(Icons.broken_image_outlined,
                       color: AppTheme.textMutedColor),
                 ),
-                loadingBuilder: (context, child, progress) =>
-                    progress == null
-                        ? child
-                        : Container(
-                            height: 120,
-                            color: AppTheme.surfaceColor,
-                            alignment: Alignment.center,
-                            child: const CircularProgressIndicator(
-                                strokeWidth: 2),
-                          ),
+                loadingBuilder: (context, child, progress) => progress == null
+                    ? child
+                    : Container(
+                        height: 120,
+                        color: AppTheme.surfaceColor,
+                        alignment: Alignment.center,
+                        child: const CircularProgressIndicator(strokeWidth: 2),
+                      ),
               ),
             ),
             const SizedBox(height: AppTheme.spaceSm + 4),
@@ -434,8 +434,9 @@ class _AdCard extends StatelessWidget {
                 const SizedBox(width: AppTheme.spaceSm),
                 GradientBadge(
                   label: ad.isActive ? 'Active' : 'Inactive',
-                  gradient:
-                      ad.isActive ? AppTheme.successGradient : AppTheme.darkGradient,
+                  gradient: ad.isActive
+                      ? AppTheme.successGradient
+                      : AppTheme.darkGradient,
                   compact: true,
                 ),
                 IconButton(

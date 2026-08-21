@@ -18,3 +18,4 @@ export 'proof_photo_picker.dart';
 export 'rate_shipper_sheet.dart';
 export 'shimmer.dart';
 export 'star_rating.dart';
+export 'wallet_card.dart';

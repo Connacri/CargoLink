@@ -102,41 +102,44 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
     );
 
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(shipperFinanceSummaryProvider(shipper.id));
-          await ref
-              .read(shipperBookingsPagerProvider(shipper.id).notifier)
-              .refresh();
-        },
-        child: CustomScrollView(
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            GradientSliverHeader(
-              title: 'Finance',
-              subtitle: shipper.user?.fullName ?? 'Espace expéditeur',
-              icon: Icons.account_balance_wallet_rounded,
-            ),
-            SliverToBoxAdapter(child: _buildProfitHeader(currency, profit)),
-            SliverToBoxAdapter(child: _buildStatGrid(shipper.id, currency)),
-            SliverToBoxAdapter(
-                child: _buildPlatformFeesSection(shipper.id, currency)),
-            SliverToBoxAdapter(
-                child: _buildRevenueChart(shipper.id, currency, revenue)),
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  AppTheme.spaceMd,
-                  AppTheme.spaceLg,
-                  AppTheme.spaceMd,
-                  AppTheme.spaceSm,
-                ),
-                child: Text('Historique des commandes', style: AppTheme.h2),
+      body: SafeArea(
+        top: false,
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(shipperFinanceSummaryProvider(shipper.id));
+            await ref
+                .read(shipperBookingsPagerProvider(shipper.id).notifier)
+                .refresh();
+          },
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              GradientSliverHeader(
+                title: 'Finance',
+                subtitle: shipper.user?.fullName ?? 'Espace expéditeur',
+                icon: Icons.account_balance_wallet_rounded,
               ),
-            ),
-            _buildBookingsList(),
-          ],
+              SliverToBoxAdapter(child: _buildProfitHeader(currency, profit)),
+              SliverToBoxAdapter(child: _buildStatGrid(shipper.id, currency)),
+              SliverToBoxAdapter(
+                  child: _buildPlatformFeesSection(shipper.id, currency)),
+              SliverToBoxAdapter(
+                  child: _buildRevenueChart(shipper.id, currency, revenue)),
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    AppTheme.spaceMd,
+                    AppTheme.spaceLg,
+                    AppTheme.spaceMd,
+                    AppTheme.spaceSm,
+                  ),
+                  child: Text('Historique des commandes', style: AppTheme.h2),
+                ),
+              ),
+              _buildBookingsList(),
+            ],
+          ),
         ),
       ),
     );
@@ -267,8 +270,7 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
               Expanded(
                 child: _FinanceStatCard(
                   label: 'Commission remboursée',
-                  value:
-                      '${feesRefunded.toStringAsFixed(0)} $currency',
+                  value: '${feesRefunded.toStringAsFixed(0)} $currency',
                   icon: Icons.assignment_return_rounded,
                   color: AppTheme.textSecondaryColor,
                 ),
@@ -336,8 +338,7 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
                 }
                 return Column(
                   children: [
-                    for (final fee in list)
-                      _PlatformFeeTile(fee: fee),
+                    for (final fee in list) _PlatformFeeTile(fee: fee),
                   ],
                 );
               },
@@ -361,7 +362,8 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: () => _showPayFeesSheet(context, shipperId, currency),
+                  onPressed: () =>
+                      _showPayFeesSheet(context, shipperId, currency),
                   icon: const Icon(Icons.payment_rounded, size: 18),
                   label: const Text('Payer mes dûs'),
                 ),
@@ -373,8 +375,8 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
     );
   }
 
-  void _showPayFeesSheet(BuildContext context, String shipperId,
-      String currency) {
+  void _showPayFeesSheet(
+      BuildContext context, String shipperId, String currency) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -386,17 +388,28 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
     );
   }
 
-  Widget _buildRevenueChart(String shipperId, String currency,
-      double totalRevenue) {
+  Widget _buildRevenueChart(
+      String shipperId, String currency, double totalRevenue) {
     const months = [
-      'J', 'F', 'M', 'A', 'M', 'J',
-      'J', 'A', 'S', 'O', 'N', 'D',
+      'J',
+      'F',
+      'M',
+      'A',
+      'M',
+      'J',
+      'J',
+      'A',
+      'S',
+      'O',
+      'N',
+      'D',
     ];
     final summary = ref.watch(shipperFinanceSummaryProvider(shipperId));
     final monthly = (summary.valueOrNull?['monthly'] as Map?) ?? const {};
     final data = <RevenueBar>[
       for (var m = 1; m <= 12; m++)
-        RevenueBar(label: months[m - 1], value: (monthly[m] as num?)?.toDouble() ?? 0),
+        RevenueBar(
+            label: months[m - 1], value: (monthly[m] as num?)?.toDouble() ?? 0),
     ];
 
     return Padding(
@@ -546,8 +559,7 @@ class _FinanceBookingTile extends ConsumerWidget {
                   child: _FinanceInfoTile(
                     icon: Icons.monitor_weight_outlined,
                     label: 'Poids',
-                    value:
-                        '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
+                    value: '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
                   ),
                 ),
                 Expanded(
@@ -619,7 +631,8 @@ class _FinanceInfoTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: AppTheme.caption, overflow: TextOverflow.ellipsis),
+              Text(label,
+                  style: AppTheme.caption, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 2),
               Text(
                 value,
@@ -766,8 +779,7 @@ class _PayFeesSheetState extends ConsumerState<_PayFeesSheet> {
   @override
   Widget build(BuildContext context) {
     final fees = ref.watch(shipperPlatformFeesProvider(widget.shipperId));
-    final pending =
-        fees.valueOrNull?.where((f) => !f.isPaid).toList() ?? [];
+    final pending = fees.valueOrNull?.where((f) => !f.isPaid).toList() ?? [];
 
     var total = 0.0;
     for (final f in pending) {
@@ -802,15 +814,13 @@ class _PayFeesSheetState extends ConsumerState<_PayFeesSheet> {
                   RadioListTile<String>(
                     value: 'baridimob',
                     title: Text('Baridimob / virement'),
-                    subtitle:
-                        Text('Paiement par virement bancaire ou CCP'),
+                    subtitle: Text('Paiement par virement bancaire ou CCP'),
                     secondary: Icon(Icons.account_balance_rounded),
                   ),
                   RadioListTile<String>(
                     value: 'visa',
                     title: Text('Carte Visa (-30%)'),
-                    subtitle:
-                        Text('Paiement en ligne par carte bancaire'),
+                    subtitle: Text('Paiement en ligne par carte bancaire'),
                     secondary: Icon(Icons.credit_card_rounded),
                   ),
                 ],

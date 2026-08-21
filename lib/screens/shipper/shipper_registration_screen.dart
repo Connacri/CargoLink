@@ -194,9 +194,8 @@ class _ShipperRegistrationScreenState
               passportPhotoUrl: passportUrl!,
               livePhotoUrl: liveUrl!,
               shipperType: _shipperType,
-              microCardPhotoUrl: _shipperType == 'micro_importateur'
-                  ? microCardUrl
-                  : null,
+              microCardPhotoUrl:
+                  _shipperType == 'micro_importateur' ? microCardUrl : null,
             );
       } else {
         await ref.read(shipperServiceProvider).registerShipper(
@@ -205,9 +204,8 @@ class _ShipperRegistrationScreenState
               passportPhotoUrl: passportUrl!,
               livePhotoUrl: liveUrl!,
               shipperType: _shipperType,
-              microCardPhotoUrl: _shipperType == 'micro_importateur'
-                  ? microCardUrl
-                  : null,
+              microCardPhotoUrl:
+                  _shipperType == 'micro_importateur' ? microCardUrl : null,
             );
       }
 
@@ -256,54 +254,64 @@ class _ShipperRegistrationScreenState
     if (existingType != null) _shipperType = existingType;
 
     return Scaffold(
-      body: shipper.when(
-        data: (existing) {
-          if (_submitted) {
-            return _buildSubmitted();
-          }
-          if (existing != null && existing.isVerified && !_editingVerified) {
-            return _buildAlreadyVerified();
-          }
-          return _buildForm(existing);
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, s) => _buildForm(null),
+      body: SafeArea(
+        top: false,
+        child: shipper.when(
+          data: (existing) {
+            if (_submitted) {
+              return _buildSubmitted();
+            }
+            if (existing != null && existing.isVerified && !_editingVerified) {
+              return _buildAlreadyVerified();
+            }
+            return _buildForm(existing);
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, s) => _buildForm(null),
+        ),
       ),
     );
   }
 
   Widget _buildSubmitted() {
-    return const CustomScrollView(
+    return CustomScrollView(
       slivers: [
-        GradientSliverHeader(
+        const GradientSliverHeader(
           title: 'Inscription Expéditeur',
           subtitle: 'Dossier envoyé',
           icon: Icons.mark_email_read_outlined,
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.all(AppTheme.spaceXl),
+            padding: const EdgeInsets.all(AppTheme.spaceXl),
             child: GlassCard(
               child: Column(
                 children: [
-                  AnimatedIconDot(
+                  const AnimatedIconDot(
                     icon: Icons.check_circle_rounded,
                     color: AppTheme.accentColor,
                     size: 32,
                   ),
-                  SizedBox(height: AppTheme.spaceMd),
-                  Text(
+                  const SizedBox(height: AppTheme.spaceMd),
+                  const Text(
                     'Dossier envoyé',
                     textAlign: TextAlign.center,
                     style: AppTheme.h3,
                   ),
-                  SizedBox(height: AppTheme.spaceSm),
-                  Text(
+                  const SizedBox(height: AppTheme.spaceSm),
+                  const Text(
                     'Votre dossier est en attente de vérification par '
                     'l\'administration. Vous pourrez publier des offres '
                     'dès qu\'il sera validé.',
                     textAlign: TextAlign.center,
                     style: AppTheme.bodySecondary,
+                  ),
+                  const SizedBox(height: AppTheme.spaceLg),
+                  FilledButton.tonalIcon(
+                    onPressed: () => Navigator.of(context)
+                        .pushNamedAndRemoveUntil('/home', (route) => false),
+                    icon: const Icon(Icons.home_rounded),
+                    label: const Text('Aller à l\'accueil'),
                   ),
                 ],
               ),
@@ -359,6 +367,13 @@ class _ShipperRegistrationScreenState
                     onPressed: () => setState(() => _editingVerified = true),
                     icon: const Icon(Icons.edit_outlined),
                     label: const Text('Modifier mes documents'),
+                  ),
+                  const SizedBox(height: AppTheme.spaceSm),
+                  FilledButton.tonalIcon(
+                    onPressed: () => Navigator.of(context)
+                        .pushNamedAndRemoveUntil('/home', (route) => false),
+                    icon: const Icon(Icons.home_rounded),
+                    label: const Text('Aller à l\'accueil'),
                   ),
                 ],
               ),
@@ -553,8 +568,9 @@ class _ShipperRegistrationScreenState
             Row(
               children: [
                 Icon(icon,
-                    color:
-                        selected ? AppTheme.primaryColor : AppTheme.textMutedColor,
+                    color: selected
+                        ? AppTheme.primaryColor
+                        : AppTheme.textMutedColor,
                     size: 20),
                 const Spacer(),
                 Icon(

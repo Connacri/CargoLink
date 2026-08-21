@@ -15,6 +15,7 @@ import '../shared/qr_scan_screen.dart';
 import 'shipper_stats_detail_screen.dart';
 import 'shipper_booking_detail_screen.dart';
 import 'shipper_finance_screen.dart';
+import 'shipper_orders_screen.dart';
 
 // ============================================================================
 // PAGINATED PROVIDERS (local to this file)
@@ -312,6 +313,9 @@ class _ShipperDashboardScreenState
               child: _buildPublishAndScan(shipper.id),
             ),
             SliverToBoxAdapter(
+              child: _buildActiveOrdersCard(shipper.id),
+            ),
+            SliverToBoxAdapter(
               child: _buildBookingsHeader(shipper.id),
             ),
             ..._buildBookingsList(shipper.id),
@@ -604,6 +608,72 @@ class _ShipperDashboardScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // COMMANDES EN COURS — carte de synthèse des commandes reçues pas encore
+  // livrées. Un appui ouvre la liste complète avec frises de suivi et
+  // détails (ShipperOrdersInProgressScreen).
+  // --------------------------------------------------------------------------
+
+  Widget _buildActiveOrdersCard(String shipperId) {
+    final pager = ref.watch(shipperBookingsPagerProvider(shipperId));
+    final activeOrders = pager.items
+        .where((b) => b.status != 'delivered' && b.status != 'cancelled')
+        .toList();
+    if (activeOrders.isEmpty) return const SizedBox.shrink();
+    final pending =
+        activeOrders.where((b) => b.status == 'pending').length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: GlassCard(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) =>
+                ShipperOrdersInProgressScreen(shipperId: shipperId),
+          ),
+        ),
+        child: Row(
+          children: [
+            const AnimatedIconDot(
+              icon: Icons.local_shipping_rounded,
+              color: AppTheme.infoColor,
+            ),
+            const SizedBox(width: AppTheme.spaceMd),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Commandes en cours', style: AppTheme.h3),
+                  Text(
+                    '${activeOrders.length} commande${activeOrders.length > 1 ? 's' : ''} '
+                    'pas encore livrée${activeOrders.length > 1 ? 's' : ''}'
+                    '${pending > 0 ? ' • $pending en attente' : ''}',
+                    style: AppTheme.caption,
+                  ),
+                ],
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      ShipperOrdersInProgressScreen(shipperId: shipperId),
+                ),
+              ),
+              icon: const Icon(Icons.timeline_rounded, size: 18),
+              label: const Text('Suivre'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1275,129 +1345,24 @@ class _FinanceSummaryStrip extends ConsumerWidget {
     final currency =
         settings.valueOrNull?.defaultCurrency ?? AppConstants.defaultCurrency;
 
-    final receivable =
-        (summary.valueOrNull?['receivable'] as num?)?.toDouble() ?? 0;
+    // Profit net comptable : CA total (encaissé + à recevoir) − commissions
+    // dues. Le dû regroupe commissions en attente de confirmation et à payer.
+    final profit = (summary.valueOrNull?['profit'] as num?)?.toDouble() ?? 0;
     final feesDue = ((summary.valueOrNull?['fees_awaiting'] as num?) ?? 0) +
         ((summary.valueOrNull?['fees_pending'] as num?) ?? 0);
-    final profit = (summary.valueOrNull?['profit'] as num?)?.toDouble() ?? 0;
 
-    return GlassCard(
+    return WalletCard(
+      title: 'Portefeuille',
+      mainLabel: 'Profit net',
+      mainValue: '${profit.toStringAsFixed(0)} $currency',
+      badgeLabel: feesDue > 0
+          ? 'Dus : ${feesDue.toStringAsFixed(0)} $currency'
+          : 'Aucun dû',
+      badgePositive: feesDue <= 0,
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => const ShipperFinanceScreen(),
         ),
-      ),
-      padding: const EdgeInsets.all(AppTheme.spaceMd),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const Text('Finance', style: AppTheme.h3),
-              const Spacer(),
-              const Icon(
-                Icons.account_balance_wallet_rounded,
-                size: 18,
-                color: AppTheme.accentColor,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Bénéfice: ${profit.toStringAsFixed(0)} $currency',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.accentColor,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spaceSm),
-          Row(
-            children: [
-              Expanded(
-                child: _FinanceMini(
-                  label: 'À recevoir',
-                  value: '${receivable.toStringAsFixed(0)} $currency',
-                  icon: Icons.schedule_rounded,
-                  color: AppTheme.infoColor,
-                ),
-              ),
-              const SizedBox(width: AppTheme.spaceSm),
-              Expanded(
-                child: _FinanceMini(
-                  label: 'Commission à payer',
-                  value: feesDue > 0
-                      ? '${feesDue.toStringAsFixed(0)} $currency'
-                      : 'Pas de dettes',
-                  icon: feesDue > 0
-                      ? Icons.hourglass_top_rounded
-                      : Icons.verified_rounded,
-                  color: feesDue > 0
-                      ? AppTheme.warningColor
-                      : AppTheme.accentColor,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FinanceMini extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _FinanceMini({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: AppTheme.spaceSm,
-        horizontal: AppTheme.spaceSm,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: AppTheme.spaceXs),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: AppTheme.caption,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimaryColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

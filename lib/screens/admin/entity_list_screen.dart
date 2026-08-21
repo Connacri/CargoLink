@@ -64,14 +64,11 @@ class _UsersPagerNotifier extends PaginatedListNotifier<User> {
   }
 }
 
-final pagedUsersProvider = StateNotifierProvider.family<
-    _UsersPagerNotifier,
-    PaginatedList<User>,
-    ({String? role})>((ref, params) {
+final pagedUsersProvider = StateNotifierProvider.family<_UsersPagerNotifier,
+    PaginatedList<User>, ({String? role})>((ref, params) {
   final scanner = _UsersScanner();
-  Future<List<User>> fetch(int limit, int offset) => ref
-      .read(authServiceProvider)
-      .getAllUsers(limit: limit, offset: offset);
+  Future<List<User>> fetch(int limit, int offset) =>
+      ref.read(authServiceProvider).getAllUsers(limit: limit, offset: offset);
   return _UsersPagerNotifier(
     scanner,
     loader: (limit, offset) => scanner.load(fetch, params.role, limit),
@@ -247,18 +244,21 @@ class _EntityListScreenState extends ConsumerState<EntityListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: _refresh,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            GradientSliverHeader(
-              title: _title,
-              subtitle: 'Dossiers administrateur',
-              icon: _icon,
-            ),
-            ..._buildBody(),
-          ],
+      body: SafeArea(
+        top: false,
+        child: RefreshIndicator(
+          onRefresh: _refresh,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              GradientSliverHeader(
+                title: _title,
+                subtitle: 'Dossiers administrateur',
+                icon: _icon,
+              ),
+              ..._buildBody(),
+            ],
+          ),
         ),
       ),
     );
@@ -498,8 +498,8 @@ class _ShipmentCard extends ConsumerWidget {
             ),
             if (s.shipper?.user != null)
               GestureDetector(
-                onTap: () => openUserProfileFromUser(
-                    context, ref, s.shipper!.user!),
+                onTap: () =>
+                    openUserProfileFromUser(context, ref, s.shipper!.user!),
                 child: Padding(
                   padding: const EdgeInsets.only(left: AppTheme.spaceSm + 4),
                   child: GradientAvatar(
@@ -660,7 +660,8 @@ class _PaymentCard extends ConsumerWidget {
           children: [
             AnimatedIconDot(
               icon: Icons.account_balance_wallet_rounded,
-              color: p.isCompleted ? AppTheme.accentColor : AppTheme.warningColor,
+              color:
+                  p.isCompleted ? AppTheme.accentColor : AppTheme.warningColor,
             ),
             const SizedBox(width: AppTheme.spaceSm + 4),
             Expanded(
@@ -738,7 +739,8 @@ class _DisputeCard extends ConsumerWidget {
             ),
             GradientBadge(
               label: _statusLabel(d.status),
-              gradient: d.isOpen ? AppTheme.errorGradient : AppTheme.successGradient,
+              gradient:
+                  d.isOpen ? AppTheme.errorGradient : AppTheme.successGradient,
               compact: true,
             ),
           ],

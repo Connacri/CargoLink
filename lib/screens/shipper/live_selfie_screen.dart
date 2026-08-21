@@ -5,19 +5,27 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 
-/// Selfie capture screen for identity verification.
+/// Capture screen for identity selfies and package proof photos.
 ///
-/// A plain front-camera viewfinder — no face detection, no crop, no overlay
+/// A plain camera viewfinder — no face detection, no crop, no overlay
 /// magic. The preview always keeps the camera's own aspect ratio (never
 /// stretched) and the photo is taken with the shutter button, just like
 /// photographing a passport with the stock camera app.
+///
+/// [lens] selects the camera: front for selfies (default), back to
+/// photograph a package (collecte, preuve de livraison…).
 class LiveSelfieScreen extends StatefulWidget {
-  const LiveSelfieScreen({super.key});
+  const LiveSelfieScreen({super.key, this.lens = CameraLensDirection.front});
+
+  final CameraLensDirection lens;
 
   /// Resolves with the captured photo file path, or null if cancelled.
-  static Future<String?> capture(BuildContext context) async {
+  static Future<String?> capture(
+    BuildContext context, {
+    CameraLensDirection lens = CameraLensDirection.front,
+  }) async {
     final path = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const LiveSelfieScreen()),
+      MaterialPageRoute(builder: (_) => LiveSelfieScreen(lens: lens)),
     );
     return path;
   }
@@ -64,17 +72,8 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
       _error = null;
     });
     try {
-      final cameras = await availableCameras();
-      CameraDescription front = cameras.isNotEmpty ? cameras.first : throw StateError('Pas de caméra');
-      for (final c in cameras) {
-        if (c.lensDirection == CameraLensDirection.front) {
-          front = c;
-          break;
-        }
-      }
-
       final controller = CameraController(
-        front,
+        await _pickCamera(),
         ResolutionPreset.high,
         enableAudio: false,
       );
@@ -92,18 +91,23 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
     }
   }
 
+  /// Camera matching the requested lens; falls back to any available camera.
+  Future<CameraDescription> _pickCamera() async {
+    final cameras = await availableCameras();
+    if (cameras.isEmpty) throw StateError('Pas de caméra');
+    for (final c in cameras) {
+      if (c.lensDirection == widget.lens) return c;
+    }
+    return cameras.first;
+  }
+
   Future<void> _restartCamera() async {
     try {
-      final cameras = await availableCameras();
-      CameraDescription front = cameras.first;
-      for (final c in cameras) {
-        if (c.lensDirection == CameraLensDirection.front) {
-          front = c;
-          break;
-        }
-      }
-      final controller = CameraController(front, ResolutionPreset.high,
-          enableAudio: false);
+      final controller = CameraController(
+        await _pickCamera(),
+        ResolutionPreset.high,
+        enableAudio: false,
+      );
       _controller = controller;
       await controller.initialize();
       if (mounted) setState(() {});
@@ -224,9 +228,11 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
                 color: Colors.white.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: const Text(
-                'Cadrez votre visage puis appuyez',
-                style: TextStyle(
+              child: Text(
+                widget.lens == CameraLensDirection.front
+                    ? 'Cadrez votre visage puis appuyez'
+                    : 'Cadrez le colis puis appuyez',
+                style: const TextStyle(
                   color: Colors.black87,
                   fontWeight: FontWeight.w700,
                   fontSize: 13,

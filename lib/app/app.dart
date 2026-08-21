@@ -18,6 +18,7 @@ import '../screens/admin/platform_settings_screen.dart';
 import '../screens/client/booking_screen.dart';
 import '../screens/client/booking_wizard_screen.dart';
 import '../screens/client/my_orders_screen.dart';
+import '../screens/client/my_parcels_screen.dart';
 import '../screens/client/payment_screen.dart';
 import '../screens/client/tracking_screen.dart';
 import '../screens/profile/profile_screen.dart';
@@ -84,6 +85,7 @@ class CargoLinkApp extends ConsumerWidget {
           return TrackingScreen(bookingId: bookingId);
         },
         '/my-orders': (context) => const MyOrdersScreen(),
+        '/my-parcels': (context) => const MyParcelsScreen(),
         '/profile': (context) => const ProfileScreen(),
         '/shipper-registration': (context) => const ShipperRegistrationScreen(),
         '/admin-dashboard': (context) => const AdminDashboardScreen(),

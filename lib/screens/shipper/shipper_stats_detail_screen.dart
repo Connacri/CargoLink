@@ -144,20 +144,16 @@ class _ShipperStatsDetailScreenState
           if (event.eventType == PostgresChangeEvent.delete) {
             notifier.removeItem(id);
           } else {
-            ref
-                .read(bookingServiceProvider)
-                .getBookingById(id)
-                .then((booking) {
-                  if (booking == null ||
-                      booking.shipment?.shipperId != widget.shipperId) {
-                    notifier.removeItem(id);
-                  } else {
-                    notifier.upsertItem(booking);
-                  }
-                })
-                .catchError((Object e) {
-                  notifier.removeItem(id);
-                });
+            ref.read(bookingServiceProvider).getBookingById(id).then((booking) {
+              if (booking == null ||
+                  booking.shipment?.shipperId != widget.shipperId) {
+                notifier.removeItem(id);
+              } else {
+                notifier.upsertItem(booking);
+              }
+            }).catchError((Object e) {
+              notifier.removeItem(id);
+            });
           }
         }
       },
@@ -166,55 +162,58 @@ class _ShipperStatsDetailScreenState
     final shipper = ref.watch(shipperByIdProvider(widget.shipperId));
 
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(shipperStatsProvider(widget.shipperId));
-          ref.invalidate(shipperEarningsProvider(widget.shipperId));
-          final notifier = isBookings
-              ? ref
-                  .read(shipperBookingsPagerProvider(widget.shipperId).notifier)
-              : ref.read(
-                  shipperShipmentsPagerProvider(widget.shipperId).notifier);
-          await notifier.refresh();
-        },
-        child: CustomScrollView(
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            GradientSliverHeader(
-              title: widget.type.title,
-              subtitle: _buildSubtitle(shipper),
-              icon: widget.type.icon,
-              expandedHeight: 140,
-            ),
-            if (widget.type == ShipperStatsDetailType.revenue)
-              SliverToBoxAdapter(
-                child: _buildRevenueHeader(shipper),
+      body: SafeArea(
+        top: false,
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(shipperStatsProvider(widget.shipperId));
+            ref.invalidate(shipperEarningsProvider(widget.shipperId));
+            final notifier = isBookings
+                ? ref.read(
+                    shipperBookingsPagerProvider(widget.shipperId).notifier)
+                : ref.read(
+                    shipperShipmentsPagerProvider(widget.shipperId).notifier);
+            await notifier.refresh();
+          },
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              GradientSliverHeader(
+                title: widget.type.title,
+                subtitle: _buildSubtitle(shipper),
+                icon: widget.type.icon,
+                expandedHeight: 140,
               ),
-            if (widget.type == ShipperStatsDetailType.revenue)
-              SliverToBoxAdapter(
-                child: _buildCommissionCard(),
-              ),
-            if (widget.type == ShipperStatsDetailType.revenue)
-              SliverToBoxAdapter(
-                child: _buildRevenueChart(),
-              ),
-            if (widget.type == ShipperStatsDetailType.revenue) ...[
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    AppTheme.spaceMd,
-                    AppTheme.spaceLg,
-                    AppTheme.spaceMd,
-                    AppTheme.spaceSm,
-                  ),
-                  child: Text('Inventaire', style: AppTheme.h2),
+              if (widget.type == ShipperStatsDetailType.revenue)
+                SliverToBoxAdapter(
+                  child: _buildRevenueHeader(shipper),
                 ),
-              ),
-              _buildInventorySection(),
+              if (widget.type == ShipperStatsDetailType.revenue)
+                SliverToBoxAdapter(
+                  child: _buildCommissionCard(),
+                ),
+              if (widget.type == ShipperStatsDetailType.revenue)
+                SliverToBoxAdapter(
+                  child: _buildRevenueChart(),
+                ),
+              if (widget.type == ShipperStatsDetailType.revenue) ...[
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd,
+                      AppTheme.spaceLg,
+                      AppTheme.spaceMd,
+                      AppTheme.spaceSm,
+                    ),
+                    child: Text('Inventaire', style: AppTheme.h2),
+                  ),
+                ),
+                _buildInventorySection(),
+              ],
+              if (isBookings) _buildBookingsList() else _buildShipmentsList(),
             ],
-            if (isBookings) _buildBookingsList() else _buildShipmentsList(),
-          ],
+          ),
         ),
       ),
     );
@@ -306,11 +305,11 @@ class _ShipperStatsDetailScreenState
                 Expanded(
                   child: _CommissionStat(
                     icon: Icons.pending_actions_rounded,
-                    color:
-                        toPay > 0 ? AppTheme.warningColor : AppTheme.accentColor,
+                    color: toPay > 0
+                        ? AppTheme.warningColor
+                        : AppTheme.accentColor,
                     label: 'À payer',
-                    value:
-                        '${toPay.toStringAsFixed(0)} $currency',
+                    value: '${toPay.toStringAsFixed(0)} $currency',
                   ),
                 ),
               ],
@@ -704,8 +703,8 @@ class _BookingTile extends ConsumerWidget {
                   imageUrl: booking.client?.profilePictureUrl,
                   radius: 12,
                   onTap: booking.client != null
-                      ? () => openUserProfileFromUser(
-                          context, ref, booking.client!)
+                      ? () =>
+                          openUserProfileFromUser(context, ref, booking.client!)
                       : null,
                 ),
                 const SizedBox(width: AppTheme.spaceSm),
@@ -866,13 +865,12 @@ class _BookingTile extends ConsumerWidget {
       context,
       ref,
       () async {
-        final url = await ref
-            .read(storageServiceProvider)
-            .uploadBookingProofPhoto(
-              file: photo,
-              bookingId: booking.id,
-              type: 'delivery',
-            );
+        final url =
+            await ref.read(storageServiceProvider).uploadBookingProofPhoto(
+                  file: photo,
+                  bookingId: booking.id,
+                  type: 'delivery',
+                );
         await ref
             .read(bookingServiceProvider)
             .markAsDelivered(booking.id, deliveryPhotoUrl: url);
