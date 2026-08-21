@@ -187,11 +187,21 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
       );
     }
 
-    // CameraPreview sizes itself to the camera's own aspect ratio. Centered on
-    // a black background it can never be stretched, whatever the device.
+    // The raw camera stream lives in sensor coordinates (landscape). Flip the
+    // ratio in portrait so the viewfinder shows the true proportions instead
+    // of a wide, squashed picture — the captured photo stays untouched.
+    final size = MediaQuery.of(context).size;
+    final native = controller.value.aspectRatio;
+    final double aspect;
+    if (size.height >= size.width) {
+      aspect = native > 1 ? 1 / native : native;
+    } else {
+      aspect = native < 1 ? 1 / native : native;
+    }
+
     final preview = Center(
       child: AspectRatio(
-        aspectRatio: controller.value.aspectRatio,
+        aspectRatio: aspect,
         child: CameraPreview(controller),
       ),
     );

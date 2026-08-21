@@ -1,0 +1,44 @@
+# Génération icônes + splash CargoLink — flutter_adaptive_studio 0.28.11
+# Commande : fas generate  (outil activé globalement :
+#            dart pub global activate flutter_adaptive_studio)
+#
+# Splash :
+#  - splash2.png en PLEIN ÉCRAN (background_image) sur Android < 12 et iOS.
+#  - Android 12+ : splash animé du système (AnimatedVectorDrawable) sur fond
+#    blanc — l'API système n'accepte qu'une couleur de fond, l'image plein
+#    écran reprend ensuite via le splash in-app AdaptiveSplash (main.dart).
+#
+# PATCHES À RE-APPLIQUER APRÈS CHAQUE `fas generate`
+# (splash2.png contient déjà le logo : le logo centré auto-généré ferait un
+# doublon par-dessus l'image plein écran) :
+#  1. android/app/src/main/res/drawable{,-v21}/launch_background.xml :
+#     supprimer l'item `<item android:drawable="@drawable/splash_icon_legacy" .../>`
+#  2. supprimer les fichiers res/drawable*/splash_icon_legacy.png
+#  3. lib/fas_splash.g.dart : remplacer `logo: _b64('...')` par `logo: null`
+flutter_adaptive_studio:
+  source: assets/icons/icon2.png
+
+  android:
+    icon:
+      adaptive:
+        foreground: assets/icons/icon2.png
+        background: "#6366F1"
+        safe_zone: fit
+      round: true
+      play_store: true
+      legacy_padding: 43
+    splash:
+      background: "#FFFFFF"
+      background_image: assets/icons/splash2.png
+      animated_icon: assets/icons/splash_anim.xml
+      fullscreen: true
+      status_bar_color: transparent
+      navigation_bar_color: "#FFFFFF"
+
+  ios:
+    icon:
+      image: assets/icons/icon2.png
+      background: "#6366F1"
+    splash:
+      background: "#FFFFFF"
+      background_image: assets/icons/splash2.png

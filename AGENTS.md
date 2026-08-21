@@ -26,3 +26,27 @@
 - Lancer `flutter analyze` (0 issue) puis `flutter test` (tous verts).
 - Les builds web (`flutter build web --release`) et Android (`flutter build apk --debug`)
   doivent compiler.
+
+## Splash & icônes (flutter_adaptive_studio)
+
+- Générés par l'outil CLI **flutter_adaptive_studio 0.28.11** activé globalement
+  (`dart pub global activate flutter_adaptive_studio`) — PAS en dépendance pubspec
+  (ses deps `archive ^4`/`xml ^7` entrent en conflit avec flutter_local_notifications).
+- Config : `flutter_adaptive_studio.yaml`. Commande : `fas generate`.
+- **Après chaque `fas generate`, re-appliquer les 3 patches documentés en tête du yaml**
+  (supprimer le logo centré en doublon : launch_background.xml ×2, splash_icon_legacy*,
+  `logo: null` dans lib/fas_splash.g.dart) — splash2.png est une image plein écran
+  qui contient déjà le logo.
+- Le fichier généré `lib/fas_splash.g.dart` importe `dart:ffi` (indisponible sur web) :
+  ne jamais l'importer directement — passer par `lib/core/widgets/app_splash_gate.dart`
+  (import conditionnel io/web).
+
+## Diagnostics Supabase
+
+- L'outil MCP `supabase_query_logs` renvoie « Backend error! » systématique (service de
+  logs analytics indisponible pour ce projet). Ne pas insister.
+- Contournement : requêtes SQL via `supabase_execute_sql` —
+  - Requêtes lentes/coûteuses : table `pg_stat_statements` (extension installée),
+    trier par `total_exec_time` ;
+  - Activité temps réel : `pg_stat_activity` ;
+  - Verrous : `pg_locks` joint `pg_stat_activity`.

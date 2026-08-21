@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
@@ -540,9 +541,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 ..._buildHistorySlivers(userData),
                 SliverToBoxAdapter(child: _buildActionsSection()),
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: AppTheme.spaceXxl),
-                ),
+                const SliverToBoxAdapter(child: _AppVersionFooter()),
               ],
             ),
           ),
@@ -1651,6 +1650,39 @@ class _ProfileFinanceStat extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
       ],
+    );
+  }
+}
+
+class _AppVersionFooter extends StatelessWidget {
+  const _AppVersionFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<PackageInfo>(
+      future: PackageInfo.fromPlatform(),
+      builder: (context, snapshot) {
+        final info = snapshot.data;
+        final version = info == null ? '' : ' v${info.version}';
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.spaceMd,
+            AppTheme.spaceXl,
+            AppTheme.spaceMd,
+            AppTheme.spaceLg,
+          ),
+          child: Column(
+            children: [
+              Text(
+                'CargoLink$version',
+                style: AppTheme.caption.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: AppTheme.spaceXs),
+              const Text('Développé par FORSLOG ltd', style: AppTheme.caption),
+            ],
+          ),
+        );
+      },
     );
   }
 }
