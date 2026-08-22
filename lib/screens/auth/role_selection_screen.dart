@@ -210,7 +210,11 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
     final shipper = widget.currentRole == 'shipper'
         ? shipperAsync.valueOrNull
         : null;
-    final showTypeSection = shipper != null && shipper.isVerified;
+    // Le changement de type est offert aux expéditeurs vérifiés ET à ceux
+    // dont le dossier a été rejeté : toute modification renvoie le dossier
+    // en attente de validation par un admin / super admin.
+    final showTypeSection = shipper != null &&
+        (shipper.isVerified || shipper.isRejected);
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
@@ -419,6 +423,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
     final effective = _shipperType ?? shipper.shipperType;
     final needsCard = effective == 'micro_importateur' &&
         (shipper.microCardPhotoUrl == null || _microCardFile != null);
+    final rejected = shipper.isRejected;
     return GlassCard(
       padding: const EdgeInsets.all(AppTheme.spaceMd),
       child: Column(
@@ -435,12 +440,60 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
               Text('Type d\'expéditeur', style: AppTheme.h3),
             ],
           ),
-          const SizedBox(height: AppTheme.spaceXs),
-          const Text(
-            'Changer de type renvoie votre dossier pour une nouvelle '
-            'vérification par l\'administration.',
-            style: AppTheme.caption,
-          ),
+          if (rejected) ...[
+            const SizedBox(height: AppTheme.spaceSm),
+            Container(
+              padding: const EdgeInsets.all(AppTheme.spaceSm),
+              decoration: BoxDecoration(
+                color: AppTheme.errorColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                border: Border.all(
+                  color: AppTheme.errorColor.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.error_outline_rounded,
+                          size: 18, color: AppTheme.errorColor),
+                      const SizedBox(width: AppTheme.spaceXs),
+                      Text(
+                        'Dossier rejeté',
+                        style: AppTheme.body.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.errorColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (shipper.rejectionReason != null &&
+                      shipper.rejectionReason!.isNotEmpty) ...[
+                    const SizedBox(height: AppTheme.spaceXs),
+                    Text(
+                      'Motif : ${shipper.rejectionReason}',
+                      style: AppTheme.caption,
+                    ),
+                  ],
+                  const SizedBox(height: AppTheme.spaceXs),
+                  const Text(
+                    'Vous avez la main : changez de type ci-dessous '
+                    '(voyageur ↔ micro-importateur) puis enregistrez — '
+                    'votre dossier sera renvoyé en attente de validation.',
+                    style: AppTheme.caption,
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: AppTheme.spaceXs),
+            const Text(
+              'Changer de type renvoie votre dossier pour une nouvelle '
+              'vérification par l\'administration.',
+              style: AppTheme.caption,
+            ),
+          ],
           const SizedBox(height: AppTheme.spaceMd),
           _buildTypeOption(
             title: 'Voyageur ordinaire',

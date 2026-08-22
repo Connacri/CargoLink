@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -26,12 +27,44 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
   String _imageName = '';
   String _audience = 'all';
   bool _isSaving = false;
+  int? _imageWidth;
+  int? _imageHeight;
 
   @override
   void dispose() {
     _titleController.dispose();
     _linkController.dispose();
     super.dispose();
+  }
+
+  /// Libellé lisible du poids du fichier (Ko / Mo).
+  String get _imageWeightLabel {
+    if (_imageBytes == null) return '';
+    final ko = _imageBytes!.lengthInBytes / 1024;
+    return ko >= 1024
+        ? '${(ko / 1024).toStringAsFixed(1)} Mo'
+        : '${ko.toStringAsFixed(0)} Ko';
+  }
+
+  /// Décode l'image pour récupérer ses dimensions (largeur × hauteur).
+  Future<void> _decodeImageDimensions(Uint8List bytes) async {
+    int? width;
+    int? height;
+    try {
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      width = frame.image.width;
+      height = frame.image.height;
+      frame.image.dispose();
+      codec.dispose();
+    } catch (_) {
+      // Image illisible : on laisse les dimensions à null.
+    }
+    if (!mounted) return;
+    setState(() {
+      _imageWidth = width;
+      _imageHeight = height;
+    });
   }
 
   Future<void> _pickImage() async {
@@ -52,6 +85,7 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
       _imageBytes = bytes;
       _imageName = picked.name;
     });
+    await _decodeImageDimensions(bytes);
   }
 
   Future<void> _submit() async {
@@ -94,6 +128,8 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
         _imageBytes = null;
         _imageName = '';
         _audience = 'all';
+        _imageWidth = null;
+        _imageHeight = null;
       });
       ref.invalidate(myAdsProvider);
       ref.invalidate(allAdsProvider);
@@ -183,6 +219,8 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
   @override
   Widget build(BuildContext context) {
     final ads = ref.watch(myAdsProvider);
+    final shipper = ref.watch(currentShipperProvider).valueOrNull;
+    final isMicroImportateur = shipper?.isMicroImportateur ?? false;
 
     return Scaffold(
       body: SafeArea(
@@ -228,7 +266,9 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppTheme.spaceMd),
-                  child: _buildComposer(),
+                  child: isMicroImportateur
+                      ? _buildComposer()
+                      : const _MicroOnlyNotice(),
                 ),
               ),
               ...ads.when(
@@ -306,10 +346,51 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
                           ),
                         ],
                       )
-                    : Image.memory(_imageBytes!, fit: BoxFit.cover),
+                     : Image.memory(_imageBytes!, fit: BoxFit.cover),
               ),
             ),
           ),
+          if (_imageBytes != null) ...[
+            const SizedBox(height: AppTheme.spaceXs),
+            Row(
+              children: [
+                const Icon(Icons.aspect_ratio_rounded,
+                    size: 14, color: AppTheme.textSecondaryColor),
+                const SizedBox(width: 4),
+                Text(
+                  _imageWidth != null && _imageHeight != null
+                      ? '$_imageWidth × $_imageHeight px'
+                      : 'Dimensions inconnues',
+                  style: AppTheme.caption,
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                const Icon(Icons.sd_storage_outlined,
+                    size: 14, color: AppTheme.textSecondaryColor),
+                const SizedBox(width: 4),
+                Text(_imageWeightLabel, style: AppTheme.caption),
+                const SizedBox(width: AppTheme.spaceSm),
+                Flexible(
+                  child: Text(
+                    _imageName,
+                    style: AppTheme.caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceXs),
+            Text(
+              _imageBytes!.lengthInBytes > 2 * 1024 * 1024
+                  ? 'Image un peu lourde : en dessous de 2 Mo, elle se charge '
+                      'plus vite pour les clients.'
+                  : 'Format 16:9 recommandé — la bannière sera recadrée '
+                      'en paysage.',
+              style: AppTheme.caption.copyWith(
+                color: AppTheme.textMutedColor,
+              ),
+            ),
+          ],
           const SizedBox(height: AppTheme.spaceSm + 4),
           TextField(
             controller: _titleController,
@@ -376,31 +457,93 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
     );
   }
 
+  /// Liste groupée : pubs en ligne d'abord, puis en attente (validation ou
+  /// paiement), puis refusées — l'expéditeur voit tout ce qu'il a publié.
   List<Widget> _buildListSlivers(List<Ad> items) {
     if (items.isEmpty) return const [];
-    return [
-      const SliverToBoxAdapter(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(AppTheme.spaceMd, AppTheme.spaceMd,
-              AppTheme.spaceMd, AppTheme.spaceSm),
-          child: Text('Mes soumissions', style: AppTheme.h3),
-        ),
-      ),
-      SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
-        sliver: SliverList.builder(
-          itemCount: items.length,
-          itemBuilder: (context, index) => StaggeredEntrance(
-            delay: Duration(milliseconds: (index % 10) * 40),
-            child: _MyAdCard(
-              ad: items[index],
-              onDeclarePayment: () => _declarePayment(items[index]),
-              onDelete: () => _deleteDraft(items[index]),
+    final live = items.where((a) => a.isLive).toList(growable: false);
+    // En attente = validation en cours (pending) OU paiement à déclarer /
+    // paiement déclaré (awaiting_payment).
+    final waiting =
+        items.where((a) => !a.isLive && !a.isRejected).toList(growable: false);
+    final rejected = items.where((a) => a.isRejected).toList(growable: false);
+
+    List<Widget> section(String title, List<Ad> ads, LinearGradient gradient) {
+      return [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(AppTheme.spaceMd,
+                AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceSm),
+            child: Row(
+              children: [
+                Text(title, style: AppTheme.h3),
+                const SizedBox(width: AppTheme.spaceSm),
+                GradientBadge(label: '${ads.length}', gradient: gradient),
+              ],
             ),
           ),
         ),
-      ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+          sliver: SliverList.builder(
+            itemCount: ads.length,
+            itemBuilder: (context, index) => StaggeredEntrance(
+              delay: Duration(milliseconds: (index % 10) * 40),
+              child: _MyAdCard(
+                ad: ads[index],
+                onDeclarePayment: () => _declarePayment(ads[index]),
+                onDelete: () => _deleteDraft(ads[index]),
+              ),
+            ),
+          ),
+        ),
+      ];
+    }
+
+    return [
+      if (live.isNotEmpty)
+        ...section('En ligne', live, AppTheme.successGradient),
+      if (waiting.isNotEmpty)
+        ...section('En attente', waiting, AppTheme.infoGradient),
+      if (rejected.isNotEmpty)
+        ...section('Refusées', rejected, AppTheme.errorGradient),
+      const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceXxl)),
     ];
+  }
+}
+
+/// Notice affichée aux expéditeurs non micro-importateurs : la publication
+/// de publicités est réservée aux comptes micro-importateurs.
+class _MicroOnlyNotice extends StatelessWidget {
+  const _MicroOnlyNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return const GlassCard(
+      child: Column(
+        children: [
+          AnimatedIconDot(
+            icon: Icons.storefront_outlined,
+            color: AppTheme.primaryColor,
+          ),
+          SizedBox(height: AppTheme.spaceSm),
+          Text(
+            'Réservé aux micro-importateurs',
+            style: AppTheme.h3,
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: AppTheme.spaceXs),
+          Text(
+            'La publicité sponsorisée est offerte aux comptes '
+            'micro-importateurs (commerçants). Depuis « Choisir votre rôle », '
+            'passez en micro-importateur avec votre carte de commerce : après '
+            'validation par un admin, vous pourrez soumettre vos publicités.',
+            style: AppTheme.bodySecondary,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
   }
 }
 

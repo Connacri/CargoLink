@@ -12,6 +12,7 @@ import 'transactions_screen.dart';
 import 'commission_screen.dart';
 import 'inventory_screen.dart';
 import 'depot_detail_screen.dart';
+import 'ads_screen.dart';
 
 // ============================================================================
 // PAGINATED PROVIDERS (local to this screen)
@@ -155,6 +156,68 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 // SHIPPERS VERIFICATION TAB
 // ============================================================================
 
+/// Carte « Publicités à valider » : nombre de pubs expéditeur en attente
+/// (validation ou confirmation de paiement). Un appui ouvre la file.
+class _PendingAdsCard extends ConsumerWidget {
+  const _PendingAdsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(pendingAdsCountProvider);
+    final n = count.valueOrNull ?? 0;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: GlassCard(
+        padding: EdgeInsets.zero,
+        child: ListTile(
+          leading: const AnimatedIconDot(
+            icon: Icons.campaign_outlined,
+            color: AppTheme.warningColor,
+          ),
+          title: const Text('Publicités à valider'),
+          subtitle: Text(
+            n == 0
+                ? 'Aucune pub expéditeur à traiter'
+                : '$n publicité(s) à valider ou paiement à confirmer',
+            style: AppTheme.caption,
+          ),
+          trailing: count.when(
+            data: (value) => value > 0
+                ? Text(
+                    '$value',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.errorColor,
+                    ),
+                  )
+                : const Icon(Icons.check_circle_rounded,
+                    color: AppTheme.accentColor),
+            loading: () => const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            error: (_, __) =>
+                const Icon(Icons.help_outline, color: AppTheme.textMutedColor),
+          ),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const AdsScreen(openOnValidationQueue: true),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ShippersTab extends ConsumerWidget {
   const _ShippersTab();
 
@@ -168,6 +231,9 @@ class _ShippersTab extends ConsumerWidget {
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
+          const SliverToBoxAdapter(
+            child: _PendingAdsCard(),
+          ),
           const SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(

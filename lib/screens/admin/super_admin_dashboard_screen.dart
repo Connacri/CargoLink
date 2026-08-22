@@ -14,6 +14,7 @@ import 'platform_settings_screen.dart';
 import 'verification_center_screen.dart';
 import 'commission_screen.dart';
 import 'inventory_screen.dart';
+import 'ads_screen.dart';
 
 /// Founder (super_admin) dashboard — accès total et contrôle de la plateforme :
 /// stats globales, gestion de tous les comptes (rôles, activation,
@@ -63,6 +64,7 @@ class _SuperAdminDashboardScreenState
   Future<void> _refreshAll() async {
     ref.invalidate(platformStatsProvider);
     ref.invalidate(pendingShippersCountProvider);
+    ref.invalidate(pendingAdsCountProvider);
     ref.invalidate(unreadFeedbackCountProvider);
     ref.invalidate(awaitingCommissionCountProvider);
     ref.invalidate(awaitingCommissionFeesProvider);
@@ -81,11 +83,13 @@ class _SuperAdminDashboardScreenState
     final pendingPublications = ref.watch(awaitingPublicationCountProvider);
     final pendingDeletions = ref.watch(pendingDeletionRequestsCountProvider);
     final pendingVerifications = ref.watch(pendingShippersCountProvider);
+    final pendingAds = ref.watch(pendingAdsCountProvider);
 
     final totalBadges = (pendingCommissions.valueOrNull ?? 0) +
         (pendingPublications.valueOrNull ?? 0) +
         (pendingDeletions.valueOrNull ?? 0) +
-        (pendingVerifications.valueOrNull ?? 0);
+        (pendingVerifications.valueOrNull ?? 0) +
+        (pendingAds.valueOrNull ?? 0);
 
     return Scaffold(
       body: SafeArea(
@@ -107,6 +111,7 @@ class _SuperAdminDashboardScreenState
                   SliverToBoxAdapter(child: _StatsOverview()),
                   SliverToBoxAdapter(child: _FounderWalletSection()),
                   SliverToBoxAdapter(child: _PendingVerificationSection()),
+                  SliverToBoxAdapter(child: _PendingAdsSection()),
                   SliverToBoxAdapter(child: _PendingPublicationSection()),
                   SliverToBoxAdapter(child: _PendingCommissionSection()),
                   SliverToBoxAdapter(child: _PendingDeletionSection()),
@@ -690,6 +695,72 @@ class _PendingVerificationSection extends ConsumerWidget {
   }
 }
 
+/// Publicités expéditeur en attente : validation des soumissions puis
+/// confirmation des paiements déclarés. Un appui ouvre la file « À traiter ».
+class _PendingAdsSection extends ConsumerWidget {
+  const _PendingAdsSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(pendingAdsCountProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        0,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: GlassCard(
+        padding: EdgeInsets.zero,
+        child: ListTile(
+          leading: const AnimatedIconDot(
+            icon: Icons.campaign_outlined,
+            color: AppTheme.warningColor,
+          ),
+          title: const Text('Publicités à valider'),
+          subtitle: count.when(
+            data: (n) => Text(
+              n == 0
+                  ? 'Aucune pub expéditeur à traiter'
+                  : '$n publicité(s) à valider ou paiement à confirmer',
+              style: AppTheme.caption,
+            ),
+            loading: () => const Text('Chargement…', style: AppTheme.caption),
+            error: (_, __) =>
+                const Text('Suivi indisponible', style: AppTheme.caption),
+          ),
+          trailing: count.when(
+            data: (n) => n > 0
+                ? Text(
+                    '$n',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.errorColor,
+                    ),
+                  )
+                : const Icon(Icons.check_circle_rounded,
+                    color: AppTheme.accentColor),
+            loading: () => const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            error: (_, __) =>
+                const Icon(Icons.help_outline, color: AppTheme.textMutedColor),
+          ),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const AdsScreen(openOnValidationQueue: true),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Commission payments awaiting super-admin confirmation. Each row offers a
 /// "Confirmer" action that moves the fee from `awaiting_confirmation` to `paid`.
 class _PendingCommissionSection extends ConsumerWidget {
@@ -1134,6 +1205,7 @@ class _FounderMenuButton extends ConsumerWidget {
     final deletion = ref.watch(pendingDeletionRequestsCountProvider);
     final feedback = ref.watch(unreadFeedbackCountProvider);
     final chat = ref.watch(unreadChatTotalProvider);
+    final ads = ref.watch(pendingAdsCountProvider);
 
     return PopupMenuButton<_FounderMenuAction>(
       tooltip: 'Menu du Fondateur',
@@ -1194,6 +1266,7 @@ class _FounderMenuButton extends ConsumerWidget {
           action: _FounderMenuAction.ads,
           icon: Icons.ad_units_rounded,
           label: 'Publicités',
+          badge: _countLabel(ads),
         ),
         _founderMenuItem(
           action: _FounderMenuAction.feedback,

@@ -405,6 +405,55 @@ class _ShipperRegistrationScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (existing != null && existing.isRejected) ...[
+                      Container(
+                        padding: const EdgeInsets.all(AppTheme.spaceSm),
+                        decoration: BoxDecoration(
+                          color: AppTheme.errorColor.withValues(alpha: 0.08),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMd),
+                          border: Border.all(
+                            color: AppTheme.errorColor.withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.error_outline_rounded,
+                                    size: 18, color: AppTheme.errorColor),
+                                SizedBox(width: AppTheme.spaceXs),
+                                Text(
+                                  'Votre dossier a été rejeté',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.errorColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (existing.rejectionReason != null &&
+                                existing.rejectionReason!.isNotEmpty) ...[
+                              const SizedBox(height: AppTheme.spaceXs),
+                              Text(
+                                'Motif : ${existing.rejectionReason}',
+                                style: AppTheme.caption,
+                              ),
+                            ],
+                            const SizedBox(height: AppTheme.spaceXs),
+                            const Text(
+                              'Corrigez vos informations — vous pouvez aussi '
+                              'changer de type (voyageur ordinaire ↔ '
+                              'micro-importateur) — puis renvoyez : le '
+                              'dossier repassera en attente de validation.',
+                              style: AppTheme.caption,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppTheme.spaceMd),
+                    ],
                     TextFormField(
                       controller: _passportNumberController,
                       textCapitalization: TextCapitalization.characters,

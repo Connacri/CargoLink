@@ -77,6 +77,21 @@ class AdsService {
     }
   }
 
+  /// Nombre de pubs expéditeur en attente de validation — alimente la carte
+  /// « Publicités à valider » des dashboards admin et fondateur.
+  Future<int> countPendingAds() async {
+    try {
+      final response = await SupabaseConfig.client
+          .from('ads')
+          .select('id')
+          .eq('status', Ad.statusPending);
+      return (response as List).length;
+    } catch (e) {
+      _logger.e('Error counting pending ads: $e');
+      return 0;
+    }
+  }
+
   /// Upload-free creation: storage upload is handled by the caller.
   ///
   /// - Admin/super_admin : la pub naît [Ad.statusActive] et gratuite.

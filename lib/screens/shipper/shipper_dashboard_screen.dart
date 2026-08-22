@@ -293,7 +293,9 @@ class _ShipperDashboardScreenState
             if (currentAd != null)
               AdSliverHeader(
                 ad: currentAd,
-                trailing: _headerTrailing(),
+                trailing: _headerTrailing(
+                  canAdvertise: shipper.isMicroImportateur,
+                ),
               )
             else
               GradientSliverHeader(
@@ -302,13 +304,15 @@ class _ShipperDashboardScreenState
                     '${shipper.user?.fullName ?? 'Espace expéditeur'}  •  ★ ${shipper.ratingDisplay}'
                     '${shipper.isMicroImportateur ? '  •  Micro-importateur' : ''}',
                 icon: Icons.flight_takeoff_rounded,
-                trailing: _headerTrailing(),
+                trailing: _headerTrailing(
+                  canAdvertise: shipper.isMicroImportateur,
+                ),
               ),
             SliverToBoxAdapter(
               child: _buildStats(shipper),
             ),
             SliverToBoxAdapter(
-              child: _buildPublishAndScan(shipper.id),
+              child: _buildPublishAndScan(shipper),
             ),
             SliverToBoxAdapter(
               child: _buildActiveOrdersCard(shipper.id),
@@ -362,15 +366,16 @@ class _ShipperDashboardScreenState
     );
   }
 
-  Widget _headerTrailing() {
+  Widget _headerTrailing({required bool canAdvertise}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          tooltip: 'Mes publicités',
-          icon: const Icon(Icons.campaign_outlined, color: Colors.white),
-          onPressed: () => Navigator.of(context).pushNamed('/my-ads'),
-        ),
+        if (canAdvertise)
+          IconButton(
+            tooltip: 'Mes publicités',
+            icon: const Icon(Icons.campaign_outlined, color: Colors.white),
+            onPressed: () => Navigator.of(context).pushNamed('/my-ads'),
+          ),
         const ChatInboxBadge(),
         GestureDetector(
           onTap: () => _showNotificationsSheet(context),
@@ -512,7 +517,7 @@ class _ShipperDashboardScreenState
   // card below it, both taking the place of the two app-bar icons.
   // --------------------------------------------------------------------------
 
-  Widget _buildPublishAndScan(String shipperId) {
+  Widget _buildPublishAndScan(Shipper shipper) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.spaceMd,
@@ -525,7 +530,7 @@ class _ShipperDashboardScreenState
         children: [
           // Large "Publier une offre" button
           InkWell(
-            onTap: () => _showPublishDialog(shipperId),
+            onTap: () => _showPublishDialog(shipper.id),
             borderRadius: BorderRadius.circular(AppTheme.radiusLg),
             child: Ink(
               decoration: BoxDecoration(
@@ -627,19 +632,21 @@ class _ShipperDashboardScreenState
               ),
             ),
           ),
-          const SizedBox(height: AppTheme.spaceMd),
-          // Big "Publier une publicité" card — opens the shipper ads screen
-          // where submissions go through admin/super-admin approval + payment.
-          InkWell(
-            onTap: () => Navigator.of(context).pushNamed('/my-ads'),
-            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-            child: Ink(
-              decoration: BoxDecoration(
-                gradient: AppTheme.warningGradient,
-                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                boxShadow: AppTheme.shadowMd,
-              ),
-              padding: const EdgeInsets.all(AppTheme.spaceLg),
+          if (shipper.isMicroImportateur) ...[
+            const SizedBox(height: AppTheme.spaceMd),
+            // Big "Publier une publicité" card — réservée aux micro-
+            // importateurs : la soumission passe par la validation d'un
+            // admin/super admin puis le règlement des frais.
+            InkWell(
+              onTap: () => Navigator.of(context).pushNamed('/my-ads'),
+              borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+              child: Ink(
+                decoration: BoxDecoration(
+                  gradient: AppTheme.warningGradient,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                  boxShadow: AppTheme.shadowMd,
+                ),
+                padding: const EdgeInsets.all(AppTheme.spaceLg),
               child: Row(
                 children: [
                   Container(
@@ -692,6 +699,7 @@ class _ShipperDashboardScreenState
               ),
             ),
           ),
+          ],
         ],
       ),
     );

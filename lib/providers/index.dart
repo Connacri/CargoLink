@@ -677,6 +677,12 @@ final myAdsProvider = FutureProvider<List<Ad>>((ref) async {
   return ref.watch(adsServiceProvider).getMyAds();
 });
 
+/// Pubs expéditeur en attente de validation — carte des dashboards
+/// admin et fondateur (« Publicités à valider »).
+final pendingAdsCountProvider = FutureProvider<int>((ref) async {
+  return ref.watch(adsServiceProvider).countPendingAds();
+});
+
 // ============================================================================
 // V2 PROVIDERS — Réseau logistique multi-shipper
 // ============================================================================

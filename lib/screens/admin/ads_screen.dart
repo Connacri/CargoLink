@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -16,7 +17,11 @@ import '../../core/widgets/ui_kit.dart';
 /// Une pub admin est active immédiatement ; une pub expéditeur suit le
 /// circuit pending -> awaiting_payment -> active (voir [AdsService]).
 class AdsScreen extends ConsumerStatefulWidget {
-  const AdsScreen({super.key});
+  const AdsScreen({super.key, this.openOnValidationQueue = false});
+
+  /// Vrai quand l'écran est ouvert depuis la carte « Publicités à valider » :
+  /// le filtre « À traiter » (validation + paiement) est actif à l'ouverture.
+  final bool openOnValidationQueue;
 
   @override
   ConsumerState<AdsScreen> createState() => _AdsScreenState();
@@ -29,12 +34,45 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
   String _imageName = '';
   String _audience = 'all';
   bool _isSaving = false;
+  late bool _showQueueOnly = widget.openOnValidationQueue;
+  int? _imageWidth;
+  int? _imageHeight;
 
   @override
   void dispose() {
     _titleController.dispose();
     _linkController.dispose();
     super.dispose();
+  }
+
+  /// Libellé lisible du poids du fichier (Ko / Mo).
+  String get _imageWeightLabel {
+    if (_imageBytes == null) return '';
+    final ko = _imageBytes!.lengthInBytes / 1024;
+    return ko >= 1024
+        ? '${(ko / 1024).toStringAsFixed(1)} Mo'
+        : '${ko.toStringAsFixed(0)} Ko';
+  }
+
+  /// Décode l'image pour récupérer ses dimensions (largeur × hauteur).
+  Future<void> _decodeImageDimensions(Uint8List bytes) async {
+    int? width;
+    int? height;
+    try {
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      width = frame.image.width;
+      height = frame.image.height;
+      frame.image.dispose();
+      codec.dispose();
+    } catch (_) {
+      // Image illisible : on laisse les dimensions à null.
+    }
+    if (!mounted) return;
+    setState(() {
+      _imageWidth = width;
+      _imageHeight = height;
+    });
   }
 
   Future<void> _pickImage() async {
@@ -55,6 +93,7 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
       _imageBytes = bytes;
       _imageName = picked.name;
     });
+    await _decodeImageDimensions(bytes);
   }
 
   Future<void> _save() async {
@@ -98,10 +137,13 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
         _imageBytes = null;
         _imageName = '';
         _audience = 'all';
+        _imageWidth = null;
+        _imageHeight = null;
       });
       ref.invalidate(allAdsProvider);
       ref.invalidate(activeAdsProvider);
       ref.invalidate(shipperActiveAdsProvider);
+      ref.invalidate(pendingAdsCountProvider);
       _snack('Publicité publiée', AppTheme.accentColor);
     } catch (e) {
       _snack('Échec: $e', AppTheme.errorColor);
@@ -206,6 +248,7 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
     ref.invalidate(allAdsProvider);
     ref.invalidate(activeAdsProvider);
     ref.invalidate(shipperActiveAdsProvider);
+    ref.invalidate(pendingAdsCountProvider);
   }
 
   void _snack(String text, Color color) {
@@ -335,10 +378,40 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                ],
-              ),
+              ],
             ),
           ),
+          ),
+          if (_imageBytes != null) ...[
+            const SizedBox(height: AppTheme.spaceXs),
+            Row(
+              children: [
+                const Icon(Icons.aspect_ratio_rounded,
+                    size: 14, color: AppTheme.textSecondaryColor),
+                const SizedBox(width: 4),
+                Text(
+                  _imageWidth != null && _imageHeight != null
+                      ? '$_imageWidth × $_imageHeight px'
+                      : 'Dimensions inconnues',
+                  style: AppTheme.caption,
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                const Icon(Icons.sd_storage_outlined,
+                    size: 14, color: AppTheme.textSecondaryColor),
+                const SizedBox(width: 4),
+                Text(_imageWeightLabel, style: AppTheme.caption),
+                const SizedBox(width: AppTheme.spaceSm),
+                Flexible(
+                  child: Text(
+                    _imageName,
+                    style: AppTheme.caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: AppTheme.spaceSm + 4),
           TextField(
             controller: _titleController,
@@ -399,35 +472,75 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
                 : const Icon(Icons.publish_rounded),
             label: Text(_isSaving ? 'Publication…' : 'Publier maintenant'),
           ),
+          const SizedBox(height: AppTheme.spaceXs),
+          const Text(
+            'Privilège fondateur/admin : vos publicités sont mises en ligne '
+            'immédiatement, sans validation.',
+            style: AppTheme.caption,
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
   }
 
   List<Widget> _buildListSlivers(List<Ad> items) {
+    final queue =
+        items.where((a) => a.isPending || a.isAwaitingPayment).toList();
+    final visible = _showQueueOnly ? queue : items;
     final pending = items.where((a) => a.isPending).length;
     final headers = <Widget>[
       SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
               AppTheme.spaceMd, 0, AppTheme.spaceMd, AppTheme.spaceSm),
-          child: Text(
-            items.isEmpty
-                ? 'Publicités'
-                : pending > 0
-                    ? 'Toutes les publicités ($pending en attente)'
-                    : 'Toutes les publicités',
-            style: AppTheme.h3,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  items.isEmpty
+                      ? 'Publicités'
+                      : pending > 0
+                          ? 'Toutes les publicités ($pending en attente)'
+                          : 'Toutes les publicités',
+                  style: AppTheme.h3,
+                ),
+              ),
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(
+                    value: true,
+                    icon: Icon(Icons.pending_actions_rounded, size: 18),
+                    label: Text('À traiter'),
+                  ),
+                  ButtonSegment(
+                    value: false,
+                    icon: Icon(Icons.list_rounded, size: 18),
+                    label: Text('Toutes'),
+                  ),
+                ],
+                selected: {_showQueueOnly},
+                onSelectionChanged: (selection) =>
+                    setState(() => _showQueueOnly = selection.first),
+                showSelectedIcon: false,
+                style: ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  side: WidgetStatePropertyAll(
+                    BorderSide(color: AppTheme.primaryColor.withValues(alpha: 0.4)),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     ];
-    if (items.isEmpty) {
+    if (visible.isEmpty) {
       return [
         ...headers,
-        const SliverFillRemaining(
+        SliverFillRemaining(
           hasScrollBody: false,
-          child: _EmptyAds(),
+          child: _EmptyAds(queueOnly: _showQueueOnly),
         ),
       ];
     }
@@ -437,16 +550,16 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
         padding: const EdgeInsets.fromLTRB(
             AppTheme.spaceMd, 0, AppTheme.spaceMd, AppTheme.spaceXxl),
         sliver: SliverList.builder(
-          itemCount: items.length,
+          itemCount: visible.length,
           itemBuilder: (context, index) => StaggeredEntrance(
             delay: Duration(milliseconds: (index % 10) * 40),
             child: _AdCard(
-              ad: items[index],
-              onApprove: () => _approve(items[index]),
-              onReject: () => _reject(items[index]),
-              onConfirmPayment: () => _confirmPayment(items[index]),
-              onToggle: () => _toggle(items[index]),
-              onDelete: () => _delete(items[index]),
+              ad: visible[index],
+              onApprove: () => _approve(visible[index]),
+              onReject: () => _reject(visible[index]),
+              onConfirmPayment: () => _confirmPayment(visible[index]),
+              onToggle: () => _toggle(visible[index]),
+              onDelete: () => _delete(visible[index]),
             ),
           ),
         ),
@@ -517,19 +630,29 @@ class _BannerPreview extends StatelessWidget {
 }
 
 class _EmptyAds extends StatelessWidget {
-  const _EmptyAds();
+  const _EmptyAds({this.queueOnly = false});
+
+  final bool queueOnly;
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.campaign_outlined, size: 56, color: AppTheme.textMutedColor),
-        SizedBox(height: AppTheme.spaceMd),
-        Text('Aucune publicité pour le moment', style: AppTheme.h3),
-        SizedBox(height: AppTheme.spaceSm),
+        const Icon(Icons.campaign_outlined, size: 56, color: AppTheme.textMutedColor),
+        const SizedBox(height: AppTheme.spaceMd),
         Text(
-          'Créez une bannière ou validez celles des expéditeurs.',
+          queueOnly
+              ? 'Aucune publicité à traiter'
+              : 'Aucune publicité pour le moment',
+          style: AppTheme.h3,
+        ),
+        const SizedBox(height: AppTheme.spaceSm),
+        Text(
+          queueOnly
+              ? 'Les soumissions des expéditeurs et les paiements à '
+                  'confirmer apparaîtront ici.'
+              : 'Créez une bannière ou validez celles des expéditeurs.',
           style: AppTheme.bodySecondary,
           textAlign: TextAlign.center,
         ),
