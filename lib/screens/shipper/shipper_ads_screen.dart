@@ -30,6 +30,9 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
   int? _imageWidth;
   int? _imageHeight;
 
+  /// Durée d'affichage choisie : 7, 15 ou 30 jours (grille tarifaire Ad).
+  int _durationDays = 7;
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -121,6 +124,7 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
             linkUrl: link,
             audience: _audience,
             title: _titleController.text,
+            durationDays: _durationDays,
           );
       _titleController.clear();
       _linkController.clear();
@@ -128,6 +132,7 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
         _imageBytes = null;
         _imageName = '';
         _audience = 'all';
+        _durationDays = 7;
         _imageWidth = null;
         _imageHeight = null;
       });
@@ -236,24 +241,24 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
                     'Sponsorisez votre activité sur CargoLink',
                 icon: Icons.campaign_outlined,
               ),
-              SliverToBoxAdapter(
+              const SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(AppTheme.spaceMd,
+                  padding: EdgeInsets.fromLTRB(AppTheme.spaceMd,
                       AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceSm),
                   child: GlassCard(
                     child: Row(
                       children: [
-                        const AnimatedIconDot(
+                        AnimatedIconDot(
                           icon: Icons.info_outline_rounded,
                           color: AppTheme.warningColor,
                         ),
-                        const SizedBox(width: AppTheme.spaceSm),
+                        SizedBox(width: AppTheme.spaceSm),
                         Expanded(
                           child: Text(
-                            'Frais de publication : '
-                            '${AppConstants.adPublicationFeeDzd.toStringAsFixed(0)} '
-                            '${AppConstants.defaultCurrency}. Votre pub est '
-                            'validée par un admin avant mise en ligne.',
+                            'Choisissez la durée d\'affichage (7, 15 ou 30 '
+                            'jours) : le prix à payer s\'affiche en direct. '
+                            'Votre pub est validée par un admin avant mise '
+                            'en ligne.',
                             style: AppTheme.caption,
                           ),
                         ),
@@ -434,6 +439,62 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
                     ))
                 .toList(),
           ),
+          const SizedBox(height: AppTheme.spaceSm + 4),
+          const Text('Durée d\'affichage', style: AppTheme.caption),
+          const SizedBox(height: AppTheme.spaceXs),
+          Wrap(
+            spacing: AppTheme.spaceXs,
+            runSpacing: AppTheme.spaceXs,
+            children: Ad.pricingTiers.entries.map((entry) {
+              final selected = _durationDays == entry.key;
+              return ChoiceChip(
+                label: Text(
+                    '${entry.key} j · ${entry.value.toStringAsFixed(0)} ${AppConstants.defaultCurrency}'),
+                selected: selected,
+                onSelected: (_) => setState(() => _durationDays = entry.key),
+                selectedColor: AppTheme.primaryColor.withValues(alpha: 0.15),
+                labelStyle: TextStyle(
+                  color: selected
+                      ? AppTheme.primaryColor
+                      : AppTheme.textSecondaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
+          Container(
+            padding: const EdgeInsets.all(AppTheme.spaceSm + 2),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+              color: AppTheme.primaryColor.withValues(alpha: 0.08),
+              border: Border.all(
+                color: AppTheme.primaryColor.withValues(alpha: 0.25),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.schedule_rounded,
+                    size: 18, color: AppTheme.primaryColor),
+                const SizedBox(width: AppTheme.spaceSm),
+                Expanded(
+                  child: Text(
+                    'Votre pub restera en ligne $_durationDays jours après '
+                    'validation.',
+                    style: AppTheme.caption,
+                  ),
+                ),
+                Text(
+                  '${Ad.priceForDuration(_durationDays).toStringAsFixed(0)} '
+                  '${AppConstants.defaultCurrency}',
+                  style: AppTheme.caption.copyWith(
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: AppTheme.spaceMd),
           FilledButton.icon(
             onPressed: _isSaving ? null : _submit,
@@ -449,7 +510,8 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
                 : const Icon(Icons.send_rounded),
             label: Text(_isSaving
                 ? 'Envoi…'
-                : 'Envoyer pour validation (${AppConstants.adPublicationFeeDzd.toStringAsFixed(0)} '
+                : 'Envoyer pour validation '
+                    '(${Ad.priceForDuration(_durationDays).toStringAsFixed(0)} '
                     '${AppConstants.defaultCurrency})'),
           ),
         ],
@@ -558,6 +620,16 @@ class _MyAdCard extends StatelessWidget {
   final VoidCallback onDeclarePayment;
   final VoidCallback onDelete;
 
+  /// « Expire le 12/09 » pour une pub en ligne, sinon « 15 jours ».
+  String get _durationLabel {
+    if (ad.isLive && ad.expiresAt != null) {
+      final d = ad.expiresAt!;
+      return 'Expire le ${d.day.toString().padLeft(2, '0')}/'
+          '${d.month.toString().padLeft(2, '0')}';
+    }
+    return '${ad.durationDays} jours';
+  }
+
   @override
   Widget build(BuildContext context) {
     LinearGradient gradient;
@@ -621,6 +693,13 @@ class _MyAdCard extends StatelessWidget {
                 ),
                 const SizedBox(width: AppTheme.spaceXs),
                 GradientBadge(label: label, gradient: gradient, compact: true),
+                const Spacer(),
+                Text(
+                  _durationLabel,
+                  style: AppTheme.caption.copyWith(
+                    color: AppTheme.textSecondaryColor,
+                  ),
+                ),
               ],
             ),
             if (hint != null) ...[

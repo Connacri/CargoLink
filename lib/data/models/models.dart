@@ -1004,6 +1004,13 @@ class Ad {
   /// Frais de publication en DZD (0 pour une pub créée par un admin).
   final double priceDzd;
 
+  /// Durée d'affichage choisie à la soumission : 7, 15 ou 30 jours.
+  final int durationDays;
+
+  /// Date d'expiration posée automatiquement à l'activation
+  /// (activation + durée). Null pour les pubs jamais activées.
+  final DateTime? expiresAt;
+
   final String? reviewedBy;
   final DateTime? reviewedAt;
   final String? rejectionReason;
@@ -1023,6 +1030,8 @@ class Ad {
     this.audience = 'all',
     this.status = statusActive,
     this.priceDzd = 0,
+    this.durationDays = 7,
+    this.expiresAt,
     this.reviewedBy,
     this.reviewedAt,
     this.rejectionReason,
@@ -1043,6 +1052,10 @@ class Ad {
       status: json['status'] as String? ?? statusActive,
       priceDzd:
           (json['price_dzd'] as num?)?.toDouble() ?? 0,
+      durationDays: (json['duration_days'] as num?)?.toInt() ?? 7,
+      expiresAt: json['expires_at'] == null
+          ? null
+          : DateTime.parse(json['expires_at'] as String),
       reviewedBy: json['reviewed_by'] as String?,
       reviewedAt: json['reviewed_at'] == null
           ? null
@@ -1067,6 +1080,8 @@ class Ad {
       'audience': audience,
       'status': status,
       'price_dzd': priceDzd,
+      'duration_days': durationDays,
+      'expires_at': expiresAt?.toIso8601String(),
       'reviewed_by': reviewedBy,
       'reviewed_at': reviewedAt?.toIso8601String(),
       'rejection_reason': rejectionReason,
@@ -1078,6 +1093,20 @@ class Ad {
   bool get isAwaitingPayment => status == statusAwaitingPayment;
   bool get isRejected => status == statusRejected;
   bool get isLive => status == statusActive && isActive;
+
+  /// Pub activée dont la période d'affichage est dépassée.
+  bool get isExpired =>
+      expiresAt != null && expiresAt!.isBefore(DateTime.now());
+
+  /// Grille tarifaire officielle : durée d'affichage → frais en DZD.
+  static const Map<int, double> pricingTiers = {
+    7: 2000,
+    15: 3500,
+    30: 6000,
+  };
+
+  static double priceForDuration(int days) =>
+      pricingTiers[days] ?? pricingTiers[7]!;
 
   static const Map<String, String> audienceLabels = {
     'all': 'Tous',
@@ -1093,6 +1122,8 @@ class Ad {
     String? rejectionReason,
     DateTime? reviewedAt,
     DateTime? paymentDeclaredAt,
+    int? durationDays,
+    DateTime? expiresAt,
   }) {
     return Ad(
       id: id,
@@ -1106,6 +1137,8 @@ class Ad {
       audience: audience,
       status: status ?? this.status,
       priceDzd: priceDzd,
+      durationDays: durationDays ?? this.durationDays,
+      expiresAt: expiresAt ?? this.expiresAt,
       reviewedBy: reviewedBy,
       reviewedAt: reviewedAt ?? this.reviewedAt,
       rejectionReason: rejectionReason ?? this.rejectionReason,

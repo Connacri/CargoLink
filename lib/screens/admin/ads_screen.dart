@@ -33,6 +33,9 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
   Uint8List? _imageBytes;
   String _imageName = '';
   String _audience = 'all';
+
+  /// Durée d'affichage de la pub : 7, 15 ou 30 jours.
+  int _durationDays = 7;
   bool _isSaving = false;
   late bool _showQueueOnly = widget.openOnValidationQueue;
   int? _imageWidth;
@@ -129,6 +132,7 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
             linkUrl: link,
             audience: _audience,
             title: _titleController.text,
+            durationDays: _durationDays,
             activateImmediately: true,
           );
       _titleController.clear();
@@ -137,6 +141,7 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
         _imageBytes = null;
         _imageName = '';
         _audience = 'all';
+        _durationDays = 7;
         _imageWidth = null;
         _imageHeight = null;
       });
@@ -457,6 +462,28 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
                     ))
                 .toList(),
           ),
+          const SizedBox(height: AppTheme.spaceSm + 4),
+          const Text('Durée d\'affichage', style: AppTheme.caption),
+          const SizedBox(height: AppTheme.spaceXs),
+          Wrap(
+            spacing: AppTheme.spaceXs,
+            runSpacing: AppTheme.spaceXs,
+            children: Ad.pricingTiers.keys.map((days) {
+              final selected = _durationDays == days;
+              return ChoiceChip(
+                label: Text('$days jours'),
+                selected: selected,
+                onSelected: (_) => setState(() => _durationDays = days),
+                selectedColor: AppTheme.primaryColor.withValues(alpha: 0.15),
+                labelStyle: TextStyle(
+                  color: selected
+                      ? AppTheme.primaryColor
+                      : AppTheme.textSecondaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              );
+            }).toList(),
+          ),
           const SizedBox(height: AppTheme.spaceMd),
           FilledButton.icon(
             onPressed: _isSaving ? null : _save,
@@ -707,6 +734,18 @@ class _AdCard extends StatelessWidget {
   final VoidCallback onToggle;
   final VoidCallback onDelete;
 
+  /// « Expire le 12/09 (15 j) » / « Période dépassée » / « Durée : 15 jours ».
+  String get _durationInfo {
+    if (ad.isExpired) return 'Période dépassée — pub hors affichage';
+    if (ad.isLive && ad.expiresAt != null) {
+      final d = ad.expiresAt!;
+      return 'Expire le ${d.day.toString().padLeft(2, '0')}/'
+          '${d.month.toString().padLeft(2, '0')} '
+          '(${ad.durationDays} jours)';
+    }
+    return 'Durée d\'affichage : ${ad.durationDays} jours';
+  }
+
   @override
   Widget build(BuildContext context) {
     final showReviewActions =
@@ -790,6 +829,15 @@ class _AdCard extends StatelessWidget {
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                _durationInfo,
+                style: AppTheme.caption.copyWith(
+                  color: ad.isLive && ad.isExpired ? AppTheme.red : null,
+                ),
               ),
             ),
             if (ad.priceDzd > 0)

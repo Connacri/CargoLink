@@ -31,8 +31,11 @@ class AdsService {
       final response = await query
           .order('created_at', ascending: false)
           .limit(limit);
+      // Les pubs expirées (période dépassée) ne sont plus affichées.
+      final now = DateTime.now();
       return (response as List)
           .map((item) => Ad.fromJson(item as Map<String, dynamic>))
+          .where((ad) => ad.expiresAt == null || ad.expiresAt!.isAfter(now))
           .toList();
     } catch (e) {
       _logger.e('Error getting active ads: $e');
@@ -95,12 +98,14 @@ class AdsService {
   /// Upload-free creation: storage upload is handled by the caller.
   ///
   /// - Admin/super_admin : la pub naît [Ad.statusActive] et gratuite.
-  /// - Expéditeur : la base force [Ad.statusPending] + prix fixé par trigger.
+  /// - Expéditeur : la base force [Ad.statusPending] + prix recalculé par
+  ///   trigger selon la durée choisie (7 j = 2000, 15 j = 3500, 30 j = 6000).
   Future<Ad> createAd({
     required String imageUrl,
     required String linkUrl,
     required String audience,
     String? title,
+    int durationDays = 7,
     bool activateImmediately = false,
   }) async {
     try {
@@ -113,6 +118,7 @@ class AdsService {
         'audience': audience,
         if (title != null && title.trim().isNotEmpty) 'title': title.trim(),
         'created_by': userId,
+        'duration_days': durationDays,
         // Les admins demandent une pub en ligne directe ; pour un expéditeur
         // la base écrase ce statut en 'pending'.
         'status': activateImmediately ? Ad.statusActive : Ad.statusPending,
