@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.16** |
-| Code de version (versionCode) | **146** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `02df649` |
-| Statut CI | À publier au prochain push → release `v1.0.16` sur GitHub |
+| Version (versionName) | **1.0.17** |
+| Code de version (versionCode) | **148** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `5ccd928` |
+| Statut CI | À publier au prochain push → release `v1.0.17` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.16** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.17** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,31 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Publicités réservées aux micro-importateurs** : le bouton « Publier une
+  publicité » du tableau de bord et le formulaire de soumission ne sont
+  accessibles qu'aux comptes micro-importateurs (verrou aussi appliqué côté
+  base : RLS + trigger qui refusent toute soumission d'un autre expéditeur).
+  Les non-micro voient une notice expliquant comment devenir micro-importateur.
+- **Carte « Publicités à valider » (admin & fondateur)** : les dashboards
+  affichent désormais le nombre de pubs expéditeurs à traiter. En entrant :
+  file « À traiter » (validations + paiements déclarés à confirmer), visualisation
+  de la bannière en grand format (zoom plein écran), boutons Approuver /
+  Refuser / Confirmer paiement. Le menu fondateur porte aussi le badge.
+- **Mes publicités groupées par statut** : l'expéditeur voit ses pubs en trois
+  sections — En ligne, En attente (validation ou paiement), Refusées — avec
+  compteurs.
+- **Détails de l'image avant publication** : dans le formulaire (expéditeur ET
+  fondateur), après choix de la bannière, affichage des dimensions en pixels,
+  du poids du fichier (Ko/Mo) et du nom, plus un conseil (16:9, < 2 Mo).
+- **Fondateur sans validation** : rappel affiché dans son formulaire — ses
+  publicités sont mises en ligne immédiatement (il n'a pas besoin
+  d'approbation) ; il conserve la liste complète des pubs avec filtre
+  « À traiter / Toutes ».
+- **Dossier rejeté : l'expéditeur reprend la main** : bannière « Dossier
+  rejeté » avec motif dans l'inscription expéditeur et sur l'écran de rôle ;
+  il peut basculer entre voyageur ordinaire ↔ micro-importateur puis renvoyer
+  le dossier, qui repasse automatiquement **en attente de validation des
+  admins/super admins**.
 - **Bouton « Publier une publicité » bien visible** : une grande carte dédiée
   (icône 📣) apparaît sur le tableau de bord de l'expéditeur — notamment les
   micro-importateurs — sous « Scanner un colis ». Un appui ouvre la soumission
