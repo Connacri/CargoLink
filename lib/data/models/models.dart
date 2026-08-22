@@ -972,10 +972,20 @@ class Broadcast {
 }
 
 // ============================================================================
-// AD MODEL (Bannière publicitaire affichée sur l'accueil client)
+// AD MODEL (Bannière publicitaire affichée en haut des accueil client/expéditeur)
+//
+// Cycle de vie : les pubs créées par un admin/fondateur sont actives
+// immédiatement et gratuites. Un expéditeur soumet sa pub (pending), un admin
+// l'approuve (awaiting_payment), l'expéditeur déclare son paiement puis
+// l'admin confirme (active). Rejet possible à chaque étape (rejected).
 // ============================================================================
 
 class Ad {
+  static const String statusActive = 'active';
+  static const String statusPending = 'pending';
+  static const String statusAwaitingPayment = 'awaiting_payment';
+  static const String statusRejected = 'rejected';
+
   final String id;
   final String imageUrl;
   final String linkUrl;
@@ -983,6 +993,23 @@ class Ad {
   final String? createdBy;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? title;
+
+  /// Cible de la pub : 'all', 'clients' ou 'shippers'.
+  final String audience;
+
+  /// 'active', 'pending', 'awaiting_payment' ou 'rejected'.
+  final String status;
+
+  /// Frais de publication en DZD (0 pour une pub créée par un admin).
+  final double priceDzd;
+
+  final String? reviewedBy;
+  final DateTime? reviewedAt;
+  final String? rejectionReason;
+
+  /// Date à laquelle l'expéditeur a déclaré avoir payé (null sinon).
+  final DateTime? paymentDeclaredAt;
 
   Ad({
     required this.id,
@@ -992,6 +1019,14 @@ class Ad {
     this.createdBy,
     required this.createdAt,
     required this.updatedAt,
+    this.title,
+    this.audience = 'all',
+    this.status = statusActive,
+    this.priceDzd = 0,
+    this.reviewedBy,
+    this.reviewedAt,
+    this.rejectionReason,
+    this.paymentDeclaredAt,
   });
 
   factory Ad.fromJson(Map<String, dynamic> json) {
@@ -1003,6 +1038,19 @@ class Ad {
       createdBy: json['created_by'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
+      title: json['title'] as String?,
+      audience: json['audience'] as String? ?? 'all',
+      status: json['status'] as String? ?? statusActive,
+      priceDzd:
+          (json['price_dzd'] as num?)?.toDouble() ?? 0,
+      reviewedBy: json['reviewed_by'] as String?,
+      reviewedAt: json['reviewed_at'] == null
+          ? null
+          : DateTime.parse(json['reviewed_at'] as String),
+      rejectionReason: json['rejection_reason'] as String?,
+      paymentDeclaredAt: json['payment_declared_at'] == null
+          ? null
+          : DateTime.parse(json['payment_declared_at'] as String),
     );
   }
 
@@ -1015,10 +1063,37 @@ class Ad {
       'created_by': createdBy,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'title': title,
+      'audience': audience,
+      'status': status,
+      'price_dzd': priceDzd,
+      'reviewed_by': reviewedBy,
+      'reviewed_at': reviewedAt?.toIso8601String(),
+      'rejection_reason': rejectionReason,
+      'payment_declared_at': paymentDeclaredAt?.toIso8601String(),
     };
   }
 
-  Ad copyWith({bool? isActive}) {
+  bool get isPending => status == statusPending;
+  bool get isAwaitingPayment => status == statusAwaitingPayment;
+  bool get isRejected => status == statusRejected;
+  bool get isLive => status == statusActive && isActive;
+
+  static const Map<String, String> audienceLabels = {
+    'all': 'Tous',
+    'clients': 'Clients',
+    'shippers': 'Expéditeurs',
+  };
+
+  String get audienceLabel => audienceLabels[audience] ?? audience;
+
+  Ad copyWith({
+    bool? isActive,
+    String? status,
+    String? rejectionReason,
+    DateTime? reviewedAt,
+    DateTime? paymentDeclaredAt,
+  }) {
     return Ad(
       id: id,
       imageUrl: imageUrl,
@@ -1027,6 +1102,14 @@ class Ad {
       createdBy: createdBy,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      title: title,
+      audience: audience,
+      status: status ?? this.status,
+      priceDzd: priceDzd,
+      reviewedBy: reviewedBy,
+      reviewedAt: reviewedAt ?? this.reviewedAt,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
+      paymentDeclaredAt: paymentDeclaredAt ?? this.paymentDeclaredAt,
     );
   }
 }

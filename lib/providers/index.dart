@@ -649,7 +649,7 @@ final broadcastsProvider = FutureProvider<List<Broadcast>>((ref) async {
 });
 
 // ============================================================================
-// ADS PROVIDERS (bannières publicitaires accueil client)
+// ADS PROVIDERS (bannières publicitaires accueil client + expéditeur)
 // ============================================================================
 
 final adsServiceProvider = Provider<AdsService>((ref) {
@@ -659,12 +659,22 @@ final adsServiceProvider = Provider<AdsService>((ref) {
 /// Active ads shown on the client home (newest first). Invalide après chaque
 /// création/modification/suppression par le fondateur.
 final activeAdsProvider = FutureProvider<List<Ad>>((ref) async {
-  return ref.watch(adsServiceProvider).getActiveAds();
+  return ref.watch(adsServiceProvider).getActiveAds(audience: 'clients');
+});
+
+/// Active ads shown on the shipper dashboard (newest first).
+final shipperActiveAdsProvider = FutureProvider<List<Ad>>((ref) async {
+  return ref.watch(adsServiceProvider).getActiveAds(audience: 'shippers');
 });
 
 /// All ads for the founder management screen.
 final allAdsProvider = FutureProvider<List<Ad>>((ref) async {
   return ref.watch(adsServiceProvider).getAllAds();
+});
+
+/// Ads submitted by the current user (expéditeur « Mes publicités »).
+final myAdsProvider = FutureProvider<List<Ad>>((ref) async {
+  return ref.watch(adsServiceProvider).getMyAds();
 });
 
 // ============================================================================

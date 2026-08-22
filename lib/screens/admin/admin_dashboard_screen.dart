@@ -250,10 +250,32 @@ class _ShipperVerificationCard extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: AppTheme.spaceSm + 4),
-            if (shipper.passportPhotoUrl.isNotEmpty)
-              _preview(context, 'Photo passeport', shipper.passportPhotoUrl),
-            if (shipper.livePhotoUrl.isNotEmpty)
-              _preview(context, 'Photo en direct', shipper.livePhotoUrl),
+            if (shipper.passportPhotoUrl.isNotEmpty ||
+                shipper.livePhotoUrl.isNotEmpty ||
+                (shipper.microCardPhotoUrl?.isNotEmpty ?? false)) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (shipper.passportPhotoUrl.isNotEmpty)
+                    _preview(context, 'Passeport', shipper.passportPhotoUrl),
+                  if (shipper.livePhotoUrl.isNotEmpty) ...[
+                    if (shipper.passportPhotoUrl.isNotEmpty)
+                      const SizedBox(width: AppTheme.spaceSm),
+                    _preview(context, 'Selfie', shipper.livePhotoUrl),
+                  ],
+                  if (shipper.microCardPhotoUrl?.isNotEmpty ?? false) ...[
+                    const SizedBox(width: AppTheme.spaceSm),
+                    _preview(
+                        context, 'Carte micro', shipper.microCardPhotoUrl!),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Touchez une photo pour l\'agrandir',
+                style: AppTheme.caption.copyWith(fontSize: 11),
+              ),
+            ],
             const SizedBox(height: AppTheme.spaceSm + 4),
             Row(
               children: [
@@ -288,26 +310,37 @@ class _ShipperVerificationCard extends ConsumerWidget {
     );
   }
 
+  /// Small square (1:1) tappable preview that opens the full-screen zoom
+  /// viewer. Must be placed inside a [Row].
   Widget _preview(BuildContext context, String label, String url) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+    return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AppTheme.caption),
+          Text(
+            label,
+            style: AppTheme.caption,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: AppTheme.spaceXs),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-            child: Image.network(
-              url,
-              height: 80,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const SizedBox(
-                height: 80,
-                child: Center(
-                  child: Text('Aperçu indisponible',
-                      style: AppTheme.bodySecondary),
+          GestureDetector(
+            onTap: () =>
+                showFullScreenImage(context, imageUrl: url, title: label),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                child: Image.network(
+                  url,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: AppTheme.surfaceMuted,
+                    child: const Center(
+                      child: Icon(Icons.broken_image_outlined,
+                          color: AppTheme.textMutedColor),
+                    ),
+                  ),
                 ),
               ),
             ),

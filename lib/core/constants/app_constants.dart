@@ -41,7 +41,11 @@ class AppConstants {
   static const List<String> supportedCurrencies = ['DZD', 'EUR', 'USD', 'CNY'];
   static const double platformCommissionPercent = 5.0;
   static const double minPricePerKg = 500.0; // DZD
-  
+
+  /// Frais de publication d'une publicité soumise par un expéditeur (DZD).
+  /// Doit rester synchronisé avec app_internal.guard_ads_non_admin (SQL).
+  static const double adPublicationFeeDzd = 2000.0;
+
   // Locations (Algerian cities)
   static const List<String> majorCities = [
     'Alger',

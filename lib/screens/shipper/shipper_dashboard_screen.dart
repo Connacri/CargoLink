@@ -9,6 +9,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/utils/profile_navigation.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/ad_sliver_header.dart';
 import '../../core/widgets/notification_widgets.dart';
 import '../../core/widgets/chat_widgets.dart';
 import '../shared/qr_scan_screen.dart';
@@ -272,6 +273,10 @@ class _ShipperDashboardScreenState
         ? null
         : pager.items.where((s) => s.status == _statusFilter).toList();
 
+    // Bannière sponsorisée (pub ciblée « Expéditeurs ») à la place du header.
+    final activeAds = ref.watch(shipperActiveAdsProvider).valueOrNull ?? [];
+    final currentAd = activeAds.isNotEmpty ? activeAds.first : null;
+
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
@@ -285,27 +290,20 @@ class _ShipperDashboardScreenState
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            GradientSliverHeader(
-              title: 'Tableau de bord',
-              subtitle:
-                  '${shipper.user?.fullName ?? 'Espace expéditeur'}  •  ★ ${shipper.ratingDisplay}'
-                  '${shipper.isMicroImportateur ? '  •  Micro-importateur' : ''}',
-              icon: Icons.flight_takeoff_rounded,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const ChatInboxBadge(),
-                  GestureDetector(
-                    onTap: () => _showNotificationsSheet(context),
-                    child: const Padding(
-                      padding: EdgeInsets.only(right: 8),
-                      child: UnreadNotificationBadge(),
-                    ),
-                  ),
-                  const LogoutIconButton(),
-                ],
+            if (currentAd != null)
+              AdSliverHeader(
+                ad: currentAd,
+                trailing: _headerTrailing(),
+              )
+            else
+              GradientSliverHeader(
+                title: 'Tableau de bord',
+                subtitle:
+                    '${shipper.user?.fullName ?? 'Espace expéditeur'}  •  ★ ${shipper.ratingDisplay}'
+                    '${shipper.isMicroImportateur ? '  •  Micro-importateur' : ''}',
+                icon: Icons.flight_takeoff_rounded,
+                trailing: _headerTrailing(),
               ),
-            ),
             SliverToBoxAdapter(
               child: _buildStats(shipper),
             ),
@@ -361,6 +359,28 @@ class _ShipperDashboardScreenState
           ],
         ),
       ),
+    );
+  }
+
+  Widget _headerTrailing() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: 'Mes publicités',
+          icon: const Icon(Icons.campaign_outlined, color: Colors.white),
+          onPressed: () => Navigator.of(context).pushNamed('/my-ads'),
+        ),
+        const ChatInboxBadge(),
+        GestureDetector(
+          onTap: () => _showNotificationsSheet(context),
+          child: const Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: UnreadNotificationBadge(),
+          ),
+        ),
+        const LogoutIconButton(),
+      ],
     );
   }
 

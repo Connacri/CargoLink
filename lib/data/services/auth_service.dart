@@ -70,12 +70,29 @@ class GoogleSignInResult {
 class AuthService {
   AuthService({fbauth.FirebaseAuth? firebaseAuth})
       : _auth = firebaseAuth ?? fbauth.FirebaseAuth.instance,
-        _logger = Logger();
+        _logger = Logger() {
+    // Le jeton Supabase échangé vit ~1 h : on branche le mécanisme
+    // d'auto-refresh de SupabaseConfig sur notre Edge Function d'échange pour
+    // qu'aucune requête ne parte avec un « JWT expired » (PGRST303) après une
+    // heure de session ouverte.
+    SupabaseConfig.setTokenRefresher(_refreshSupabaseToken);
+  }
 
   final fbauth.FirebaseAuth _auth;
   final Logger _logger;
 
   fbauth.FirebaseAuth get firebaseAuth => _auth;
+
+  /// Re-exchange un ID token Firebase frais contre un nouveau jeton Supabase.
+  /// Appelé par [SupabaseConfig._resolveAccessToken] quand le jeton courant
+  /// approche son expiration. Lève si l'utilisateur s'est déconnecté.
+  Future<String> _refreshSupabaseToken() async {
+    final user = _auth.currentUser;
+    if (user == null) throw StateError('Utilisateur déconnecté');
+    final token = await _exchangeForSupabaseToken(user);
+    SupabaseConfig.setAccessToken(token);
+    return token;
+  }
 
   /// Stream of authentication state. Yields the initial state immediately, then
   /// follows FirebaseAuth's `authStateChanges`. Every emitted signed-in user

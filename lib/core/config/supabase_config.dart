@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -32,16 +35,81 @@ class SupabaseConfig {
   // through the `accessToken` callback (the documented way to bridge a
   // third-party auth system with Supabase): every request carries it as the
   // `Authorization` header while it is non-null, and falls back to the anon key
-  // when signed out.
+  // when signed out. Le callback rafraîchit AU VOL le jeton Supabase quand il
+  // approche son expiration (durée de vie ~1 h) — sinon, après une heure de
+  // session, chaque requête REST échouait en PGRST303 « JWT expired ».
   static final SupabaseClient _client = SupabaseClient(
     supabaseUrl,
     supabaseAnonKey,
-    accessToken: () async => _supabaseJwt,
+    accessToken: _resolveAccessToken,
   );
 
   static String? _supabaseJwt;
 
+  /// Re-exchange hook (registered by AuthService) : Firebase ID token frais ->
+  /// Edge Function -> nouveau jeton Supabase.
+  static Future<String> Function()? _tokenRefresher;
+
+  /// Refresh déjà en cours — partagé pour que 20 requêtes simultanées ne
+  /// déclenchent qu'un seul échange.
+  static Future<String>? _refreshInFlight;
+
   static SupabaseClient get client => _client;
+
+  /// Enregistre la fonction de re-exchange (appelée au démarrage par
+  /// [AuthService]). Best-effort : sans elle, on retombe sur l'ancien
+  /// comportement (jeton figé).
+  static void setTokenRefresher(Future<String> Function() refresher) {
+    _tokenRefresher = refresher;
+  }
+
+  /// Résout le jeton à attacher à la requête : renvoie le jeton courant sauf
+  /// s'il est expiré ou sur le point de l'être (< 2 min), auquel cas un
+  /// re-exchange est tenté une seule fois et partagé entre appelants.
+  static Future<String?> _resolveAccessToken() async {
+    final jwt = _supabaseJwt;
+    if (jwt == null) return null;
+    if (!_isExpiredOrExpiring(jwt)) return jwt;
+
+    final refresher = _tokenRefresher;
+    if (refresher != null) {
+      _refreshInFlight ??= () async {
+        try {
+          return await refresher();
+        } finally {
+          _refreshInFlight = null;
+        }
+      }();
+      try {
+        return await _refreshInFlight;
+      } catch (_) {
+        // Réseau indisponible ou utilisateur déconnecté entre-temps : on
+        // renvoie l'ancien jeton plutôt que de repasser anonyme (des listes
+        // vides silencieuses seraient pires qu'une erreur explicite).
+      }
+    }
+    return jwt;
+  }
+
+  /// Décode le claim `exp` du JWT (sans vérifier la signature — inutile ici,
+  /// le jeton vient de notre propre Edge Function) et indique s'il est expiré
+  /// ou expire dans moins de 2 minutes.
+  static bool _isExpiredOrExpiring(String jwt) {
+    try {
+      final part = jwt.split('.')[1];
+      final normalized =
+          base64Url.normalize(part.padRight((part.length + 3) & ~3, '='));
+      final payload =
+          jsonDecode(utf8.decode(base64Url.decode(normalized)))
+              as Map<String, dynamic>;
+      final exp = (payload['exp'] as num?)?.toInt();
+      if (exp == null) return false;
+      return DateTime.fromMillisecondsSinceEpoch(exp * 1000)
+          .isBefore(DateTime.now().add(const Duration(minutes: 2)));
+    } catch (_) {
+      return false;
+    }
+  }
 
   /// Whether a Firebase-minted access token is currently active. When false,
   /// every request falls back to the anon key and RLS (`auth.uid() = id`)

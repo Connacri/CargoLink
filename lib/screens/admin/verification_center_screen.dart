@@ -142,18 +142,32 @@ class _VerificationCard extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: AppTheme.spaceSm + 4),
-            if (shipper.passportPhotoUrl.isNotEmpty)
-              _photoTile(
-                context,
-                'Photo passeport',
-                shipper.passportPhotoUrl,
+            if (shipper.passportPhotoUrl.isNotEmpty ||
+                shipper.livePhotoUrl.isNotEmpty ||
+                (shipper.microCardPhotoUrl?.isNotEmpty ?? false)) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (shipper.passportPhotoUrl.isNotEmpty)
+                    _photoTile(context, 'Passeport', shipper.passportPhotoUrl),
+                  if (shipper.livePhotoUrl.isNotEmpty) ...[
+                    if (shipper.passportPhotoUrl.isNotEmpty)
+                      const SizedBox(width: AppTheme.spaceSm),
+                    _photoTile(context, 'Selfie', shipper.livePhotoUrl),
+                  ],
+                  if (shipper.microCardPhotoUrl?.isNotEmpty ?? false) ...[
+                    const SizedBox(width: AppTheme.spaceSm),
+                    _photoTile(
+                        context, 'Carte micro', shipper.microCardPhotoUrl!),
+                  ],
+                ],
               ),
-            if (shipper.livePhotoUrl.isNotEmpty)
-              _photoTile(
-                context,
-                'Photo en direct',
-                shipper.livePhotoUrl,
+              const SizedBox(height: 2),
+              Text(
+                'Touchez une photo pour l\'agrandir',
+                style: AppTheme.caption.copyWith(fontSize: 11),
               ),
+            ],
             const SizedBox(height: AppTheme.spaceSm + 4),
             Row(
               children: [
@@ -188,22 +202,27 @@ class _VerificationCard extends ConsumerWidget {
     );
   }
 
-  /// Tappable photo preview that opens the full-screen zoom viewer.
+  /// Small square (1:1) tappable preview that opens the full-screen zoom
+  /// viewer. Must be placed inside a [Row].
   Widget _photoTile(BuildContext context, String label, String url) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+    return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AppTheme.caption),
+          Text(
+            label,
+            style: AppTheme.caption,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: AppTheme.spaceXs),
           GestureDetector(
             onTap: () =>
                 showFullScreenImage(context, imageUrl: url, title: label),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                 child: Image.network(
                   url,
                   fit: BoxFit.cover,
@@ -217,11 +236,6 @@ class _VerificationCard extends ConsumerWidget {
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            'Touchez pour agrandir',
-            style: AppTheme.caption.copyWith(fontSize: 11),
           ),
         ],
       ),

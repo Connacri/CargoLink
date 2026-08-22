@@ -298,20 +298,27 @@ class _BookingDetail extends StatelessWidget {
                                 itemCount: b.productPhotosUrl!.length,
                                 separatorBuilder: (_, __) => const SizedBox(
                                     width: AppTheme.spaceSm),
-                                itemBuilder: (context, i) => ClipRRect(
-                                  borderRadius: BorderRadius.circular(
-                                      AppTheme.radiusSm),
-                                  child: Image.network(
-                                    b.productPhotosUrl![i],
-                                    width: 72,
-                                    height: 72,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Container(
+                                itemBuilder: (context, i) => GestureDetector(
+                                  onTap: () => showFullScreenImage(
+                                    context,
+                                    imageUrl: b.productPhotosUrl![i],
+                                    title: 'Photo produit ${i + 1}',
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(
+                                        AppTheme.radiusSm),
+                                    child: Image.network(
+                                      b.productPhotosUrl![i],
                                       width: 72,
                                       height: 72,
-                                      color: AppTheme.surfaceColor,
-                                      child: const Icon(
-                                          Icons.broken_image_outlined),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        width: 72,
+                                        height: 72,
+                                        color: AppTheme.surfaceColor,
+                                        child: const Icon(
+                                            Icons.broken_image_outlined),
+                                      ),
                                     ),
                                   ),
                                 ),
