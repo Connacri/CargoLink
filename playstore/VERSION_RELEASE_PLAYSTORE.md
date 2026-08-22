@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.14** |
-| Code de version (versionCode) | **141** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `068725a` |
-| Statut CI | À publier au prochain push → release `v1.0.14` sur GitHub |
+| Version (versionName) | **1.0.15** |
+| Code de version (versionCode) | **144** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `3d58451` |
+| Statut CI | À publier au prochain push → release `v1.0.15` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.0** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.15** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,13 +32,28 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
-- **Filtre Voyageurs / Micro-importateurs corrigé** : sur l'accueil client,
-  les chips filtrent désormais réellement les offres par type d'expéditeur
-  (toutes les offres s'affichaient quel que soit le choix) ; la recherche
-  respecte aussi la chip active, et changer de chip pendant une recherche
-  relance celle-ci avec le même filtre.
+- **Régie publicitaire complète** : le fondateur crée des pubs façon Facebook
+  Ads depuis « Publicités » — image paysage, titre, lien de destination et
+  **audience au choix (Tous / Clients / Expéditeurs)** avec aperçu en direct ;
+  la bannière cliquable s'affiche en haut de l'accueil ciblé et ouvre le lien.
+- **Publicités expéditeur avec validation et paiement** : un expéditeur soumet
+  sa pub (« Mes publicités », icône 📣 du tableau de bord) ; après
+  **acceptation par un admin/super admin**, il déclare le paiement des frais de
+  publication (2000 DZD), l'admin confirme, la pub passe **en ligne**. Suivi de
+  statut complet côté expéditeur (validation en cours, paiement requis,
+  paiement déclaré, en ligne, refusée + motif).
+- **Session qui n'expire plus (PGRST303)** : le JWT Supabase échangé contre le
+  compte Firebase est maintenant **renouvelé automatiquement** avant expiration
+  (décodage de la date d'exp, rafraîchissement partagé à 2 min du seuil), fini
+  les erreurs « JWT expired » au bout d'une heure.
+- **Photos KYC agrandissables (admin & fondateur)** : dans les dossiers en
+  attente de vérification, chaque photo (passeport, selfie, carte micro-
+  importateur — cette dernière désormais affichée) apparaît en **aperçu carré
+  1:1** ; un appui ouvre la photo en plein écran avec pincement pour zoomer et
+  vérifier l'authenticité. Les photos produit du détail commande fondateur sont
+  aussi agrandissables.
 
-### Version 1.0.13
+### Version 1.0.14
 
 - **Suivi multi-colis sur l'accueil client** : la carte « Suivi de colis »
   affiche désormais **tous les colis pas encore livrés** (et non plus une
