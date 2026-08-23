@@ -19,6 +19,21 @@ class StorageService {
   // UPLOAD METHODS
   // ============================================================================
 
+  /// Supabase Storage n'accepte que des clés « sûres » : ASCII, sans espaces,
+  /// accents ni parenthèses. Les sélecteurs de fichiers (surtout Windows)
+  /// renvoient souvent des noms comme « scaled_télécharger (3).jfif » → on
+  /// assainit systématiquement avant de construire la clé finale.
+  String _sanitizeFileName(String fileName) {
+    final ext =
+        p.extension(fileName).toLowerCase().replaceAll(RegExp(r'[^a-z0-9.]'), '');
+    var base = p.basenameWithoutExtension(fileName)
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+    if (base.isEmpty) base = 'file';
+    return '${DateTime.now().millisecondsSinceEpoch}_$base$ext';
+  }
+
   /// Upload image file
   Future<String> uploadImage({
     required File file,
@@ -28,7 +43,7 @@ class StorageService {
     try {
       _logger.i('Uploading image to $bucket/$path');
 
-      final fileName = p.basename(file.path);
+      final fileName = _sanitizeFileName(p.basename(file.path));
       final fullPath = '$path/$fileName';
 
       await _supabase.storage.from(bucket).uploadBinary(
@@ -59,7 +74,8 @@ class StorageService {
     try {
       _logger.i('Uploading image bytes to $bucket/$path');
 
-      final fullPath = '$path/$fileName';
+      final safeName = _sanitizeFileName(fileName);
+      final fullPath = '$path/$safeName';
 
       await _supabase.storage.from(bucket).uploadBinary(
             fullPath,
