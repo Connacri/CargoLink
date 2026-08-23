@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.25** |
-| Code de version (versionCode) | **165** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `f6e28ea` |
-| Statut CI | À publier au prochain push → release `v1.0.25` sur GitHub |
+| Version (versionName) | **1.0.26** |
+| Code de version (versionCode) | **167** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `8dc237a` |
+| Statut CI | À publier au prochain push → release `v1.0.26` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.25** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.26** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,11 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Correction de l'échec d'inscription micro-importateur (InvalidKey 400)** :
+  les noms de fichiers avec accents, espaces ou parenthèses choisis via le
+  sélecteur Windows (ex. « scaled_télécharger (3).jfif ») sont désormais
+  assainis côté service avant l'envoi vers Supabase Storage — la clé générée
+  est toujours ASCII sûre (horodatage + nom nettoyé + extension).
 - **Carrousel des publicités** : sur les accueils client et expéditeur, toutes
   les pubs actives publiées défilent dans un bandeau (défilement automatique
   toutes les 4 s, points indicateurs, clic = ouverture du lien de la pub
