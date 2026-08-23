@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.22** |
-| Code de version (versionCode) | **158** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `bb947fe` |
-| Statut CI | À publier au prochain push → release `v1.0.22` sur GitHub |
+| Version (versionName) | **1.0.23** |
+| Code de version (versionCode) | **161** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `431cf1c` |
+| Statut CI | À publier au prochain push → release `v1.0.23` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.22** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.23** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,20 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Headers compacts partout (sauf profils)** : le grand header dégradé
+  extensible est désormais réservé aux écrans de profil (client, expéditeur,
+  profils publics). Tous les autres écrans — accueils, dashboards, listes,
+  formulaires, réglages — utilisent une barre supérieure fine et épinglée
+  (titre + sous-titre sur une ligne, icône, actions conservées) :
+  l'espace d'affichage gagné profite au contenu utile sur tous les écrans.
+- **Bannière publicitaire compacte** : sur les accueils client et expéditeur,
+  la pub sponsorisée devient un bandeau fixe de 140 px juste sous la barre
+  « CargoLink » (épinglé avec elle) au lieu du header plein écran — le
+  contenu démarre immédiatement, la pub reste cliquable.
+- **Rappel — cloisonnement des pubs expéditeur** : chaque micro-importateur
+  ne voit dans « Mes publicités » que ses propres pubs (en attente, en ligne
+  ou refusées) ; les bannières actives restent diffusées aux clients et aux
+  expéditeurs sur les accueils.
 - **Durée d'affichage libre pour les publicités** : le micro-importateur (et le
   fondateur) saisissent n'importe quelle durée de 1 à 365 jours — plus de
   paliers imposés. Des raccourcis (puces des durées configurées) restent
