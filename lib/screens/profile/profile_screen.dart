@@ -1663,7 +1663,10 @@ class _AppVersionFooter extends StatelessWidget {
       future: PackageInfo.fromPlatform(),
       builder: (context, snapshot) {
         final info = snapshot.data;
-        final version = info == null ? '' : ' v${info.version}';
+        // Version alignée sur les tags CI (ex : v1.0.18, build 150).
+        final label = info == null || info.version.isEmpty
+            ? 'CargoLink'
+            : 'CargoLink v${info.version} (${info.buildNumber})';
         return Padding(
           padding: const EdgeInsets.fromLTRB(
             AppTheme.spaceMd,
@@ -1674,7 +1677,7 @@ class _AppVersionFooter extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                'CargoLink$version',
+                label,
                 style: AppTheme.caption.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: AppTheme.spaceXs),
