@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.18** |
-| Code de version (versionCode) | **150** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `5db50e0` |
-| Statut CI | À publier au prochain push → release `v1.0.18` sur GitHub |
+| Version (versionName) | **1.0.19** |
+| Code de version (versionCode) | **152** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `e88e9ff` |
+| Statut CI | À publier au prochain push → release `v1.0.19` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.18** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.19** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,12 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Version de l'app alignée sur les tags CI** : le pied de page du profil
+  affiche désormais « CargoLink v1.0.19 (152) » — versionName + versionCode
+  identiques aux tags GitHub Releases. `pubspec.yaml` suit le dernier tag
+  publié (les builds signés CI écrasent toujours avec la valeur du tag via
+  `--build-name/--build-number`) ; le build web reçoit aussi ces flags et son
+  `version.json` utilise la bonne clé (`build_number`) pour package_info_plus.
 - **Durée d'affichage au choix avec prix en direct** : lors de la soumission
   d'une publicité, le micro-importateur choisit la période d'affichage —
   7 jours (2 000 DZD), 15 jours (3 500 DZD) ou 30 jours (6 000 DZD) — et voit
