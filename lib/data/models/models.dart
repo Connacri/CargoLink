@@ -1209,6 +1209,38 @@ class AdPricingRule {
     return Ad.priceForDuration(days);
   }
 
+  /// Prix pour une durée LIBRE (miroir exact du trigger SQL) : palier exact,
+  /// sinon interpolation linéaire entre les deux paliers encadrants, sinon
+  /// prorata du premier/dernier palier. Courbe utilisée : lignes de
+  /// l'audience choisie, sinon les lignes 'all', sinon toutes.
+  static double priceForFlexible(
+      List<AdPricingRule> rules, int days, String audience) {
+    final d = days.clamp(1, 365);
+    var pool = rules.where((r) => r.audience == audience).toList();
+    if (pool.isEmpty) pool = rules.where((r) => r.audience == 'all').toList();
+    if (pool.isEmpty) pool = List.of(rules);
+    pool.sort((a, b) => a.durationDays.compareTo(b.durationDays));
+
+    for (final r in pool) {
+      if (r.durationDays == d) return r.priceDzd;
+    }
+    AdPricingRule? lo;
+    AdPricingRule? hi;
+    for (final r in pool) {
+      if (r.durationDays < d) lo = r; // garde le plus proche en dessous
+      if (r.durationDays > d && hi == null) hi = r; // premier au-dessus
+    }
+    double ceil(num v) => v.ceilToDouble();
+    if (lo != null && hi != null) {
+      return ceil(lo.priceDzd +
+          (hi.priceDzd - lo.priceDzd) * (d - lo.durationDays) /
+              (hi.durationDays - lo.durationDays));
+    }
+    if (hi != null) return ceil(hi.priceDzd * d / hi.durationDays);
+    if (lo != null) return ceil(lo.priceDzd * d / lo.durationDays);
+    return Ad.priceForDuration(d);
+  }
+
   /// Durées disponibles dans la grille, triées.
   static List<int> durationsOf(List<AdPricingRule> rules) {
     final days = rules.map((r) => r.durationDays).toSet().toList()..sort();

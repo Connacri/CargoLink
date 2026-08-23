@@ -30,14 +30,23 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
   int? _imageWidth;
   int? _imageHeight;
 
-  /// Durée d'affichage choisie : 7, 15 ou 30 jours (grille tarifaire Ad).
-  int _durationDays = 7;
+  /// Durée d'affichage choisie : champ libre de 1 à 365 jours (le prix suit
+  /// la grille du fondateur par interpolation).
+  final TextEditingController _daysController =
+      TextEditingController(text: '7');
 
   @override
   void dispose() {
     _titleController.dispose();
     _linkController.dispose();
+    _daysController.dispose();
     super.dispose();
+  }
+
+  /// Durée saisie (null si invalide : vide, non entier, hors 1..365).
+  int? get _parsedDays {
+    final v = int.tryParse(_daysController.text.trim());
+    return (v == null || v < 1 || v > 365) ? null : v;
   }
 
   /// Libellé lisible du poids du fichier (Ko / Mo).
@@ -107,6 +116,11 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
       _snack('Lien invalide (ex: https://monsite.com)', AppTheme.errorColor);
       return;
     }
+    final days = _parsedDays;
+    if (days == null) {
+      _snack('Durée invalide : entre 1 et 365 jours', AppTheme.errorColor);
+      return;
+    }
 
     setState(() => _isSaving = true);
     try {
@@ -124,7 +138,7 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
             linkUrl: link,
             audience: _audience,
             title: _titleController.text,
-            durationDays: _durationDays,
+            durationDays: days,
           );
       _titleController.clear();
       _linkController.clear();
@@ -132,7 +146,7 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
         _imageBytes = null;
         _imageName = '';
         _audience = 'all';
-        _durationDays = 7;
+        _daysController.text = '7';
         _imageWidth = null;
         _imageHeight = null;
       });
@@ -259,10 +273,10 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
                         SizedBox(width: AppTheme.spaceSm),
                            Expanded(
                              child: Text(
-                               'Choisissez la cible et la durée d\'affichage : '
-                               'le prix à payer s\'affiche en direct. Votre '
-                               'pub est validée par un admin avant mise en '
-                               'ligne.',
+                               'Choisissez la cible et la durée d\'affichage '
+                               '(durée libre) : le prix à payer s\'affiche en '
+                               'direct. Votre pub est validée par un admin '
+                               'avant mise en ligne.',
                                style: AppTheme.caption,
                              ),
                            ),
@@ -446,26 +460,40 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
           const SizedBox(height: AppTheme.spaceSm + 4),
           const Text('Durée d\'affichage', style: AppTheme.caption),
           const SizedBox(height: AppTheme.spaceXs),
+          TextField(
+            controller: _daysController,
+            keyboardType: TextInputType.number,
+            maxLength: 3,
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              labelText: 'Nombre de jours (durée libre)',
+              hintText: 'Ex : 7, 12, 30…',
+              prefixIcon: Icon(Icons.schedule_rounded),
+              suffixText: 'jours',
+              counterText: '',
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceXs),
           Wrap(
             spacing: AppTheme.spaceXs,
             runSpacing: AppTheme.spaceXs,
-            children: AdPricingRule.durationsOf(pricing).map((days) {
-              final selected = _durationDays == days;
-              final price = AdPricingRule.priceFor(pricing, days, _audience);
-              return ChoiceChip(
-                label: Text(
-                    '$days j · ${price.toStringAsFixed(0)} ${AppConstants.defaultCurrency}'),
-                selected: selected,
-                onSelected: (_) => setState(() => _durationDays = days),
-                selectedColor: AppTheme.primaryColor.withValues(alpha: 0.15),
-                labelStyle: TextStyle(
-                  color: selected
-                      ? AppTheme.primaryColor
-                      : AppTheme.textSecondaryColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              );
-            }).toList(),
+            children: AdPricingRule.durationsOf(pricing)
+                .map((days) => ActionChip(
+                      label: Text('$days j'),
+                      onPressed: () =>
+                          setState(() => _daysController.text = '$days'),
+                      backgroundColor:
+                          _parsedDays == days
+                              ? AppTheme.primaryColor.withValues(alpha: 0.15)
+                              : null,
+                      labelStyle: TextStyle(
+                        color: _parsedDays == days
+                            ? AppTheme.primaryColor
+                            : AppTheme.textSecondaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ))
+                .toList(),
           ),
           const SizedBox(height: AppTheme.spaceSm),
           Container(
@@ -484,14 +512,15 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
                 const SizedBox(width: AppTheme.spaceSm),
                 Expanded(
                   child: Text(
-                    'Votre pub restera en ligne $_durationDays jours après '
-                    'validation.',
+                    _parsedDays == null
+                        ? 'Saisissez une durée valide (1 à 365 jours).'
+                        : 'Votre pub restera en ligne $_parsedDays '
+                            'jour(s) après validation.',
                     style: AppTheme.caption,
                   ),
                 ),
                 Text(
-                  '${_selectedPrice(pricing).toStringAsFixed(0)} '
-                  '${AppConstants.defaultCurrency}',
+                  '${_priceLabel(pricing)} ${AppConstants.defaultCurrency}',
                   style: AppTheme.caption.copyWith(
                     color: AppTheme.primaryColor,
                     fontWeight: FontWeight.w700,
@@ -516,17 +545,21 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
             label: Text(_isSaving
                 ? 'Envoi…'
                 : 'Envoyer pour validation '
-                    '(${_selectedPrice(pricing).toStringAsFixed(0)} '
-                    '${AppConstants.defaultCurrency})'),
+                    '(${_priceLabel(pricing)} ${AppConstants.defaultCurrency})'),
           ),
         ],
       ),
     );
   }
 
-  /// Prix affiché en direct : dépend de la durée choisie ET de la cible.
-  double _selectedPrice(List<AdPricingRule> pricing) =>
-      AdPricingRule.priceFor(pricing, _durationDays, _audience);
+  /// Prix affiché en direct : durée libre × cible, via la courbe tarifaire
+  /// du fondateur (même calcul que le serveur, à l'unité près).
+  String _priceLabel(List<AdPricingRule> pricing) {
+    final days = _parsedDays;
+    if (days == null) return '--';
+    return AdPricingRule.priceForFlexible(pricing, days, _audience)
+        .toStringAsFixed(0);
+  }
 
   /// Liste groupée : pubs en ligne d'abord, puis en attente (validation ou
   /// paiement), puis refusées — l'expéditeur voit tout ce qu'il a publié.

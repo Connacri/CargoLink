@@ -34,8 +34,9 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
   String _imageName = '';
   String _audience = 'all';
 
-  /// Durée d'affichage de la pub : 7, 15 ou 30 jours.
-  int _durationDays = 7;
+  /// Durée d'affichage de la pub : champ libre de 1 à 365 jours.
+  final TextEditingController _daysController =
+      TextEditingController(text: '7');
   bool _isSaving = false;
   late bool _showQueueOnly = widget.openOnValidationQueue;
   int? _imageWidth;
@@ -45,7 +46,14 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
   void dispose() {
     _titleController.dispose();
     _linkController.dispose();
+    _daysController.dispose();
     super.dispose();
+  }
+
+  /// Durée saisie (null si invalide : vide, non entier, hors 1..365).
+  int? get _parsedDays {
+    final v = int.tryParse(_daysController.text.trim());
+    return (v == null || v < 1 || v > 365) ? null : v;
   }
 
   /// Libellé lisible du poids du fichier (Ko / Mo).
@@ -115,6 +123,11 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
       _snack('Lien invalide (ex: https://monsite.com)', AppTheme.errorColor);
       return;
     }
+    final days = _parsedDays;
+    if (days == null) {
+      _snack('Durée invalide : entre 1 et 365 jours', AppTheme.errorColor);
+      return;
+    }
 
     setState(() => _isSaving = true);
     try {
@@ -132,7 +145,7 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
             linkUrl: link,
             audience: _audience,
             title: _titleController.text,
-            durationDays: _durationDays,
+            durationDays: days,
             activateImmediately: true,
           );
       _titleController.clear();
@@ -141,7 +154,7 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
         _imageBytes = null;
         _imageName = '';
         _audience = 'all';
-        _durationDays = 7;
+        _daysController.text = '7';
         _imageWidth = null;
         _imageHeight = null;
       });
@@ -474,24 +487,40 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
           const SizedBox(height: AppTheme.spaceSm + 4),
           const Text('Durée d\'affichage', style: AppTheme.caption),
           const SizedBox(height: AppTheme.spaceXs),
+          TextField(
+            controller: _daysController,
+            keyboardType: TextInputType.number,
+            maxLength: 3,
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              labelText: 'Nombre de jours (durée libre)',
+              hintText: 'Ex : 7, 12, 30…',
+              prefixIcon: Icon(Icons.schedule_rounded),
+              suffixText: 'jours',
+              counterText: '',
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceXs),
           Wrap(
             spacing: AppTheme.spaceXs,
             runSpacing: AppTheme.spaceXs,
-            children: _durations().map((days) {
-              final selected = _durationDays == days;
-              return ChoiceChip(
-                label: Text('$days jours'),
-                selected: selected,
-                onSelected: (_) => setState(() => _durationDays = days),
-                selectedColor: AppTheme.primaryColor.withValues(alpha: 0.15),
-                labelStyle: TextStyle(
-                  color: selected
-                      ? AppTheme.primaryColor
-                      : AppTheme.textSecondaryColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              );
-            }).toList(),
+            children: _durations()
+                .map((days) => ActionChip(
+                      label: Text('$days j'),
+                      onPressed: () =>
+                          setState(() => _daysController.text = '$days'),
+                      backgroundColor:
+                          _parsedDays == days
+                              ? AppTheme.primaryColor.withValues(alpha: 0.15)
+                              : null,
+                      labelStyle: TextStyle(
+                        color: _parsedDays == days
+                            ? AppTheme.primaryColor
+                            : AppTheme.textSecondaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ))
+                .toList(),
           ),
           const SizedBox(height: AppTheme.spaceMd),
           FilledButton.icon(
