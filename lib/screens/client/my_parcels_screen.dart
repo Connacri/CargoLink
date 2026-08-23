@@ -57,7 +57,7 @@ class MyParcelsScreen extends ConsumerWidget {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            const GradientSliverHeader(
+            const CompactSliverHeader(
               title: 'Mes colis',
               subtitle: 'Suivi de tous vos colis',
               icon: Icons.connecting_airports_rounded,

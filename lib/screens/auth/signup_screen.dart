@@ -98,7 +98,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         top: false,
         child: CustomScrollView(
           slivers: [
-            const GradientSliverHeader(
+            const CompactSliverHeader(
               title: 'Créer un compte',
               subtitle: 'Rejoignez CargoLink',
               icon: Icons.person_add_alt_1,

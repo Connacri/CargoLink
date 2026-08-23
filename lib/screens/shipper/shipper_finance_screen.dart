@@ -115,7 +115,7 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              GradientSliverHeader(
+              CompactSliverHeader(
                 title: 'Finance',
                 subtitle: shipper.user?.fullName ?? 'Espace expéditeur',
                 icon: Icons.account_balance_wallet_rounded,

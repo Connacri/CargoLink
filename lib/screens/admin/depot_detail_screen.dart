@@ -102,7 +102,7 @@ class _DepotDetailScreenState extends ConsumerState<DepotDetailScreen> {
             data: (list) => CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                GradientSliverHeader(
+                CompactSliverHeader(
                   title: widget.depot.name,
                   subtitle: [
                     if (widget.depot.city != null) widget.depot.city!,

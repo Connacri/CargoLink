@@ -100,7 +100,7 @@ class _AccountStatusScreenState extends ConsumerState<AccountStatusScreen> {
         top: false,
         child: CustomScrollView(
           slivers: [
-            GradientSliverHeader(
+            CompactSliverHeader(
               title: deletion ? 'Suppression programmée' : 'Compte désactivé',
               subtitle: deletion
                   ? 'Votre compte sera bientôt supprimé'

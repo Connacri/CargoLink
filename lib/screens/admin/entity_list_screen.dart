@@ -251,7 +251,7 @@ class _EntityListScreenState extends ConsumerState<EntityListScreen> {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              GradientSliverHeader(
+              CompactSliverHeader(
                 title: _title,
                 subtitle: 'Dossiers administrateur',
                 icon: _icon,

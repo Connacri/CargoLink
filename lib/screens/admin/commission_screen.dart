@@ -35,7 +35,7 @@ class CommissionScreen extends ConsumerWidget {
               return CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  GradientSliverHeader(
+                  CompactSliverHeader(
                     title: 'Commissions',
                     subtitle:
                         'Commission plateforme ($rate%) · encaissées et dues',

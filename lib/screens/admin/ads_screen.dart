@@ -288,7 +288,7 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              const GradientSliverHeader(
+              const CompactSliverHeader(
                 title: 'Publicités',
                 subtitle: 'Bannières sponsorisées des accueil',
                 icon: Icons.campaign_outlined,

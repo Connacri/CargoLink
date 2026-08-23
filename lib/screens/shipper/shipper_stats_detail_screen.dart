@@ -179,7 +179,7 @@ class _ShipperStatsDetailScreenState
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              GradientSliverHeader(
+              CompactSliverHeader(
                 title: widget.type.title,
                 subtitle: _buildSubtitle(shipper),
                 icon: widget.type.icon,

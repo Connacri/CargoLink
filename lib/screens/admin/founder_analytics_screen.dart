@@ -114,7 +114,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              const GradientSliverHeader(
+              const CompactSliverHeader(
                 title: 'Analytics',
                 subtitle: 'Chiffres détaillés de la plateforme',
                 icon: Icons.insert_chart_outlined_rounded,

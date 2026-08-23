@@ -75,7 +75,7 @@ class _ShipperOrdersInProgressScreenState
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              GradientSliverHeader(
+              CompactSliverHeader(
                 title: 'Commandes en cours',
                 subtitle:
                     '${activeOrders.length} commande${activeOrders.length > 1 ? 's' : ''} pas encore livrée${activeOrders.length > 1 ? 's' : ''}',

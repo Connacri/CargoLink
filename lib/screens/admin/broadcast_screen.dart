@@ -225,7 +225,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            const GradientSliverHeader(
+            const CompactSliverHeader(
               title: 'Annonces',
               subtitle: 'Communiquez avec tous les utilisateurs',
               icon: Icons.campaign_rounded,

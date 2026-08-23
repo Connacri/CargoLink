@@ -103,7 +103,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           top: false,
           child: CustomScrollView(
             slivers: [
-              const GradientSliverHeader(
+              const CompactSliverHeader(
                 title: 'Paiement',
                 subtitle: 'Commande réglée',
                 icon: Icons.payments_rounded,
@@ -124,7 +124,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           top: false,
           child: CustomScrollView(
             slivers: [
-              GradientSliverHeader(
+              CompactSliverHeader(
                 title: 'Paiement',
                 subtitle: 'En attente',
                 icon: Icons.payments_rounded,
@@ -144,7 +144,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         top: false,
         child: CustomScrollView(
           slivers: [
-            const GradientSliverHeader(
+            const CompactSliverHeader(
               title: 'Paiement',
               subtitle: 'Vérifie et confirme ton règlement',
               icon: Icons.lock_rounded,

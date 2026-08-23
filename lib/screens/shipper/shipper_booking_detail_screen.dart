@@ -77,7 +77,7 @@ class _ShipperBookingDetailScreenState
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                GradientSliverHeader(
+                CompactSliverHeader(
                   title: data.productName,
                   subtitle: status.displayName,
                   icon: Icons.receipt_long_rounded,

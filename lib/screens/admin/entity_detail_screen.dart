@@ -69,7 +69,7 @@ class _ShipmentDetail extends StatelessWidget {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            GradientSliverHeader(
+            CompactSliverHeader(
               title: '${s.originCountry} → ${s.destinationCity}',
               subtitle: 'Détail du vol',
               icon: Icons.flight_takeoff_rounded,
@@ -236,7 +236,7 @@ class _BookingDetail extends StatelessWidget {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            GradientSliverHeader(
+            CompactSliverHeader(
               title: b.productName,
               subtitle: 'Détail de la commande',
               icon: Icons.receipt_long_rounded,

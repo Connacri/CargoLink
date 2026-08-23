@@ -244,7 +244,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              const GradientSliverHeader(
+              const CompactSliverHeader(
                 title: 'Mes Commandes',
                 subtitle: 'Suis et gère tes réservations',
                 icon: Icons.receipt_long_rounded,

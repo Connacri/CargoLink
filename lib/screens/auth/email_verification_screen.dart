@@ -156,7 +156,7 @@ class _EmailVerificationScreenState
         top: false,
         child: CustomScrollView(
           slivers: [
-            const GradientSliverHeader(
+            const CompactSliverHeader(
               title: 'Confirmez votre email',
               subtitle: 'Dernière étape avant de commencer',
               icon: Icons.mark_email_read,

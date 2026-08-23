@@ -53,7 +53,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         top: false,
         child: CustomScrollView(
           slivers: [
-            const GradientSliverHeader(
+            const CompactSliverHeader(
               title: 'Mot de passe oublié',
               subtitle: 'Réinitialisez votre mot de passe',
               icon: Icons.lock_reset,

@@ -276,7 +276,7 @@ class _ShipperRegistrationScreenState
   Widget _buildSubmitted() {
     return CustomScrollView(
       slivers: [
-        const GradientSliverHeader(
+        const CompactSliverHeader(
           title: 'Inscription Expéditeur',
           subtitle: 'Dossier envoyé',
           icon: Icons.mark_email_read_outlined,
@@ -325,7 +325,7 @@ class _ShipperRegistrationScreenState
   Widget _buildAlreadyVerified() {
     return CustomScrollView(
       slivers: [
-        const GradientSliverHeader(
+        const CompactSliverHeader(
           title: 'Inscription Expéditeur',
           subtitle: 'Profil vérifié',
           icon: Icons.verified_user_rounded,
@@ -391,7 +391,7 @@ class _ShipperRegistrationScreenState
 
     return CustomScrollView(
       slivers: [
-        const GradientSliverHeader(
+        const CompactSliverHeader(
           title: 'Inscription Expéditeur',
           subtitle: 'Vérification de l\'identité pour publier des offres',
           icon: Icons.verified_user_rounded,

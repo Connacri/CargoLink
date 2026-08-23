@@ -73,7 +73,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         top: false,
         child: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) => [
-            GradientSliverHeader(
+            CompactSliverHeader(
               title: '',
               subtitle: 'Vérification, litiges et revenus',
               icon: Icons.shield_outlined,

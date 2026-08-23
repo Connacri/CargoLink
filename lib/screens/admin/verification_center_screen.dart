@@ -43,7 +43,7 @@ class VerificationCenterScreen extends ConsumerWidget {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              GradientSliverHeader(
+              CompactSliverHeader(
                 title: 'Vérification des expéditeurs',
                 subtitle: 'Dossiers en attente — photos en grand écran',
                 icon: Icons.fact_check_outlined,

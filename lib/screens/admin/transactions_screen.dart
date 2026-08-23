@@ -24,7 +24,7 @@ class TransactionsScreen extends ConsumerWidget {
             data: (items) => CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                const GradientSliverHeader(
+                const CompactSliverHeader(
                   title: 'Transactions',
                   subtitle: 'Toutes les opérations financières',
                   icon: Icons.swap_horiz_rounded,

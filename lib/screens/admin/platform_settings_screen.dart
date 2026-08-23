@@ -105,7 +105,7 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                const GradientSliverHeader(
+                const CompactSliverHeader(
                   title: 'Paramètres plateforme',
                   subtitle:
                       'Frais, devise et règles de la plateforme — Fondateur',

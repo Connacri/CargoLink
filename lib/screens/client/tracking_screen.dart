@@ -110,7 +110,7 @@ class TrackingScreen extends ConsumerWidget {
             top: false,
             child: CustomScrollView(
               slivers: [
-                GradientSliverHeader(
+                CompactSliverHeader(
                   title: 'Suivi de colis',
                   subtitle: bookingData.productName,
                   icon: Icons.connecting_airports_rounded,

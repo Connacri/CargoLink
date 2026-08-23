@@ -85,7 +85,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
             data: (items) => CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                const GradientSliverHeader(
+                const CompactSliverHeader(
                   title: 'Inventaire',
                   subtitle: 'Dépôts de collecte des colis',
                   icon: Icons.warehouse_outlined,

@@ -102,7 +102,7 @@ class _SuperAdminDashboardScreenState
               child: const CustomScrollView(
                 physics: AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  GradientSliverHeader(
+                  CompactSliverHeader(
                     title: 'Tableau de bord',
                     subtitle: 'Vue d\'ensemble de la plateforme',
                     icon: Icons.dashboard_outlined,
@@ -127,7 +127,7 @@ class _SuperAdminDashboardScreenState
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  const GradientSliverHeader(
+                  const CompactSliverHeader(
                     title: 'Comptes',
                     subtitle: 'Gérer les utilisateurs',
                     icon: Icons.people_alt_outlined,
@@ -152,7 +152,7 @@ class _SuperAdminDashboardScreenState
               child: const CustomScrollView(
                 physics: AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  GradientSliverHeader(
+                  CompactSliverHeader(
                     title: 'Outils',
                     subtitle: 'Paramètres et modération',
                     icon: Icons.settings_outlined,

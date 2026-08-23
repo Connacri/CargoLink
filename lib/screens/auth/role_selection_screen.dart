@@ -221,7 +221,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
         top: false,
         child: CustomScrollView(
           slivers: [
-            GradientSliverHeader(
+            CompactSliverHeader(
               title: widget.firstTime
                   ? 'Choisissez votre rôle'
                   : 'Changer de rôle',

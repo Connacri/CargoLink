@@ -175,7 +175,7 @@ class _UserDetailsScreenState extends ConsumerState<UserDetailsScreen>
         top: false,
         child: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) => [
-            GradientSliverHeader(
+            CompactSliverHeader(
               title: 'Dossier',
               subtitle: user.fullName,
               icon: Icons.folder_shared_outlined,

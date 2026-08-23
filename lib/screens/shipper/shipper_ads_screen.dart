@@ -253,7 +253,7 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              const GradientSliverHeader(
+              const CompactSliverHeader(
                 title: 'Mes publicités',
                 subtitle:
                     'Sponsorisez votre activité sur CargoLink',

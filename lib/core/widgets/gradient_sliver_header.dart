@@ -181,3 +181,85 @@ class _Orb extends StatelessWidget {
     );
   }
 }
+
+/// Header compact épinglé (une simple toolbar dégradée) utilisé sur tous les
+/// écrans SAUF les profils : le grand header extensible est réservé aux
+/// profils afin d'économiser l'espace d'affichage partout ailleurs.
+///
+/// L'API est volontairement identique à [GradientSliverHeader] (title,
+/// subtitle, icon, trailing, gradient, bottom) ; [expandedHeight] est accepté
+/// pour la compatibilité des appelants mais ignoré.
+class CompactSliverHeader extends StatelessWidget {
+  const CompactSliverHeader({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.icon,
+    this.trailing,
+    this.gradient = AppTheme.primaryGradient,
+    this.expandedHeight,
+    this.bottom,
+  });
+
+  final String title;
+  final String? subtitle;
+  final IconData? icon;
+  final Widget? trailing;
+  final LinearGradient gradient;
+  final double? expandedHeight;
+  final PreferredSizeWidget? bottom;
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverAppBar(
+      pinned: true,
+      elevation: 0,
+      toolbarHeight: (subtitle != null && subtitle!.isNotEmpty) ? 68 : 56,
+      backgroundColor: Colors.blue,
+      automaticallyImplyLeading: true,
+      iconTheme: const IconThemeData(color: Colors.white),
+      actions: trailing != null ? [trailing!] : null,
+      bottom: bottom,
+      flexibleSpace: FlexibleSpaceBar(
+        collapseMode: CollapseMode.none,
+        background: Container(decoration: BoxDecoration(gradient: gradient)),
+      ),
+      title: Row(
+        children: [
+          if (icon != null) ...[
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (subtitle != null && subtitle!.isNotEmpty)
+                  Text(
+                    subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 11,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -415,7 +415,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 ),
               )
             else
-              GradientSliverHeader(
+              CompactSliverHeader(
                 title: 'CargoLink',
                 subtitle:
                     'Trouvez les meilleurs micro-importateurs pour vos commandes',

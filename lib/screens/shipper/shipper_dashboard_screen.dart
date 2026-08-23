@@ -299,7 +299,7 @@ class _ShipperDashboardScreenState
                 ),
               )
             else
-              GradientSliverHeader(
+              CompactSliverHeader(
                 title: 'Tableau de bord',
                 subtitle:
                     '${shipper.user?.fullName ?? 'Espace expéditeur'}  •  ★ ${shipper.ratingDisplay}'
@@ -1875,7 +1875,7 @@ class _ActiveShipmentsScreenState extends ConsumerState<ActiveShipmentsScreen> {
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            const GradientSliverHeader(
+            const CompactSliverHeader(
               title: 'Mes Offres',
               subtitle: 'Toutes tes offres publiées',
               icon: Icons.flight_takeoff_rounded,
@@ -1980,7 +1980,7 @@ class _ShipperShipmentDetailScreenState
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            GradientSliverHeader(
+            CompactSliverHeader(
               title: '${shipment.originCountry} → ${shipment.destinationCity}',
               subtitle: 'Commandes reçues pour cette offre',
               icon: Icons.flight_takeoff_rounded,

@@ -67,7 +67,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               key: _formKey,
               child: CustomScrollView(
                 slivers: [
-                  GradientSliverHeader(
+                  CompactSliverHeader(
                     title: 'Nouvelle Réservation',
                     subtitle:
                         '${shipmentData.originCountry} → ${shipmentData.destinationCity}',
