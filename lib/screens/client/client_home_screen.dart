@@ -151,7 +151,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     final origin = ref.read(originFilterProvider);
     final shipperType = ref.read(shipperTypeFilterProvider);
     if (destination != null &&
-        !shipment.destinationCity.toLowerCase().contains(destination.toLowerCase())) {
+        !shipment.destinationCity
+            .toLowerCase()
+            .contains(destination.toLowerCase())) {
       return false;
     }
     if (origin != null &&
@@ -236,11 +238,10 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     final key = '$query|${ref.read(shipperTypeFilterProvider)}';
     if (key == _lastSearchKey) return;
     _lastSearchKey = key;
-    final notifier = ref
-        .read(clientSearchPagerProvider((
-          query: query,
-          shipperType: ref.read(shipperTypeFilterProvider),
-        )).notifier);
+    final notifier = ref.read(clientSearchPagerProvider((
+      query: query,
+      shipperType: ref.read(shipperTypeFilterProvider),
+    )).notifier);
     notifier.loadInitial();
   }
 
@@ -287,9 +288,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     // hors critères, même si le filtre serveur régressait.
     final sortedFeed = pager.copyWith(
       items: _applySort(
-        pager.items
-            .where((s) => _passesLocalFilters(s, shipperType))
-            .toList(),
+        pager.items.where((s) => _passesLocalFilters(s, shipperType)).toList(),
         sort,
       ),
     );
@@ -385,67 +384,37 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            if (currentAd != null)
-              AdSliverHeader(
-                ad: currentAd,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const ChatInboxBadge(),
-                    IconButton(
-                      onPressed: () =>
-                          ref.read(navigationIndexProvider.notifier).state = 1,
-                      tooltip: 'Mes colis',
-                      icon: const Icon(Icons.connecting_airports_rounded),
+            CompactSliverHeader(
+              title: 'CargoLink',
+              subtitle:
+                  'Trouvez les meilleurs micro-importateurs pour vos commandes',
+              icon: Icons.airplanemode_active,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const ChatInboxBadge(),
+                  IconButton(
+                    onPressed: () =>
+                        ref.read(navigationIndexProvider.notifier).state = 1,
+                    tooltip: 'Mes colis',
+                    icon: const Icon(Icons.connecting_airports_rounded),
+                  ),
+                  IconButton(
+                    onPressed: () => _openQrScanner(context),
+                    tooltip: 'Scanner un colis',
+                    icon: const Icon(Icons.qr_code_scanner_rounded),
+                  ),
+                  GestureDetector(
+                    onTap: () => _showNotificationsSheet(context),
+                    child: const Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: UnreadNotificationBadge(),
                     ),
-                    IconButton(
-                      onPressed: () => _openQrScanner(context),
-                      tooltip: 'Scanner un colis',
-                      icon: const Icon(Icons.qr_code_scanner_rounded),
-                    ),
-                    GestureDetector(
-                      onTap: () => _showNotificationsSheet(context),
-                      child: const Padding(
-                        padding: EdgeInsets.only(right: 8),
-                        child: UnreadNotificationBadge(),
-                      ),
-                    ),
-                    const LogoutIconButton(),
-                  ],
-                ),
-              )
-            else
-              CompactSliverHeader(
-                title: 'CargoLink',
-                subtitle:
-                    'Trouvez les meilleurs micro-importateurs pour vos commandes',
-                icon: Icons.airplanemode_active,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const ChatInboxBadge(),
-                    IconButton(
-                      onPressed: () =>
-                          ref.read(navigationIndexProvider.notifier).state = 1,
-                      tooltip: 'Mes colis',
-                      icon: const Icon(Icons.connecting_airports_rounded),
-                    ),
-                    IconButton(
-                      onPressed: () => _openQrScanner(context),
-                      tooltip: 'Scanner un colis',
-                      icon: const Icon(Icons.qr_code_scanner_rounded),
-                    ),
-                    GestureDetector(
-                      onTap: () => _showNotificationsSheet(context),
-                      child: const Padding(
-                        padding: EdgeInsets.only(right: 8),
-                        child: UnreadNotificationBadge(),
-                      ),
-                    ),
-                    const LogoutIconButton(),
-                  ],
-                ),
+                  ),
+                  const LogoutIconButton(),
+                ],
               ),
+            ),
             SliverToBoxAdapter(
               child: _buildGreeting(currentUser),
             ),
@@ -524,7 +493,6 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               'Filtrez par destination, origine et prix',
               'Choisissez une offre active (poids disponible)',
               'Le poids est réservé dès la réservation',
-
             ],
           ),
           WorkflowSlide(
@@ -915,9 +883,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         '/booking-wizard',
         arguments: shipment.id,
       ),
-      onAvatarTap: shipper?.id != null
-          ? () => _openShipperProfile(shipper!.id)
-          : null,
+      onAvatarTap:
+          shipper?.id != null ? () => _openShipperProfile(shipper!.id) : null,
       onBook: () => Navigator.of(context).pushNamed(
         '/booking-wizard',
         arguments: shipment.id,
@@ -1072,9 +1039,8 @@ class _ParcelProgressRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final events =
-        ref.watch(trackingHistoryProvider(booking.id)).valueOrNull ??
-            const <ShipmentTracking>[];
+    final events = ref.watch(trackingHistoryProvider(booking.id)).valueOrNull ??
+        const <ShipmentTracking>[];
     final latest = events.isEmpty ? null : events.last;
     final progress =
         (TrackingScreen.stageIndex(latest?.status ?? 'order_processed') + 1) /
