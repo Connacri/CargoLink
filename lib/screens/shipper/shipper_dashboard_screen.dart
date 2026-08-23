@@ -8,9 +8,8 @@ import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/utils/profile_navigation.dart';
-import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/airport_picker_field.dart';
-import '../../core/widgets/ad_sliver_header.dart';
+import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/notification_widgets.dart';
 import '../../core/widgets/chat_widgets.dart';
 import '../shared/qr_scan_screen.dart';
@@ -274,9 +273,8 @@ class _ShipperDashboardScreenState
         ? null
         : pager.items.where((s) => s.status == _statusFilter).toList();
 
-    // Bannière sponsorisée (pub ciblée « Expéditeurs ») à la place du header.
+    // Carrousel des pubs actives ciblées « Expéditeurs », sous la barre fine.
     final activeAds = ref.watch(shipperActiveAdsProvider).valueOrNull ?? [];
-    final currentAd = activeAds.isNotEmpty ? activeAds.first : null;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -291,23 +289,19 @@ class _ShipperDashboardScreenState
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            if (currentAd != null)
-              AdSliverHeader(
-                ad: currentAd,
-                trailing: _headerTrailing(
-                  canAdvertise: shipper.isMicroImportateur,
-                ),
-              )
-            else
-              CompactSliverHeader(
-                title: 'Tableau de bord',
-                subtitle:
-                    '${shipper.user?.fullName ?? 'Espace expéditeur'}  •  ★ ${shipper.ratingDisplay}'
-                    '${shipper.isMicroImportateur ? '  •  Micro-importateur' : ''}',
-                icon: Icons.flight_takeoff_rounded,
-                trailing: _headerTrailing(
-                  canAdvertise: shipper.isMicroImportateur,
-                ),
+            CompactSliverHeader(
+              title: 'Tableau de bord',
+              subtitle:
+                  '${shipper.user?.fullName ?? 'Espace expéditeur'}  •  ★ ${shipper.ratingDisplay}'
+                  '${shipper.isMicroImportateur ? '  •  Micro-importateur' : ''}',
+              icon: Icons.flight_takeoff_rounded,
+              trailing: _headerTrailing(
+                canAdvertise: shipper.isMicroImportateur,
+              ),
+            ),
+            if (activeAds.isNotEmpty)
+              SliverToBoxAdapter(
+                child: AdBannerCarousel(ads: activeAds, height: 140),
               ),
             SliverToBoxAdapter(
               child: _buildStats(shipper),

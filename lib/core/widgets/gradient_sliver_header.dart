@@ -212,7 +212,11 @@ class CompactSliverHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
-      pinned: true,
+      // Header compact flottant : se cache quand on scrolle vers le bas du
+      // contenu et réapparaît dès qu'on scrolle vers le haut.
+      floating: true,
+      pinned: false,
+      snap: false,
       elevation: 0,
       toolbarHeight: (subtitle != null && subtitle!.isNotEmpty) ? 68 : 56,
       backgroundColor: Colors.blue,

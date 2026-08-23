@@ -6,6 +6,7 @@
 library;
 
 export 'animations.dart';
+export 'ad_banner_carousel.dart';
 export 'fade_in_scroll.dart';
 export 'feedback_launcher.dart';
 export 'glass_card.dart';
