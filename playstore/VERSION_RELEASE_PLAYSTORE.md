@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.19** |
-| Code de version (versionCode) | **152** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `e88e9ff` |
-| Statut CI | À publier au prochain push → release `v1.0.19` sur GitHub |
+| Version (versionName) | **1.0.20** |
+| Code de version (versionCode) | **154** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `fb56094` |
+| Statut CI | À publier au prochain push → release `v1.0.20` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.19** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.20** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,9 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Splash natif régénéré** depuis le nouveau visuel `assets/icons/splash2.png`
+  : images Android (classique + Android 12+, mode sombre inclus), iOS et web
+  mises à jour.
 - **Version de l'app alignée sur les tags CI** : le pied de page du profil
   affiche désormais « CargoLink v1.0.19 (152) » — versionName + versionCode
   identiques aux tags GitHub Releases. `pubspec.yaml` suit le dernier tag
