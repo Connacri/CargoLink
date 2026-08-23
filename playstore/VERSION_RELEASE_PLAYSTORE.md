@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.23** |
-| Code de version (versionCode) | **161** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `431cf1c` |
-| Statut CI | À publier au prochain push → release `v1.0.23` sur GitHub |
+| Version (versionName) | **1.0.24** |
+| Code de version (versionCode) | **163** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `b8fd8a9` |
+| Statut CI | À publier au prochain push → release `v1.0.24` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.23** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.24** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,9 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Splash natif régénéré** depuis la nouvelle version du visuel
+  `assets/icons/splash3.jpeg` : images Android (classique + Android 12+,
+  mode sombre inclus), iOS et web mises à jour.
 - **Headers compacts partout (sauf profils)** : le grand header dégradé
   extensible est désormais réservé aux écrans de profil (client, expéditeur,
   profils publics). Tous les autres écrans — accueils, dashboards, listes,
