@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.24** |
-| Code de version (versionCode) | **163** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `b8fd8a9` |
-| Statut CI | À publier au prochain push → release `v1.0.24` sur GitHub |
+| Version (versionName) | **1.0.25** |
+| Code de version (versionCode) | **165** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `f6e28ea` |
+| Statut CI | À publier au prochain push → release `v1.0.25` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.24** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.25** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,14 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Carrousel des publicités** : sur les accueils client et expéditeur, toutes
+  les pubs actives publiées défilent dans un bandeau (défilement automatique
+  toutes les 4 s, points indicateurs, clic = ouverture du lien de la pub
+  affichée) au lieu d'une seule bannière fixe.
+- **Correction du crash « Null check operator »** sur l'accueil client quand
+  aucune pub n'est active (le bandeau ne s'affiche que s'il y a des pubs).
+- **Barres supérieures flottantes** : les headers compacts se cachent quand on
+  fait défiler le contenu vers le bas et réapparaissent dès qu'on remonte.
 - **Splash natif régénéré** depuis la nouvelle version du visuel
   `assets/icons/splash3.jpeg` : images Android (classique + Android 12+,
   mode sombre inclus), iOS et web mises à jour.
