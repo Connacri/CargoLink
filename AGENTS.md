@@ -24,8 +24,12 @@
 ## Qualité (avant de commit/push)
 
 - Lancer `flutter analyze` (0 issue) puis `flutter test` (tous verts).
-- Les builds web (`flutter build web --release`) et Android (`flutter build apk --debug`)
-  doivent compiler.
+- **NE JAMAIS builder localement** (ni `flutter build web --release`, ni
+  `flutter build apk --debug`, ni aucun autre build) : la compilation est
+  validée par la CI (`release.yml`) après le push. Ne pas perdre de temps
+  local dessus.
+- **Toujours committer et pousser** dès qu'une tâche demandée est terminée
+  (code puis docs, cf. workflow ci-dessus).
 
 ## Splash & icônes (flutter_native_splash + flutter_launcher_icons)
 
