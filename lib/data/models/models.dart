@@ -1148,6 +1148,75 @@ class Ad {
 }
 
 // ============================================================================
+// AD PRICING RULE (grille tarifaire configurable par le fondateur)
+// ============================================================================
+
+/// Une ligne de la grille tarifaire des publicités : le prix dépend à la fois
+/// de la durée d'affichage et de l'audience cible. Stockée dans la table
+/// `ad_pricing`, éditable par les admins depuis les réglages plateforme.
+class AdPricingRule {
+  final int durationDays;
+  final String audience; // all, clients, shippers
+  final double priceDzd;
+
+  const AdPricingRule({
+    required this.durationDays,
+    this.audience = 'all',
+    required this.priceDzd,
+  });
+
+  factory AdPricingRule.fromJson(Map<String, dynamic> json) {
+    return AdPricingRule(
+      durationDays: (json['duration_days'] as num).toInt(),
+      audience: json['audience'] as String? ?? 'all',
+      priceDzd: (json['price_dzd'] as num?)?.toDouble() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'duration_days': durationDays,
+        'audience': audience,
+        'price_dzd': priceDzd,
+      };
+
+  String get audienceLabel => Ad.audienceLabels[audience] ?? audience;
+
+  /// Grille hors-ligne de secours si la table n'est pas lisible.
+  static const List<AdPricingRule> fallback = [
+    AdPricingRule(durationDays: 7, audience: 'all', priceDzd: 2000),
+    AdPricingRule(durationDays: 7, audience: 'clients', priceDzd: 2500),
+    AdPricingRule(durationDays: 7, audience: 'shippers', priceDzd: 2500),
+    AdPricingRule(durationDays: 15, audience: 'all', priceDzd: 3500),
+    AdPricingRule(durationDays: 15, audience: 'clients', priceDzd: 4500),
+    AdPricingRule(durationDays: 15, audience: 'shippers', priceDzd: 4500),
+    AdPricingRule(durationDays: 30, audience: 'all', priceDzd: 6000),
+    AdPricingRule(durationDays: 30, audience: 'clients', priceDzd: 7500),
+    AdPricingRule(durationDays: 30, audience: 'shippers', priceDzd: 7500),
+  ];
+
+  /// Prix d'une (durée, audience), avec repli sur la ligne 'all' puis sur
+  /// n'importe quelle ligne de cette durée, puis sur la grille statique.
+  static double priceFor(List<AdPricingRule> rules, int days, String audience) {
+    for (final r in rules) {
+      if (r.durationDays == days && r.audience == audience) return r.priceDzd;
+    }
+    for (final r in rules) {
+      if (r.durationDays == days && r.audience == 'all') return r.priceDzd;
+    }
+    for (final r in rules) {
+      if (r.durationDays == days) return r.priceDzd;
+    }
+    return Ad.priceForDuration(days);
+  }
+
+  /// Durées disponibles dans la grille, triées.
+  static List<int> durationsOf(List<AdPricingRule> rules) {
+    final days = rules.map((r) => r.durationDays).toSet().toList()..sort();
+    return days.isEmpty ? Ad.pricingTiers.keys.toList() : days;
+  }
+}
+
+// ============================================================================
 // CONVERSATION MODEL (Chat expéditeur ↔ client)
 // ============================================================================
 

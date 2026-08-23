@@ -226,6 +226,10 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
     final ads = ref.watch(myAdsProvider);
     final shipper = ref.watch(currentShipperProvider).valueOrNull;
     final isMicroImportateur = shipper?.isMicroImportateur ?? false;
+    // Grille tarifaire du fondateur (durée × audience), repli hors-ligne si
+    // indisponible.
+    final pricing =
+        ref.watch(adPricingProvider).valueOrNull ?? AdPricingRule.fallback;
 
     return Scaffold(
       body: SafeArea(
@@ -253,15 +257,15 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
                           color: AppTheme.warningColor,
                         ),
                         SizedBox(width: AppTheme.spaceSm),
-                        Expanded(
-                          child: Text(
-                            'Choisissez la durée d\'affichage (7, 15 ou 30 '
-                            'jours) : le prix à payer s\'affiche en direct. '
-                            'Votre pub est validée par un admin avant mise '
-                            'en ligne.',
-                            style: AppTheme.caption,
-                          ),
-                        ),
+                           Expanded(
+                             child: Text(
+                               'Choisissez la cible et la durée d\'affichage : '
+                               'le prix à payer s\'affiche en direct. Votre '
+                               'pub est validée par un admin avant mise en '
+                               'ligne.',
+                               style: AppTheme.caption,
+                             ),
+                           ),
                       ],
                     ),
                   ),
@@ -271,9 +275,9 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppTheme.spaceMd),
-                  child: isMicroImportateur
-                      ? _buildComposer()
-                      : const _MicroOnlyNotice(),
+                   child: isMicroImportateur
+                       ? _buildComposer(pricing)
+                       : const _MicroOnlyNotice(),
                 ),
               ),
               ...ads.when(
@@ -309,7 +313,7 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
     );
   }
 
-  Widget _buildComposer() {
+  Widget _buildComposer(List<AdPricingRule> pricing) {
     return GlassCard(
       padding: const EdgeInsets.all(AppTheme.spaceMd),
       radius: AppTheme.radiusMd,
@@ -445,13 +449,14 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
           Wrap(
             spacing: AppTheme.spaceXs,
             runSpacing: AppTheme.spaceXs,
-            children: Ad.pricingTiers.entries.map((entry) {
-              final selected = _durationDays == entry.key;
+            children: AdPricingRule.durationsOf(pricing).map((days) {
+              final selected = _durationDays == days;
+              final price = AdPricingRule.priceFor(pricing, days, _audience);
               return ChoiceChip(
                 label: Text(
-                    '${entry.key} j · ${entry.value.toStringAsFixed(0)} ${AppConstants.defaultCurrency}'),
+                    '$days j · ${price.toStringAsFixed(0)} ${AppConstants.defaultCurrency}'),
                 selected: selected,
-                onSelected: (_) => setState(() => _durationDays = entry.key),
+                onSelected: (_) => setState(() => _durationDays = days),
                 selectedColor: AppTheme.primaryColor.withValues(alpha: 0.15),
                 labelStyle: TextStyle(
                   color: selected
@@ -485,7 +490,7 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
                   ),
                 ),
                 Text(
-                  '${Ad.priceForDuration(_durationDays).toStringAsFixed(0)} '
+                  '${_selectedPrice(pricing).toStringAsFixed(0)} '
                   '${AppConstants.defaultCurrency}',
                   style: AppTheme.caption.copyWith(
                     color: AppTheme.primaryColor,
@@ -511,13 +516,17 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
             label: Text(_isSaving
                 ? 'Envoi…'
                 : 'Envoyer pour validation '
-                    '(${Ad.priceForDuration(_durationDays).toStringAsFixed(0)} '
+                    '(${_selectedPrice(pricing).toStringAsFixed(0)} '
                     '${AppConstants.defaultCurrency})'),
           ),
         ],
       ),
     );
   }
+
+  /// Prix affiché en direct : dépend de la durée choisie ET de la cible.
+  double _selectedPrice(List<AdPricingRule> pricing) =>
+      AdPricingRule.priceFor(pricing, _durationDays, _audience);
 
   /// Liste groupée : pubs en ligne d'abord, puis en attente (validation ou
   /// paiement), puis refusées — l'expéditeur voit tout ce qu'il a publié.

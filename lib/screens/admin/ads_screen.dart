@@ -319,6 +319,15 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
     );
   }
 
+  /// Durées d'affichage disponibles : issues de la grille tarifaire
+  /// configurée par le fondateur (repli sur la grille statique).
+  List<int> _durations() {
+    final rules = ref.watch(adPricingProvider).valueOrNull;
+    return rules == null
+        ? Ad.pricingTiers.keys.toList()
+        : AdPricingRule.durationsOf(rules);
+  }
+
   Widget _buildComposer() {
     return GlassCard(
       padding: const EdgeInsets.all(AppTheme.spaceMd),
@@ -468,7 +477,7 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
           Wrap(
             spacing: AppTheme.spaceXs,
             runSpacing: AppTheme.spaceXs,
-            children: Ad.pricingTiers.keys.map((days) {
+            children: _durations().map((days) {
               final selected = _durationDays == days;
               return ChoiceChip(
                 label: Text('$days jours'),

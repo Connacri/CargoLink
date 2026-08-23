@@ -683,6 +683,13 @@ final pendingAdsCountProvider = FutureProvider<int>((ref) async {
   return ref.watch(adsServiceProvider).countPendingAds();
 });
 
+/// Grille tarifaire des pubs (durée × audience), configurable par le
+/// fondateur dans les réglages plateforme.
+final adPricingProvider =
+    FutureProvider.autoDispose<List<AdPricingRule>>((ref) async {
+  return ref.watch(adsServiceProvider).getAdPricing();
+});
+
 // ============================================================================
 // V2 PROVIDERS — Réseau logistique multi-shipper
 // ============================================================================

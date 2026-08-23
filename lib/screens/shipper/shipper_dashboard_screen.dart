@@ -9,6 +9,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/utils/profile_navigation.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/airport_picker_field.dart';
 import '../../core/widgets/ad_sliver_header.dart';
 import '../../core/widgets/notification_widgets.dart';
 import '../../core/widgets/chat_widgets.dart';
@@ -1076,8 +1077,8 @@ class _ShipperDashboardScreenState
     final airlineController = TextEditingController();
     final flightController = TextEditingController();
     final descriptionController = TextEditingController();
-    String originCountry = AppConstants.populateOrigins.first;
-    String destinationCity = AppConstants.majorCities.first;
+    String? originCountry;
+    String? destinationCity;
     DateTime departure = DateTime.now().add(const Duration(days: 3));
     DateTime arrival = DateTime.now().add(const Duration(days: 7));
     bool submitting = false;
@@ -1120,27 +1121,20 @@ class _ShipperDashboardScreenState
                       ),
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      initialValue: originCountry,
-                      decoration: const InputDecoration(labelText: 'Origine'),
-                      items: AppConstants.populateOrigins
-                          .map(
-                              (c) => DropdownMenuItem(value: c, child: Text(c)))
-                          .toList(),
-                      onChanged: (v) => setSheetState(
-                          () => originCountry = v ?? originCountry),
+                    AirportPickerField(
+                      label: 'Départ — aéroport d\'origine',
+                      value: originCountry,
+                      prefixIcon: Icons.flight_takeoff_rounded,
+                      onChanged: (v) =>
+                          setSheetState(() => originCountry = v),
                     ),
                     const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      initialValue: destinationCity,
-                      decoration:
-                          const InputDecoration(labelText: 'Destination'),
-                      items: AppConstants.majorCities
-                          .map(
-                              (c) => DropdownMenuItem(value: c, child: Text(c)))
-                          .toList(),
-                      onChanged: (v) => setSheetState(
-                          () => destinationCity = v ?? destinationCity),
+                    AirportPickerField(
+                      label: 'Arrivée — aéroport de destination',
+                      value: destinationCity,
+                      prefixIcon: Icons.flight_land_rounded,
+                      onChanged: (v) =>
+                          setSheetState(() => destinationCity = v),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -1275,6 +1269,18 @@ class _ShipperDashboardScreenState
                           ? null
                           : () async {
                               if (!formKey.currentState!.validate()) return;
+                              if (originCountry == null ||
+                                  destinationCity == null) {
+                                ScaffoldMessenger.of(sheetContext)
+                                    .showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                        'Choisissez les aéroports de départ '
+                                        'et d\'arrivée'),
+                                  ),
+                                );
+                                return;
+                              }
                               setSheetState(() => submitting = true);
                               try {
                                 final weight =
@@ -1289,8 +1295,8 @@ class _ShipperDashboardScreenState
                                     .read(shipmentServiceProvider)
                                     .publishShipment(
                                       shipperId: shipperId,
-                                      originCountry: originCountry,
-                                      destinationCity: destinationCity,
+                                      originCountry: originCountry!,
+                                      destinationCity: destinationCity!,
                                       availableWeightKg: weight,
                                       pricePerKg: price,
                                       departureDate: departure,

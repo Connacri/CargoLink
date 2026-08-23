@@ -81,17 +81,18 @@ class HomeTabsScreen extends ConsumerWidget {
         onTap: (index) {
           ref.read(navigationIndexProvider.notifier).state = index;
         },
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Accueil',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.shopping_bag),
             label: 'Commandes',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: _ProfileTabIcon(selected: index == 2),
+            activeIcon: const _ProfileTabIcon(selected: true),
             label: 'Profil',
           ),
         ],
@@ -121,23 +122,120 @@ class HomeTabsScreen extends ConsumerWidget {
         onTap: (index) {
           ref.read(navigationIndexProvider.notifier).state = index;
         },
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: 'Tableau de bord',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.flight_takeoff),
             label: 'Mes Offres',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.account_balance_wallet),
             label: 'Finance',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: _ProfileTabIcon(
+              selected: index == 3,
+              showVerificationBadge: true,
+            ),
+            activeIcon: const _ProfileTabIcon(
+              selected: true,
+              showVerificationBadge: true,
+            ),
             label: 'Profil',
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Onglet « Profil » de la bottom bar : photo de profil de l'utilisateur
+/// (icône par défaut si aucune), avec pastille d'état de vérification pour
+/// les expéditeurs (vert = vérifié, orange = en attente, rouge = refusé).
+class _ProfileTabIcon extends ConsumerWidget {
+  const _ProfileTabIcon({required this.selected, this.showVerificationBadge});
+
+  final bool selected;
+  final bool? showVerificationBadge;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider).valueOrNull;
+    final shipper =
+        showVerificationBadge == true
+            ? ref.watch(currentShipperProvider).valueOrNull
+            : null;
+
+    final Color tint =
+        selected ? Theme.of(context).colorScheme.primary : Colors.grey;
+    final String? photoUrl = user?.profilePictureUrl;
+
+    Widget avatar;
+    if (photoUrl != null && photoUrl.isNotEmpty) {
+      avatar = ClipOval(
+        child: Image.network(
+          photoUrl,
+          width: 26,
+          height: 26,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) =>
+              Icon(Icons.person, size: 24, color: tint),
+        ),
+      );
+    } else {
+      avatar = Icon(Icons.person, size: 24, color: tint);
+    }
+    if (selected && (photoUrl?.isNotEmpty ?? false)) {
+      avatar = Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: tint, width: 2),
+        ),
+        child: avatar,
+      );
+    }
+
+    // Pastille de vérification (expéditeur uniquement).
+    IconData? badgeIcon;
+    Color badgeColor;
+    switch (shipper?.verificationStatus) {
+      case 'verified':
+        badgeIcon = Icons.check_circle_rounded;
+        badgeColor = const Color(0xFF22C55E);
+      case 'rejected':
+        badgeIcon = Icons.cancel_rounded;
+        badgeColor = const Color(0xFFEF4444);
+      case 'pending':
+        badgeIcon = Icons.schedule_rounded;
+        badgeColor = const Color(0xFFF59E0B);
+      default:
+        badgeIcon = null;
+        badgeColor = Colors.transparent;
+    }
+
+    return SizedBox(
+      width: 30,
+      height: 30,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Center(child: avatar),
+          if (badgeIcon != null)
+            Positioned(
+              right: -3,
+              bottom: -2,
+              child: Container(
+                padding: const EdgeInsets.all(1),
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+                child: Icon(badgeIcon, size: 13, color: badgeColor),
+              ),
+            ),
         ],
       ),
     );

@@ -61,6 +61,8 @@ class AdsService {
   }
 
   /// Ads submitted by the current user (shipper "Mes publicités").
+  /// Double filtre : côté requête (eq created_by) et côté client — un
+  /// micro-importateur ne doit jamais voir que SES pubs, rien d'autre.
   Future<List<Ad>> getMyAds({int limit = 50}) async {
     try {
       final userId = AuthService().currentUserId;
@@ -73,10 +75,61 @@ class AdsService {
           .limit(limit);
       return (response as List)
           .map((item) => Ad.fromJson(item as Map<String, dynamic>))
+          .where((ad) => ad.createdBy == userId)
           .toList();
     } catch (e) {
       _logger.e('Error getting my ads: $e');
       return [];
+    }
+  }
+
+  /// Grille tarifaire des pubs paramétrée par le fondateur
+  /// (table `ad_pricing` : prix par durée d'affichage × audience cible).
+  Future<List<AdPricingRule>> getAdPricing() async {
+    try {
+      final response =
+          await SupabaseConfig.client.from('ad_pricing').select();
+      final rules = (response as List)
+          .map((item) =>
+              AdPricingRule.fromJson(item as Map<String, dynamic>))
+          .toList();
+      rules.sort((a, b) {
+        final byDuration = a.durationDays.compareTo(b.durationDays);
+        if (byDuration != 0) return byDuration;
+        const order = {'all': 0, 'clients': 1, 'shippers': 2};
+        return (order[a.audience] ?? 3).compareTo(order[b.audience] ?? 3);
+      });
+      return rules;
+    } catch (e) {
+      _logger.e('Error getting ad pricing: $e');
+      return AdPricingRule.fallback;
+    }
+  }
+
+  /// Sauvegarde de la grille tarifaire (admin/fondateur uniquement — RLS).
+  /// [toDelete] contient les lignes retirées (durée supprimée ou audience).
+  Future<void> saveAdPricing({
+    required List<AdPricingRule> upserts,
+    List<AdPricingRule> deletes = const [],
+  }) async {
+    try {
+      for (final rule in deletes) {
+        await SupabaseConfig.client
+            .from('ad_pricing')
+            .delete()
+            .match({'duration_days': rule.durationDays,
+                    'audience': rule.audience});
+      }
+      if (upserts.isNotEmpty) {
+        await SupabaseConfig.client
+            .from('ad_pricing')
+            .upsert(upserts.map((r) => r.toJson()).toList());
+      }
+      _logger.i(
+          'Ad pricing saved (${upserts.length} rows, ${deletes.length} deleted)');
+    } catch (e) {
+      _logger.e('Error saving ad pricing: $e');
+      rethrow;
     }
   }
 
@@ -99,7 +152,7 @@ class AdsService {
   ///
   /// - Admin/super_admin : la pub naît [Ad.statusActive] et gratuite.
   /// - Expéditeur : la base force [Ad.statusPending] + prix recalculé par
-  ///   trigger selon la durée choisie (7 j = 2000, 15 j = 3500, 30 j = 6000).
+  ///   trigger depuis la grille tarifaire configurable (table `ad_pricing`).
   Future<Ad> createAd({
     required String imageUrl,
     required String linkUrl,

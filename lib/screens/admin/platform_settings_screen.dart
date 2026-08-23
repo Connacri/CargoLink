@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
@@ -291,6 +292,16 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
                   ),
                 ),
                 const SliverToBoxAdapter(
+                  child: SizedBox(height: AppTheme.spaceMd),
+                ),
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+                    child: _AdPricingEditor(),
+                  ),
+                ),
+                const SliverToBoxAdapter(
                   child: SizedBox(height: AppTheme.spaceXxl),
                 ),
               ],
@@ -320,5 +331,294 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
       default:
         return code;
     }
+  }
+}
+
+// ============================================================================
+// TARIFS PUBLICITAIRES (éditeur de la grille durée × audience, table
+// `ad_pricing`) — visible uniquement des admins/fondateur (RLS).
+// ============================================================================
+
+class _AdPricingEditor extends ConsumerStatefulWidget {
+  const _AdPricingEditor();
+
+  @override
+  ConsumerState<_AdPricingEditor> createState() => _AdPricingEditorState();
+}
+
+class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
+  final Map<String, TextEditingController> _controllers = {};
+  final List<int> _durations = [];
+  List<AdPricingRule> _originalRules = const [];
+  bool _initialized = false;
+  bool _saving = false;
+
+  String _key(int days, String audience) => '$days|$audience';
+
+  void _initWith(List<AdPricingRule> rules) {
+    if (_initialized || rules.isEmpty) return;
+    _initialized = true;
+    _originalRules = rules;
+    _durations
+      ..clear()
+      ..addAll(AdPricingRule.durationsOf(rules));
+    for (final d in _durations) {
+      for (final audience in Ad.audienceLabels.keys) {
+        final existing = rules.firstWhere(
+          (r) => r.durationDays == d && r.audience == audience,
+          orElse: () => AdPricingRule(
+            durationDays: d,
+            audience: audience,
+            priceDzd: AdPricingRule.priceFor(rules, d, audience),
+          ),
+        );
+        _controllers[_key(d, audience)] =
+            TextEditingController(text: existing.priceDzd.toStringAsFixed(0));
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in _controllers.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _addDuration() async {
+    final controller = TextEditingController();
+    final days = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Nouvelle durée d\'affichage'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Nombre de jours',
+            suffixText: 'jours',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(context, int.tryParse(controller.text)),
+            child: const Text('Ajouter'),
+          ),
+        ],
+      ),
+    );
+    if (days == null || days < 1 || days > 365) return;
+    if (_durations.contains(days)) return;
+    // Prix par défaut : le plus proche existant pour chaque cible.
+    setState(() {
+      _durations.add(days);
+      _durations.sort();
+      for (final audience in Ad.audienceLabels.keys) {
+        final nearest = _durations
+            .where((d) => d != days)
+            .fold<int?>(null, (best, d) =>
+                best == null || (d - days).abs() < (best - days).abs()
+                    ? d
+                    : best);
+        final fallbackPrice = nearest == null
+            ? 2000.0
+            : double.tryParse(
+                    _controllers[_key(nearest, audience)]?.text ?? '') ??
+                2000.0;
+        _controllers[_key(days, audience)] =
+            TextEditingController(text: fallbackPrice.toStringAsFixed(0));
+      }
+    });
+  }
+
+  void _removeDuration(int days) {
+    setState(() {
+      _durations.remove(days);
+      for (final audience in Ad.audienceLabels.keys) {
+        _controllers.remove(_key(days, audience))?.dispose();
+      }
+    });
+  }
+
+  Future<void> _save() async {
+    final upserts = <AdPricingRule>[];
+    for (final d in _durations) {
+      for (final entry in Ad.audienceLabels.entries) {
+        final value =
+            double.tryParse(_controllers[_key(d, entry.key)]?.text ?? '');
+        if (value == null || value < 0) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                'Prix invalide pour $d jours · ${entry.value}'),
+            backgroundColor: AppTheme.errorColor,
+          ));
+          return;
+        }
+        upserts.add(AdPricingRule(
+          durationDays: d,
+          audience: entry.key,
+          priceDzd: value,
+        ));
+      }
+    }
+    // Lignes retirées de la grille : durées supprimées.
+    final deletes = _originalRules
+        .where((r) => !_durations.contains(r.durationDays))
+        .toList();
+
+    setState(() => _saving = true);
+    try {
+      await ref.read(adsServiceProvider).saveAdPricing(
+            upserts: upserts,
+            deletes: deletes,
+          );
+      ref.invalidate(adPricingProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Tarifs publicitaires enregistrés'),
+          backgroundColor: AppTheme.accentColor,
+        ));
+      }
+    } catch (e) {
+      if (mounted) await showAppErrorDialog(context, message: 'Erreur: $e');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pricingAsync = ref.watch(adPricingProvider);
+    return pricingAsync.when(
+      loading: () => const ShimmerCard(lines: 3),
+      error: (e, s) => GlassCard(
+        child: Text('Erreur grille tarifaire: $e',
+            style: AppTheme.bodySecondary),
+      ),
+      data: (rules) {
+        _initWith(rules);
+        return GlassCard(
+          padding: const EdgeInsets.all(AppTheme.spaceMd),
+          radius: AppTheme.radiusMd,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Row(
+                children: [
+                  AnimatedIconDot(
+                    icon: Icons.campaign_rounded,
+                    color: AppTheme.primaryColor,
+                  ),
+                  SizedBox(width: AppTheme.spaceSm),
+                  Expanded(
+                    child: Text('Tarifs publicitaires', style: AppTheme.h3),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppTheme.spaceXs),
+              const Text(
+                'Le prix payé par un micro-importateur dépend de la durée '
+                'd\'affichage et de la cible qu\'il choisit.',
+                style: AppTheme.caption,
+              ),
+              const SizedBox(height: AppTheme.spaceSm),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: _addDuration,
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: const Text('Ajouter une durée'),
+                ),
+              ),
+              ..._durations.map(_buildDurationGroup),
+              if (_durations.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppTheme.spaceSm),
+                  child: Text(
+                    'Aucune durée configurée : les expéditeurs ne peuvent pas '
+                    'publier tant que la grille est vide.',
+                    style: AppTheme.caption,
+                  ),
+                ),
+              const SizedBox(height: AppTheme.spaceSm),
+              FilledButton.icon(
+                onPressed: _saving ? null : _save,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.save_outlined),
+                label:
+                    Text(_saving ? 'Enregistrement...' : 'Enregistrer'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDurationGroup(int days) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppTheme.spaceSm),
+      child: Container(
+        padding: const EdgeInsets.all(AppTheme.spaceSm + 2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+          border: Border.all(color: AppTheme.textMutedColor.withValues(alpha: 0.25)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.schedule_rounded,
+                    size: 18, color: AppTheme.primaryColor),
+                const SizedBox(width: AppTheme.spaceXs),
+                Expanded(
+                  child: Text(
+                    '$days jours',
+                    style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Supprimer cette durée',
+                  icon: const Icon(Icons.delete_outline,
+                      size: 20, color: AppTheme.errorColor),
+                  onPressed: () => _removeDuration(days),
+                ),
+              ],
+            ),
+            for (final entry in Ad.audienceLabels.entries)
+              Padding(
+                padding: const EdgeInsets.only(top: AppTheme.spaceXs),
+                child: TextFormField(
+                  controller: _controllers[_key(days, entry.key)],
+                  keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true),
+                  decoration: InputDecoration(
+                    labelText:
+                        'Cible « ${entry.value} » (${AppConstants.defaultCurrency})',
+                    prefixIcon: const Icon(Icons.payments_outlined),
+                    isDense: true,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
