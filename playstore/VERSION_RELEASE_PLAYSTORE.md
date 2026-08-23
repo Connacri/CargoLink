@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.21** |
-| Code de version (versionCode) | **156** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `4d0965a` |
-| Statut CI | À publier au prochain push → release `v1.0.21` sur GitHub |
+| Version (versionName) | **1.0.22** |
+| Code de version (versionCode) | **158** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `bb947fe` |
+| Statut CI | À publier au prochain push → release `v1.0.22` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.21** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.22** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,14 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Durée d'affichage libre pour les publicités** : le micro-importateur (et le
+  fondateur) saisissent n'importe quelle durée de 1 à 365 jours — plus de
+  paliers imposés. Des raccourcis (puces des durées configurées) restent
+  disponibles. Le prix suit la **courbe tarifaire du fondateur** : palier
+  exact si la durée correspond, sinon interpolation linéaire entre les deux
+  paliers encadrants, sinon prorata du premier/dernier palier — calcul
+  identique côté serveur (infalsifiable, arrondi au dinar supérieur) et
+  affiché en direct dans le formulaire.
 - **Aéroports de départ et d'arrivée au choix** : le formulaire de publication
   d'une offre propose désormais une **recherche mondiale d'aéroports** (base
   airport-data) — recherche par ville, nom ou code IATA avec drapeau du pays ;
