@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.20** |
-| Code de version (versionCode) | **154** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `fb56094` |
-| Statut CI | À publier au prochain push → release `v1.0.20` sur GitHub |
+| Version (versionName) | **1.0.21** |
+| Code de version (versionCode) | **156** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `4d0965a` |
+| Statut CI | À publier au prochain push → release `v1.0.21` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.20** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.21** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -32,6 +32,27 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+- **Aéroports de départ et d'arrivée au choix** : le formulaire de publication
+  d'une offre propose désormais une **recherche mondiale d'aéroports** (base
+  airport-data) — recherche par ville, nom ou code IATA avec drapeau du pays ;
+  fini les listes figées, le champ stocke « Aéroport (IATA) ».
+- **Photo de profil dans la barre du bas** : l'onglet « Profil » affiche la
+  photo de l'utilisateur (icône par défaut sinon) avec bordure quand il est
+  actif. Les **expéditeurs** voient en plus une **pastille d'état du dossier**
+  (vert = vérifié, orange = en attente, rouge = refusé) directement sur la
+  barre de navigation.
+- **Tarifs publicitaires paramétrables par le fondateur** : nouvelle section
+  « Tarifs publicitaires » dans Réglages plateforme — ajout/suppression libre
+  des durées d'affichage et **un prix par durée ET par cible** (Tous /
+  Clients / Expéditeurs). Le serveur recalcule toujours le prix depuis cette
+  grille (infalsifiable), et le micro-importateur voit le prix changer en
+  direct selon la durée et la cible choisies dans son formulaire.
+- **Mes publicités : uniquement les siennes** : garde-fou supplémentaire côté
+  app — un micro-importateur ne voit que ses propres publicités (en attente,
+  en ligne ou refusées), jamais celles des autres.
+- **Splash natif régénéré** depuis le nouveau visuel `assets/icons/splash3.jpeg`
+  : images Android (classique + Android 12+, mode sombre inclus), iOS et web
+  mises à jour.
 - **Splash natif régénéré** depuis le nouveau visuel `assets/icons/splash2.png`
   : images Android (classique + Android 12+, mode sombre inclus), iOS et web
   mises à jour.
