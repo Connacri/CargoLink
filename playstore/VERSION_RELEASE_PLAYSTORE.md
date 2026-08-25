@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.26** |
-| Code de version (versionCode) | **167** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `8dc237a` |
-| Statut CI | À publier au prochain push → release `v1.0.26` sur GitHub |
+| Version (versionName) | **1.0.27** |
+| Code de version (versionCode) | **169** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `8e02166` |
+| Statut CI | À publier au prochain push → release `v1.0.27` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.26** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.27** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -31,6 +31,41 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.27
+
+- **Programme de parrainage** : un utilisateur génère un code de parrainage
+  unique et le partage (WhatsApp, Telegram, SMS) ; un filleul entre ce code
+  à l'inscription. Le parrain gagne **50 % de la commission plateforme** sur
+  les commandes du filleul. Tableau de bord fondateur pour valider les lots,
+  marquer les gains comme payés et superviser les parrains actifs.
+- **Bouton Feedback global (FAB)** : un bouton flottant « Avis / Suggestion »
+  est visible sur **tous les écrans de tous les rôles** — envoie directement
+  un message au fondateur via Supabase.
+- **Partage social d'offre** : chaque offre peut être partagée via WhatsApp,
+  Telegram ou n'importe quelle app. Le partage génère une **image billet
+  d'avion** (style billet de vol CargoLink avec route, dates, prix) et un
+  **deep link** `cargolink://offer/<id>` pour ouverture directe dans l'app.
+- **Écran détail offre** : en appuyant sur une offre, le client accède à un
+  écran dédié avec le billet visuel, la disponibilité, la description de
+  l'expéditeur et un bouton « Réserver cette offre ».
+- **WorkflowSlider amélioré** : le carrousel « Comment ça marche » est
+  désormais scrollable et tolère les contenus longs sur tous les écrans.
+- **SafeArea bottom-only universel** : tous les écrans, dialogs et bottom
+  sheets n'appliquent le SafeArea qu'en bas (pas de marge inutile en haut).
+- **Annonce pub taille cohérente** : toutes les bannières publi (carrousel,
+  formulaires, aperçu admin) utilisent un ratio **2:1 (1200×600 px)** et
+  affichent la taille idéale pour guider les annonceurs.
+- **Filtre destination corrigé** : le filtre par ville côté serveur utilise
+  désormais des wildcards `LIKE` pour correspondre correctement aux libellés
+  d'aéroports stockés (ex. « Alger » matche « Aéroport d'Alger Houari
+  Boumediene (ALG) »).
+- **Correction du crash _Notch** dans le billet d'offre (marge négative
+  interdite remplacée par Transform.translate).
+- **Cleanup code** : suppression de `_buildRoute` mort, migration
+  `withOpacity()` → `withValues(alpha:)`, modernisation `super.key`.
+
+### Version 1.0.26
 
 - **Correction de l'échec d'inscription micro-importateur (InvalidKey 400)** :
   les noms de fichiers avec accents, espaces ou parenthèses choisis via le
