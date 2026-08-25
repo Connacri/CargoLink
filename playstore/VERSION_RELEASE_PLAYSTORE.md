@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.28** |
-| Code de version (versionCode) | **174** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `ac56192` |
-| Statut CI | À publier au prochain push → release `v1.0.28` sur GitHub |
+| Version (versionName) | **1.0.55** |
+| Code de version (versionCode) | **175** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `251d716` |
+| Statut CI | À publier au prochain push → release `v1.0.55` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.28** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.55** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 

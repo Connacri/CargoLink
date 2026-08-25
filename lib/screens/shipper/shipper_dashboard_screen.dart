@@ -1847,6 +1847,20 @@ class _ShipmentMiniCard extends ConsumerWidget {
                 ],
               ),
             ],
+            const SizedBox(height: AppTheme.spaceXs),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  tooltip: 'Partager cette offre',
+                  icon: const Icon(Icons.ios_share_rounded, size: 20),
+                  color: AppTheme.primaryColor,
+                  onPressed: () => ref
+                      .read(offerShareServiceProvider)
+                      .shareOffer(context, shipment),
+                ),
+              ],
+            ),
           ],
         ),
       ),
