@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/ui_kit.dart';
 import '../core/widgets/micro_badge.dart';
@@ -12,6 +13,21 @@ import '../core/widgets/micro_badge.dart';
 /// profile) and falls back to [onTap] when not provided. The two gestures are
 /// fully separated. Follows the design tokens defined in [AppTheme] and the
 /// shared kit inside `core/widgets`.
+
+/// Parse une chaîne d'aéroport du type
+/// « Aéroport d'Alger Houari Boumediene (ALG) » et renvoie le code IATA
+/// (3 lettres entre parenthèses). Renvoie la chaîne brute si aucun code n'est
+/// trouvé.
+String _iataCode(String airport) {
+  final match = RegExp(r'\(([A-Za-z]{3})\)').firstMatch(airport);
+  return match != null ? match.group(1)! : airport;
+}
+
+/// Renvoie le nom complet d'un aéroport (sans le code IATA entre parenthèses).
+String _airportName(String airport) {
+  return airport.replaceAll(RegExp(r'\s*\([A-Za-z]{3}\)\s*$'), '').trim();
+}
+
 class ShipperCard extends StatefulWidget {
   const ShipperCard({
     super.key,
@@ -28,6 +44,7 @@ class ShipperCard extends StatefulWidget {
     required this.totalKg,
     required this.pricePerKg,
     required this.arrivalDate,
+    required this.departureDate,
     this.shipmentsCount,
     this.isAvailable = true,
     this.isVerified = false,
@@ -38,6 +55,7 @@ class ShipperCard extends StatefulWidget {
     this.onAvatarTap,
     required this.onBook,
     this.onChat,
+    this.onShare,
   });
 
   final String shipperId;
@@ -58,6 +76,7 @@ class ShipperCard extends StatefulWidget {
   final double totalKg;
   final double pricePerKg;
   final DateTime arrivalDate;
+  final DateTime departureDate;
 
   /// Shippers' total number of completed shipments (shown when expanded).
   final int? shipmentsCount;
@@ -73,6 +92,9 @@ class ShipperCard extends StatefulWidget {
   final VoidCallback? onAvatarTap;
   final VoidCallback onBook;
   final VoidCallback? onChat;
+
+  /// Partage de l'offre (image billet + lien profond). Absent = pas de bouton.
+  final VoidCallback? onShare;
 
   @override
   State<ShipperCard> createState() => _ShipperCardState();
@@ -107,7 +129,16 @@ class _ShipperCardState extends State<ShipperCard> {
           children: [
             _buildHeader(),
             const SizedBox(height: AppTheme.spaceMd),
-            _buildRoute(),
+            FlightRouteCard(
+              origin: widget.origin!,
+              destination: widget.destination,
+              airline: widget.airline,
+              flightNumber: widget.flightNumber,
+              departureTime: DateFormat('d MMM yy - HH:mm', 'fr_FR')
+                  .format(widget.departureDate),
+              arrivalTime: DateFormat('d MMM yy - HH:mm', 'fr_FR')
+                  .format(widget.arrivalDate),
+            ),
             const SizedBox(height: AppTheme.spaceMd),
             _buildAvailability(),
             const SizedBox(height: AppTheme.spaceMd),
@@ -209,40 +240,7 @@ class _ShipperCardState extends State<ShipperCard> {
     );
   }
 
-  Widget _buildRoute() {
-    final origin = widget.origin;
-    return Row(
-      children: [
-        const Icon(
-          Icons.connecting_airports_rounded,
-          size: 16,
-          color: AppTheme.textMutedColor,
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            origin != null && origin.isNotEmpty
-                ? '$origin → ${widget.destination}'
-                : widget.destination,
-            style: AppTheme.body,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        if (widget.flightNumber != null) ...[
-          const SizedBox(width: AppTheme.spaceSm),
-          Flexible(
-            child: Text(
-              widget.airline != null
-                  ? '${widget.airline} · ${widget.flightNumber}'
-                  : 'Vol ${widget.flightNumber}',
-              style: AppTheme.caption,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
+
 
   Widget _buildAvailability() {
     return Column(
@@ -301,14 +299,6 @@ class _ShipperCardState extends State<ShipperCard> {
                       : AppTheme.textMutedColor,
                 ),
               ),
-              if (widget.clientPricePerKg != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  'dont ${widget.pricePerKg.toStringAsFixed(0)} '
-                  '${widget.currency} transporteur',
-                  style: AppTheme.caption,
-                ),
-              ],
             ],
           ),
         ),
@@ -326,6 +316,18 @@ class _ShipperCardState extends State<ShipperCard> {
             ],
           ),
         ),
+        if (widget.onShare != null)
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: IconButton(
+              onPressed: widget.onShare,
+              tooltip: 'Partager cette offre',
+              icon: const Icon(Icons.ios_share_rounded, size: 20),
+              color: AppTheme.primaryColor,
+              padding: EdgeInsets.zero,
+            ),
+          ),
         Expanded(
           child: SizedBox(
             height: 40,
@@ -368,6 +370,17 @@ class _ShipperCardState extends State<ShipperCard> {
         ),
         const SizedBox(height: AppTheme.spaceMd),
         const Text('Statistiques', style: AppTheme.h3),
+        const SizedBox(height: AppTheme.spaceMd),
+        if (widget.clientPricePerKg != null) ...[
+          const SizedBox(height: 2),
+          Center(
+            child: Text(
+              'Dont ${widget.pricePerKg.toStringAsFixed(0)} '
+              '${widget.currency} Prix Expéditeur',
+              style: AppTheme.caption,
+            ),
+          ),
+        ],
         const SizedBox(height: AppTheme.spaceMd),
         Row(
           children: [
@@ -415,6 +428,347 @@ class _ShipperCardState extends State<ShipperCard> {
       return '${(value / 1000).toStringAsFixed(1)}k';
     }
     return '$value';
+  }
+}
+
+class FlightRouteCard extends StatelessWidget {
+  final String origin;
+  final String destination;
+  final String? airline;
+  final String? flightNumber;
+  final String? departureTime;
+  final String? arrivalTime;
+
+  const FlightRouteCard({
+    super.key,
+    required this.origin,
+    required this.destination,
+    this.airline,
+    this.flightNumber,
+    this.departureTime,
+    this.arrivalTime,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: theme.dividerColor.withValues(alpha:0.08),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha:0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ============================================================
+            // HEADER
+            // ============================================================
+            Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: primary.withValues(alpha:0.10),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.flight_rounded,
+                    color: primary,
+                    size: 19,
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                // Compagnie
+                Expanded(
+                  child: Text(
+                    airline?.isNotEmpty == true ? airline! : 'Vol',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+
+                // Numéro du vol
+                if (flightNumber?.isNotEmpty == true) ...[
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: primary.withValues(alpha:0.08),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        flightNumber!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // ============================================================
+            // ROUTE
+            // ============================================================
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // --------------------------------------------------------
+                // ORIGIN
+                // --------------------------------------------------------
+                Expanded(
+                  child: _AirportCard(
+                    code: origin,
+                    time: departureTime,
+                    alignment: CrossAxisAlignment.start,
+                    textAlign: TextAlign.left,
+                    theme: theme,
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                // --------------------------------------------------------
+                // FLIGHT ARROW
+                // --------------------------------------------------------
+                SizedBox(
+                  width: 58,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: primary.withValues(alpha:0.10),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.flight_takeoff_rounded,
+                          color: primary,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 30,
+                            height: 2,
+                            decoration: BoxDecoration(
+                              color: primary.withValues(alpha:0.25),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: primary,
+                            size: 17,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                // --------------------------------------------------------
+                // DESTINATION
+                // --------------------------------------------------------
+                Expanded(
+                  child: _AirportCard(
+                    code: destination,
+                    time: arrivalTime,
+                    alignment: CrossAxisAlignment.end,
+                    textAlign: TextAlign.right,
+                    theme: theme,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 18),
+
+            // ============================================================
+            // DIVIDER
+            // ============================================================
+            Container(
+              height: 1,
+              color: theme.dividerColor.withValues(alpha:0.08),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ============================================================
+            // ROUTE SUMMARY
+            // ============================================================
+            Row(
+              children: [
+                Icon(
+                  Icons.route_rounded,
+                  size: 16,
+                  color: theme.textTheme.bodySmall?.color?.withValues(alpha:0.65),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    '$origin → $destination',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.textTheme.bodySmall?.color?.withValues(alpha:
+                        0.75,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 15,
+                  color: primary,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ==========================================================================
+// AIRPORT CARD
+// ==========================================================================
+
+class _AirportCard extends StatelessWidget {
+  final String code; // chaîne complète ex: "Aéroport d'Alger (ALG)"
+  final String? time;
+  final CrossAxisAlignment alignment;
+  final TextAlign textAlign;
+  final ThemeData theme;
+
+  const _AirportCard({
+    required this.code,
+    required this.time,
+    required this.alignment,
+    required this.textAlign,
+    required this.theme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = theme.colorScheme.primary;
+    final iata = _iataCode(code);
+    final name = _airportName(code);
+
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(
+        minHeight: 68,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 9,
+      ),
+      decoration: BoxDecoration(
+        color: primary.withValues(alpha:0.055),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: primary.withValues(alpha:0.10),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: alignment,
+        children: [
+          // --------------------------------------------------------------
+          // CODE IATA (3 lettres) en grand
+          // --------------------------------------------------------------
+          Text(
+            iata,
+            textAlign: textAlign,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.2,
+              fontSize: 26,
+            ),
+          ),
+
+          // --------------------------------------------------------------
+          // NOM COMPLET en petits caractères
+          // --------------------------------------------------------------
+          if (name.isNotEmpty && name != iata) ...[
+            const SizedBox(height: 2),
+            Text(
+              name,
+              textAlign: textAlign,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: theme.textTheme.bodySmall?.color?.withValues(alpha:0.55),
+              ),
+            ),
+          ],
+
+          // --------------------------------------------------------------
+          // TIME
+          // --------------------------------------------------------------
+          if (time?.isNotEmpty == true) ...[
+            const SizedBox(height: 3),
+            Text(
+              time!,
+              textAlign: textAlign,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.textTheme.bodySmall?.color?.withValues(alpha:0.60),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

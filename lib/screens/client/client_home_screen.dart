@@ -446,7 +446,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             // Carrousel des pubs actives : toutes les bannières défilent.
             if (activeAds.isNotEmpty)
               SliverToBoxAdapter(
-                child: AdBannerCarousel(ads: activeAds, height: 200),
+                child: AdBannerCarousel(ads: activeAds),
               ),
             SliverToBoxAdapter(
               child: _buildGreeting(currentUser),
@@ -516,7 +516,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         top: AppTheme.spaceSm,
       ),
       child: WorkflowSlider(
-        height: 250,
+        height: 270,
         slides: [
           WorkflowSlide(
             title: '1. Trouvez votre offre',
@@ -738,6 +738,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
+        top: false,
         child: ListView(
           children: [
             const Padding(
@@ -765,6 +766,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
+        top: false,
         child: ListView(
           children: [
             const Padding(
@@ -911,9 +913,12 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       pricePerKg: shipment.pricePerKg,
       clientPricePerKg: shipment.pricePerKg + commission,
       arrivalDate: shipment.arrivalDate,
+      departureDate: shipment.departureDate,
       isAvailable: shipment.isActive && !shipment.isFull,
+      // Le tap sur la card ouvre le DÉTAIL de l'offre — la réservation se
+      // fait uniquement via le bouton « Réserver » (ou l'écran détail).
       onTap: () => Navigator.of(context).pushNamed(
-        '/booking-wizard',
+        '/offer-detail',
         arguments: shipment.id,
       ),
       onAvatarTap:
@@ -934,6 +939,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 ),
               )
           : null,
+      onShare: () => ref
+          .read(offerShareServiceProvider)
+          .shareOffer(context, shipment),
     );
   }
 

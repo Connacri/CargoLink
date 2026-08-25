@@ -66,6 +66,7 @@ class _ShipmentDetail extends StatelessWidget {
     final shipperUser = s.shipper?.user;
     return Scaffold(
       body: SafeArea(
+        top: false,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
@@ -233,6 +234,7 @@ class _BookingDetail extends StatelessWidget {
     final client = b.client;
     return Scaffold(
       body: SafeArea(
+        top: false,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [

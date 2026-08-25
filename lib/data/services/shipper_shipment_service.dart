@@ -95,6 +95,35 @@ class ShipperService {
     }
   }
 
+  /// Save a collection address to the shipper's saved addresses list.
+  Future<void> saveCollectionAddress({
+    required String shipperId,
+    required String address,
+  }) async {
+    try {
+      _logger.i('Saving collection address for shipper: $shipperId');
+      // Fetch current saved addresses
+      final response = await _supabase
+          .from('shippers')
+          .select('saved_addresses')
+          .eq('id', shipperId)
+          .single();
+      final current = (response['saved_addresses'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [];
+      if (current.contains(address)) return; // déjà sauvegardée
+      current.add(address);
+      await _supabase.from('shippers').update({
+        'saved_addresses': current,
+      }).eq('id', shipperId);
+      _logger.i('Collection address saved');
+    } catch (e) {
+      _logger.e('Error saving collection address: $e');
+      rethrow;
+    }
+  }
+
   /// Get shipper profile by user ID. Returns null when the user has no shipper
   /// profile yet (e.g. they just switched their role to shipper) instead of
   /// throwing a PGRST116 "0 rows" exception.
@@ -305,6 +334,7 @@ class ShipmentService {
     String? airline,
     String? flightNumber,
     String? description,
+    String? collectionAddress,
     double? publicationFee,
     double publicationFeeDiscount = 0,
   }) async {
@@ -335,6 +365,7 @@ class ShipmentService {
                     : 'paid',
             'publication_fee_discount': publicationFeeDiscount,
             'description': description,
+            'collection_address': collectionAddress,
             'created_at': DateTime.now().toIso8601String(),
             'updated_at': DateTime.now().toIso8601String(),
           })
@@ -525,7 +556,7 @@ class ShipmentService {
           .gt('available_weight_kg', 0);
 
       if (destinationCity != null) {
-        query = query.ilike('destination_city', destinationCity);
+        query = query.ilike('destination_city', '%$destinationCity%');
       }
 
       if (originCountry != null) {

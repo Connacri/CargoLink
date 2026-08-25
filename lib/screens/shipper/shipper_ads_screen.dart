@@ -338,7 +338,8 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
             onTap: _isSaving ? null : _pickImage,
             borderRadius: BorderRadius.circular(AppTheme.radiusMd),
             child: AspectRatio(
-              aspectRatio: 16 / 9,
+              aspectRatio:
+                  kAdRecommendedWidth / kAdRecommendedHeight, // 2:1
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(AppTheme.radiusMd),
@@ -364,12 +365,12 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
                           ),
                           SizedBox(height: AppTheme.spaceXs),
                           Text(
-                            '16:9 recommandé, max 5 Mo',
+                            'Taille idéale : $kAdSizeLabel (2:1), max 5 Mo',
                             style: AppTheme.caption,
                           ),
                         ],
                       )
-                     : Image.memory(_imageBytes!, fit: BoxFit.cover),
+                    : Image.memory(_imageBytes!, fit: BoxFit.cover),
               ),
             ),
           ),

@@ -145,6 +145,7 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
+        top: false,
         child: _initializing
             ? const Center(
                 child: CircularProgressIndicator(color: Colors.white),

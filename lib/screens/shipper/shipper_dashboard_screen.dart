@@ -198,6 +198,7 @@ class _ShipperDashboardScreenState
       body: Container(
         decoration: const BoxDecoration(gradient: AppTheme.primaryGradient),
         child: SafeArea(
+          top: false,
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppTheme.spaceLg),
@@ -301,7 +302,7 @@ class _ShipperDashboardScreenState
             ),
             if (activeAds.isNotEmpty)
               SliverToBoxAdapter(
-                child: AdBannerCarousel(ads: activeAds, height: 140),
+                child: AdBannerCarousel(ads: activeAds),
               ),
             SliverToBoxAdapter(
               child: _buildStats(shipper),
@@ -1071,12 +1072,26 @@ class _ShipperDashboardScreenState
     final airlineController = TextEditingController();
     final flightController = TextEditingController();
     final descriptionController = TextEditingController();
+    final collectionAddressCtrl = TextEditingController();
     String? originCountry;
     String? destinationCity;
     DateTime departure = DateTime.now().add(const Duration(days: 3));
     DateTime arrival = DateTime.now().add(const Duration(days: 7));
     bool submitting = false;
     bool payByVisa = false;
+    bool saveAddressForNextTime = true;
+
+    // Adresses de collecte déjà sauvegardées par l'expéditeur.
+    List<String> savedAddresses = [];
+    try {
+      final shipperProfile =
+          await ref.read(shipperServiceProvider).getShipperByUserId(
+                ref.read(authServiceProvider).currentUserId ?? '',
+              );
+      savedAddresses = shipperProfile?.savedAddresses ?? [];
+    } catch (_) {
+      savedAddresses = [];
+    }
 
     final settings = ref.read(platformSettingsProvider).valueOrNull;
     final minWeight = settings?.minWeightKg ?? AppConstants.minWeightKg;
@@ -1086,6 +1101,7 @@ class _ShipperDashboardScreenState
     final commissionPercent =
         settings?.commissionPercent ?? AppConstants.platformCommissionPercent;
 
+    if (!mounted) return;
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1214,6 +1230,53 @@ class _ShipperDashboardScreenState
                       ),
                     ),
                     const SizedBox(height: 12),
+                    // Adresse de collecte : saisie manuelle ou choix parmi
+                    // les adresses déjà sauvegardées par l'expéditeur.
+                    if (savedAddresses.isNotEmpty) ...[
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            for (final addr in savedAddresses)
+                              ActionChip(
+                                label: Text(
+                                  addr,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                                onPressed: () => setSheetState(() =>
+                                    collectionAddressCtrl.text = addr),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    TextFormField(
+                      controller: collectionAddressCtrl,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        labelText:
+                            'Adresse de collecte (lieu où remettre les colis)',
+                        hintText: 'ex : Dépôt Bab Ezzouar, Alger',
+                        prefixIcon: Icon(Icons.location_on_outlined),
+                      ),
+                    ),
+                    CheckboxListTile(
+                      value: saveAddressForNextTime,
+                      onChanged: (v) => setSheetState(
+                          () => saveAddressForNextTime = v ?? true),
+                      title: const Text(
+                        'Enregistrer cette adresse pour mes prochaines offres',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                    ),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
@@ -1307,9 +1370,34 @@ class _ShipperDashboardScreenState
                                           descriptionController.text.isEmpty
                                               ? null
                                               : descriptionController.text,
+                                      collectionAddress:
+                                          collectionAddressCtrl.text.trim()
+                                                  .isEmpty
+                                              ? null
+                                              : collectionAddressCtrl.text
+                                                  .trim(),
                                       publicationFee: publicationFee,
                                       publicationFeeDiscount: discount,
                                     );
+                                // Sauvegarde de l'adresse de collecte pour
+                                // les prochaines offres (si demandé).
+                                final addrToSave =
+                                    collectionAddressCtrl.text.trim();
+                                if (saveAddressForNextTime &&
+                                    addrToSave.isNotEmpty &&
+                                    !savedAddresses.contains(addrToSave)) {
+                                  try {
+                                    await ref
+                                        .read(shipperServiceProvider)
+                                        .saveCollectionAddress(
+                                          shipperId: shipperId,
+                                          address: addrToSave,
+                                        );
+                                  } catch (_) {
+                                    // Non bloquant : la pub de l'offre
+                                    // réussit quand même.
+                                  }
+                                }
                                 // Le paiement par carte Visa (-30%) place
                                 // l'offre en attente de confirmation
                                 // fondateur (géré par publishShipment) ;

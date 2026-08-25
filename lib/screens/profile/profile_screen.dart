@@ -15,6 +15,7 @@ import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/micro_badge.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../auth/role_selection_screen.dart';
+import '../referral/referral_screen.dart';
 import '../shipper/live_selfie_screen.dart';
 import '../shipper/shipper_dashboard_screen.dart';
 
@@ -242,6 +243,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       context: context,
       backgroundColor: AppTheme.backgroundColor,
       builder: (context) => SafeArea(
+        top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -527,6 +529,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 SliverToBoxAdapter(child: _buildRoleSettings(userData)),
                 SliverToBoxAdapter(child: _buildPersonalInfo(userData)),
                 SliverToBoxAdapter(child: _buildSocialSection(userData)),
+                SliverToBoxAdapter(child: _buildReferralSection()),
                 SliverToBoxAdapter(child: _buildSaveButton(userData)),
                 const SliverToBoxAdapter(
                   child: Padding(
@@ -801,6 +804,68 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Tuile « Programme de parrainage » — visible pour tous les rôles tant
+  /// que le programme est actif côté fondateur.
+  Widget _buildReferralSection() {
+    final programActive = ref.watch(referralProgramActiveProvider);
+    return programActive.maybeWhen(
+      data: (active) => !active
+          ? const SizedBox.shrink()
+          : Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppTheme.spaceMd,
+                AppTheme.spaceMd,
+                AppTheme.spaceMd,
+                0,
+              ),
+              child: GlassCard(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (_) => const ReferralScreen()),
+                  );
+                },
+                padding: const EdgeInsets.all(AppTheme.spaceMd),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color:
+                            AppTheme.accentColor.withValues(alpha: 0.12),
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusSm),
+                      ),
+                      child: const Icon(Icons.card_giftcard_rounded,
+                          color: AppTheme.accentColor, size: 24),
+                    ),
+                    const SizedBox(width: AppTheme.spaceMd),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Programme de parrainage',
+                              style: AppTheme.body
+                                  .copyWith(fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Gagnez 50% de la commission plateforme sur chaque '
+                            'colis livré et payé par vos filleuls.',
+                            style: AppTheme.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded,
+                        color: AppTheme.textMutedColor),
+                  ],
+                ),
+              ),
+            ),
+      orElse: () => const SizedBox.shrink(),
     );
   }
 

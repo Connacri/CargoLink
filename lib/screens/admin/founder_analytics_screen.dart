@@ -102,6 +102,7 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
 
     return Scaffold(
       body: SafeArea(
+        top: false,
         child: RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(allUsersProvider);

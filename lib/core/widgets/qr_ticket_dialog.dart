@@ -98,15 +98,21 @@ class _QrTicketDialogState extends State<_QrTicketDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = (screenWidth * 0.85).clamp(300.0, 480.0);
+
     return Dialog(
       backgroundColor: AppTheme.backgroundColor,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radiusLg),
       ),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spaceMd),
-          child: Column(
+      child: SizedBox(
+        width: dialogWidth,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(AppTheme.spaceMd),
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -145,6 +151,7 @@ class _QrTicketDialogState extends State<_QrTicketDialog> {
                         : 'Enregistrer dans la galerie')),
               ),
             ],
+            ),
           ),
         ),
       ),

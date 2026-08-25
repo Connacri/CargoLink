@@ -17,6 +17,10 @@ import '../data/services/settings_service.dart';
 import '../data/services/v2_service.dart';
 import '../data/services/feedback_service.dart';
 import '../data/services/inventory_service.dart';
+import '../data/services/deep_link_service.dart';
+import '../data/services/offer_share_service.dart';
+import '../data/services/referral_service.dart';
+import '../data/models/referral_models.dart';
 
 // ============================================================================
 // AUTH PROVIDERS
@@ -33,7 +37,17 @@ final authStateProvider = StreamProvider<AppAuthState>((ref) {
 
 final currentUserProvider = FutureProvider<User?>((ref) async {
   final authService = ref.watch(authServiceProvider);
-  return authService.getCurrentUserProfile();
+  final user = await authService.getCurrentUserProfile();
+  if (user != null) {
+    // Applique un éventuel code de parrainage saisi à l'inscription,
+    // dès la première session authentifiée (idempotent).
+    try {
+      await ref
+          .read(referralServiceProvider)
+          .consumePendingCode(user.id);
+    } catch (_) {}
+  }
+  return user;
 });
 
 final isAuthenticatedProvider = Provider<bool>((ref) {
@@ -927,4 +941,63 @@ final depotStatsProvider =
     FutureProvider.family<Map<String, dynamic>?, String>((ref, depotId) async {
   final service = ref.watch(inventoryServiceProvider);
   return service.getDepotStats(depotId);
+});
+
+// ============================================================================
+// PARRAINAGE (referral program)
+// ============================================================================
+
+final referralServiceProvider = Provider<ReferralService>((ref) {
+  return ReferralService();
+});
+
+/// Interrupteur fondateur du programme de parrainage.
+final referralProgramActiveProvider = FutureProvider<bool>((ref) async {
+  return ref.watch(referralServiceProvider).isProgramActive();
+});
+
+/// Statistiques du parrain connecté (code, filleuls, gains, lots).
+final myReferralStatsProvider =
+    FutureProvider.autoDispose<ReferralStats>((ref) async {
+  final userId = ref.watch(authServiceProvider).currentUserId;
+  if (userId == null) throw StateError('Non authentifié');
+  return ref.watch(referralServiceProvider).getMyStats(userId);
+});
+
+/// Filleuls du parrain connecté avec gains cumulés.
+final myReferralFilleulsProvider =
+    FutureProvider.autoDispose<List<ReferralFilleul>>((ref) async {
+  final userId = ref.watch(authServiceProvider).currentUserId;
+  if (userId == null) return [];
+  return ref.watch(referralServiceProvider).getMyFilleuls(userId);
+});
+
+/// Historique des lots de vidéos du parrain connecté.
+final myReferralBatchesProvider =
+    FutureProvider.autoDispose<List<ReferralBatch>>((ref) async {
+  final userId = ref.watch(authServiceProvider).currentUserId;
+  if (userId == null) return [];
+  return ref.watch(referralServiceProvider).getMyBatches(userId);
+});
+
+/// Vue fondateur : tous les parrains + wallets détaillés.
+final allParrainsOverviewProvider =
+    FutureProvider.autoDispose<List<ParrainOverview>>((ref) async {
+  final service = ref.watch(referralServiceProvider);
+  final overview = await service.getAllParrainsOverview();
+  await service.prefetchUsers(overview.map((o) => o.user?.id ?? '').toList());
+  // Recharge après prefetch pour peupler les profils users.
+  return service.getAllParrainsOverview();
+});
+
+// ============================================================================
+// PARTAGE D'OFFRE & DEEP LINKS
+// ============================================================================
+
+final offerShareServiceProvider = Provider<OfferShareService>((ref) {
+  return OfferShareService();
+});
+
+final deepLinkServiceProvider = Provider<DeepLinkService>((ref) {
+  return DeepLinkService();
 });

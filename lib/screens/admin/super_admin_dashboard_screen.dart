@@ -15,6 +15,7 @@ import 'verification_center_screen.dart';
 import 'commission_screen.dart';
 import 'inventory_screen.dart';
 import 'ads_screen.dart';
+import 'referral_admin_screen.dart';
 
 /// Founder (super_admin) dashboard — accès total et contrôle de la plateforme :
 /// stats globales, gestion de tous les comptes (rôles, activation,
@@ -1236,6 +1237,12 @@ class _FounderMenuButton extends ConsumerWidget {
             Navigator.of(context).pushNamed('/feedback-inbox');
           case _FounderMenuAction.chat:
             openChatInbox(context, ref);
+          case _FounderMenuAction.referral:
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const ReferralAdminScreen(),
+              ),
+            );
         }
       },
       itemBuilder: (context) => [
@@ -1280,6 +1287,11 @@ class _FounderMenuButton extends ConsumerWidget {
           label: 'Messages',
           badge: _countLabel(chat),
         ),
+        _founderMenuItem(
+          action: _FounderMenuAction.referral,
+          icon: Icons.card_giftcard_rounded,
+          label: 'Parrainages',
+        ),
       ],
     );
   }
@@ -1299,6 +1311,7 @@ enum _FounderMenuAction {
   ads,
   feedback,
   chat,
+  referral,
 }
 
 /// One entry of the founder menu: icon + label + optional count badge.

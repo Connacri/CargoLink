@@ -111,22 +111,31 @@ class _SlideCard extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.10),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(AppTheme.spaceLg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
+          // Scrollable : tolère les contenus longs (titre + étapes + règles)
+          // quelle que soit la hauteur imposée par l'écran appelant.
+          Positioned.fill(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppTheme.spaceLg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
                 Text(
                   slide.title,
-                  style: AppTheme.h2.copyWith(color: Colors.white),
+                  style: AppTheme.h2.copyWith(
+                    color: Colors.white,
+                    fontSize: 20,
+                  ),
                 ),
                 if (slide.subtitle != null) ...[
                   const SizedBox(height: 4),
                   Text(
                     slide.subtitle!,
                     style: AppTheme.bodySecondary
-                        .copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                        .copyWith(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 13,
+                        ),
                   ),
                 ],
                 const SizedBox(height: AppTheme.spaceMd),
@@ -137,8 +146,8 @@ class _SlideCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          width: 22,
-                          height: 22,
+                          width: 20,
+                          height: 20,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.20),
@@ -148,7 +157,7 @@ class _SlideCard extends StatelessWidget {
                             '${i + 1}',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -157,7 +166,10 @@ class _SlideCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             slide.steps[i],
-                            style: AppTheme.body.copyWith(color: Colors.white),
+                            style: AppTheme.body.copyWith(
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
@@ -199,7 +211,8 @@ class _SlideCard extends StatelessWidget {
                     ),
                   ),
                 ],
-              ],
+                ],
+              ),
             ),
           ),
         ],

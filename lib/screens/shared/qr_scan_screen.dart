@@ -277,6 +277,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
             _buildHeader(),

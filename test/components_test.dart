@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:cargolink/components/shipper_card.dart';
 import 'package:cargolink/components/tracking_timeline.dart';
@@ -8,6 +9,9 @@ import 'package:cargolink/components/revenue_bar_chart.dart';
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
 void main() {
+  setUpAll(() async {
+    await initializeDateFormatting('fr_FR');
+  });
   group('ShipperCard', () {
     testWidgets('renders name, availability and book button', (tester) async {
       var booked = false;
@@ -24,6 +28,7 @@ void main() {
         pricePerKg: 1200,
         arrivalDate: DateTime.now().add(const Duration(days: 2)),
         onBook: () => booked = true,
+        departureDate: DateTime.now().add(const Duration(days: 0)),
       )));
 
       expect(find.text('Mohamed Karim'), findsOneWidget);
@@ -40,6 +45,9 @@ void main() {
     });
 
     testWidgets('expands stats via the details icon', (tester) async {
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
       await tester.pumpWidget(_wrap(ShipperCard(
         shipperId: 's1',
         name: 'Fatima B.',
@@ -52,6 +60,7 @@ void main() {
         arrivalDate: DateTime.now().add(const Duration(days: 1)),
         shipmentsCount: 1240,
         onBook: () {},
+        departureDate: DateTime.now().add(const Duration(days: 0)),
       )));
 
       expect(find.text('Statistiques'), findsNothing);

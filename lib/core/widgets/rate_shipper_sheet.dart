@@ -61,6 +61,7 @@ class _RateShipperSheetState extends State<_RateShipperSheet> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
+      top: false,
       child: Container(
         padding: EdgeInsets.only(
           left: AppTheme.spaceMd,

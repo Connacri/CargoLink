@@ -18,6 +18,7 @@ Future<File?> pickProofPhoto(BuildContext context, {String title = 'Photo de pre
     context: context,
     backgroundColor: AppTheme.backgroundColor,
     builder: (sheetContext) => SafeArea(
+      top: false,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

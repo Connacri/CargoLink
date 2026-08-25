@@ -45,6 +45,7 @@ Future<void> showFullScreenImage(
             ),
           ),
           SafeArea(
+            top: false,
             child: Padding(
               padding: const EdgeInsets.all(AppTheme.spaceSm),
               child: Row(

@@ -875,7 +875,8 @@ class _ShipperBookingDetailScreenState
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (sheetContext) => const SafeArea(child: _RefusalSheet()),
+      builder: (sheetContext) =>
+          const SafeArea(top: false, child: _RefusalSheet()),
     );
     if (reason == null) return;
     await _run(
@@ -929,7 +930,8 @@ class _ShipperBookingDetailScreenState
       context: context,
       isScrollControlled: true,
       backgroundColor: AppTheme.backgroundColor,
-      builder: (sheetContext) => const SafeArea(child: _VerificationSheet()),
+      builder: (sheetContext) =>
+          const SafeArea(top: false, child: _VerificationSheet()),
     );
     if (result == null) return;
 
@@ -1009,7 +1011,8 @@ class _ShipperBookingDetailScreenState
       context: context,
       isScrollControlled: true,
       backgroundColor: AppTheme.backgroundColor,
-      builder: (sheetContext) => const SafeArea(child: _CourierDepositSheet()),
+      builder: (sheetContext) =>
+          const SafeArea(top: false, child: _CourierDepositSheet()),
     );
     if (info == null) return;
     await _run(() async {

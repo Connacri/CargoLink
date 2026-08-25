@@ -20,6 +20,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
+  final _referralCodeController = TextEditingController();
   String _role = 'client';
   bool _obscurePassword = true;
   bool _isLoading = false;
@@ -31,6 +32,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
+    _referralCodeController.dispose();
     super.dispose();
   }
 
@@ -46,6 +48,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             phone: _phoneController.text.trim(),
             role: _role,
           );
+
+      // Code de parrainage optionnel : appliqué à la première session
+      // authentifiée (email vérifié / login).
+      final referralCode = _referralCodeController.text.trim();
+      if (referralCode.isNotEmpty) {
+        try {
+          await ref.read(referralServiceProvider).savePendingCode(referralCode);
+        } catch (_) {}
+      }
 
       ref.invalidate(currentUserProvider);
 
@@ -236,6 +247,19 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                               }
                               return null;
                             },
+                          ),
+                        ),
+                        const SizedBox(height: AppTheme.spaceLg),
+                        StaggeredEntrance(
+                          delay: const Duration(milliseconds: 440),
+                          child: TextFormField(
+                            controller: _referralCodeController,
+                            textCapitalization: TextCapitalization.characters,
+                            decoration: const InputDecoration(
+                              labelText: 'Code de parrainage (optionnel)',
+                              hintText: 'Ex : AB2CD3EF',
+                              prefixIcon: Icon(Icons.card_giftcard_rounded),
+                            ),
                           ),
                         ),
                         const SizedBox(height: AppTheme.spaceLg),

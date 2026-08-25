@@ -302,7 +302,24 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
               const SizedBox(height: AppTheme.spaceMd),
               TextField(
                 controller: _productDescCtrl,
+                maxLength: 1000,
                 maxLines: 3,
+                buildCounter: (context,
+                        {required currentLength,
+                        required isFocused,
+                        required maxLength}) =>
+                    Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    '$currentLength / $maxLength',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: currentLength > 900
+                          ? AppTheme.errorColor
+                          : AppTheme.textMutedColor,
+                    ),
+                  ),
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Description',
                   hintText: 'Décrivez le produit en détail...',
@@ -434,7 +451,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
         const Text('Photos du produit', style: AppTheme.h2),
         const SizedBox(height: 4),
         const Text(
-          'Optionnel — ajoutez jusqu\'à 5 photos pour accélérer la confirmation.',
+          'Optionnel — ajoutez jusqu\'à 6 photos pour accélérer la confirmation.',
           style: AppTheme.bodySecondary,
         ),
         const SizedBox(height: AppTheme.spaceMd),
@@ -506,7 +523,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
                   ],
                 ),
               ),
-            if (_productImages.length < 5 && !_loadingImage)
+            if (_productImages.length < 6 && !_loadingImage)
               GestureDetector(
                 onTap: _pickImage,
                 child: DottedAddTile(onTap: _pickImage),
@@ -527,6 +544,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
       context: context,
       backgroundColor: AppTheme.backgroundColor,
       builder: (sheetContext) => SafeArea(
+        top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -611,6 +629,13 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
         return;
       }
       if (!mounted) return;
+      if (_productImages.length >= 6) {
+        if (mounted) {
+          setState(() => _loadingImage = false);
+          _toast('Maximum 6 photos autorisées');
+        }
+        return;
+      }
       final name = picked.name.isNotEmpty
           ? picked.name
           : 'product_${DateTime.now().millisecondsSinceEpoch}.jpg';

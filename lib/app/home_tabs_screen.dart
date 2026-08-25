@@ -16,11 +16,34 @@ import 'app_widgets.dart';
 // HOME TABS SCREEN
 // ============================================================================
 
-class HomeTabsScreen extends ConsumerWidget {
+class HomeTabsScreen extends ConsumerStatefulWidget {
   const HomeTabsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeTabsScreen> createState() => _HomeTabsScreenState();
+}
+
+class _HomeTabsScreenState extends ConsumerState<HomeTabsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Deep link arrivé avant connexion : ouvrir l'offre mise en attente.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _openPendingOffer();
+    });
+  }
+
+  Future<void> _openPendingOffer() async {
+    try {
+      final shipmentId =
+          await ref.read(deepLinkServiceProvider).consumePendingOffer();
+      if (!mounted || shipmentId == null) return;
+      Navigator.of(context).pushNamed('/booking-wizard', arguments: shipmentId);
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final navIndex = ref.watch(navigationIndexProvider);
     final currentUser = ref.watch(currentUserProvider);
 
@@ -59,7 +82,6 @@ class HomeTabsScreen extends ConsumerWidget {
       error: (error, stack) => ErrorScreen(error: error.toString()),
     );
   }
-
   Widget _buildClientTabs(
     BuildContext context,
     WidgetRef ref,

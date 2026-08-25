@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
+import '../core/widgets/feedback_launcher.dart';
 import '../providers/index.dart';
 import '../screens/auth/account_gate_screen.dart';
 import '../screens/auth/email_verification_screen.dart';
@@ -19,6 +20,7 @@ import '../screens/client/booking_screen.dart';
 import '../screens/client/booking_wizard_screen.dart';
 import '../screens/client/my_orders_screen.dart';
 import '../screens/client/my_parcels_screen.dart';
+import '../screens/client/offer_detail_screen.dart';
 import '../screens/client/payment_screen.dart';
 import '../screens/client/tracking_screen.dart';
 import '../screens/profile/profile_screen.dart';
@@ -44,7 +46,20 @@ class CargoLinkApp extends ConsumerWidget {
       navigatorKey: appNavigatorKey,
       builder: (context, child) => WebAndroidDownloadBanner(
         navigatorKey: appNavigatorKey,
-        child: child ?? const SizedBox.shrink(),
+        child: Stack(
+          children: [
+            child ?? const SizedBox.shrink(),
+            // Écoute des liens profonds (cargolink://offer/<id>).
+            const _DeepLinkListener(),
+            // FAB « Feedback » global — visible sur tous les écrans de tous
+            // les rôles (au-dessus de chaque route, y compris les dialogs).
+            const Positioned(
+              right: 14,
+              bottom: 22,
+              child: GlobalFeedbackFab(),
+            ),
+          ],
+        ),
       ),
       home: authState.when(
         data: (authData) {
@@ -75,6 +90,11 @@ class CargoLinkApp extends ConsumerWidget {
               ModalRoute.of(context)?.settings.arguments as String;
           return BookingWizardScreen(shipmentId: shipmentId);
         },
+        '/offer-detail': (context) {
+          final shipmentId =
+              ModalRoute.of(context)?.settings.arguments as String;
+          return OfferDetailScreen(shipmentId: shipmentId);
+        },
         '/payment': (context) {
           final bookingId =
               ModalRoute.of(context)?.settings.arguments as String;
@@ -101,4 +121,38 @@ class CargoLinkApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
     );
   }
+}
+
+/// Écoute les deep links entrants et route vers l'offre ciblée :
+/// - utilisateur connecté → écran de réservation directement ;
+/// - sinon → l'id est mis en file d'attente, consommé après login
+///   (voir [HomeTabsScreen]).
+class _DeepLinkListener extends ConsumerStatefulWidget {
+  const _DeepLinkListener();
+
+  @override
+  ConsumerState<_DeepLinkListener> createState() => _DeepLinkListenerState();
+}
+
+class _DeepLinkListenerState extends ConsumerState<_DeepLinkListener> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(deepLinkServiceProvider).init(onOffer: (shipmentId) {
+        final nav = appNavigatorKey.currentState;
+        if (nav == null) return;
+        final signedIn =
+            ref.read(authServiceProvider).currentUserId != null;
+        if (signedIn) {
+          nav.pushNamed('/booking-wizard', arguments: shipmentId);
+        } else {
+          ref.read(deepLinkServiceProvider).savePendingOffer(shipmentId);
+        }
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }

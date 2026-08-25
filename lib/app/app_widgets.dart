@@ -220,6 +220,7 @@ class _WebAndroidDownloadBannerState extends State<WebAndroidDownloadBanner> {
     return Material(
       color: AppTheme.primaryDark,
       child: SafeArea(
+        top: false,
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(

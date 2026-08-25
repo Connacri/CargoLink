@@ -6,22 +6,28 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../data/models/models.dart';
 import '../theme/app_theme.dart';
 
+/// Taille d'image recommandée pour les bannières publicitaires — celle
+/// affichée dans les formulaires de création ET le ratio réel d'affichage
+/// sur les pages d'accueil (client & expéditeur).
+const int kAdRecommendedWidth = 1200;
+const int kAdRecommendedHeight = 600;
+const String kAdSizeLabel = '$kAdRecommendedWidth × $kAdRecommendedHeight px';
+
 /// Carrousel des bannières publicitaires actives : fait défiler toutes les
 /// pubs publiées (une par page, défilement automatique toutes les 4 s,
 /// points indicateurs), et ouvre le lien de la pub affichée au toucher.
+///
+/// Les bannières sont affichées au ratio exact de la taille recommandée
+/// ([kAdRecommendedWidth] × [kAdRecommendedHeight], soit 2:1).
 class AdBannerCarousel extends StatefulWidget {
   const AdBannerCarousel({
     super.key,
     required this.ads,
-    this.height = 160,
     this.autoAdvance = const Duration(seconds: 4),
   });
 
   /// Pubs actives à faire défiler (ordre déjà trié par le service).
   final List<Ad> ads;
-
-  /// Hauteur fixe du bandeau.
-  final double height;
 
   /// Durée d'affichage d'une page avant passage automatique à la suivante.
   final Duration autoAdvance;
@@ -92,9 +98,9 @@ class _AdBannerCarouselState extends State<AdBannerCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: widget.height,
+    return AspectRatio(
+      aspectRatio:
+          kAdRecommendedWidth / kAdRecommendedHeight, // 2:1, comme annoncé
       child: Stack(
         children: [
           PageView.builder(

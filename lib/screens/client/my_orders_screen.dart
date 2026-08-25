@@ -213,6 +213,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
     if (userId == null) {
       return const Scaffold(
         body: SafeArea(
+          top: false,
           child: Center(
             child: Text(
               'Utilisateur non identifié',

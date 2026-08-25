@@ -101,6 +101,7 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
 
         return Scaffold(
           body: SafeArea(
+            top: false,
             child: CustomScrollView(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),

@@ -172,7 +172,7 @@ class _GateScaffold extends StatelessWidget {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(gradient: AppTheme.primaryGradient),
-        child: SafeArea(child: child),
+        child: SafeArea(top: false, child: child),
       ),
     );
   }

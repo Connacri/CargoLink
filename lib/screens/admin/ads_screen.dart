@@ -409,6 +409,23 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
             ),
           ),
           ),
+          const SizedBox(height: 6),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.photo_size_select_large,
+                  size: 14, color: AppTheme.textMutedColor),
+              SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  'Taille idéale : $kAdSizeLabel (paysage 2:1) — '
+                  'c\'est la taille affichée sur les pages d\'accueil.',
+                  textAlign: TextAlign.center,
+                  style: AppTheme.caption,
+                ),
+              ),
+            ],
+          ),
           if (_imageBytes != null) ...[
             const SizedBox(height: AppTheme.spaceXs),
             Row(
@@ -643,7 +660,8 @@ class _BannerPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: 16 / 9,
+      aspectRatio:
+          kAdRecommendedWidth / kAdRecommendedHeight, // 2:1 comme en accueil
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppTheme.radiusMd),

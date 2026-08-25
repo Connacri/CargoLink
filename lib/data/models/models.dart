@@ -150,6 +150,7 @@ class Shipper {
   final int totalShipments;
   final DateTime createdAt;
   final User? user; // Related user object
+  final List<String> savedAddresses;
 
   Shipper({
     required this.id,
@@ -167,6 +168,7 @@ class Shipper {
     this.totalShipments = 0,
     required this.createdAt,
     this.user,
+    this.savedAddresses = const [],
   });
 
   factory Shipper.fromJson(Map<String, dynamic> json) {
@@ -188,6 +190,10 @@ class Shipper {
       totalShipments: json['total_shipments'] as int? ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String),
       user: json['users'] != null ? User.fromJson(json['users']) : null,
+      savedAddresses: (json['saved_addresses'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
     );
   }
 
@@ -207,6 +213,7 @@ class Shipper {
       'rating': rating,
       'total_shipments': totalShipments,
       'created_at': createdAt.toIso8601String(),
+      'saved_addresses': savedAddresses,
     };
   }
 
@@ -242,6 +249,7 @@ class Shipment {
   final String publicationFeeStatus; // pending, awaiting_confirmation, paid
   final double publicationFeeDiscount;
   final DateTime? publicationPaidAt;
+  final String? collectionAddress;
   final DateTime createdAt;
   final DateTime updatedAt;
   final Shipper? shipper; // Related shipper object
@@ -274,6 +282,7 @@ class Shipment {
     this.publicationFeeStatus = 'pending',
     this.publicationFeeDiscount = 0,
     this.publicationPaidAt,
+    this.collectionAddress,
     required this.createdAt,
     required this.updatedAt,
     this.shipper,
@@ -304,6 +313,7 @@ class Shipment {
       publicationPaidAt: json['publication_paid_at'] != null
           ? DateTime.tryParse(json['publication_paid_at'] as String)
           : null,
+      collectionAddress: json['collection_address'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       shipper:
@@ -332,6 +342,7 @@ class Shipment {
       'publication_fee_status': publicationFeeStatus,
       'publication_fee_discount': publicationFeeDiscount,
       'publication_paid_at': publicationPaidAt?.toIso8601String(),
+      'collection_address': collectionAddress,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
