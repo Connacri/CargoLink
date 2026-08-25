@@ -4,6 +4,9 @@ import '../core/theme/app_theme.dart';
 import '../core/widgets/ui_kit.dart';
 import '../core/widgets/micro_badge.dart';
 
+/// Returns `true` when the [date] carries a meaningful time (non-midnight).
+bool _hasTime(DateTime date) => date.hour != 0 || date.minute != 0;
+
 /// Reusable shipper offer card used on the client search feed.
 ///
 /// Compact on first render. Tapping the card fires [onTap] (e.g. open the
@@ -134,10 +137,16 @@ class _ShipperCardState extends State<ShipperCard> {
               destination: widget.destination,
               airline: widget.airline,
               flightNumber: widget.flightNumber,
-              departureTime: DateFormat('d MMM yy - HH:mm', 'fr_FR')
-                  .format(widget.departureDate),
-              arrivalTime: DateFormat('d MMM yy - HH:mm', 'fr_FR')
-                  .format(widget.arrivalDate),
+              departureTime: _hasTime(widget.departureDate)
+                  ? DateFormat('d MMM yy - HH:mm', 'fr_FR')
+                      .format(widget.departureDate)
+                  : DateFormat('d MMM yy', 'fr_FR')
+                      .format(widget.departureDate),
+              arrivalTime: _hasTime(widget.arrivalDate)
+                  ? DateFormat('d MMM yy - HH:mm', 'fr_FR')
+                      .format(widget.arrivalDate)
+                  : DateFormat('d MMM yy', 'fr_FR')
+                      .format(widget.arrivalDate),
             ),
             const SizedBox(height: AppTheme.spaceMd),
             _buildAvailability(),

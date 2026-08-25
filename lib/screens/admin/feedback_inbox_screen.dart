@@ -22,38 +22,41 @@ class _FeedbackInboxScreenState extends ConsumerState<FeedbackInboxScreen> {
     final feedbackAsync = ref.watch(feedbackListProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: const Text('Feedback utilisateurs'),
         backgroundColor: AppTheme.backgroundColor,
-      ),
-      body: feedbackAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppTheme.accentColor),
+        appBar: AppBar(
+          title: const Text('Feedback utilisateurs'),
+          backgroundColor: AppTheme.backgroundColor,
         ),
-        error: (e, _) => Center(
-          child: Text('Erreur : $e',
-              style: const TextStyle(color: AppTheme.textSecondaryColor)),
-        ),
-        data: (items) {
-          if (items.isEmpty) {
-            return const Center(
-              child: Text(
-                'Aucun feedback pour le moment.',
-                style: TextStyle(color: AppTheme.textSecondaryColor),
-              ),
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(AppTheme.spaceMd),
-            itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(height: AppTheme.spaceSm),
-            itemBuilder: (context, index) =>
-                _FeedbackCard(item: items[index]),
-          );
-        },
-      ),
-    );
+        body: SafeArea(
+          top: false,
+          child: feedbackAsync.when(
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppTheme.accentColor),
+            ),
+            error: (e, _) => Center(
+              child: Text('Erreur : $e',
+                  style: const TextStyle(color: AppTheme.textSecondaryColor)),
+            ),
+            data: (items) {
+              if (items.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'Aucun feedback pour le moment.',
+                    style: TextStyle(color: AppTheme.textSecondaryColor),
+                  ),
+                );
+              }
+              return ListView.separated(
+                padding: const EdgeInsets.all(AppTheme.spaceMd),
+                itemCount: items.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppTheme.spaceSm),
+                itemBuilder: (context, index) =>
+                    _FeedbackCard(item: items[index]),
+              );
+            },
+          ),
+        ));
   }
 }
 
@@ -110,8 +113,8 @@ class _FeedbackCard extends ConsumerWidget {
               ),
               if (!item.isRead)
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: AppTheme.warningColor,
                     borderRadius: BorderRadius.circular(12),
@@ -172,9 +175,7 @@ class _FeedbackCard extends ConsumerWidget {
               if (!item.isRead)
                 TextButton.icon(
                   onPressed: () async {
-                    await ref
-                        .read(feedbackServiceProvider)
-                        .markRead(item.id);
+                    await ref.read(feedbackServiceProvider).markRead(item.id);
                     ref.invalidate(feedbackListProvider);
                     ref.invalidate(unreadFeedbackCountProvider);
                   },

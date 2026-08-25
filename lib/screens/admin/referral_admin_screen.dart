@@ -163,7 +163,10 @@ class _ReferralAdminScreenState extends ConsumerState<ReferralAdminScreen>
           ),
         ],
       ),
-      body: _buildBody(),
+      body: SafeArea(
+        top: false,
+        child: _buildBody(),
+      ),
     );
   }
 

@@ -51,7 +51,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _afterSignIn();
     } catch (e) {
       if (mounted) {
-        await showAppErrorDialog(context, message: 'Erreur de connexion: $e');
+      await showAuthErrorDialog(context, error: e);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -67,7 +67,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // profile exists (no extra navigation needed — routing is state-driven).
     } catch (e) {
       if (mounted) {
-        await showAppErrorDialog(context, message: 'Erreur: $e');
+        await showAuthErrorDialog(context, error: e);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

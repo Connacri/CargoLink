@@ -3,6 +3,9 @@ import 'package:intl/intl.dart';
 
 import '../theme/app_theme.dart';
 
+/// Returns `true` when the [date] carries a meaningful time (non-midnight).
+bool _hasTime(DateTime date) => date.hour != 0 || date.minute != 0;
+
 /// Billet d'avion stylisé représentant une offre CargoLink — rendu hors écran
 /// puis capturé en PNG pour le partage social (WhatsApp, Telegram…).
 class OfferTicketCard extends StatelessWidget {
@@ -46,8 +49,12 @@ class OfferTicketCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final dep = DateFormat('dd MMM', 'fr_FR').format(departureDate);
     final arr = DateFormat('dd MMM', 'fr_FR').format(arrivalDate);
-    final depTime = DateFormat('HH:mm', 'fr_FR').format(departureDate);
-    final arrTime = DateFormat('HH:mm', 'fr_FR').format(arrivalDate);
+    final depTime = _hasTime(departureDate)
+        ? DateFormat('HH:mm', 'fr_FR').format(departureDate)
+        : null;
+    final arrTime = _hasTime(arrivalDate)
+        ? DateFormat('HH:mm', 'fr_FR').format(arrivalDate)
+        : null;
 
     return Container(
       width: 340,
@@ -267,13 +274,13 @@ class _RoutePoint extends StatelessWidget {
   const _RoutePoint({
     required this.code,
     required this.city,
-    required this.time,
+    this.time,
     required this.alignEnd,
   });
 
   final String code;
   final String city;
-  final String time;
+  final String? time;
   final bool alignEnd;
 
   @override
@@ -292,11 +299,12 @@ class _RoutePoint extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
-        Text(time,
-            style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Colors.grey.shade800)),
+        if (time != null)
+          Text(time!,
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey.shade800)),
       ],
     );
   }

@@ -31,7 +31,9 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
       appBar: AppBar(
         title: const Text('Messages'),
       ),
-      body: userId == null
+      body: SafeArea(
+        top: false,
+        child: userId == null
           ? const Center(child: Text('Connectez-vous pour voir vos messages'))
           : stream == null
               ? const Center(child: CircularProgressIndicator())
@@ -52,6 +54,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                         );
                       },
                     ),
+        ),
     );
   }
 

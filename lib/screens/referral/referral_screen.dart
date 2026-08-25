@@ -89,8 +89,8 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
             content:
                 Text('Lot soumis ✓ — en attente de validation du fondateur'),
             backgroundColor: AppTheme.accentColor,
-          ),
-        );
+      ),);
+
       }
     } catch (e) {
       if (mounted) {
@@ -112,75 +112,79 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Programme de parrainage')),
-      body: programActive.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => const Center(child: Text('Erreur de chargement')),
-        data: (active) {
-          if (!active) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppTheme.spaceLg),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.pause_circle_outline_rounded,
-                        size: 56, color: Colors.grey.shade500),
-                    const SizedBox(height: AppTheme.spaceMd),
-                    const Text(
-                      'Le programme de parrainage est fermé pour le moment.',
-                      textAlign: TextAlign.center,
-                      style: AppTheme.h3,
-                    ),
-                    const SizedBox(height: AppTheme.spaceSm),
-                    const Text(
-                      'Il sera relancé prochainement — les parrains inscrits '
-                      'conserveront leur code.',
-                      textAlign: TextAlign.center,
-                      style: AppTheme.bodySecondary,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(myReferralStatsProvider);
-              ref.invalidate(myReferralFilleulsProvider);
-              ref.invalidate(myReferralBatchesProvider);
-            },
-            child: ListView(
-              padding: const EdgeInsets.all(AppTheme.spaceMd),
-              children: [
-                _buildHowItWorks(),
-                const SizedBox(height: AppTheme.spaceMd),
-                stats.when(
-                  loading: () => const Padding(
-                    padding: EdgeInsets.all(32),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                  error: (e, _) => GlassCard(
-                    child: Text('Erreur : $e', style: AppTheme.bodySecondary),
-                  ),
-                  data: (s) => Column(
+      body: SafeArea(
+        top: false,
+        child: programActive.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => const Center(child: Text('Erreur de chargement')),
+          data: (active) {
+            if (!active) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppTheme.spaceLg),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildMyCode(s),
+                      Icon(Icons.pause_circle_outline_rounded,
+                          size: 56, color: Colors.grey.shade500),
                       const SizedBox(height: AppTheme.spaceMd),
-                      _buildStatsRow(s),
-                      const SizedBox(height: AppTheme.spaceMd),
-                      _buildNextBatchSection(s),
+                      const Text(
+                        'Le programme de parrainage est fermé pour le moment.',
+                        textAlign: TextAlign.center,
+                        style: AppTheme.h3,
+                      ),
+                      const SizedBox(height: AppTheme.spaceSm),
+                      const Text(
+                        'Il sera relancé prochainement — les parrains inscrits '
+                        'conserveront leur code.',
+                        textAlign: TextAlign.center,
+                        style: AppTheme.bodySecondary,
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: AppTheme.spaceMd),
-                _buildFilleuls(filleuls),
-                const SizedBox(height: AppTheme.spaceMd),
-                _buildBatches(batches),
-                const SizedBox(height: AppTheme.spaceXxl),
-              ],
-            ),
-          );
-        },
+              );
+            }
+            return RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(myReferralStatsProvider);
+                ref.invalidate(myReferralFilleulsProvider);
+                ref.invalidate(myReferralBatchesProvider);
+              },
+              child: ListView(
+                padding: const EdgeInsets.all(AppTheme.spaceMd),
+                children: [
+                  _buildHowItWorks(),
+                  const SizedBox(height: AppTheme.spaceMd),
+                  stats.when(
+                    loading: () => const Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    error: (e, _) => GlassCard(
+                      child:
+                          Text('Erreur : $e', style: AppTheme.bodySecondary),
+                    ),
+                    data: (s) => Column(
+                      children: [
+                        _buildMyCode(s),
+                        const SizedBox(height: AppTheme.spaceMd),
+                        _buildStatsRow(s),
+                        const SizedBox(height: AppTheme.spaceMd),
+                        _buildNextBatchSection(s),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spaceMd),
+                  _buildFilleuls(filleuls),
+                  const SizedBox(height: AppTheme.spaceMd),
+                  _buildBatches(batches),
+                  const SizedBox(height: AppTheme.spaceXxl),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -289,7 +293,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
           ),
           const SizedBox(height: AppTheme.spaceSm),
           Text(
-            'Appuyez sur le code pour le copier',
+            'Appuyez pour copier',
             style: AppTheme.caption.copyWith(fontStyle: FontStyle.italic),
           ),
           const SizedBox(height: AppTheme.spaceMd),
@@ -307,7 +311,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                 child: FilledButton.icon(
                   onPressed: () => _copyCode(s.code),
                   icon: const Icon(Icons.copy_rounded, size: 18),
-                  label: const Text('Copier le lien'),
+                  label: const Text('Copier'),
                 ),
               ),
             ],

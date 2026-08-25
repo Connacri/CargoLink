@@ -38,7 +38,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       if (mounted) setState(() => _sent = true);
     } catch (e) {
       if (mounted) {
-        await showAppErrorDialog(context, message: 'Erreur: $e');
+        await showAuthErrorDialog(context, error: e);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

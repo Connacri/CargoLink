@@ -94,7 +94,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       }
     } catch (e) {
       if (mounted) {
-        await showAppErrorDialog(context, message: 'Erreur d\'inscription: $e');
+        await showAuthErrorDialog(context, error: e);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

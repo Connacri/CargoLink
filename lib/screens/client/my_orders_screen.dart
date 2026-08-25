@@ -591,48 +591,31 @@ class _BookingCard extends ConsumerWidget {
             ],
             const SizedBox(height: AppTheme.spaceMd),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onTrack,
-                    icon:
-                        const Icon(Icons.connecting_airports_rounded, size: 18),
-                    label: const Text('Suivre'),
-                  ),
+                _CardIconButton(
+                  icon: Icons.connecting_airports_rounded,
+                  tooltip: 'Suivre',
+                  onTap: onTrack,
                 ),
-                const SizedBox(width: AppTheme.spaceSm),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    // Ré-affiche / ré-enregistre le MÊME QR code que celui
-                    // généré à la réservation (jamais régénéré).
-                    onPressed: () => showQrTicketDialog(context, booking),
-                    icon: const Icon(Icons.qr_code_2_rounded, size: 18),
-                    label: const Text('QR'),
-                  ),
+                _CardIconButton(
+                  icon: Icons.qr_code_2_rounded,
+                  tooltip: 'QR',
+                  onTap: () => showQrTicketDialog(context, booking),
                 ),
-                if (onChat != null) ...[
-                  const SizedBox(width: AppTheme.spaceSm),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: onChat,
-                      icon: const Icon(Icons.chat_rounded, size: 18),
-                      label: const Text('Discuter'),
-                    ),
+                if (onChat != null)
+                  _CardIconButton(
+                    icon: Icons.chat_rounded,
+                    tooltip: 'Discuter',
+                    onTap: onChat,
                   ),
-                ],
-                if (onCancel != null) ...[
-                  const SizedBox(width: AppTheme.spaceSm),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: onCancel,
-                      icon: const Icon(Icons.close_rounded, size: 18),
-                      label: const Text('Annuler'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.errorColor,
-                      ),
-                    ),
+                if (onCancel != null)
+                  _CardIconButton(
+                    icon: Icons.close_rounded,
+                    tooltip: 'Annuler',
+                    onTap: onCancel,
+                    color: AppTheme.errorColor,
                   ),
-                ],
               ],
             ),
           ],
@@ -766,6 +749,45 @@ class _EmptyOrders extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _CardIconButton extends StatelessWidget {
+  const _CardIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    this.color,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(AppTheme.spaceSm),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: (color ?? AppTheme.primaryColor).withValues(alpha: 0.3),
+            ),
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: color ?? AppTheme.primaryColor,
+          ),
+        ),
+      ),
     );
   }
 }

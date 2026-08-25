@@ -110,7 +110,7 @@ class _EmailVerificationScreenState
       }
     } catch (e) {
       if (mounted) {
-        await showAppErrorDialog(context, message: 'Erreur: $e');
+        await showAuthErrorDialog(context, error: e);
       }
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -131,7 +131,7 @@ class _EmailVerificationScreenState
       }
     } catch (e) {
       if (mounted) {
-        await showAppErrorDialog(context, message: 'Erreur: $e');
+        await showAuthErrorDialog(context, error: e);
       }
     }
   }
@@ -143,7 +143,7 @@ class _EmailVerificationScreenState
       ref.invalidate(currentShipperProvider);
     } catch (e) {
       if (mounted) {
-        await showAppErrorDialog(context, message: 'Erreur: $e');
+        await showAuthErrorDialog(context, error: e);
       }
     }
   }
