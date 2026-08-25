@@ -11,16 +11,22 @@ import '../../core/widgets/offer_ticket_card.dart';
 import '../models/models.dart';
 
 /// Partage social d'une offre : génère l'image « billet d'avion » de l'offre
-/// et ouvre la feuille de partage native avec un texte contenant le lien
-/// profond de réservation + le lien Play Store.
+/// et ouvre la feuille de partage native avec un lien web (accessible aux
+/// non-inscrits) + lien deep link pour ouverture directe dans l'app.
 class OfferShareService {
   static const _deepLinkScheme = 'cargolink';
+  static const _webBaseUrl =
+      'https://connacri.github.io/CargoLink/offer.html';
   static const _playStoreUrl =
       'https://play.google.com/store/apps/details?id=com.cargolink.dz.cargolink';
 
-  /// Lien profond direct vers une offre.
+  /// Lien profond direct vers une offre (si l'app est installée).
   static String deepLinkFor(String shipmentId) =>
       '$_deepLinkScheme://offer/$shipmentId';
+
+  /// Lien web fallback (accessible aux non-inscrits, ouvre la page de partage).
+  static String webLinkFor(String shipmentId) =>
+      '$_webBaseUrl?id=$shipmentId';
 
   Future<void> shareOffer(BuildContext context, Shipment shipment) async {
     final shipper = shipment.shipper;
@@ -40,11 +46,12 @@ class OfferShareService {
       ),
     );
 
+    final webUrl = webLinkFor(shipment.id);
     final text = '✈️ ${shipment.originCountry} → ${shipment.destinationCity} '
        'à partir de ${shipment.pricePerKg.toStringAsFixed(0)} '
         '${AppConstants.defaultCurrency}/kg avec CargoLink !\n'
-        'Réservez ce vol : ${deepLinkFor(shipment.id)}\n'
-        'Pas encore l\'app ? $_playStoreUrl';
+        'Voir l\'offre : $webUrl\n'
+        'Télécharger l\'app : $_playStoreUrl';
 
     final XFile file;
     if (bytes != null) {

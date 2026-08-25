@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offre CargoLink — Détail</title>
+<meta property="og:title" content="Offre CargoLink">
+<meta property="og:description" content="Découvrez cette offre de transport CargoLink">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://connacri.github.io/CargoLink/assets/icons/icon2.png">
+<style>
+  :root { --primary: #6366F1; --primary-dark: #4F46E5; --bg: #F8FAFC; --card: #FFFFFF; --text: #1E293B; --muted: #64748B; --border: #E2E8F0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+  .header { background: linear-gradient(135deg, #6366F1, #4F46E5); width: 100%; padding: 24px 16px; text-align: center; color: white; }
+  .header h1 { font-size: 22px; font-weight: 800; letter-spacing: 0.5px; }
+  .header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .card { background: var(--card); border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); margin: 16px; padding: 24px; max-width: 420px; width: calc(100% - 32px); }
+  .route { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .route-point { text-align: center; flex: 1; }
+  .route-code { font-size: 28px; font-weight: 900; color: #111827; letter-spacing: 1px; }
+  .route-city { font-size: 12px; color: var(--muted); margin-top: 2px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .route-arrow { font-size: 20px; color: var(--primary); margin: 0 8px; }
+  .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: var(--muted); }
+  .info-value { font-weight: 700; }
+  .price-box { background: #EEF2FF; border-radius: 12px; padding: 14px; margin-top: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .price-label { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .price-value { font-size: 22px; font-weight: 900; color: var(--primary); }
+  .shipper-info { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .shipper-avatar { width: 40px; height: 40px; border-radius: 50%; background: #E2E8F0; object-fit: cover; }
+  .shipper-name { font-weight: 700; font-size: 14px; }
+  .shipper-meta { font-size: 12px; color: var(--muted); }
+  .cta { margin: 20px 16px; max-width: 420px; width: calc(100% - 32px); }
+  .btn { display: block; width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; text-align: center; text-decoration: none; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-secondary { background: transparent; color: var(--primary); border: 2px solid var(--primary); margin-top: 10px; }
+  .loading { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 15px; }
+  .error { text-align: center; padding: 60px 20px; }
+  .error h2 { font-size: 20px; margin-bottom: 8px; }
+  .error p { color: var(--muted); font-size: 14px; }
+  .footer { text-align: center; padding: 20px; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>CargoLink</h1>
+  <p>Offre de transport international</p>
+</div>
+
+<div id="content">
+  <div class="loading">Chargement de l'offre...</div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://mxhomeuraxnmjtfhzhvz.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14aG9tZXVyYXhubWp0Zmh6aHZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNDMyODIsImV4cCI6MjEwMTYxOTI4Mn0.phNESFfG1i7Xd-Z_oc_xTEX14KIL7rVGUyHJzkwKDHw';
+
+function getShipmentId() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('id') || params.get('shipment') || params.get('s');
+}
+
+function iata(airport) {
+  const m = airport.match(/\(([A-Za-z]{2,4})\)/);
+  return m ? m[1].toUpperCase() : airport;
+}
+
+function cityName(airport) {
+  return airport.replace(/\s*\([A-Za-z]{2,4}\)\s*$/, '').trim();
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: '2-digit' });
+}
+
+function renderOffer(offer) {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="card">
+      <div class="route">
+        <div class="route-point">
+          <div class="route-code">${iata(offer.origin_country)}</div>
+          <div class="route-city">${cityName(offer.origin_country)}</div>
+        </div>
+        <div class="route-arrow">✈</div>
+        <div class="route-point">
+          <div class="route-code">${iata(offer.destination_city)}</div>
+          <div class="route-city">${cityName(offer.destination_city)}</div>
+        </div>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Départ</span>
+        <span class="info-value">${formatDate(offer.departure_date)}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Arrivée</span>
+        <span class="info-value">${formatDate(offer.arrival_date)}</span>
+      </div>
+      ${offer.airline ? `<div class="info-row"><span class="info-label">Compagnie</span><span class="info-value">${offer.airline}${offer.flight_number ? ' • ' + offer.flight_number : ''}</span></div>` : ''}
+      <div class="info-row">
+        <span class="info-label">Poids disponible</span>
+        <span class="info-value">${offer.available_weight_kg} kg</span>
+      </div>
+      <div class="price-box">
+        <span class="price-label">Prix / kg</span>
+        <span class="price-value">${offer.price_per_kg} DZD</span>
+      </div>
+      ${offer.description ? `<div class="info-row"><span class="info-label">Description</span><span class="info-value">${offer.description}</span></div>` : ''}
+      <div class="shipper-info">
+        ${offer.shipper_avatar ? `<img class="shipper-avatar" src="${offer.shipper_avatar}" alt="">` : '<div class="shipper-avatar"></div>'}
+        <div>
+          <div class="shipper-name">${offer.shipper_name}</div>
+          <div class="shipper-meta">${offer.is_micro_importateur ? 'Micro-importateur' : 'Voyageur'}${offer.shipper_rating > 0 ? ' • ⭐ ' + offer.shipper_rating : ''}</div>
+        </div>
+      </div>
+    </div>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://play.google.com/store/apps/details?id=com.cargolink.dz.cargolink" target="_blank">
+        Télécharger CargoLink
+      </a>
+      <a class="btn btn-secondary" href="cargolink://offer/${offer.id}" onclick="setTimeout(function(){}, 2000)">
+        Ouvrir dans l'app
+      </a>
+    </div>
+  `;
+  document.title = `${iata(offer.origin_country)} → ${iata(offer.destination_city)} — CargoLink`;
+  // Open graph meta
+  document.querySelector('meta[property="og:title"]').content = `${iata(offer.origin_country)} → ${iata(offer.destination_city)} — CargoLink`;
+  document.querySelector('meta[property="og:description"]').content = `${offer.available_weight_kg} kg disponibles • ${offer.price_per_kg} DZD/kg • ${formatDate(offer.departure_date)}`;
+}
+
+function renderError(msg) {
+  document.getElementById('content').innerHTML = `
+    <div class="error">
+      <h2>Offre introuvable</h2>
+      <p>${msg || 'Cette offre n\'existe plus ou a été désactivée.'}</p>
+    </div>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://play.google.com/store/apps/details?id=com.cargolink.dz.cargolink" target="_blank">
+        Télécharger CargoLink
+      </a>
+    </div>
+  `;
+}
+
+async function load() {
+  const id = getShipmentId();
+  if (!id) { renderError('Lien invalide — aucun identifiant d\'offre.'); return; }
+
+  try {
+    const resp = await fetch(
+      `${SUPABASE_URL}/rest/v1/rpc/get_public_offer_for_share`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${SUPABASE_ANON}`
+        },
+        body: JSON.stringify({ p_shipment_id: id })
+      }
+    );
+    const data = await resp.json();
+    if (!data || data.error || data.id) {
+      // Supabase returns the object directly (not wrapped)
+      const offer = data.id ? data : (data.get_public_offer_for_share || data);
+      if (offer.error) { renderError(); return; }
+      renderOffer(offer);
+    } else {
+      renderError();
+    }
+  } catch (e) {
+    renderError('Erreur de connexion. Réessayez plus tard.');
+  }
+}
+
+load();
+</script>
+</body>
+</html>
