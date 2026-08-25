@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,37 +12,67 @@ import '../core/theme/app_theme.dart';
 // LOADING SCREEN
 // ============================================================================
 
-class LoadingScreen extends StatelessWidget {
+class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
 
   @override
+  State<LoadingScreen> createState() => _LoadingScreenState();
+}
+
+class _LoadingScreenState extends State<LoadingScreen> {
+  bool _timedOut = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Timer(const Duration(seconds: 30), () {
+      if (mounted) setState(() => _timedOut = true);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(
+            const CircleAvatar(
               radius: 50,
               backgroundColor: AppTheme.primaryColor,
               child: Icon(Icons.flight_takeoff, size: 50, color: Colors.white),
             ),
-            SizedBox(height: 24),
-            Text(
+            const SizedBox(height: 24),
+            const Text(
               'CargoLink',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
-              'Chargement...',
-              style: TextStyle(
+              _timedOut
+                  ? 'Le chargement prend plus de temps que prévu.'
+                  : 'Chargement...',
+              style: const TextStyle(
                 fontSize: 14,
                 color: AppTheme.textSecondaryColor,
               ),
             ),
-            SizedBox(height: 24),
-            CircularProgressIndicator(),
+            const SizedBox(height: 24),
+            if (_timedOut)
+              FilledButton.icon(
+                onPressed: () {
+                  // Force a full app restart by navigating to root
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/',
+                    (route) => false,
+                  );
+                },
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Réessayer'),
+              )
+            else
+              const CircularProgressIndicator(),
           ],
         ),
       ),

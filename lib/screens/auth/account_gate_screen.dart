@@ -4,7 +4,6 @@ import '../../providers/index.dart';
 import '../../data/services/auth_service.dart';
 import '../../core/config/supabase_config.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../app/home_tabs_screen.dart';
 import './account_status_screen.dart';
@@ -73,6 +72,7 @@ class _GateRoleDeciderState extends ConsumerState<_GateRoleDecider> {
   bool _checked = false;
   bool _showRolePicker = false;
   int _retries = 0;
+  bool _error = false;
 
   @override
   void initState() {
@@ -81,15 +81,11 @@ class _GateRoleDeciderState extends ConsumerState<_GateRoleDecider> {
   }
 
   Future<void> _verify() async {
-    // Tri-state: true = profile exists, false = definitively no row,
-    // null = transient failure. Only a definitive "no row" may open the role
-    // picker — a returning user who already picked a role must never see it
-    // again (even for a single frame while the provider refreshes).
+    if (!mounted) return;
+
     final hasProfile = await widget.authService.hasProfile();
     if (!mounted) return;
     if (hasProfile == true) {
-      // A profile exists but the provider returned null transiently. Invalidate
-      // so the parent gate re-routes straight to home — never the role picker.
       ref.invalidate(currentUserProvider);
       ref.invalidate(currentShipperProvider);
       return;
@@ -103,9 +99,13 @@ class _GateRoleDeciderState extends ConsumerState<_GateRoleDecider> {
     }
     // Indeterminate: stay on the gate and retry instead of guessing.
     if (hasProfile == null) {
-      // No Supabase session yet (web restore / slow exchange): keep waiting for
-      // the auth stream to set the token — never treat this as "no profile".
       if (!SupabaseConfig.hasAccessToken) {
+        if (_retries >= 15) {
+          // ~6 s without Supabase token → show retry UI
+          setState(() => _error = true);
+          return;
+        }
+        _retries++;
         Future.delayed(const Duration(milliseconds: 400), _verify);
         return;
       }
@@ -120,6 +120,43 @@ class _GateRoleDeciderState extends ConsumerState<_GateRoleDecider> {
 
   @override
   Widget build(BuildContext context) {
+    if (_error) {
+      return _GateScaffold(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppTheme.spaceLg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AnimatedIconDot(
+                  icon: Icons.cloud_off_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                const SizedBox(height: AppTheme.spaceMd),
+                const Text(
+                  'Impossible de se connecter au serveur.\nVérifiez votre connexion internet.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white, fontSize: 14),
+                ),
+                const SizedBox(height: AppTheme.spaceLg),
+                FilledButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _error = false;
+                      _retries = 0;
+                    });
+                    _verify();
+                  },
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Réessayer'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     if (!_checked || !_showRolePicker) return const _GateLoading();
     return const RoleSelectionScreen(firstTime: true);
   }
@@ -136,6 +173,7 @@ class _PurgeAndSignOut extends ConsumerStatefulWidget {
 
 class _PurgeAndSignOutState extends ConsumerState<_PurgeAndSignOut> {
   bool _started = false;
+  String? _error;
 
   @override
   void initState() {
@@ -150,13 +188,61 @@ class _PurgeAndSignOutState extends ConsumerState<_PurgeAndSignOut> {
       await widget.authService.deleteAccountPermanently();
     } catch (e) {
       if (mounted) {
-        await showAppErrorDialog(context, message: 'Erreur: $e');
+        setState(() {
+          _error = '$e';
+          _started = false; // allow retry
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_error != null) {
+      return _GateScaffold(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppTheme.spaceLg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AnimatedIconDot(
+                  icon: Icons.error_outline,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                const SizedBox(height: AppTheme.spaceMd),
+                const Text(
+                  'Erreur lors de la suppression du compte.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white, fontSize: 14),
+                ),
+                const SizedBox(height: AppTheme.spaceLg),
+                FilledButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _error = null;
+                      _started = false;
+                    });
+                    _purge();
+                  },
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Réessayer'),
+                ),
+                const SizedBox(height: AppTheme.spaceSm),
+                TextButton(
+                  onPressed: () => widget.authService.signOut(),
+                  child: const Text(
+                    'Se déconnecter',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return const _GateLoading();
   }
 }

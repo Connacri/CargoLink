@@ -103,9 +103,25 @@ class AuthService {
     final current = _auth.currentUser;
     if (current != null) {
       try {
-        await _onAuthenticated(current);
+        // 20 s total budget for the token exchange (includes 1 retry).
+        await _onAuthenticated(current).timeout(
+          const Duration(seconds: 20),
+          onTimeout: () {
+            _logger.e('Token exchange timed out at startup');
+          },
+        );
       } catch (e) {
         _logger.e('Failed to restore Supabase session: $e');
+      }
+      // If the exchange failed / timed-out, SupabaseConfig.hasAccessToken is
+      // still false. Sign the user out so they land on the login screen
+      // instead of being stuck in an infinite gate-retry loop.
+      if (!SupabaseConfig.hasAccessToken) {
+        try {
+          await _auth.signOut();
+        } catch (_) {}
+        yield const AppAuthState();
+        return;
       }
     }
     yield _buildState();
@@ -191,7 +207,7 @@ class AuthService {
       ),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'idToken': idToken}),
-    );
+    ).timeout(const Duration(seconds: 20));
     // _logger.i('_exchange: HTTP ${response.statusCode}');
 
     if (response.statusCode != 200) {
