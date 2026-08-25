@@ -137,13 +137,16 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
   }
 
   Future<void> _pickTargetUsers() async {
-    final users = ref.read(allUsersProvider).value ?? [];
+    // Force rechargement pour éviter le cas AsyncLoading (value == null)
+    ref.invalidate(allUsersProvider);
+    final users = await ref.read(allUsersProvider.future).catchError((_) => <User>[]);
     if (users.isEmpty) {
       _snack('Impossible de charger la liste des utilisateurs',
           AppTheme.warningColor);
       return;
     }
 
+    if (!mounted) return;
     final result = await showModalBottomSheet<Set<String>>(
       context: context,
       isScrollControlled: true,
@@ -154,7 +157,8 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
       ),
     );
 
-    if (result == null || !mounted) return;
+    if (!mounted) return;
+    if (result == null) return;
 
     setState(() {
       _targetUsers

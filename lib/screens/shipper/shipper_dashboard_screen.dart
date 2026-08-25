@@ -1290,7 +1290,19 @@ class _ShipperDashboardScreenState
                                     .add(const Duration(days: 365)),
                               );
                               if (date != null) {
-                                setSheetState(() => departure = date);
+                                if (!sheetContext.mounted) return;
+                                final time = await showTimePicker(
+                                  context: sheetContext,
+                                  initialTime:
+                                      TimeOfDay.fromDateTime(departure),
+                                );
+                                setSheetState(() => departure = DateTime(
+                                      date.year,
+                                      date.month,
+                                      date.day,
+                                      time?.hour ?? departure.hour,
+                                      time?.minute ?? departure.minute,
+                                    ));
                               }
                             },
                             icon: const Icon(Icons.flight_takeoff, size: 18),
@@ -1310,7 +1322,19 @@ class _ShipperDashboardScreenState
                                     .add(const Duration(days: 365)),
                               );
                               if (date != null) {
-                                setSheetState(() => arrival = date);
+                                if (!sheetContext.mounted) return;
+                                final time = await showTimePicker(
+                                  context: sheetContext,
+                                  initialTime:
+                                      TimeOfDay.fromDateTime(arrival),
+                                );
+                                setSheetState(() => arrival = DateTime(
+                                      date.year,
+                                      date.month,
+                                      date.day,
+                                      time?.hour ?? arrival.hour,
+                                      time?.minute ?? arrival.minute,
+                                    ));
                               }
                             },
                             icon: const Icon(Icons.flight_land, size: 18),
