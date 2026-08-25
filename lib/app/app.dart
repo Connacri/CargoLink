@@ -51,11 +51,11 @@ class CargoLinkApp extends ConsumerWidget {
             child ?? const SizedBox.shrink(),
             // Écoute des liens profonds (cargolink://offer/<id>).
             const _DeepLinkListener(),
-            // FAB « Feedback » global — visible sur tous les écrans de tous
-            // les rôles (au-dessus de chaque route, y compris les dialogs).
+            // FAB « Feedback » global — positionnée au-dessus de la bottom
+            // navigation bar (~80 px) pour ne pas la masquer.
             const Positioned(
               right: 14,
-              bottom: 22,
+              bottom: 88,
               child: GlobalFeedbackFab(),
             ),
           ],

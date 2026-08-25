@@ -95,6 +95,8 @@ class ReferralBatch {
   final List<String> videoUrls;
   final String status; // pending, approved, rejected, suspended
   final String? reviewNote;
+  final String? reviewedBy;
+  final DateTime? reviewedAt;
   final DateTime createdAt;
 
   const ReferralBatch({
@@ -103,6 +105,8 @@ class ReferralBatch {
     required this.videoUrls,
     required this.status,
     this.reviewNote,
+    this.reviewedBy,
+    this.reviewedAt,
     required this.createdAt,
   });
 
@@ -117,6 +121,10 @@ class ReferralBatch {
       ],
       status: json['status'] as String,
       reviewNote: json['review_note'] as String?,
+      reviewedBy: json['reviewed_by'] as String?,
+      reviewedAt: json['reviewed_at'] == null
+          ? null
+          : DateTime.tryParse(json['reviewed_at'] as String),
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }

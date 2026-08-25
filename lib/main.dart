@@ -29,12 +29,26 @@ Future<void> main() async {
   } catch (_) {}
 
   runApp(
-    const ProviderScope(
+    ProviderScope(
       child: BetterFeedback(
-        localeOverride: Locale('fr'),
+        localeOverride: const Locale('fr'),
         themeMode: ThemeMode.dark,
         mode: FeedbackMode.draw,
-        child: CargoLinkApp(),
+        theme: FeedbackThemeData(
+          background: const Color(0xFF303030),
+          feedbackSheetColor: const Color(0xFF1E1E2E),
+          bottomSheetDescriptionStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+          bottomSheetTextInputStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+          ),
+          brightness: Brightness.dark,
+          dragHandleColor: Colors.white38,
+        ),
+        child: const CargoLinkApp(),
       ),
     ),
   );
