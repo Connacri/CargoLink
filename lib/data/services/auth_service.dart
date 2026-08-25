@@ -475,8 +475,12 @@ class AuthService {
           _logger.w('signOut: GoogleSignIn signOut failed (ignored): $e');
         }
       }
-      await _auth.signOut();
-      _logger.i('signOut: FirebaseAuth signed out');
+      try {
+        await _auth.signOut();
+        _logger.i('signOut: FirebaseAuth signed out');
+      } catch (e) {
+        _logger.w('signOut: FirebaseAuth signOut failed (ignored): $e');
+      }
       SupabaseConfig.reset();
       _logger.i('signOut: Supabase session reset, SUCCESS');
     } catch (e) {

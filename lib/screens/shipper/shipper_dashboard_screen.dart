@@ -174,7 +174,12 @@ class _ShipperDashboardScreenState
 
     return shipper.when(
       data: (shipperData) {
-        if (shipperData == null || !shipperData.isVerified) {
+        if (shipperData == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (!shipperData.isVerified) {
           return _buildNotVerified(shipperData);
         }
         return _buildDashboard(shipperData);
@@ -1949,7 +1954,12 @@ class _ActiveShipmentsScreenState extends ConsumerState<ActiveShipmentsScreen> {
 
     return shipper.when(
       data: (shipperData) {
-        if (shipperData == null || !shipperData.isVerified) {
+        if (shipperData == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (!shipperData.isVerified) {
           return const Scaffold(
             body: Center(
               child: Padding(
