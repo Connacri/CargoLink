@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.55** |
-| Code de version (versionCode) | **175** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `251d716` |
-| Statut CI | À publier au prochain push → release `v1.0.55` sur GitHub |
+| Version (versionName) | **1.0.58** |
+| Code de version (versionCode) | **178** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `906bfc0` |
+| Statut CI | À publier au prochain push → release `v1.0.58` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.55** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.58** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -27,6 +27,26 @@ https://github.com/Connacri/CargoLink/releases/download/vX.Y.Z/app-release.aab
 
 **Canal de test conseillé** : Play Console → « Test interne » d'abord (sécurité),
 puis « Test fermé » avec des bêta-testeurs, puis Production.
+
+---
+
+## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.58
+
+- **FAB feedback repositionnée** : au-dessus de la bottom navigation bar
+  (bottom: 88) pour ne plus la masquer.
+- **Texte du formulaire feedback en blanc** : `FeedbackThemeData.dark`
+  personnalisé avec `bottomSheetDescriptionStyle` et
+  `bottomSheetTextInputStyle` en blanc, fond sombre `#1E1E2E`.
+- **ReferralBatch enrichi** : champs `reviewed_by` / `reviewed_at` ajoutés
+  au modèle Dart + migration DB同步。
+- **5 RPCs V2 créés dans Supabase** (migration `v2_custody_and_payout_rpcs`) :
+  `create_transfer`, `accept_transfer`, `complete_transfer`,
+  `freeze_payout`, `release_payout` — SECURITY DEFINER, search_path fixé,
+  idempotents, accès anon révoqué.
+- **Sécurité DB** : `get_public_offer_for_share` reçoit
+  `SET search_path = public` (correction advisory).
 
 ---
 
