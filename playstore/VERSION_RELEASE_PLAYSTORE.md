@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.27** |
-| Code de version (versionCode) | **169** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `8e02166` |
-| Statut CI | À publier au prochain push → release `v1.0.27` sur GitHub |
+| Version (versionName) | **1.0.28** |
+| Code de version (versionCode) | **174** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `ac56192` |
+| Statut CI | À publier au prochain push → release `v1.0.28` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.27** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.28** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -31,6 +31,26 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.28
+
+- **Fix rejet Play Store (app loading / 2ème rejet)** : timeout 20s sur
+  l'échange de token Supabase (sign-out automatique si échec), FCM init
+  timeout 8s, `_GateRoleDecider` max 15 retries + écran d'erreur avec
+  bouton « Réessayer », `LoadingScreen` timeout 30s avec bouton retry.
+- **Fix rejet Play Store (edge-to-edge)** : `WindowCompat.setDecorFitsSystemWindows`
+  dans `MainActivity.kt` + suppression des APIs obsolètes `setStatusBarColor`/
+  `setNavigationBarColor`/`immersiveSticky` + suppression `windowFullscreen`
+  des 4 fichiers styles.xml — compatible Android 15+.
+- **Fix rejet Play Store (UCropActivity)** : suppression de
+  `android:screenOrientation="portrait"` sur l'activité UCrop (cassait la
+  rotation et pouvait causer des crashes).
+- **Sélecteur d'heure publication** : les expéditeurs choisissent désormais
+  l'heure de départ ET d'arrivée (via `showTimePicker`) lors de la
+  publication d'une offre.
+- **Fix sélection users broadcast** : la liste des utilisateurs se charge
+  correctement au premier clic (invalidation + await du provider au lieu
+  d'un simple `read` qui pouvait renvoyer `null` pendant le chargement).
 
 ### Version 1.0.27
 
