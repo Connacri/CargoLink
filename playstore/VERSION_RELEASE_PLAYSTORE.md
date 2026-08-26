@@ -1,4 +1,4 @@
-# VERSION RELEASE PLAYSTORE
+﻿# VERSION RELEASE PLAYSTORE
 
 > Ce fichier est **mis à jour après chaque commit** : il décrit toujours la version
 > courante prête pour la Google Play Console, le build à déposer et tout ce qui a été
@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.67** |
-| Code de version (versionCode) | **190** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `7b3c703` |
-| Statut CI | À publier au prochain push → release `v1.0.67` sur GitHub |
+| Version (versionName) | **1.0.68** |
+| Code de version (versionCode) | **192** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `9171167` |
+| Statut CI | À publier au prochain push → release `v1.0.68` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.58** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.68** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -48,8 +48,19 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
-### Version 1.0.67
+### Version 1.0.68
 
+- **Sélecteur pays → ville** : nouveau widget `CountryCityPickerField` utilisant
+  l'API gratuite `countries.dev` (34 000 villes, sans clé). L'utilisateur choisit
+  d'abord un pays, puis une ville de ce pays. Utilisé côté expéditeur (destination)
+  et côté client (filtre destination).
+- **Aéroport avec ajout manuel** : le sélecteur d'aéroport propose désormais un
+  bouton « Ajouter manuellement » quand l'aéroport recherché n'est pas trouvé
+  dans la base — l'utilisateur saisit le nom et le code IATA optionnel.
+- **Filtres client simplifiés** : l'origine utilise désormais le sélecteur
+  d'aéroport (au lieu de la liste statique de pays), la destination utilise le
+  sélecteur pays → ville. La feuille `_CityPickerSheet` avec géolocalisation a
+  été retirée (fonctionnalité reprise par les nouveaux sélecteurs).
 - **Géolocalisation pour filtres destination/origine** : les filtres de
   recherche côté client utilisent désormais un sélecteur de villes avec bouton
   « Me localiser » — trouve automatiquement la ville algérienne la plus proche
@@ -64,6 +75,9 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 - **`arrival_date` nullable** : la colonne `arrival_date` en base est désormais
   optionnelle, alignée sur le modèle Dart (`DateTime?`). Les anciennes offres
   avec date d'arrivée continuent de fonctionner normalement.
+- **Page web offer.html** : la page de partage d'offre affiche désormais la
+  ville de destination (au lieu du code IATA) et la ligne « Arrivée » a été
+  supprimée.
 - **Suppressions de doublon** : correction du doublon `Constantine` dans les
   coordonnées GPS des villes algériennes.
 
