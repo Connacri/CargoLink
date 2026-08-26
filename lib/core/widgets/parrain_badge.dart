@@ -55,7 +55,7 @@ class ParrainBadgeOverlay extends StatelessWidget {
         Positioned(
           right: -badgeOffset,
           bottom: -badgeOffset,
-          child: ParrainBadge(visible: true),
+          child: const ParrainBadge(visible: true),
         ),
       ],
     );

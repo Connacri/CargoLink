@@ -1,6 +1,8 @@
 import 'package:airport_data/airport_data.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 /// Champ de sélection d'aéroport avec recherche mondiale (nom ou code IATA)
 /// via le package `airport_data`. Utilisé pour le départ et l'arrivée des
 /// offres de transport. La valeur stockée est un libellé lisible du type
@@ -32,14 +34,25 @@ class AirportPickerField extends StatelessWidget {
     return String.fromCharCode(first) + String.fromCharCode(second);
   }
 
-  Future<void> _pick(BuildContext context) async {
-    final selected = await showModalBottomSheet<Airport>(
+  /// Ouvre la feuille de sélection d'aéroport et retourne le libellé choisi
+  /// (ex: « Alger (ALG) ») ou null si annulé. Utile pour les filtres client.
+  static Future<String?> showPicker(BuildContext context) async {
+    final selected = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       builder: (_) => const _AirportSearchSheet(),
     );
-    if (selected != null) {
-      onChanged('${selected.airport} (${selected.iata})');
+    return selected;
+  }
+
+  Future<void> _pick(BuildContext context) async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const _AirportSearchSheet(),
+    );
+    if (selected != null && selected.isNotEmpty) {
+      onChanged(selected);
     }
   }
 
@@ -76,7 +89,8 @@ class AirportPickerField extends StatelessWidget {
 
 /// Bottom sheet de recherche : tapez au moins 2 caractères (nom d'aéroport,
 /// ville ou code IATA) — résultats triés par importance (service régulier et
-/// taille d'aéroport d'abord).
+/// taille d'aéroport d'abord). Un bouton « Ajouter manuellement » permet de
+/// saisir un aéroport absent de la base.
 class _AirportSearchSheet extends StatefulWidget {
   const _AirportSearchSheet();
 
@@ -133,6 +147,16 @@ class _AirportSearchSheetState extends State<_AirportSearchSheet> {
     });
   }
 
+  Future<void> _addCustom() async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (_) => const _CustomAirportDialog(),
+    );
+    if (result != null && result.isNotEmpty && mounted) {
+      Navigator.pop(context, result);
+    }
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -141,6 +165,8 @@ class _AirportSearchSheetState extends State<_AirportSearchSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final query = _controller.text.trim();
+
     return SafeArea(
       top: false,
       child: Padding(
@@ -201,14 +227,49 @@ class _AirportSearchSheetState extends State<_AirportSearchSheet> {
                       )
                     : _results.isEmpty
                         ? Center(
-                            child: Text(
-                              'Aucun aéroport trouvé',
-                              style: TextStyle(color: Colors.grey.shade600),
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.search_off_rounded,
+                                      size: 40,
+                                      color: Colors.grey.shade400),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Aucun aéroport trouvé pour « $query »',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color: Colors.grey.shade600),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  OutlinedButton.icon(
+                                    onPressed: _addCustom,
+                                    icon: const Icon(
+                                        Icons.add_circle_outline_rounded,
+                                        size: 18),
+                                    label: const Text(
+                                        'Ajouter manuellement'),
+                                  ),
+                                ],
+                              ),
                             ),
                           )
                         : ListView.builder(
-                            itemCount: _results.length,
+                            itemCount: _results.length + 1,
                             itemBuilder: (context, index) {
+                              // Dernier élément : bouton « Ajouter ».
+                              if (index == _results.length) {
+                                return ListTile(
+                                  leading: const Icon(
+                                      Icons.add_circle_outline_rounded,
+                                      color: AppTheme.primaryColor),
+                                  title: const Text('Ajouter manuellement'),
+                                  subtitle: const Text(
+                                      'Saisir un aéroport absent de la base'),
+                                  onTap: _addCustom,
+                                );
+                              }
                               final airport = _results[index];
                               final flag = AirportPickerField
                                   .flagFromCountryCode(
@@ -245,7 +306,7 @@ class _AirportSearchSheetState extends State<_AirportSearchSheet> {
                                 trailing:
                                     const Icon(Icons.chevron_right_rounded),
                                 onTap: () =>
-                                    Navigator.pop(context, airport),
+                                    Navigator.pop(context, '${airport.airport} (${airport.iata})'),
                               );
                             },
                           ),
@@ -254,6 +315,92 @@ class _AirportSearchSheetState extends State<_AirportSearchSheet> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Dialog pour saisir un aéroport manuellement (nom + code IATA optionnel).
+class _CustomAirportDialog extends StatefulWidget {
+  const _CustomAirportDialog();
+
+  @override
+  State<_CustomAirportDialog> createState() => _CustomAirportDialogState();
+}
+
+class _CustomAirportDialogState extends State<_CustomAirportDialog> {
+  final _nameCtrl = TextEditingController();
+  final _iataCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _iataCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    final name = _nameCtrl.text.trim();
+    final iata = _iataCtrl.text.trim().toUpperCase();
+    final label = iata.isNotEmpty ? '$name ($iata)' : name;
+    Navigator.pop(context, label);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Ajouter un aéroport'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _nameCtrl,
+              textCapitalization: TextCapitalization.words,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Nom de l\'aéroport ou de la ville',
+                hintText: 'ex : Aéroport de Tlemcen',
+                prefixIcon: Icon(Icons.flight_rounded),
+              ),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Requis' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _iataCtrl,
+              textCapitalization: TextCapitalization.characters,
+              maxLength: 3,
+              decoration: const InputDecoration(
+                labelText: 'Code IATA (optionnel)',
+                hintText: 'ex : TLM',
+                prefixIcon: Icon(Icons.tag_rounded),
+                counterText: '',
+              ),
+              validator: (v) {
+                if (v != null &&
+                    v.trim().isNotEmpty &&
+                    v.trim().length != 3) {
+                  return '3 lettres max';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annuler'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Valider'),
+        ),
+      ],
     );
   }
 }

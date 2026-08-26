@@ -1,13 +1,13 @@
-import 'dart:math';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/airport_picker_field.dart';
+import '../../core/widgets/country_city_picker_field.dart';
 import '../../core/widgets/notification_widgets.dart';
 import '../../core/widgets/chat_widgets.dart';
 import '../../core/utils/qr_booking.dart';
@@ -814,37 +814,18 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     );
   }
 
-  void _showDestinationPicker() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _CityPickerSheet(
-        title: 'Choisir une destination',
-        cities: AppConstants.majorCities,
-        current: ref.read(destinationFilterProvider),
-        onSelected: (city) {
-          ref.read(destinationFilterProvider.notifier).state = city;
-        },
-      ),
-    );
+  void _showDestinationPicker() async {
+    final result = await CountryCityPickerField.showPicker(context);
+    if (result != null) {
+      ref.read(destinationFilterProvider.notifier).state = result;
+    }
   }
 
-  void _showOriginPicker() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _CityPickerSheet(
-        title: "Choisir l'origine",
-        cities: AppConstants.populateOrigins,
-        current: ref.read(originFilterProvider),
-        showGeolocation: false,
-        onSelected: (origin) {
-          ref.read(originFilterProvider.notifier).state = origin;
-        },
-      ),
-    );
+  void _showOriginPicker() async {
+    final result = await AirportPickerField.showPicker(context);
+    if (result != null) {
+      ref.read(originFilterProvider.notifier).state = result;
+    }
   }
 
   void _openQrScanner(BuildContext context) {
@@ -1288,271 +1269,6 @@ class _NoSearchResults extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
       ],
-    );
-  }
-}
-
-// ============================================================================
-// CITY PICKER — feuille réutilisable avec recherche temps réel + géolocalisation
-// ============================================================================
-
-double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
-  const R = 6371.0;
-  final dLat = (lat2 - lat1) * pi / 180;
-  final dLon = (lon2 - lon1) * pi / 180;
-  final a = sin(dLat / 2) * sin(dLat / 2) +
-      cos(lat1 * pi / 180) * cos(lat2 * pi / 180) *
-          sin(dLon / 2) * sin(dLon / 2);
-  return R * 2 * atan2(sqrt(a), sqrt(1 - a));
-}
-
-const Map<String, (double, double)> _cityCoords = {
-  'Alger': (36.7538, 3.0588),
-  'Oran': (35.6969, -0.6331),
-  'Annaba': (36.9000, 7.7667),
-  'Constantine': (36.3650, 6.6147),
-  'Tlemcen': (34.8828, -1.3167),
-  'Sidi Bel Abbès': (35.1903, -0.6308),
-  'Béjaïa': (36.7509, 5.0567),
-  'Tizi Ouzou': (36.7119, 4.0497),
-  'Batna': (35.5567, 6.1742),
-  'Blida': (36.4700, 2.8300),
-  'Sétif': (36.1900, 5.4136),
-  'Biskra': (34.8484, 5.7264),
-  'Tiaret': (35.3833, 1.3167),
-  'Béchar': (31.6167, -2.2167),
-  'Skikda': (36.8761, 6.9094),
-  'Ghardaïa': (32.4911, 3.6736),
-  'Mostaganem': (35.9333, 0.0833),
-  'M\'sila': (35.7000, 4.5425),
-  'Jijel': (36.8206, 5.7667),
-  'Chlef': (36.1650, 1.3317),
-  'Médéa': (36.2675, 2.7539),
-  'Mascara': (35.3983, 0.1403),
-  'Aïn Touta': (35.3833, 5.9000),
-  'Guelma': (36.4625, 7.4264),
-  'Ouargla': (31.9497, 5.3253),
-};
-
-class _CityPickerSheet extends StatefulWidget {
-  const _CityPickerSheet({
-    required this.title,
-    required this.cities,
-    required this.current,
-    required this.onSelected,
-    this.showGeolocation = true,
-  });
-  final String title;
-  final List<String> cities;
-  final String? current;
-  final ValueChanged<String?> onSelected;
-  final bool showGeolocation;
-
-  @override
-  State<_CityPickerSheet> createState() => _CityPickerSheetState();
-}
-
-class _CityPickerSheetState extends State<_CityPickerSheet> {
-  final _searchCtrl = TextEditingController();
-  String _query = '';
-  bool _loadingLocation = false;
-  String? _nearbyCity;
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _locateMe() async {
-    setState(() => _loadingLocation = true);
-    try {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Permission de localisation refusée')),
-          );
-        }
-        return;
-      }
-      final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.medium,
-        timeLimit: const Duration(seconds: 10),
-      );
-      // Trouver la ville la plus proche.
-      String? closest;
-      double minDist = double.infinity;
-      for (final entry in _cityCoords.entries) {
-        final dist = _haversineKm(
-          pos.latitude, pos.longitude, entry.value.$1, entry.value.$2,
-        );
-        if (dist < minDist) {
-          minDist = dist;
-          closest = entry.key;
-        }
-      }
-      setState(() {
-        _nearbyCity = closest;
-        _loadingLocation = false;
-      });
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Impossible d\'obtenir la position')),
-        );
-      }
-      if (mounted) setState(() => _loadingLocation = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final filtered = _query.isEmpty
-        ? widget.cities
-        : widget.cities
-            .where((c) => c.toLowerCase().contains(_query.toLowerCase()))
-            .toList();
-
-    // Ajouter la ville la plus proche en tête si elle n'est pas déjà dans la
-    // liste filtrée.
-    final displayCities = <String>[];
-    if (_nearbyCity != null &&
-        _nearbyCity!.toLowerCase().contains(_query.toLowerCase()) &&
-        !displayCities.contains(_nearbyCity)) {
-      displayCities.add(_nearbyCity!);
-    }
-    displayCities.addAll(filtered.where((c) => c != _nearbyCity));
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.8,
-      minChildSize: 0.4,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (ctx, scrollCtrl) => Container(
-        decoration: const BoxDecoration(
-          color: AppTheme.surfaceColor,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(top: 10, bottom: 6),
-                decoration: BoxDecoration(
-                  color: AppTheme.textSecondaryColor.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-                child: Text(widget.title, style: AppTheme.h3),
-              ),
-              if (widget.showGeolocation)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: _loadingLocation ? null : _locateMe,
-                      icon: _loadingLocation
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.my_location_rounded, size: 18),
-                      label: Text(_loadingLocation
-                          ? 'Localisation en cours…'
-                          : 'Me localiser'),
-                    ),
-                  ),
-                ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                child: TextField(
-                  controller: _searchCtrl,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    hintText: 'Rechercher une ville...',
-                    prefixIcon: Icon(Icons.search_rounded),
-                    isDense: true,
-                  ),
-                  onChanged: (v) => setState(() => _query = v.trim()),
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  controller: scrollCtrl,
-                  itemCount: displayCities.length + 1,
-                  itemBuilder: (_, i) {
-                    if (i == 0) {
-                      return ListTile(
-                        leading: const Icon(Icons.clear_rounded,
-                            color: AppTheme.warningColor),
-                        title: const Text('Effacer le filtre'),
-                        selected: widget.current == null,
-                        onTap: () {
-                          widget.onSelected(null);
-                          Navigator.pop(context);
-                        },
-                      );
-                    }
-                    final city = displayCities[i - 1];
-                    final isNearby = city == _nearbyCity;
-                    return ListTile(
-                      leading: Icon(
-                        isNearby
-                            ? Icons.my_location_rounded
-                            : Icons.location_city_rounded,
-                        color: isNearby
-                            ? AppTheme.accentColor
-                            : AppTheme.primaryColor,
-                      ),
-                      title: Row(
-                        children: [
-                          Expanded(child: Text(city)),
-                          if (isNearby)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppTheme.accentColor
-                                    .withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'Proche',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.accentColor,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      selected: widget.current == city,
-                      onTap: () {
-                        widget.onSelected(city);
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

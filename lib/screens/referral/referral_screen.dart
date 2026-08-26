@@ -249,27 +249,29 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
   Widget _buildHowItWorks(double commissionPct) {
     final steps = [
       (
-        Icons.person_add_rounded,
-        '1. Partagez votre code',
-        'Envoyez votre code ou lien d\'invitation à vos proches via WhatsApp, '
-            'Telegram ou Facebook.'
+        Icons.share_rounded,
+        'Partagez votre code',
+        'Envoyez votre code parrain à vos proches — par message, réseaux '
+            'sociaux ou en personne. Chaque personne qui s\'inscrit avec votre '
+            'code devient votre filleul.',
       ),
       (
         Icons.shopping_bag_rounded,
-        '2. Ils commandent',
-        'Votre filleul s\'inscrit avec votre code et passe sa première commande '
-            'auprès d\'un expéditeur vérifié.'
-      ),
-      (
-        Icons.local_shipping_rounded,
-        '3. Il reçoit et paie son colis',
-        'Dès que le colis est livré et payé, vous gagnez automatiquement.'
+        'Votre filleul commande',
+        'Il passe sa première commande de colis sur CargoLink et choisit un '
+            'expéditeur vérifié. Vous n\'avez rien d\'autre à faire.',
       ),
       (
         Icons.savings_rounded,
-        '4. Vous gagnez $commissionPct% de la commission',
-        'La plateforme prélève une commission sur chaque commande : vous '
-            'en touchez la part configurée, versée dans votre wallet parrain.'
+        'Vous gagnez $commissionPct% de commission',
+        'Dès que le colis est livré et payé, $commissionPct% de la commission '
+            'plateforme est automatiquement versé sur votre wallet parrain.',
+      ),
+      (
+        Icons.payments_rounded,
+        'Retirez votre argent',
+        'Cumulez les gains et demandez le paiement directement depuis cette '
+            'page. Virement sur votre compte en quelques clics.',
       ),
     ];
     return GlassCard(
@@ -290,9 +292,14 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
               ),
               const SizedBox(width: AppTheme.spaceSm),
               const Expanded(
-                child: Text('Comment ça marche ?', style: AppTheme.h3),
+                child: Text('Gagnez de l\'argent simplement', style: AppTheme.h3),
               ),
             ],
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
+          const Text(
+            'Invitez des amis, ils commandent, vous êtes payé. C\'est tout.',
+            style: AppTheme.bodySecondary,
           ),
           const SizedBox(height: AppTheme.spaceMd),
           ...steps.map((s) => Padding(
@@ -300,8 +307,15 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(s.$1,
-                        size: 20, color: AppTheme.primaryColor),
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(s.$1, size: 16, color: AppTheme.primaryColor),
+                    ),
                     const SizedBox(width: AppTheme.spaceSm),
                     Expanded(
                       child: Column(
@@ -400,7 +414,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
         Expanded(
           child: _StatBox(
             icon: Icons.account_balance_wallet_rounded,
-            label: 'Gains payés',
+            label: 'Perçus',
             value: s.totalPaid.toStringAsFixed(0),
           ),
         ),
@@ -408,7 +422,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
         Expanded(
           child: _StatBox(
             icon: Icons.hourglass_top_rounded,
-            label: 'En attente',
+            label: 'Attente',
             value: s.totalPending.toStringAsFixed(0),
           ),
         ),
@@ -717,7 +731,7 @@ class _StatBox extends StatelessWidget {
           Text(value,
               style: const TextStyle(
                   fontWeight: FontWeight.w800, fontSize: 14)),
-          Text(label, style: AppTheme.caption),
+          Text(label, style: AppTheme.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );

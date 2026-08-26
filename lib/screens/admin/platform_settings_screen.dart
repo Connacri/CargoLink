@@ -310,13 +310,13 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
                                 crossAxisAlignment:
                                     CrossAxisAlignment.stretch,
                                 children: [
-                                  Row(
+                                  const Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                           Icons.card_giftcard_rounded,
                                           size: 18,
                                           color: AppTheme.primaryColor),
-                                      const SizedBox(
+                                      SizedBox(
                                           width: AppTheme.spaceXs),
                                       Text(
                                         'Programme de parrainage',
@@ -373,13 +373,13 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
                                 crossAxisAlignment:
                                     CrossAxisAlignment.stretch,
                                 children: [
-                                  Row(
+                                  const Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                           Icons.local_shipping_outlined,
                                           size: 18,
                                           color: AppTheme.primaryColor),
-                                      const SizedBox(
+                                      SizedBox(
                                           width: AppTheme.spaceXs),
                                       Text(
                                         'Abonnements « Demande de Livraison »',

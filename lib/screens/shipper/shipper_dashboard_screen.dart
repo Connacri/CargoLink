@@ -10,6 +10,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/utils/profile_navigation.dart';
 import '../../core/widgets/airport_picker_field.dart';
+import '../../core/widgets/country_city_picker_field.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/notification_widgets.dart';
 import '../../core/widgets/chat_widgets.dart';
@@ -1209,8 +1210,8 @@ class _ShipperDashboardScreenState
                           setSheetState(() => originCountry = v),
                     ),
                     const SizedBox(height: 12),
-                    AirportPickerField(
-                      label: 'Arrivée — aéroport de destination',
+                    CountryCityPickerField(
+                      label: 'Arrivée — ville de destination',
                       value: destinationCity,
                       prefixIcon: Icons.flight_land_rounded,
                       onChanged: (v) =>

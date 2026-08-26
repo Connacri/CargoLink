@@ -90,17 +90,13 @@ function renderOffer(offer) {
         </div>
         <div class="route-arrow">✈</div>
         <div class="route-point">
-          <div class="route-code">${iata(offer.destination_city)}</div>
-          <div class="route-city">${cityName(offer.destination_city)}</div>
+          <div class="route-code">${offer.destination_city || '—'}</div>
+          <div class="route-city">${cityName(offer.destination_city || '')}</div>
         </div>
       </div>
       <div class="info-row">
         <span class="info-label">Départ</span>
         <span class="info-value">${formatDate(offer.departure_date)}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Arrivée</span>
-        <span class="info-value">${formatDate(offer.arrival_date)}</span>
       </div>
       ${offer.airline ? `<div class="info-row"><span class="info-label">Compagnie</span><span class="info-value">${offer.airline}${offer.flight_number ? ' • ' + offer.flight_number : ''}</span></div>` : ''}
       <div class="info-row">

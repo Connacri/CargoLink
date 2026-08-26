@@ -176,13 +176,13 @@ class _EmptyBrowseState extends StatelessWidget {
             color: AppTheme.textMutedColor.withValues(alpha: 0.4),
           ),
           const SizedBox(height: AppTheme.spaceMd),
-          Text(
+          const Text(
             'Aucune demande ouverte',
             style: AppTheme.h3,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppTheme.spaceSm),
-          Text(
+          const Text(
             'Il n\'y a pas encore de demandes de livraison '
             'correspondant à vos filtres.',
             style: AppTheme.bodySecondary,
@@ -250,7 +250,7 @@ class _BrowseRequestCard extends ConsumerWidget {
           const SizedBox(height: AppTheme.spaceSm),
           Row(
             children: [
-              Icon(Icons.flag_outlined,
+              const Icon(Icons.flag_outlined,
                   size: 14, color: AppTheme.textMutedColor),
               const SizedBox(width: AppTheme.spaceXs),
               Text(
@@ -258,7 +258,7 @@ class _BrowseRequestCard extends ConsumerWidget {
                 style: AppTheme.bodySecondary,
               ),
               const Spacer(),
-              Icon(Icons.inventory_2_outlined,
+              const Icon(Icons.inventory_2_outlined,
                   size: 14, color: AppTheme.textMutedColor),
               const SizedBox(width: AppTheme.spaceXs),
               Text(
@@ -280,7 +280,7 @@ class _BrowseRequestCard extends ConsumerWidget {
           const SizedBox(height: AppTheme.spaceXs),
           Row(
             children: [
-              Icon(Icons.calendar_today_outlined,
+              const Icon(Icons.calendar_today_outlined,
                   size: 14, color: AppTheme.textMutedColor),
               const SizedBox(width: AppTheme.spaceXs),
               Text(
