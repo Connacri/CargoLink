@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.64** |
-| Code de version (versionCode) | **184** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `13e0c78` |
-| Statut CI | À publier au prochain push → release `v1.0.64` sur GitHub |
+| Version (versionName) | **1.0.65** |
+| Code de version (versionCode) | **185** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `775f726` |
+| Statut CI | À publier au prochain push → release `v1.0.65` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.58** → workflow `release.yml` (job `android-aab`) |
@@ -47,6 +47,23 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.65
+
+- **Demande de livraison (premium)** : les clients peuvent publier une demande
+  décrivant le produit à expédier (nom, description, photos, poids, ville
+  destination, deadline). Les expéditeurs consultent les demandes ouvertes,
+  proposent un prix et une date, et le client choisit la meilleure offre.
+- **Vérification face-à-face** : une garantie de rencontre physique entre
+  client et expéditeur est disponible (photos pièce d'identité + selfie
+  des deux parties, confirmation croisée).
+- **Abonnement requis** : l'accès à la fonctionnalité « Demande de livraison »
+  est payant — le fondateur configure le prix client, expéditeur et la durée
+  (en jours) dans Réglages plateforme → Abonnements Demande de Livraison.
+- **Navigation intégrée** : carte d'accès direct sur l'accueil client
+  (gradient bleu) et dans le tableau de bord expéditeur (après Scanner un colis).
+- **Routes nommées** : `/delivery-requests` (client) et `/delivery-browse`
+  (expéditeur) enregistrées dans le routeur principal.
 
 ### Version 1.0.64
 
