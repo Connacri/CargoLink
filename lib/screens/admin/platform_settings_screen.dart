@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/models.dart';
+import '../../data/services/settings_service.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
@@ -354,6 +355,12 @@ class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
   bool _initialized = false;
   bool _saving = false;
 
+  // Tarification paramétrable des durées hors grille (durée libre choisie
+  // par l'expéditeur) : prix = fixe + variable × jours.
+  TextEditingController? _fixedCtrl;
+  TextEditingController? _variableCtrl;
+  bool _customInitialized = false;
+
   String _key(int days, String audience) => '$days|$audience';
 
   void _initWith(List<AdPricingRule> rules) {
@@ -379,11 +386,22 @@ class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
     }
   }
 
+  void _initWithSettings(PlatformSettings settings) {
+    if (_customInitialized) return;
+    _customInitialized = true;
+    _fixedCtrl = TextEditingController(
+        text: settings.adCustomFixedPrice.toStringAsFixed(0));
+    _variableCtrl = TextEditingController(
+        text: settings.adCustomVariablePrice.toStringAsFixed(0));
+  }
+
   @override
   void dispose() {
     for (final c in _controllers.values) {
       c.dispose();
     }
+    _fixedCtrl?.dispose();
+    _variableCtrl?.dispose();
     super.dispose();
   }
 
@@ -474,13 +492,29 @@ class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
         .where((r) => !_durations.contains(r.durationDays))
         .toList();
 
+    // Tarification des durées hors grille : fixe + variable × jours.
+    final fixed = double.tryParse(_fixedCtrl?.text ?? '') ?? 0;
+    final variable = double.tryParse(_variableCtrl?.text ?? '') ?? 0;
+    if (fixed < 0 || variable < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Prix fixe/variable invalide (négatif)'),
+        backgroundColor: AppTheme.errorColor,
+      ));
+      return;
+    }
+
     setState(() => _saving = true);
     try {
       await ref.read(adsServiceProvider).saveAdPricing(
             upserts: upserts,
             deletes: deletes,
           );
+      await ref.read(settingsServiceProvider).updateSettings({
+        'ad_custom_fixed_price': fixed.toString(),
+        'ad_custom_variable_price': variable.toString(),
+      });
       ref.invalidate(adPricingProvider);
+      ref.invalidate(platformSettingsProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Tarifs publicitaires enregistrés'),
@@ -497,6 +531,7 @@ class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
   @override
   Widget build(BuildContext context) {
     final pricingAsync = ref.watch(adPricingProvider);
+    final settingsAsync = ref.watch(platformSettingsProvider);
     return pricingAsync.when(
       loading: () => const ShimmerCard(lines: 3),
       error: (e, s) => GlassCard(
@@ -505,6 +540,9 @@ class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
       ),
       data: (rules) {
         _initWith(rules);
+        // Initialise les champs « durées hors grille » dès que les réglages
+        // sont chargés (les valeurs du fondateur y sont stockées).
+        settingsAsync.whenData(_initWithSettings);
         return GlassCard(
           padding: const EdgeInsets.all(AppTheme.spaceMd),
           radius: AppTheme.radiusMd,
@@ -548,6 +586,7 @@ class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
                     style: AppTheme.caption,
                   ),
                 ),
+              _buildCustomDurationPricing(),
               const SizedBox(height: AppTheme.spaceSm),
               FilledButton.icon(
                 onPressed: _saving ? null : _save,
@@ -568,6 +607,84 @@ class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
           ),
         );
       },
+    );
+  }
+
+  /// Bloc « durées hors grille » : quand l'expéditeur choisit une durée libre
+  /// qui n'existe pas dans la grille, son prix = fixe + (variable × jours),
+  /// arrondi au dinar supérieur. Si les deux champs sont à 0, l'app garde
+  /// l'interpolation automatique entre paliers existants.
+  Widget _buildCustomDurationPricing() {
+    final fixedCtrl = _fixedCtrl;
+    final variableCtrl = _variableCtrl;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppTheme.spaceSm),
+      child: Container(
+        padding: const EdgeInsets.all(AppTheme.spaceSm + 2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+          border: Border.all(
+              color: AppTheme.primaryColor.withValues(alpha: 0.35)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.tune_rounded,
+                    size: 18, color: AppTheme.primaryColor),
+                const SizedBox(width: AppTheme.spaceXs),
+                Expanded(
+                  child: Text(
+                    'Durées hors grille (choix libre)',
+                    style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceXs),
+            const Text(
+              'Quand un expéditeur choisit une durée qui n\'existe pas dans la '
+              'grille ci-dessus : Prix = fixe + (variable × jours), arrondi au '
+              'dinar supérieur. Laissez les deux champs à 0 pour garder '
+              'l\'interpolation automatique entre les paliers.',
+              style: AppTheme.caption,
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: fixedCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Prix fixe',
+                      suffixText: AppConstants.defaultCurrency,
+                      prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                Expanded(
+                  child: TextFormField(
+                    controller: variableCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Prix variable / jour',
+                      suffixText: '${AppConstants.defaultCurrency}/j',
+                      prefixIcon: Icon(Icons.timeline_rounded),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -1220,12 +1220,15 @@ class AdPricingRule {
     return Ad.priceForDuration(days);
   }
 
-  /// Prix pour une durée LIBRE (miroir exact du trigger SQL) : palier exact,
+  /// Prix pour une durée LIBRE (miroir exact du trigger SQL) : palier exact ;
+  /// sinon, si le fondateur a paramétré une tarification des durées hors
+  /// grille (fixe et/ou variable par jour), prix = fixe + variable × jours ;
   /// sinon interpolation linéaire entre les deux paliers encadrants, sinon
   /// prorata du premier/dernier palier. Courbe utilisée : lignes de
   /// l'audience choisie, sinon les lignes 'all', sinon toutes.
   static double priceForFlexible(
-      List<AdPricingRule> rules, int days, String audience) {
+      List<AdPricingRule> rules, int days, String audience,
+      {double fixedPrice = 0, double variablePrice = 0}) {
     final d = days.clamp(1, 365);
     var pool = rules.where((r) => r.audience == audience).toList();
     if (pool.isEmpty) pool = rules.where((r) => r.audience == 'all').toList();
@@ -1234,6 +1237,11 @@ class AdPricingRule {
 
     for (final r in pool) {
       if (r.durationDays == d) return r.priceDzd;
+    }
+    // Durée hors grille : formule linéaire paramétrée par le fondateur dès
+    // que l'un des deux réglages est renseigné (fixe > 0 ou variable > 0).
+    if (fixedPrice > 0 || variablePrice > 0) {
+      return (fixedPrice + variablePrice * d).ceilToDouble();
     }
     AdPricingRule? lo;
     AdPricingRule? hi;

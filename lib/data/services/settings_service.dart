@@ -17,6 +17,12 @@ class PlatformSettings {
   final int roundingPrecision;
   final String defaultCurrency;
 
+  /// Tarification des durées publicitaires HORS grille (choix libre de
+  /// l'expéditeur) : prix = fixe + variable × jours, dès que l'un des deux
+  /// est > 0. Sinon, interpolation automatique entre paliers.
+  final double adCustomFixedPrice;
+  final double adCustomVariablePrice;
+
   const PlatformSettings({
     this.commissionPercent = 5.0,
     this.minPricePerKg = 500.0,
@@ -24,6 +30,8 @@ class PlatformSettings {
     this.minWeightKg = 0.1,
     this.roundingPrecision = 1,
     this.defaultCurrency = 'DZD',
+    this.adCustomFixedPrice = 0.0,
+    this.adCustomVariablePrice = 0.0,
   });
 
   static const List<String> _keys = [
@@ -33,6 +41,8 @@ class PlatformSettings {
     'min_weight_kg',
     'rounding_precision',
     'default_currency',
+    'ad_custom_fixed_price',
+    'ad_custom_variable_price',
   ];
 
   factory PlatformSettings.fromRows(List<Map<String, dynamic>> rows) {
@@ -56,6 +66,8 @@ class PlatformSettings {
       minWeightKg: d('min_weight_kg', 0.1),
       roundingPrecision: i('rounding_precision', 1),
       defaultCurrency: map['default_currency'] ?? 'DZD',
+      adCustomFixedPrice: d('ad_custom_fixed_price', 0.0),
+      adCustomVariablePrice: d('ad_custom_variable_price', 0.0),
     );
   }
 
@@ -68,6 +80,8 @@ class PlatformSettings {
       'min_weight_kg': minWeightKg.toString(),
       'rounding_precision': roundingPrecision.toString(),
       'default_currency': defaultCurrency,
+      'ad_custom_fixed_price': adCustomFixedPrice.toString(),
+      'ad_custom_variable_price': adCustomVariablePrice.toString(),
     };
   }
 

@@ -554,12 +554,20 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
   }
 
   /// Prix affiché en direct : durée libre × cible, via la courbe tarifaire
-  /// du fondateur (même calcul que le serveur, à l'unité près).
+  /// du fondateur (même calcul que le serveur, à l'unité près). Une durée hors
+  /// grille utilise la formule fixe + variable × jours si le fondateur l'a
+  /// paramétrée, sinon l'interpolation automatique entre paliers.
   String _priceLabel(List<AdPricingRule> pricing) {
     final days = _parsedDays;
     if (days == null) return '--';
-    return AdPricingRule.priceForFlexible(pricing, days, _audience)
-        .toStringAsFixed(0);
+    final settings = ref.watch(platformSettingsProvider).valueOrNull;
+    return AdPricingRule.priceForFlexible(
+      pricing,
+      days,
+      _audience,
+      fixedPrice: settings?.adCustomFixedPrice ?? 0,
+      variablePrice: settings?.adCustomVariablePrice ?? 0,
+    ).toStringAsFixed(0);
   }
 
   /// Liste groupée : pubs en ligne d'abord, puis en attente (validation ou
