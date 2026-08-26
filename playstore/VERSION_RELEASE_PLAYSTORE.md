@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.68** |
-| Code de version (versionCode) | **192** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `9171167` |
-| Statut CI | À publier au prochain push → release `v1.0.68` sur GitHub |
+| Version (versionName) | **1.0.71** |
+| Code de version (versionCode) | **195** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `43eafc4` |
+| Statut CI | À publier au prochain push → release `v1.0.71` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.68** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.71** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -48,7 +48,7 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
-### Version 1.0.68
+### Version 1.0.71
 
 - **Sélecteur pays → ville** : nouveau widget `CountryCityPickerField` utilisant
   l'API gratuite `countries.dev` (34 000 villes, sans clé). L'utilisateur choisit
