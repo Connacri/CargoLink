@@ -7,6 +7,7 @@ import '../screens/admin/super_admin_dashboard_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/client/client_home_screen.dart';
 import '../screens/client/my_orders_screen.dart';
+import '../screens/client/my_parcels_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/shipper/shipper_dashboard_screen.dart';
 import '../screens/shipper/shipper_finance_screen.dart';
@@ -87,13 +88,14 @@ class _HomeTabsScreenState extends ConsumerState<HomeTabsScreen> {
     WidgetRef ref,
     int navIndex,
   ) {
-    // Borne défensive : 3 onglets client (0..2).
-    final index = navIndex.clamp(0, 2);
+    // Borne défensive : 4 onglets client (0..3).
+    final index = navIndex.clamp(0, 3);
     return Scaffold(
       body: IndexedStack(
         index: index,
         children: const [
           ClientHomeScreen(),
+          MyParcelsScreen(),
           MyOrdersScreen(),
           ProfileScreen(),
         ],
@@ -109,11 +111,15 @@ class _HomeTabsScreenState extends ConsumerState<HomeTabsScreen> {
             label: 'Accueil',
           ),
           const BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping_rounded),
+            label: 'Suivi',
+          ),
+          const BottomNavigationBarItem(
             icon: Icon(Icons.shopping_bag),
             label: 'Commandes',
           ),
           BottomNavigationBarItem(
-            icon: _ProfileTabIcon(selected: index == 2),
+            icon: _ProfileTabIcon(selected: index == 3),
             activeIcon: const _ProfileTabIcon(selected: true),
             label: 'Profil',
           ),
