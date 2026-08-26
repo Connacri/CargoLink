@@ -23,6 +23,12 @@ class PlatformSettings {
   final double adCustomFixedPrice;
   final double adCustomVariablePrice;
 
+  /// Part des gains du parrain : pourcentage de la commission plateforme
+  /// reversé au parrain pour chaque colis livré et payé par un filleul.
+  /// Doit rester synchronisé avec le trigger SQL
+  /// `apply_referral_on_booking_delivery` (table `referral_earnings`).
+  final double referralCommissionPercent;
+
   const PlatformSettings({
     this.commissionPercent = 5.0,
     this.minPricePerKg = 500.0,
@@ -32,6 +38,7 @@ class PlatformSettings {
     this.defaultCurrency = 'DZD',
     this.adCustomFixedPrice = 0.0,
     this.adCustomVariablePrice = 0.0,
+    this.referralCommissionPercent = 50.0,
   });
 
   static const List<String> _keys = [
@@ -43,6 +50,7 @@ class PlatformSettings {
     'default_currency',
     'ad_custom_fixed_price',
     'ad_custom_variable_price',
+    'referral_commission_percent',
   ];
 
   factory PlatformSettings.fromRows(List<Map<String, dynamic>> rows) {
@@ -68,6 +76,7 @@ class PlatformSettings {
       defaultCurrency: map['default_currency'] ?? 'DZD',
       adCustomFixedPrice: d('ad_custom_fixed_price', 0.0),
       adCustomVariablePrice: d('ad_custom_variable_price', 0.0),
+      referralCommissionPercent: d('referral_commission_percent', 50.0),
     );
   }
 
@@ -82,6 +91,7 @@ class PlatformSettings {
       'default_currency': defaultCurrency,
       'ad_custom_fixed_price': adCustomFixedPrice.toString(),
       'ad_custom_variable_price': adCustomVariablePrice.toString(),
+      'referral_commission_percent': referralCommissionPercent.toString(),
     };
   }
 

@@ -137,9 +137,25 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
   }
 
   Future<void> _pickTargetUsers() async {
-    // Force rechargement pour éviter le cas AsyncLoading (value == null)
-    ref.invalidate(allUsersProvider);
-    final users = await ref.read(allUsersProvider.future).catchError((_) => <User>[]);
+    // Recharger la liste d'utilisateurs. On évite `invalidate` + lecture
+    // immédiate qui laisse le provider en AsyncLoading(null) au premier
+    // clic (le `.future` résout alors sans valeur utile). À la place,
+    // on lit le provider, on attend la résolution (jusqu'à 3 tentatives)
+    // puis on ouvre la feuille.
+    List<User> users = const [];
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        users = await ref.read(allUsersProvider.future);
+        if (users.isNotEmpty) break;
+      } catch (_) {
+        // provider encore en chargement ou en erreur — réessaie
+      }
+      if (attempt < 2) {
+        // Forcer un rechargement propre avant la prochaine tentative.
+        ref.invalidate(allUsersProvider);
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+      }
+    }
     if (users.isEmpty) {
       _snack('Impossible de charger la liste des utilisateurs',
           AppTheme.warningColor);

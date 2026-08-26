@@ -990,6 +990,23 @@ final allParrainsOverviewProvider =
   return service.getAllParrainsOverview();
 });
 
+/// Indique si l'utilisateur connecté est parrain (au moins 1 filleul actif).
+final isCurrentUserParrainProvider = FutureProvider<bool>((ref) async {
+  final userId = ref.watch(authServiceProvider).currentUserId;
+  if (userId == null) return false;
+  final filleuls = await ref.watch(myReferralFilleulsProvider.future);
+  return filleuls.isNotEmpty;
+});
+
+/// Colis en cours d'un filleul spécifique (lecture seule pour le parrain).
+final filleulBookingsProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, String>(
+        (ref, clientId) async {
+  return ref
+      .watch(referralServiceProvider)
+      .getFilleulBookings(clientId);
+});
+
 // ============================================================================
 // PARTAGE D'OFFRE & DEEP LINKS
 // ============================================================================

@@ -425,4 +425,67 @@ class ReferralService {
       rethrow;
     }
   }
+
+  // ==========================================================================
+  // SUIVI COLIS DES FILLEULS (lecture seule)
+  // ==========================================================================
+
+  /// Récupère les réservations en cours d'un filleul (client) — lecture seule
+  /// pour que le parrain puisse suivre les livraisons sans y toucher.
+  Future<List<Map<String, dynamic>>> getFilleulBookings(
+      String clientId) async {
+    try {
+      final rows = await _supabase
+          .from('bookings')
+          .select(
+              'id, product_name, status, payment_status, allocated_weight_kg, '
+              'total_price, tracking_number, created_at, delivered_at, '
+              'shipments(destination_city, origin_country, departure_date, '
+              'arrival_date, shippers(user_id))')
+          .eq('client_id', clientId)
+          .neq('status', 'cancelled')
+          .order('created_at', ascending: false)
+          .limit(20);
+      return (rows as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      _logger.e('Error getFilleulBookings: $e');
+      return [];
+    }
+  }
+
+  /// Demande de paiement des gains en attente d'un parrain — crée une
+  /// notification pour le fondateur (ou les admins).
+  Future<void> requestPayout({
+    required String parrainId,
+    required double amount,
+  }) async {
+    try {
+      // Insérer une notification pour tous les admins/super_admins.
+      final admins = await _supabase
+          .from('users')
+          .select('id')
+          .inFilter('role', ['admin', 'super_admin']);
+
+      final parrain = await _supabase
+          .from('users')
+          .select('full_name')
+          .eq('id', parrainId)
+          .single();
+
+      for (final admin in admins as List) {
+        await _supabase.from('notifications').insert({
+          'user_id': admin['id'],
+          'type': 'payout_request',
+          'title': 'Demande de paiement parrain',
+          'message':
+              '${parrain['full_name']} demande le paiement de '
+              '${amount.toStringAsFixed(0)} DZD de gains parrainage.',
+          'related_booking_id': null,
+        });
+      }
+    } catch (e) {
+      _logger.e('Error requesting payout: $e');
+      rethrow;
+    }
+  }
 }

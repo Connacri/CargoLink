@@ -29,6 +29,7 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
   late final TextEditingController _maxWeightController;
   late final TextEditingController _minWeightController;
   late final TextEditingController _precisionController;
+  late final TextEditingController _referralCommissionController;
   String _currency = AppConstants.defaultCurrency;
   bool _saving = false;
   bool _initialized = false;
@@ -41,6 +42,7 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
     _maxWeightController = TextEditingController();
     _minWeightController = TextEditingController();
     _precisionController = TextEditingController();
+    _referralCommissionController = TextEditingController();
   }
 
   @override
@@ -51,6 +53,7 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
     _maxWeightController.dispose();
     _minWeightController.dispose();
     _precisionController.dispose();
+    _referralCommissionController.dispose();
     super.dispose();
   }
 
@@ -66,6 +69,7 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
         'min_weight_kg': _minWeightController.text,
         'rounding_precision': _precisionController.text,
         'default_currency': _currency,
+        'referral_commission_percent': _referralCommissionController.text,
       });
       ref.invalidate(platformSettingsProvider);
       if (mounted) {
@@ -98,6 +102,8 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
           _minWeightController.text = s.minWeightKg.toStringAsFixed(2);
           _precisionController.text = s.roundingPrecision.toString();
           _currency = s.defaultCurrency;
+          _referralCommissionController.text =
+              s.referralCommissionPercent.toStringAsFixed(0);
         }
 
         return Scaffold(
@@ -269,6 +275,69 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
                                 }
                                 return null;
                               },
+                            ),
+                            const SizedBox(height: AppTheme.spaceLg),
+                            Container(
+                              padding: const EdgeInsets.all(AppTheme.spaceSm),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor
+                                    .withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(
+                                    AppTheme.radiusSm),
+                              ),
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                          Icons.card_giftcard_rounded,
+                                          size: 18,
+                                          color: AppTheme.primaryColor),
+                                      const SizedBox(
+                                          width: AppTheme.spaceXs),
+                                      Text(
+                                        'Programme de parrainage',
+                                        style: AppTheme.label,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(
+                                      height: AppTheme.spaceXs),
+                                  TextFormField(
+                                    controller:
+                                        _referralCommissionController,
+                                    keyboardType: const TextInputType
+                                        .numberWithOptions(decimal: true),
+                                    decoration: const InputDecoration(
+                                      labelText:
+                                          'Part du parrain (% commission)',
+                                      prefixIcon:
+                                          Icon(Icons.percent_rounded),
+                                    ),
+                                    validator: (v) {
+                                      final value =
+                                          double.tryParse(v ?? '');
+                                      if (value == null ||
+                                          value < 0 ||
+                                          value > 100) {
+                                        return 'Entre 0 et 100';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(
+                                      height: AppTheme.spaceXs),
+                                  const Text(
+                                    'Pourcentage de la commission '
+                                    'plateforme reversé au parrain '
+                                    'pour chaque colis livré et payé '
+                                    'par un filleul.',
+                                    style: AppTheme.caption,
+                                  ),
+                                ],
+                              ),
                             ),
                             const SizedBox(height: AppTheme.spaceLg),
                             FilledButton.icon(

@@ -13,8 +13,8 @@ import '../../providers/index.dart';
 /// Programme de parrainage CargoLink — accessible depuis le profil de TOUS
 /// les rôles.
 ///
-/// - Le parrain gagne 50% de la commission plateforme sur chaque colis livré
-///   et payé par un filleul inscrit avec son code.
+/// - Le parrain gagne un % configurable de la commission plateforme sur chaque
+///   colis livré et payé par un filleul inscrit avec son code.
 /// - Tous les 3 filleuls qualifiés : 3 vidéos témoignages à soumettre,
 ///   validées par le fondateur, pour débloquer la suite.
 class ReferralScreen extends ConsumerStatefulWidget {
@@ -29,6 +29,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
   final _url2Ctrl = TextEditingController();
   final _url3Ctrl = TextEditingController();
   bool _submitting = false;
+  bool _requestingPayout = false;
 
   @override
   void dispose() {
@@ -56,6 +57,56 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
 
   Future<void> _share(String code) async {
     await Share.share(_shareText(code), subject: 'Rejoins CargoLink !');
+  }
+
+  Future<void> _requestPayout(double amount) async {
+    if (amount <= 0) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Demander le paiement'),
+        content: Text(
+          'Envoyer une demande de paiement de ${amount.toStringAsFixed(0)} DZD '
+          'au fondateur ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Demander'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _requestingPayout = true);
+    try {
+      final userId = ref.read(authServiceProvider).currentUserId!;
+      await ref.read(referralServiceProvider).requestPayout(
+            parrainId: userId,
+            amount: amount,
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Demande de paiement envoyée au fondateur ✓'),
+            backgroundColor: AppTheme.accentColor,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _requestingPayout = false);
+    }
   }
 
   Future<void> _submitBatch() async {
@@ -89,8 +140,8 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
             content:
                 Text('Lot soumis ✓ — en attente de validation du fondateur'),
             backgroundColor: AppTheme.accentColor,
-      ),);
-
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -109,6 +160,9 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     final stats = ref.watch(myReferralStatsProvider);
     final filleuls = ref.watch(myReferralFilleulsProvider);
     final batches = ref.watch(myReferralBatchesProvider);
+    final settings = ref.watch(platformSettingsProvider);
+
+    final commissionPct = settings.valueOrNull?.referralCommissionPercent ?? 50;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Programme de parrainage')),
@@ -154,7 +208,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(AppTheme.spaceMd),
                 children: [
-                  _buildHowItWorks(),
+                  _buildHowItWorks(commissionPct),
                   const SizedBox(height: AppTheme.spaceMd),
                   stats.when(
                     loading: () => const Padding(
@@ -170,6 +224,9 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                         _buildMyCode(s),
                         const SizedBox(height: AppTheme.spaceMd),
                         _buildStatsRow(s),
+                        const SizedBox(height: AppTheme.spaceMd),
+                        if (s.totalPending > 0)
+                          _buildPayoutButton(s.totalPending),
                         const SizedBox(height: AppTheme.spaceMd),
                         _buildNextBatchSection(s),
                       ],
@@ -189,8 +246,8 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     );
   }
 
-  Widget _buildHowItWorks() {
-    const steps = [
+  Widget _buildHowItWorks(double commissionPct) {
+    final steps = [
       (
         Icons.person_add_rounded,
         '1. Partagez votre code',
@@ -210,9 +267,9 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       ),
       (
         Icons.savings_rounded,
-        '4. Vous gagnez 50% de la commission',
+        '4. Vous gagnez $commissionPct% de la commission',
         'La plateforme prélève une commission sur chaque commande : vous '
-            'en touchez la moitié, versée dans votre wallet parrain.'
+            'en touchez la part configurée, versée dans votre wallet parrain.'
       ),
     ];
     return GlassCard(
@@ -356,6 +413,57 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPayoutButton(double pendingAmount) {
+    return GlassCard(
+      padding: const EdgeInsets.all(AppTheme.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.account_balance_wallet_rounded,
+                  color: AppTheme.accentColor, size: 20),
+              const SizedBox(width: AppTheme.spaceSm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Gains en attente', style: AppTheme.label),
+                    Text(
+                      '${pendingAmount.toStringAsFixed(0)} DZD',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.accentColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed:
+                  _requestingPayout ? null : () => _requestPayout(pendingAmount),
+              icon: _requestingPayout
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.send_rounded, size: 18),
+              label: Text(
+                  _requestingPayout ? 'Envoi…' : 'Demander le paiement'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -968,10 +968,9 @@ class PaymentService {
   ///  - Charges = commissions plateforme réellement dues (remboursées et
   ///    commissions liées à des commandes annulées exclues) ;
   ///  - Profit net = CA total − charges, où les charges ne comptent QUE les
-  ///    commissions des commandes déjà réglées par les clients (paiement à la
-  ///    livraison reçu) — les commissions des commandes pas encore payées par
-  ///    le client sont différées et ne réduisent pas le bénéfice tant que
-  ///    l'expéditeur n'a pas encaissé ;
+  ///    commissions des commandes livrées par l'expéditeur — les commissions
+  ///    des commandes pas encore livrées sont affichées dans les dûs mais
+  ///    ne réduisent pas le bénéfice tant que la livraison n'a pas eu lieu ;
   ///  - Trésorerie nette (cash) = encaissé − commissions réglées.
   /// Also returns the monthly revenue breakdown for the chart.
   Future<Map<String, dynamic>?> getShipperFinanceSummary(
@@ -980,22 +979,26 @@ class PaymentService {
       final bookings = await _supabase
           .from('bookings')
           .select(
-              'id, allocated_weight_kg, status, payment_status, created_at, shipments(price_per_kg, shipper_id)')
+              'id, allocated_weight_kg, status, payment_status, created_at, '
+              'shipments(price_per_kg, shipper_id, status)')
           .eq('shipments.shipper_id', shipperId);
       final bookingList = bookings as List;
 
       var revenue = 0.0;
       var receivable = 0.0;
       final cancelledBookingIds = <String>{};
-      // Statut de paiement par commande : une commission n'est déduite du
-      // bénéfice net que si le client a réellement payé son colis (paiement à
-      // la livraison reçu). Sinon, elle est différée.
-      final paymentByBookingId = <String, String>{};
+      // Livraison par commande : une commission n'est déduite du bénéfice
+      // net que si l'expéditeur a effectivement livré le colis (booking
+      // status = 'delivered'). Sinon, elle est affichée dans les dûs mais
+      // différée.
+      final deliveredByBookingId = <String, bool>{};
       final byMonth = <int, double>{};
       for (final b in bookingList) {
         final shipment = b['shipments'] as Map<String, dynamic>?;
-        final shipperPrice = (shipment?['price_per_kg'] as num?)?.toDouble() ?? 0;
-        final allocated = (b['allocated_weight_kg'] as num?)?.toDouble() ?? 0;
+        final shipperPrice =
+            (shipment?['price_per_kg'] as num?)?.toDouble() ?? 0;
+        final allocated =
+            (b['allocated_weight_kg'] as num?)?.toDouble() ?? 0;
         // Gain expéditeur = poids alloué × prix/kg expéditeur (commission exclue).
         final gain = allocated * shipperPrice;
         final status = b['status'] as String? ?? '';
@@ -1005,10 +1008,13 @@ class PaymentService {
           if (bookingId != null) cancelledBookingIds.add(bookingId);
           continue;
         }
-        if (bookingId != null) paymentByBookingId[bookingId] = payment;
+        if (bookingId != null) {
+          deliveredByBookingId[bookingId] = status == 'delivered';
+        }
         if (payment == 'paid') {
           revenue += gain;
-          final created = DateTime.tryParse(b['created_at'] as String? ?? '');
+          final created =
+              DateTime.tryParse(b['created_at'] as String? ?? '');
           if (created != null) {
             final month = created.month;
             byMonth[month] = (byMonth[month] ?? 0) + gain;
@@ -1027,9 +1033,10 @@ class PaymentService {
       var feesPending = 0.0;
       var feesRefunded = 0.0;
       var feesCancelled = 0.0;
-      // Commissions des commandes dont le client n'a pas encore payé :
-      // affichées dans les dûs mais NON déduites du bénéfice net.
-      var feesOnUnpaidBooking = 0.0;
+      // Commissions des commandes pas encore livrées par l'expéditeur :
+      // affichées dans les dûs mais NON déduites du bénéfice net tant que
+      // la livraison n'a pas eu lieu.
+      var feesOnUndeliveredBooking = 0.0;
       final feesByCurrency = <String, Map<String, double>>{};
       void add(String currency, String key, double amount) {
         final bucket =
@@ -1049,12 +1056,13 @@ class PaymentService {
           add(currency, 'cancelled', amount);
           continue;
         }
-        // Commande pas encore réglée par le client (paiement à la livraison
-        // en attente) : la commission est différée — elle n'entre pas dans le
-        // bénéfice net tant que l'expéditeur n'a pas encaissé.
-        final clientHasPaid =
-            feeBookingId == null || paymentByBookingId[feeBookingId] == 'paid';
-        if (!clientHasPaid) feesOnUnpaidBooking += amount;
+        // Commande pas encore livrée par l'expéditeur : la commission est
+        // différée — elle n'entre pas dans le bénéfice net tant que la
+        // livraison n'a pas eu lieu (quand bien même le client aurait déjà
+        // payé).
+        final delivered = feeBookingId == null ||
+            deliveredByBookingId[feeBookingId] == true;
+        if (!delivered) feesOnUndeliveredBooking += amount;
         if (status == 'paid') {
           feesPaid += amount;
           add(currency, 'paid', amount);
@@ -1075,8 +1083,8 @@ class PaymentService {
       // Comptabilité (engagement) : CA total = encaissé + créances clients.
       final grossRevenue = revenue + receivable;
       // Charges réellement déduites du bénéfice net : uniquement les
-      // commissions des commandes déjà réglées par les clients.
-      final chargesCounted = feesTotal - feesOnUnpaidBooking;
+      // commissions des commandes déjà livrées par l'expéditeur.
+      final chargesCounted = feesTotal - feesOnUndeliveredBooking;
 
       return {
         'revenue': revenue,
@@ -1088,10 +1096,10 @@ class PaymentService {
         'fees_refunded': feesRefunded,
         'fees_cancelled': feesCancelled,
         'fees_total': feesTotal,
-        'fees_on_unpaid_bookings': feesOnUnpaidBooking,
+        'fees_on_undelivered_bookings': feesOnUndeliveredBooking,
         // Profit net comptable = chiffre d'affaires total (encaissé + à
-        // recevoir) moins les commissions des commandes payées par les
-        // clients — les commissions des commandes impayées sont différées.
+        // recevoir) moins les commissions des commandes livrées — les
+        // commissions des commandes pas encore livrées sont différées.
         'profit': grossRevenue - chargesCounted,
         // Trésorerie nette : seulement ce qui est réellement rentré moins ce
         // qui est réellement sorti.

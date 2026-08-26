@@ -148,7 +148,7 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
 
   Widget _buildProfitHeader(String currency, double profit, String shipperId) {
     final deferredFee = ((ref.watch(shipperFinanceSummaryProvider(shipperId))
-                .valueOrNull?['fees_on_unpaid_bookings']) as num?)
+                .valueOrNull?['fees_on_undelivered_bookings']) as num?)
             ?.toDouble() ??
         0;
 
@@ -177,14 +177,14 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
             const SizedBox(height: AppTheme.spaceXs),
             const Text(
               'Revenus encaissés et à recevoir, moins la commission des '
-              'commandes déjà payées par les clients.',
+              'colis déjà livrés.',
               style: AppTheme.bodySecondary,
             ),
             if (deferredFee > 0) ...[
               const SizedBox(height: AppTheme.spaceXs),
               Text(
                 '+ ${deferredFee.toStringAsFixed(0)} $currency de commission '
-                'seront déduits quand les clients régleront leurs colis.',
+                'seront déduits à la livraison.',
                 style: AppTheme.caption,
               ),
             ],

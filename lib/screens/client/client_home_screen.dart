@@ -737,27 +737,13 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   void _showDestinationPicker() {
     showModalBottomSheet(
       context: context,
-      builder: (context) => SafeArea(
-        top: false,
-        child: ListView(
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(AppTheme.spaceMd),
-              child: Text('Choisir une destination', style: AppTheme.h3),
-            ),
-            ...AppConstants.majorCities.map(
-              (city) => ListTile(
-                leading: const Icon(Icons.location_city_rounded,
-                    color: AppTheme.primaryColor),
-                title: Text(city),
-                onTap: () {
-                  ref.read(destinationFilterProvider.notifier).state = city;
-                  Navigator.pop(context);
-                },
-              ),
-            ),
-          ],
-        ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _DestinationPickerSheet(
+        current: ref.read(destinationFilterProvider),
+        onSelected: (city) {
+          ref.read(destinationFilterProvider.notifier).state = city;
+        },
       ),
     );
   }
@@ -1230,6 +1216,116 @@ class _NoSearchResults extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+}
+
+// ============================================================================
+// DESTINATION PICKER — feuille dédiée avec champ de recherche temps réel
+// ============================================================================
+
+class _DestinationPickerSheet extends StatefulWidget {
+  const _DestinationPickerSheet({required this.current, required this.onSelected});
+  final String? current;
+  final ValueChanged<String?> onSelected;
+
+  @override
+  State<_DestinationPickerSheet> createState() =>
+      _DestinationPickerSheetState();
+}
+
+class _DestinationPickerSheetState extends State<_DestinationPickerSheet> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const all = AppConstants.majorCities;
+    final filtered = _query.isEmpty
+        ? all
+        : all.where((c) => c.toLowerCase().contains(_query.toLowerCase())).toList();
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.8,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (ctx, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(top: 10, bottom: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.textSecondaryColor.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 4, 20, 8),
+                child: Text('Choisir une destination', style: AppTheme.h3),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: TextField(
+                  controller: _searchCtrl,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Rechercher une ville...',
+                    prefixIcon: Icon(Icons.search_rounded),
+                    isDense: true,
+                  ),
+                  onChanged: (v) => setState(() => _query = v.trim()),
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollCtrl,
+                  itemCount: filtered.length + 1,
+                  itemBuilder: (_, i) {
+                    if (i == 0) {
+                      return ListTile(
+                        leading: const Icon(Icons.clear_rounded,
+                            color: AppTheme.warningColor),
+                        title: const Text('Effacer le filtre'),
+                        selected: widget.current == null,
+                        onTap: () {
+                          widget.onSelected(null);
+                          Navigator.pop(context);
+                        },
+                      );
+                    }
+                    final city = filtered[i - 1];
+                    return ListTile(
+                      leading: const Icon(Icons.location_city_rounded,
+                          color: AppTheme.primaryColor),
+                      title: Text(city),
+                      selected: widget.current == city,
+                      onTap: () {
+                        widget.onSelected(city);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
