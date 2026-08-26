@@ -120,7 +120,8 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
                 subtitle: shipper.user?.fullName ?? 'Espace expéditeur',
                 icon: Icons.account_balance_wallet_rounded,
               ),
-              SliverToBoxAdapter(child: _buildProfitHeader(currency, profit)),
+              SliverToBoxAdapter(
+                  child: _buildProfitHeader(currency, profit, shipper.id)),
               SliverToBoxAdapter(child: _buildStatGrid(shipper.id, currency)),
               SliverToBoxAdapter(
                   child: _buildPlatformFeesSection(shipper.id, currency)),
@@ -145,7 +146,12 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
     );
   }
 
-  Widget _buildProfitHeader(String currency, double profit) {
+  Widget _buildProfitHeader(String currency, double profit, String shipperId) {
+    final deferredFee = ((ref.watch(shipperFinanceSummaryProvider(shipperId))
+                .valueOrNull?['fees_on_unpaid_bookings']) as num?)
+            ?.toDouble() ??
+        0;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.spaceMd,
@@ -170,9 +176,18 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
             ),
             const SizedBox(height: AppTheme.spaceXs),
             const Text(
-              'Revenus encaissés moins la commission plateforme.',
+              'Revenus encaissés et à recevoir, moins la commission des '
+              'commandes déjà payées par les clients.',
               style: AppTheme.bodySecondary,
             ),
+            if (deferredFee > 0) ...[
+              const SizedBox(height: AppTheme.spaceXs),
+              Text(
+                '+ ${deferredFee.toStringAsFixed(0)} $currency de commission '
+                'seront déduits quand les clients régleront leurs colis.',
+                style: AppTheme.caption,
+              ),
+            ],
           ],
         ),
       ),

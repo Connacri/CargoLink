@@ -1556,7 +1556,8 @@ class _FinanceSummaryStrip extends ConsumerWidget {
         settings.valueOrNull?.defaultCurrency ?? AppConstants.defaultCurrency;
 
     // Profit net comptable : CA total (encaissé + à recevoir) − commissions
-    // dues. Le dû regroupe commissions en attente de confirmation et à payer.
+    // des commandes déjà payées par les clients. Les commissions des
+    // commandes impayées (paiement à la livraison en attente) sont différées.
     final profit = (summary.valueOrNull?['profit'] as num?)?.toDouble() ?? 0;
     final feesDue = ((summary.valueOrNull?['fees_awaiting'] as num?) ?? 0) +
         ((summary.valueOrNull?['fees_pending'] as num?) ?? 0);

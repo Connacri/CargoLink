@@ -967,7 +967,11 @@ class PaymentService {
   ///    (encaissées + à recevoir), annulées exclues ;
   ///  - Charges = commissions plateforme réellement dues (remboursées et
   ///    commissions liées à des commandes annulées exclues) ;
-  ///  - Profit net = CA total − charges ;
+  ///  - Profit net = CA total − charges, où les charges ne comptent QUE les
+  ///    commissions des commandes déjà réglées par les clients (paiement à la
+  ///    livraison reçu) — les commissions des commandes pas encore payées par
+  ///    le client sont différées et ne réduisent pas le bénéfice tant que
+  ///    l'expéditeur n'a pas encaissé ;
   ///  - Trésorerie nette (cash) = encaissé − commissions réglées.
   /// Also returns the monthly revenue breakdown for the chart.
   Future<Map<String, dynamic>?> getShipperFinanceSummary(
@@ -983,6 +987,10 @@ class PaymentService {
       var revenue = 0.0;
       var receivable = 0.0;
       final cancelledBookingIds = <String>{};
+      // Statut de paiement par commande : une commission n'est déduite du
+      // bénéfice net que si le client a réellement payé son colis (paiement à
+      // la livraison reçu). Sinon, elle est différée.
+      final paymentByBookingId = <String, String>{};
       final byMonth = <int, double>{};
       for (final b in bookingList) {
         final shipment = b['shipments'] as Map<String, dynamic>?;
@@ -992,11 +1000,12 @@ class PaymentService {
         final gain = allocated * shipperPrice;
         final status = b['status'] as String? ?? '';
         final payment = b['payment_status'] as String? ?? '';
+        final bookingId = b['id'] as String?;
         if (status == 'cancelled') {
-          final id = b['id'] as String?;
-          if (id != null) cancelledBookingIds.add(id);
+          if (bookingId != null) cancelledBookingIds.add(bookingId);
           continue;
         }
+        if (bookingId != null) paymentByBookingId[bookingId] = payment;
         if (payment == 'paid') {
           revenue += gain;
           final created = DateTime.tryParse(b['created_at'] as String? ?? '');
@@ -1018,6 +1027,9 @@ class PaymentService {
       var feesPending = 0.0;
       var feesRefunded = 0.0;
       var feesCancelled = 0.0;
+      // Commissions des commandes dont le client n'a pas encore payé :
+      // affichées dans les dûs mais NON déduites du bénéfice net.
+      var feesOnUnpaidBooking = 0.0;
       final feesByCurrency = <String, Map<String, double>>{};
       void add(String currency, String key, double amount) {
         final bucket =
@@ -1037,6 +1049,12 @@ class PaymentService {
           add(currency, 'cancelled', amount);
           continue;
         }
+        // Commande pas encore réglée par le client (paiement à la livraison
+        // en attente) : la commission est différée — elle n'entre pas dans le
+        // bénéfice net tant que l'expéditeur n'a pas encaissé.
+        final clientHasPaid =
+            feeBookingId == null || paymentByBookingId[feeBookingId] == 'paid';
+        if (!clientHasPaid) feesOnUnpaidBooking += amount;
         if (status == 'paid') {
           feesPaid += amount;
           add(currency, 'paid', amount);
@@ -1056,6 +1074,9 @@ class PaymentService {
       final due = feesAwaiting + feesPending;
       // Comptabilité (engagement) : CA total = encaissé + créances clients.
       final grossRevenue = revenue + receivable;
+      // Charges réellement déduites du bénéfice net : uniquement les
+      // commissions des commandes déjà réglées par les clients.
+      final chargesCounted = feesTotal - feesOnUnpaidBooking;
 
       return {
         'revenue': revenue,
@@ -1067,10 +1088,11 @@ class PaymentService {
         'fees_refunded': feesRefunded,
         'fees_cancelled': feesCancelled,
         'fees_total': feesTotal,
+        'fees_on_unpaid_bookings': feesOnUnpaidBooking,
         // Profit net comptable = chiffre d'affaires total (encaissé + à
-        // recevoir) moins les charges réelles (commissions dues, hors
-        // remboursées et hors commandes annulées).
-        'profit': grossRevenue - feesTotal,
+        // recevoir) moins les commissions des commandes payées par les
+        // clients — les commissions des commandes impayées sont différées.
+        'profit': grossRevenue - chargesCounted,
         // Trésorerie nette : seulement ce qui est réellement rentré moins ce
         // qui est réellement sorti.
         'cash_profit': revenue - feesPaid,
