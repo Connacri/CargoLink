@@ -29,6 +29,15 @@ class PlatformSettings {
   /// `apply_referral_on_booking_delivery` (table `referral_earnings`).
   final double referralCommissionPercent;
 
+  /// Prix de l'abonnement « Demande de Livraison » pour le client (DZD).
+  final double deliveryClientSubscriptionPrice;
+
+  /// Prix de l'abonnement « Demande de Livraison » pour l'expéditeur (DZD).
+  final double deliveryShipperSubscriptionPrice;
+
+  /// Durée de l'abonnement en jours (défaut 30).
+  final int deliverySubscriptionDurationDays;
+
   const PlatformSettings({
     this.commissionPercent = 5.0,
     this.minPricePerKg = 500.0,
@@ -39,6 +48,9 @@ class PlatformSettings {
     this.adCustomFixedPrice = 0.0,
     this.adCustomVariablePrice = 0.0,
     this.referralCommissionPercent = 50.0,
+    this.deliveryClientSubscriptionPrice = 0.0,
+    this.deliveryShipperSubscriptionPrice = 0.0,
+    this.deliverySubscriptionDurationDays = 30,
   });
 
   static const List<String> _keys = [
@@ -51,6 +63,9 @@ class PlatformSettings {
     'ad_custom_fixed_price',
     'ad_custom_variable_price',
     'referral_commission_percent',
+    'delivery_client_subscription_price',
+    'delivery_shipper_subscription_price',
+    'delivery_subscription_duration_days',
   ];
 
   factory PlatformSettings.fromRows(List<Map<String, dynamic>> rows) {
@@ -77,6 +92,12 @@ class PlatformSettings {
       adCustomFixedPrice: d('ad_custom_fixed_price', 0.0),
       adCustomVariablePrice: d('ad_custom_variable_price', 0.0),
       referralCommissionPercent: d('referral_commission_percent', 50.0),
+      deliveryClientSubscriptionPrice:
+          d('delivery_client_subscription_price', 0.0),
+      deliveryShipperSubscriptionPrice:
+          d('delivery_shipper_subscription_price', 0.0),
+      deliverySubscriptionDurationDays:
+          i('delivery_subscription_duration_days', 30),
     );
   }
 
@@ -92,6 +113,12 @@ class PlatformSettings {
       'ad_custom_fixed_price': adCustomFixedPrice.toString(),
       'ad_custom_variable_price': adCustomVariablePrice.toString(),
       'referral_commission_percent': referralCommissionPercent.toString(),
+      'delivery_client_subscription_price':
+          deliveryClientSubscriptionPrice.toString(),
+      'delivery_shipper_subscription_price':
+          deliveryShipperSubscriptionPrice.toString(),
+      'delivery_subscription_duration_days':
+          deliverySubscriptionDurationDays.toString(),
     };
   }
 

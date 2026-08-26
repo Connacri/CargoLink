@@ -13,6 +13,7 @@ import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/notification_widgets.dart';
 import '../../core/widgets/chat_widgets.dart';
 import '../shared/qr_scan_screen.dart';
+import 'delivery_browse_screen.dart';
 import 'shipper_stats_detail_screen.dart';
 import 'shipper_booking_detail_screen.dart';
 import 'shipper_finance_screen.dart';
@@ -614,6 +615,70 @@ class _ShipperDashboardScreenState
                         Text(
                           'Scannez le QR code du colis pour confirmer la '
                           'collecte ou la remise au client.',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.spaceSm),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Colors.white70,
+                    size: 18,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceMd),
+          InkWell(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const DeliveryBrowseScreen()),
+            ),
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: AppTheme.infoGradient,
+                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                boxShadow: AppTheme.shadowMd,
+              ),
+              padding: const EdgeInsets.all(AppTheme.spaceLg),
+              child: Row(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const Icon(
+                      Icons.delivery_dining_outlined,
+                      color: Colors.white,
+                      size: 38,
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.spaceMd),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Demandes de livraison',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Consultez les demandes des clients et proposez '
+                          'votre prix pour les livrer.',
                           style: TextStyle(
                             color: Colors.white70,
                             fontSize: 13,

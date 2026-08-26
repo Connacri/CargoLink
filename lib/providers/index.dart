@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../core/widgets/paginated_list.dart';
 import '../data/models/models.dart';
 import '../data/models/v2_models.dart';
+import '../data/models/delivery_models.dart';
 import '../data/services/auth_service.dart';
 import '../data/services/ads_service.dart';
 import '../data/services/broadcast_service.dart';
@@ -20,6 +21,7 @@ import '../data/services/inventory_service.dart';
 import '../data/services/deep_link_service.dart';
 import '../data/services/offer_share_service.dart';
 import '../data/services/referral_service.dart';
+import '../data/services/delivery_service.dart';
 import '../data/models/referral_models.dart';
 
 // ============================================================================
@@ -863,6 +865,52 @@ final chainIntegrityProvider = FutureProvider.family<List<CustodyTransfer>,
   final v2 = ref.watch(v2ServiceProvider);
   return v2.verifyChainIntegrity(params.shipmentId,
       packageId: params.packageId);
+});
+
+// ============================================================================
+// DELIVERY PROVIDERS (Demande de Livraison)
+// ============================================================================
+
+final deliveryServiceProvider = Provider<DeliveryService>((ref) {
+  return DeliveryService();
+});
+
+/// Open delivery requests (shipper view), filtered by destination/origin.
+final openDeliveryRequestsProvider = FutureProvider.family<
+    List<DeliveryRequest>,
+    ({String? destinationCity, String? originCountry})>((ref, params) async {
+  final service = ref.watch(deliveryServiceProvider);
+  return service.getOpenRequests(
+    destinationCity: params.destinationCity,
+    originCountry: params.originCountry,
+  );
+});
+
+/// Client's own delivery requests.
+final myDeliveryRequestsProvider =
+    FutureProvider.autoDispose<List<DeliveryRequest>>((ref) async {
+  final userId = ref.watch(authServiceProvider).currentUserId;
+  if (userId == null) return const [];
+  return ref.watch(deliveryServiceProvider).getMyRequests(userId);
+});
+
+/// Shipper's own delivery responses.
+final myDeliveryResponsesProvider =
+    FutureProvider.autoDispose<List<DeliveryResponse>>((ref) async {
+  final userId = ref.watch(authServiceProvider).currentUserId;
+  if (userId == null) return const [];
+  final shipper = await ref.watch(currentShipperProvider.future);
+  if (shipper == null) return const [];
+  return ref.watch(deliveryServiceProvider).getMyResponses(shipper.id);
+});
+
+/// User's active delivery subscription status.
+final deliverySubscriptionProvider = FutureProvider.family<
+    DeliverySubscription?,
+    ({String userId, String role})>((ref, params) async {
+  return ref
+      .watch(deliveryServiceProvider)
+      .getActiveSubscription(params.userId, params.role);
 });
 
 // ============================================================================

@@ -14,6 +14,7 @@ import '../../components/workflow_slider.dart';
 import '../shipper/shipper_public_profile_screen.dart';
 import '../chat/chat_screen.dart';
 import '../shared/qr_scan_screen.dart';
+import 'delivery_request_screen.dart';
 import 'tracking_screen.dart';
 
 /// Smart sort applied to the (server-side filtered) search feed.
@@ -458,6 +459,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               child: _HomeTrackingCard(),
             ),
             SliverToBoxAdapter(
+              child: _buildDeliveryCard(context),
+            ),
+            SliverToBoxAdapter(
               child: _buildHowItWorks(),
             ),
             SliverToBoxAdapter(
@@ -551,6 +555,80 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             gradient: AppTheme.successGradient,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDeliveryCard(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const DeliveryRequestScreen()),
+        ),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: AppTheme.infoGradient,
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+            boxShadow: AppTheme.shadowMd,
+          ),
+          padding: const EdgeInsets.all(AppTheme.spaceLg),
+          child: Row(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.local_shipping_outlined,
+                  color: Colors.white,
+                  size: 38,
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceMd),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Demande de livraison',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Publiez une demande : décrivez votre produit '
+                      'et les expéditeurs vous proposeront un prix.',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceSm),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.white70,
+                size: 18,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -24,6 +24,8 @@ import '../screens/client/offer_detail_screen.dart';
 import '../screens/client/payment_screen.dart';
 import '../screens/client/tracking_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/client/delivery_request_screen.dart';
+import '../screens/shipper/delivery_browse_screen.dart';
 import '../screens/shipper/shipper_ads_screen.dart';
 import '../screens/shipper/shipper_registration_screen.dart';
 import 'app_widgets.dart';
@@ -117,6 +119,8 @@ class CargoLinkApp extends ConsumerWidget {
         '/platform-settings': (context) => const PlatformSettingsScreen(),
         '/inventory': (context) => const InventoryScreen(),
         '/my-ads': (context) => const ShipperAdsScreen(),
+        '/delivery-requests': (context) => const DeliveryRequestScreen(),
+        '/delivery-browse': (context) => const DeliveryBrowseScreen(),
       },
       debugShowCheckedModeBanner: false,
     );
