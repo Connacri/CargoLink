@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.65** |
-| Code de version (versionCode) | **185** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `775f726` |
-| Statut CI | À publier au prochain push → release `v1.0.65` sur GitHub |
+| Version (versionName) | **1.0.66** |
+| Code de version (versionCode) | **186** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `85b1df1` |
+| Statut CI | À publier au prochain push → release `v1.0.66` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.58** → workflow `release.yml` (job `android-aab`) |
@@ -47,6 +47,15 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.66
+
+- **Onglet « Suivi » (client)** : nouvelle entrée dans la barre de navigation
+  inférieure côté client — affiche la liste complète de tous les colis en cours
+  avec leur progression (frise de suivi DHL-style). 4 onglets au total :
+  Accueil → Suivi → Commandes → Profil.
+- **Raccourci header** : le bouton « Mes colis » dans l'en-tête de l'accueil
+  client ouvre directement l'onglet Suivi (index 1).
 
 ### Version 1.0.65
 
