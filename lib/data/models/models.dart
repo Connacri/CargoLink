@@ -240,7 +240,7 @@ class Shipment {
   final double reservedWeightKg;
   final double pricePerKg;
   final DateTime departureDate;
-  final DateTime arrivalDate;
+  final DateTime? arrivalDate;
   final String? airline;
   final String? flightNumber;
   final String status; // active, completed, cancelled
@@ -258,7 +258,7 @@ class Shipment {
   double get utilizationPercent => (reservedWeightKg / availableWeightKg) * 100;
   bool get isFull => remainingWeightKg <= 0;
   bool get isActive =>
-      status == 'active' && arrivalDate.isAfter(DateTime.now());
+      status == 'active' && (arrivalDate == null || arrivalDate!.isAfter(DateTime.now()));
   /// The offer is only visible to clients once its publication fee is paid.
   bool get isPublished => status == 'active' && publicationFeeStatus == 'paid';
 
@@ -273,7 +273,7 @@ class Shipment {
     required this.reservedWeightKg,
     required this.pricePerKg,
     required this.departureDate,
-    required this.arrivalDate,
+    this.arrivalDate,
     this.airline,
     this.flightNumber,
     required this.status,
@@ -300,7 +300,9 @@ class Shipment {
       reservedWeightKg: (json['reserved_weight_kg'] as num? ?? 0).toDouble(),
       pricePerKg: (json['price_per_kg'] as num).toDouble(),
       departureDate: DateTime.parse(json['departure_date'] as String),
-      arrivalDate: DateTime.parse(json['arrival_date'] as String),
+      arrivalDate: json['arrival_date'] != null
+          ? DateTime.parse(json['arrival_date'] as String)
+          : null,
       airline: json['airline'] as String?,
       flightNumber: json['flight_number'] as String?,
       status: json['status'] as String,
@@ -333,7 +335,7 @@ class Shipment {
       'reserved_weight_kg': reservedWeightKg,
       'price_per_kg': pricePerKg,
       'departure_date': departureDate.toIso8601String(),
-      'arrival_date': arrivalDate.toIso8601String(),
+      'arrival_date': arrivalDate?.toIso8601String(),
       'airline': airline,
       'flight_number': flightNumber,
       'status': status,

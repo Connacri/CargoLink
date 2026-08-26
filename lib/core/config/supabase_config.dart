@@ -147,5 +147,16 @@ class SupabaseConfig {
 // ============================================================================
 
 Future<void> initializeFirebase() async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Suppress "USE_AUTH_EMULATOR not set" info log from Firebase Auth SDK.
+  await runZonedGuarded(
+    () => Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+    (error, stack) {},
+    zoneSpecification: ZoneSpecification(
+      print: (self, parent, zone, line) {
+        if (!line.contains('USE_AUTH_EMULATOR')) {
+          parent.print(self, line);
+        }
+      },
+    ),
+  );
 }

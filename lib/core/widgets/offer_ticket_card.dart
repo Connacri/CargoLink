@@ -17,7 +17,7 @@ class OfferTicketCard extends StatelessWidget {
     this.airline,
     this.flightNumber,
     required this.departureDate,
-    required this.arrivalDate,
+    this.arrivalDate,
     required this.pricePerKg,
     required this.availableKg,
     this.currency = 'DZD',
@@ -29,7 +29,7 @@ class OfferTicketCard extends StatelessWidget {
   final String? airline;
   final String? flightNumber;
   final DateTime departureDate;
-  final DateTime arrivalDate;
+  final DateTime? arrivalDate;
   final double pricePerKg;
   final double availableKg;
   final String currency;
@@ -48,12 +48,14 @@ class OfferTicketCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dep = DateFormat('dd MMM', 'fr_FR').format(departureDate);
-    final arr = DateFormat('dd MMM', 'fr_FR').format(arrivalDate);
+    final arr = arrivalDate != null
+        ? DateFormat('dd MMM', 'fr_FR').format(arrivalDate!)
+        : dep;
     final depTime = _hasTime(departureDate)
         ? DateFormat('HH:mm', 'fr_FR').format(departureDate)
         : null;
-    final arrTime = _hasTime(arrivalDate)
-        ? DateFormat('HH:mm', 'fr_FR').format(arrivalDate)
+    final arrTime = arrivalDate != null && _hasTime(arrivalDate!)
+        ? DateFormat('HH:mm', 'fr_FR').format(arrivalDate!)
         : null;
 
     return Container(

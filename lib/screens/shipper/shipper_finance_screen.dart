@@ -9,6 +9,7 @@ import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
+import '../referral/referral_screen.dart';
 import 'shipper_booking_detail_screen.dart';
 import 'shipper_stats_detail_screen.dart';
 
@@ -127,6 +128,8 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
                   child: _buildPlatformFeesSection(shipper.id, currency)),
               SliverToBoxAdapter(
                   child: _buildRevenueChart(shipper.id, currency, revenue)),
+              SliverToBoxAdapter(
+                  child: _buildReferralEarningsSection(currency)),
               const SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
@@ -455,6 +458,113 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildReferralEarningsSection(String currency) {
+    final stats = ref.watch(myReferralStatsProvider);
+    final isParrain = ref.watch(isCurrentUserParrainProvider).valueOrNull ?? false;
+
+    if (!isParrain) return const SizedBox.shrink();
+
+    ref.listen(
+      tableChangesProvider(('referral_earnings', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(myReferralStatsProvider);
+        });
+      },
+    );
+
+    return stats.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (s) {
+        if (s.totalPaid == 0 && s.totalPending == 0) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.spaceMd,
+            AppTheme.spaceXs,
+            AppTheme.spaceMd,
+            AppTheme.spaceSm,
+          ),
+          child: GlassCard(
+            padding: const EdgeInsets.all(AppTheme.spaceMd),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const AnimatedIconDot(
+                      icon: Icons.card_giftcard_rounded,
+                      color: AppTheme.accentColor,
+                    ),
+                    const SizedBox(width: AppTheme.spaceSm),
+                    const Expanded(
+                      child: Text('Gains parrainage', style: AppTheme.h3),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => const ReferralScreen()),
+                      ),
+                      child: const Text('Voir tout'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spaceSm),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _FinanceStatCard(
+                        icon: Icons.check_circle_rounded,
+                        label: 'Payés',
+                        value:
+                            '${s.totalPaid.toStringAsFixed(0)} $currency',
+                        color: AppTheme.accentColor,
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.spaceSm),
+                    Expanded(
+                      child: _FinanceStatCard(
+                        icon: Icons.hourglass_top_rounded,
+                        label: 'En attente',
+                        value:
+                            '${s.totalPending.toStringAsFixed(0)} $currency',
+                        color: AppTheme.warningColor,
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.spaceSm),
+                    Expanded(
+                      child: _FinanceStatCard(
+                        icon: Icons.group_rounded,
+                        label: 'Filleuls',
+                        value: '${s.qualifiedFilleuls}',
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+                if (s.totalPending > 0) ...[
+                  const SizedBox(height: AppTheme.spaceSm),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => const ReferralScreen()),
+                      ),
+                      icon: const Icon(Icons.send_rounded, size: 18),
+                      label: const Text('Demander le paiement'),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

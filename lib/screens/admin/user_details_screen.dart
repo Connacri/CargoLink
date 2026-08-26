@@ -931,7 +931,7 @@ class _ShipmentRow extends StatelessWidget {
                     '${s.availableWeightKg.toStringAsFixed(0)}kg dispo · '
                     '${s.reservedWeightKg.toStringAsFixed(0)}kg réservé\n'
                     'Départ ${_date(s.departureDate)} · '
-                    'Arrivée ${_date(s.arrivalDate)}',
+                    'Arrivée ${s.arrivalDate != null ? _date(s.arrivalDate!) : 'N/A'}',
                     style: AppTheme.caption,
                   ),
                 ],

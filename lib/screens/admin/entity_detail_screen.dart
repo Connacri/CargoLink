@@ -98,7 +98,7 @@ class _ShipmentDetail extends StatelessWidget {
                           _LabelValue(
                             'Dates',
                             'Départ ${_date(s.departureDate)} → '
-                            'Arrivée ${_date(s.arrivalDate)}',
+                            'Arrivée ${s.arrivalDate != null ? _date(s.arrivalDate!) : 'N/A'}',
                           ),
                           const SizedBox(height: AppTheme.spaceSm + 4),
                           _LabelValue('Prix', '${s.pricePerKg.toStringAsFixed(0)} DZD/kg'),

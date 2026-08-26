@@ -39,7 +39,7 @@ class OfferShareService {
         airline: shipment.airline,
         flightNumber: shipment.flightNumber,
         departureDate: shipment.departureDate,
-        arrivalDate: shipment.arrivalDate,
+        arrivalDate: shipment.arrivalDate ?? shipment.departureDate.add(const Duration(days: 1)),
         pricePerKg: shipment.pricePerKg,
         availableKg: shipment.remainingWeightKg,
         currency: AppConstants.defaultCurrency,

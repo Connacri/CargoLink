@@ -386,7 +386,7 @@ class _PublicShipmentCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Arrivée ${shipment.arrivalDate.day}/${shipment.arrivalDate.month}',
+                  'Arrivée ${shipment.arrivalDate != null ? '${shipment.arrivalDate!.day}/${shipment.arrivalDate!.month}' : 'N/A'}',
                   style: AppTheme.caption,
                 ),
               ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
@@ -1146,7 +1147,6 @@ class _ShipperDashboardScreenState
     String? originCountry;
     String? destinationCity;
     DateTime departure = DateTime.now().add(const Duration(days: 3));
-    DateTime arrival = DateTime.now().add(const Duration(days: 7));
     bool submitting = false;
     bool payByVisa = false;
     bool saveAddressForNextTime = true;
@@ -1327,11 +1327,55 @@ class _ShipperDashboardScreenState
                     TextFormField(
                       controller: collectionAddressCtrl,
                       textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText:
                             'Adresse de collecte (lieu où remettre les colis)',
                         hintText: 'ex : Dépôt Bab Ezzouar, Alger',
-                        prefixIcon: Icon(Icons.location_on_outlined),
+                        prefixIcon: const Icon(Icons.location_on_outlined),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.my_location_rounded, size: 20),
+                          tooltip: 'Ma position actuelle',
+                          onPressed: () async {
+                            try {
+                              LocationPermission permission =
+                                  await Geolocator.checkPermission();
+                              if (permission == LocationPermission.denied) {
+                                permission =
+                                    await Geolocator.requestPermission();
+                              }
+                              if (permission == LocationPermission.denied ||
+                                  permission ==
+                                      LocationPermission.deniedForever) {
+                                if (sheetContext.mounted) {
+                                  ScaffoldMessenger.of(sheetContext)
+                                      .showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'Permission de localisation refusée')),
+                                  );
+                                }
+                                return;
+                              }
+                              final pos = await Geolocator.getCurrentPosition(
+                                desiredAccuracy: LocationAccuracy.medium,
+                                timeLimit: const Duration(seconds: 10),
+                              );
+                              setSheetState(() {
+                                collectionAddressCtrl.text =
+                                    '${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}';
+                              });
+                            } catch (_) {
+                              if (sheetContext.mounted) {
+                                ScaffoldMessenger.of(sheetContext)
+                                    .showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'Impossible d\'obtenir la position')),
+                                );
+                              }
+                            }
+                          },
+                        ),
                       ),
                     ),
                     CheckboxListTile(
@@ -1380,38 +1424,6 @@ class _ShipperDashboardScreenState
                                 'Départ ${departure.day}/${departure.month}'),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () async {
-                              final date = await showDatePicker(
-                                context: sheetContext,
-                                initialDate: arrival,
-                                firstDate: departure,
-                                lastDate: DateTime.now()
-                                    .add(const Duration(days: 365)),
-                              );
-                              if (date != null) {
-                                if (!sheetContext.mounted) return;
-                                final time = await showTimePicker(
-                                  context: sheetContext,
-                                  initialTime:
-                                      TimeOfDay.fromDateTime(arrival),
-                                );
-                                setSheetState(() => arrival = DateTime(
-                                      date.year,
-                                      date.month,
-                                      date.day,
-                                      time?.hour ?? arrival.hour,
-                                      time?.minute ?? arrival.minute,
-                                    ));
-                              }
-                            },
-                            icon: const Icon(Icons.flight_land, size: 18),
-                            label:
-                                Text('Arrivée ${arrival.day}/${arrival.month}'),
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -1451,7 +1463,6 @@ class _ShipperDashboardScreenState
                                       availableWeightKg: weight,
                                       pricePerKg: price,
                                       departureDate: departure,
-                                      arrivalDate: arrival,
                                       airline:
                                           airlineController.text.isEmpty
                                               ? null
@@ -1852,7 +1863,7 @@ class _ShipmentMiniCard extends ConsumerWidget {
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
-                          'Arrivée ${_formatDate(shipment.arrivalDate)}',
+                          'Arrivée ${shipment.arrivalDate != null ? _formatDate(shipment.arrivalDate!) : 'N/A'}',
                           style: AppTheme.caption,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -2246,7 +2257,7 @@ class _ShipperShipmentDetailScreenState
             const SizedBox(height: AppTheme.spaceSm),
             _SummaryRow(
               label: 'Arrivée',
-              value: _formatDate(shipment.arrivalDate),
+              value: shipment.arrivalDate != null ? _formatDate(shipment.arrivalDate!) : 'N/A',
             ),
             const SizedBox(height: AppTheme.spaceSm),
             _SummaryRow(

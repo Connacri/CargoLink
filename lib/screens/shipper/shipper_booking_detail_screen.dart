@@ -686,7 +686,7 @@ class _ShipperBookingDetailScreenState
         const SizedBox(height: AppTheme.spaceSm),
         _SummaryRow(
           label: 'Arrivée',
-          value: _formatDate(shipment.arrivalDate),
+          value: shipment.arrivalDate != null ? _formatDate(shipment.arrivalDate!) : 'N/A',
         ),
         if (shipment.airline != null) ...[
           const SizedBox(height: AppTheme.spaceSm),

@@ -46,7 +46,7 @@ class ShipperCard extends StatefulWidget {
     required this.availableKg,
     required this.totalKg,
     required this.pricePerKg,
-    required this.arrivalDate,
+    this.arrivalDate,
     required this.departureDate,
     this.shipmentsCount,
     this.isAvailable = true,
@@ -78,7 +78,7 @@ class ShipperCard extends StatefulWidget {
   final double availableKg;
   final double totalKg;
   final double pricePerKg;
-  final DateTime arrivalDate;
+  final DateTime? arrivalDate;
   final DateTime departureDate;
 
   /// Shippers' total number of completed shipments (shown when expanded).
@@ -113,7 +113,7 @@ class _ShipperCardState extends State<ShipperCard> {
   int get _availabilityPercent => (_availability * 100).round();
 
   int get _daysUntilArrival =>
-      widget.arrivalDate.difference(DateTime.now()).inDays;
+      (widget.arrivalDate ?? widget.departureDate).difference(DateTime.now()).inDays;
 
   Color get _availabilityColor {
     if (_availabilityPercent >= 75) return AppTheme.accentColor;
@@ -142,11 +142,13 @@ class _ShipperCardState extends State<ShipperCard> {
                       .format(widget.departureDate)
                   : DateFormat('d MMM yy', 'fr_FR')
                       .format(widget.departureDate),
-              arrivalTime: _hasTime(widget.arrivalDate)
-                  ? DateFormat('d MMM yy - HH:mm', 'fr_FR')
-                      .format(widget.arrivalDate)
-                  : DateFormat('d MMM yy', 'fr_FR')
-                      .format(widget.arrivalDate),
+              arrivalTime: widget.arrivalDate != null
+                  ? _hasTime(widget.arrivalDate!)
+                      ? DateFormat('d MMM yy - HH:mm', 'fr_FR')
+                          .format(widget.arrivalDate!)
+                      : DateFormat('d MMM yy', 'fr_FR')
+                          .format(widget.arrivalDate!)
+                  : null,
             ),
             const SizedBox(height: AppTheme.spaceMd),
             _buildAvailability(),

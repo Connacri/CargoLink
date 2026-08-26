@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.66** |
-| Code de version (versionCode) | **186** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `85b1df1` |
-| Statut CI | À publier au prochain push → release `v1.0.66` sur GitHub |
+| Version (versionName) | **1.0.67** |
+| Code de version (versionCode) | **190** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `(à déterminer après commit)` |
+| Statut CI | À publier au prochain push → release `v1.0.67` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.58** → workflow `release.yml` (job `android-aab`) |
@@ -47,6 +47,25 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.67
+
+- **Géolocalisation pour filtres destination/origine** : les filtres de
+  recherche côté client utilisent désormais un sélecteur de villes avec bouton
+  « Me localiser » — trouve automatiquement la ville algérienne la plus proche
+  grâce au GPS (formule haversine) et l'affiche avec un badge « Proche » en
+  tête de liste.
+- **Adresse de collecte géolocalisée** : le champ adresse de collecte côté
+  expéditeur dispose d'un bouton de localisation qui remplit automatiquement
+  les coordonnées GPS actuelles.
+- **Offre à date unique** : la date d'arrivée a été supprimée du formulaire de
+  publication d'offre. Chaque offre ne comporte qu'une seule date (départ +
+  heure). Un aller-retour = deux offres distinctes.
+- **`arrival_date` nullable** : la colonne `arrival_date` en base est désormais
+  optionnelle, alignée sur le modèle Dart (`DateTime?`). Les anciennes offres
+  avec date d'arrivée continuent de fonctionner normalement.
+- **Suppressions de doublon** : correction du doublon `Constantine` dans les
+  coordonnées GPS des villes algériennes.
 
 ### Version 1.0.66
 

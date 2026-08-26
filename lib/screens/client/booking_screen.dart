@@ -181,7 +181,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Arrive: ${shipment.arrivalDate.day}/${shipment.arrivalDate.month}',
+                          'Arrive: ${shipment.arrivalDate != null ? '${shipment.arrivalDate!.day}/${shipment.arrivalDate!.month}' : 'N/A'}',
                           style: AppTheme.caption,
                         ),
                       ],
