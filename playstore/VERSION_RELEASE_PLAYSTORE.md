@@ -12,7 +12,7 @@
 |---|---|
 | Version (versionName) | **1.0.67** |
 | Code de version (versionCode) | **190** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `(à déterminer après commit)` |
+| Commit de référence | `7b3c703` |
 | Statut CI | À publier au prochain push → release `v1.0.67` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
