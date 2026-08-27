@@ -10,9 +10,9 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.74** |
-| Code de version (versionCode) | **199** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `e5b7c72` |
+| Version (versionName) | **1.0.75** |
+| Code de version (versionCode) | **203** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `9f9b738` |
 | Statut CI | À publier au prochain push → release `v1.0.73` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
@@ -47,6 +47,31 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.75
+
+- **Billet QR et numéro de suivi masqués tant que l'expéditeur n'a pas
+  accepté la commande** : avant l'acceptation (statut `accepted`), le client
+  ne voit plus ni le numéro de suivi ni le QR — seule une puce « Commande en
+  attente d'acceptation » s'affiche. Dès que l'expéditeur vérifie et accepte
+  le colis, le billet QR et le suivi deviennent accessibles.
+- **Chips de statut d'acceptation** : chaque commande client affiche
+  désormais « Commande en attente d'acceptation » (ambre), « Commande
+  acceptée — attente de collecte » (vert) ou « Refusée : <motif> » (rouge)
+  selon l'état — commun aux accueils, commandes, colis et wizard de réservation.
+- **Notifications à chaque étape du cycle** : le client est notifié (push +
+  in-app) à l'acceptation — « votre billet QR et votre suivi sont
+  disponibles » — et au refus avec le motif de l'expéditeur. Les étapes
+  confirmé / collecté / envoyé / arrivé / remis au courrier / livré étaient
+  déjà notifiées.
+- **« Commandes reçues » en tête du tableau de bord expéditeur** : le fil
+  des commandes reçues passe au-dessus des statistiques pour un accès
+  immédiat, avec toujours les pastilles « en attente » et le bouton Historique.
+- **Liste des utilisateurs (admin) robuste** : le chargement des utilisateurs
+  pour les envois devient paginé (lecture de toutes les pages par blocs de
+  100) — plus de coupe à 500 comptes.
+- **Liens « Désactiver le compte » / « Supprimer le compte » retirés du bas
+  du profil** (ils restent dans « Gérer mon compte »).
 
 ### Version 1.0.74
 
