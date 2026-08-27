@@ -10,9 +10,9 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.75** |
-| Code de version (versionCode) | **203** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `9f9b738` |
+| Version (versionName) | **1.0.76** |
+| Code de version (versionCode) | **205** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `bb65a37` |
 | Statut CI | À publier au prochain push → release `v1.0.73` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
@@ -47,6 +47,29 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.76
+
+- **Filtre par type d'expéditeur côté serveur (admin/fondateur)** : la liste
+  des utilisateurs se filtre désormais directement dans la base PostgREST
+  (`inFilter` sur la table `users` après résolution des expéditeurs du type,
+  filtre par rôle ajouté) au lieu de charger toute la table en mémoire.
+  Pagination correcte, plus de coupe à 500 comptes.
+- **Abonnements côté client complétés** : l'achat d'un abonnement
+  « Demande de livraison » affiche désormais un état **« Validation en
+  attente »** quand le fondateur ne l'a pas encore approuvé (au lieu de
+  relancer l'achat), avec le libellé correct après soumission. Le provider
+  renvoie l'abonnement actif OU en attente.
+- **Écran Finance détaillé par type d'expéditeur (fondateur)** : nouvel écran
+  `ShipperTypeFinanceScreen` — synthèse (CA encaissé, commissions réglées,
+  commissions dues, CA/expéditeur, effectifs actifs 30 j, commandes en
+  attente, top route) puis liste de chaque expéditeur du type avec ses
+  chiffres, cliquable vers son profil public. Accessible depuis les cartes
+  « Voyageurs ordinaires » / « Micro-Importateurs » du dashboard fondateur.
+- **Fix `showDatePicker` (No MaterialLocalizations)** : ajout de
+  `flutter_localizations` + `localizationsDelegates` /
+  `supportedLocales` avec locale `fr` sur le `MaterialApp` — le sélecteur
+  de date (deadline des demandes de livraison) ne plante plus.
 
 ### Version 1.0.75
 
