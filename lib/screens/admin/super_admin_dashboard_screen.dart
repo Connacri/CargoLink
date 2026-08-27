@@ -18,6 +18,7 @@ import 'commission_screen.dart';
 import 'inventory_screen.dart';
 import 'ads_screen.dart';
 import 'referral_admin_screen.dart';
+import 'subscription_management_screen.dart';
 
 /// Founder (super_admin) dashboard — accès total et contrôle de la plateforme :
 /// stats globales, gestion de tous les comptes (rôles, activation,
@@ -53,11 +54,11 @@ class _SuperAdminDashboardScreenState
     final key = 'users|$_roleFilter';
     if (key == _lastKey) return;
     _lastKey = key;
-    ref.read(pagedUsersProvider((role: _roleFilter)).notifier).loadInitial();
+    ref.read(pagedUsersProvider((role: _roleFilter, shipperType: null)).notifier).loadInitial();
   }
 
   Future<void> _refreshUsers() =>
-      ref.read(pagedUsersProvider((role: _roleFilter)).notifier).refresh();
+      ref.read(pagedUsersProvider((role: _roleFilter, shipperType: null)).notifier).refresh();
 
   void _onUserChanged() {
     _refreshUsers();
@@ -112,14 +113,15 @@ class _SuperAdminDashboardScreenState
                     trailing: LogoutIconButton(),
                   ),
                   SliverToBoxAdapter(child: _StatsOverview()),
+                  SliverToBoxAdapter(child: _ReferralSummarySection()),
                   SliverToBoxAdapter(child: _FounderWalletSection()),
                   SliverToBoxAdapter(child: _PendingVerificationSection()),
                   SliverToBoxAdapter(child: _PendingAdsSection()),
                   SliverToBoxAdapter(child: _PendingPublicationSection()),
                   SliverToBoxAdapter(child: _PendingCommissionSection()),
                   SliverToBoxAdapter(child: _PendingDeletionSection()),
+                  SliverToBoxAdapter(child: _PendingSubscriptionsSection()),
                   SliverToBoxAdapter(child: _FeedbackSection()),
-                  SliverToBoxAdapter(child: _ReferralSummarySection()),
                   SliverToBoxAdapter(child: _SubscriptionSection()),
                   SliverToBoxAdapter(
                     child: SizedBox(height: AppTheme.spaceXxl),
@@ -264,7 +266,7 @@ class _SuperAdminDashboardScreenState
   }
 
   List<Widget> _buildUsersSliver() {
-    final pager = ref.watch(pagedUsersProvider((role: _roleFilter)));
+    final pager = ref.watch(pagedUsersProvider((role: _roleFilter, shipperType: null)));
     return [
       PagedSliverList<User>(
         paginatedList: pager,
@@ -403,15 +405,24 @@ class _FounderWalletSectionState extends ConsumerState<_FounderWalletSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
-              children: [
-                AnimatedIconDot(
-                  icon: Icons.account_balance_wallet_outlined,
-                  color: AppTheme.primaryColor,
+            InkWell(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const FounderWalletDetailScreen(),
                 ),
-                SizedBox(width: AppTheme.spaceSm),
-                Expanded(child: Text('Portefeuille', style: AppTheme.h3)),
-              ],
+              ),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+              child: const Row(
+                children: [
+                  AnimatedIconDot(
+                    icon: Icons.account_balance_wallet_outlined,
+                    color: AppTheme.primaryColor,
+                  ),
+                  SizedBox(width: AppTheme.spaceSm),
+                  Expanded(child: Text('Portefeuille', style: AppTheme.h3)),
+                  Icon(Icons.chevron_right_rounded, color: AppTheme.textMutedColor),
+                ],
+              ),
             ),
             const SizedBox(height: AppTheme.spaceSm),
             summary.when(
@@ -1670,6 +1681,81 @@ class _FeedbackSection extends ConsumerWidget {
   }
 }
 
+class _PendingSubscriptionsSection extends ConsumerWidget {
+  const _PendingSubscriptionsSection();
+  
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pendingCount = ref.watch(pendingSubscriptionsCountProvider);
+    return pendingCount.when(
+      data: (count) {
+        if (count == 0) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.spaceMd,
+            AppTheme.spaceSm,
+            AppTheme.spaceMd,
+            0,
+          ),
+          child: GlassCard(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const SubscriptionManagementScreen(),
+                ),
+              );
+            },
+            child: Row(
+              children: [
+                const AnimatedIconDot(
+                  icon: Icons.card_membership_rounded,
+                  color: AppTheme.warningColor,
+                ),
+                const SizedBox(width: AppTheme.spaceMd),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Abonnements en attente', style: AppTheme.h3),
+                      Text(
+                        '$count demande${count > 1 ? 's' : ''} d\'abonnement à valider',
+                        style: AppTheme.caption,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.warningColor,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                const Icon(Icons.chevron_right_rounded,
+                    color: AppTheme.textSecondaryColor),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
 // ============================================================================
 // SUBSCRIPTIONS MANAGEMENT
 // ============================================================================
@@ -2186,10 +2272,15 @@ class _StatsOverview extends ConsumerWidget {
     );
   }
 
-  void _openList(BuildContext context, EntityListType type, {String? role}) {
+  void _openList(BuildContext context, EntityListType type,
+      {String? role, String? shipperType}) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => EntityListScreen(type: type, roleFilter: role),
+        builder: (_) => EntityListScreen(
+          type: type,
+          roleFilter: role,
+          shipperTypeFilter: shipperType,
+        ),
       ),
     );
   }
@@ -2219,6 +2310,9 @@ class _StatsOverview extends ConsumerWidget {
           bookings: bookings,
           fees: fees,
           color: AppTheme.infoColor,
+          shipperType: 'voyageur_ordinaire',
+          onTap: () => _openList(context, EntityListType.users,
+              role: 'shipper', shipperType: 'voyageur_ordinaire'),
         ),
         const SizedBox(height: AppTheme.spaceSm + 4),
         _shipperTypeCard(
@@ -2229,6 +2323,9 @@ class _StatsOverview extends ConsumerWidget {
           bookings: bookings,
           fees: fees,
           color: AppTheme.accentColor,
+          shipperType: 'micro_importateur',
+          onTap: () => _openList(context, EntityListType.users,
+              role: 'shipper', shipperType: 'micro_importateur'),
         ),
       ],
     );
@@ -2242,6 +2339,8 @@ class _StatsOverview extends ConsumerWidget {
     required List<Booking> bookings,
     required List<PlatformFee> fees,
     required Color color,
+    String? shipperType,
+    VoidCallback? onTap,
   }) {
     final ids = group.map((s) => s.id).toSet();
 
@@ -2263,64 +2362,139 @@ class _StatsOverview extends ConsumerWidget {
       }
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppTheme.spaceMd),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
-        boxShadow: AppTheme.shadowSm,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              AnimatedIconDot(icon: icon, color: color, size: 20),
-              const SizedBox(width: AppTheme.spaceSm),
-              Expanded(
-                child: Text(
-                  title,
-                  style: AppTheme.h3.copyWith(fontSize: 15),
-                  overflow: TextOverflow.ellipsis,
+    final now = DateTime.now();
+    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+    final activeShipperIds = <String>{};
+    var pendingCount = 0;
+    final routeCounts = <String, int>{};
+    for (final b in bookings) {
+      final sid = b.shipment?.shipper?.id;
+      if (sid == null || !ids.contains(sid)) continue;
+      if (b.createdAt.isAfter(thirtyDaysAgo)) activeShipperIds.add(sid);
+      if (b.status == 'pending') pendingCount++;
+      final origin = b.shipment?.originCountry;
+      final dest = b.shipment?.destinationCity;
+      if (origin != null && dest != null) {
+        final route = '$origin → $dest';
+        routeCounts[route] = (routeCounts[route] ?? 0) + 1;
+      }
+    }
+    final topRoute = routeCounts.isNotEmpty
+        ? (routeCounts.entries.toList()
+              ..sort((a, b) => b.value.compareTo(a.value)))
+            .first.key
+        : null;
+    final avgRevenue = group.isNotEmpty ? ca / group.length : 0.0;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppTheme.spaceMd),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          border: Border.all(color: color.withValues(alpha: 0.25)),
+          boxShadow: AppTheme.shadowSm,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                AnimatedIconDot(icon: icon, color: color, size: 20),
+                const SizedBox(width: AppTheme.spaceSm),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppTheme.h3.copyWith(fontSize: 15),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-              Text(
-                '${group.length}',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: color,
+                Text(
+                  '${group.length}',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                  ),
                 ),
+                const SizedBox(width: 4),
+                const Text('expéditeurs', style: AppTheme.caption),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(subtitle, style: AppTheme.caption),
+            const SizedBox(height: AppTheme.spaceSm),
+            Row(
+              children: [
+                Expanded(
+                  child: _typeStat('CA encaissé', '${ca.toStringAsFixed(0)} DZD'),
+                ),
+                Expanded(
+                  child: _typeStat(
+                      'Commissions réglées', '${paid.toStringAsFixed(0)} DZD'),
+                ),
+                Expanded(
+                  child: due > 0
+                      ? _typeStat(
+                          'Commissions dues', '${due.toStringAsFixed(0)} DZD',
+                          valueColor: AppTheme.warningColor)
+                      : _typeStat('Pas de dettes', '—',
+                          valueColor: AppTheme.accentColor),
+                ),
+              ],
+            ),
+            if (group.isNotEmpty) ...[
+              const SizedBox(height: AppTheme.spaceSm),
+              Row(
+                children: [
+                  Expanded(
+                    child: _typeStat(
+                        'CA / expéditeur', '${avgRevenue.toStringAsFixed(0)} DZD'),
+                  ),
+                  Expanded(
+                    child: _typeStat(
+                        'Actifs (30 j)', '${activeShipperIds.length}/${group.length}'),
+                  ),
+                  Expanded(
+                    child: _typeStat(
+                        'En attente', '$pendingCount',
+                        valueColor: pendingCount > 0
+                            ? AppTheme.warningColor
+                            : AppTheme.accentColor),
+                  ),
+                ],
               ),
-              const SizedBox(width: 4),
-              const Text('expéditeurs', style: AppTheme.caption),
+              if (topRoute != null) ...[
+                const SizedBox(height: AppTheme.spaceSm),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spaceSm, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.route, size: 12, color: color),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          'Top route : $topRoute',
+                          style: AppTheme.caption.copyWith(color: color),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
-          ),
-          const SizedBox(height: 2),
-          Text(subtitle, style: AppTheme.caption),
-          const SizedBox(height: AppTheme.spaceSm),
-          Row(
-            children: [
-              Expanded(
-                child: _typeStat('CA encaissé', '${ca.toStringAsFixed(0)} DZD'),
-              ),
-              Expanded(
-                child: _typeStat(
-                    'Commissions réglées', '${paid.toStringAsFixed(0)} DZD'),
-              ),
-              Expanded(
-                child: due > 0
-                    ? _typeStat(
-                        'Commissions dues', '${due.toStringAsFixed(0)} DZD',
-                        valueColor: AppTheme.warningColor)
-                    : _typeStat('Pas de dettes', '—',
-                        valueColor: AppTheme.accentColor),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -2835,7 +3009,7 @@ class _DangerZoneState extends ConsumerState<_DangerZone> {
         );
       }
       ref.invalidate(platformStatsProvider);
-      ref.invalidate(pagedUsersProvider((role: null)));
+      ref.invalidate(pagedUsersProvider((role: null, shipperType: null)));
     } catch (e) {
       if (mounted) await showAppErrorDialog(context, message: 'Erreur: $e');
     } finally {
@@ -2942,4 +3116,276 @@ class _DangerZoneState extends ConsumerState<_DangerZone> {
       ),
     );
   }
+}
+
+// ============================================================================
+// FOUNDER WALLET DETAIL SCREEN
+// ============================================================================
+
+/// Full-page view of the founder's wallet with all fees, search and filters.
+class FounderWalletDetailScreen extends ConsumerStatefulWidget {
+  const FounderWalletDetailScreen({super.key});
+
+  @override
+  ConsumerState<FounderWalletDetailScreen> createState() =>
+      _FounderWalletDetailScreenState();
+}
+
+class _FounderWalletDetailScreenState
+    extends ConsumerState<FounderWalletDetailScreen> {
+  int _filter = 0; // 0 = à payer, 1 = payés, 2 = remboursés
+  String _searchQuery = '';
+
+  void _invalidateWallet() {
+    ref.invalidate(platformFeeSummaryProvider);
+    ref.invalidate(allPlatformFeesProvider);
+    ref.invalidate(awaitingCommissionFeesProvider);
+    ref.invalidate(awaitingCommissionCountProvider);
+  }
+
+  Future<void> _confirmFee(PlatformFee fee) async {
+    try {
+      await ref.read(paymentServiceProvider).confirmPlatformFee(fee.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Paiement confirmé')),
+      );
+      _invalidateWallet();
+      ref.invalidate(shipperFinanceSummaryProvider(fee.shipperId));
+      ref.invalidate(shipperPlatformFeesProvider(fee.shipperId));
+    } catch (e) {
+      if (mounted) await showAppErrorDialog(context, message: 'Erreur: $e');
+    }
+  }
+
+  Future<void> _refundFee(PlatformFee fee) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Rembourser ce dû ?'),
+        content: Text(
+          '${fee.amount.toStringAsFixed(0)} ${fee.currency} — le dû sera '
+          'marqué comme remboursé.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Rembourser'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.read(paymentServiceProvider).refundPlatformFee(fee.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Dû marqué remboursé')),
+      );
+      _invalidateWallet();
+      ref.invalidate(shipperFinanceSummaryProvider(fee.shipperId));
+      ref.invalidate(shipperPlatformFeesProvider(fee.shipperId));
+    } catch (e) {
+      if (mounted) await showAppErrorDialog(context, message: 'Erreur: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final summary = ref.watch(platformFeeSummaryProvider);
+    final fees = ref.watch(allPlatformFeesProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Portefeuille'),
+        centerTitle: true,
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async => _invalidateWallet(),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(AppTheme.spaceMd),
+                child: summary.when(
+                  data: (s) => _buildSummaryCard(s),
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(AppTheme.spaceLg),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                  error: (_, __) => const Text(
+                    'Totaux indisponibles',
+                    style: AppTheme.caption,
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Rechercher un expéditeur, une route...',
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spaceMd, vertical: 12),
+                  ),
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                ),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceSm)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+                child: Wrap(
+                  spacing: AppTheme.spaceSm,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('À payer'),
+                      selected: _filter == 0,
+                      showCheckmark: false,
+                      onSelected: (_) => setState(() => _filter = 0),
+                    ),
+                    ChoiceChip(
+                      label: const Text('Payés'),
+                      selected: _filter == 1,
+                      showCheckmark: false,
+                      onSelected: (_) => setState(() => _filter = 1),
+                    ),
+                    ChoiceChip(
+                      label: const Text('Remboursés'),
+                      selected: _filter == 2,
+                      showCheckmark: false,
+                      onSelected: (_) => setState(() => _filter = 2),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceSm)),
+            fees.when(
+              data: (list) {
+                final filtered = list.where((f) {
+                  switch (_filter) {
+                    case 0:
+                      return f.status == 'pending' ||
+                          f.status == 'awaiting_confirmation';
+                    case 1:
+                      return f.status == 'paid';
+                    default:
+                      return f.status == 'refunded';
+                  }
+                }).toList();
+
+                // Search filter
+                final searched = _searchQuery.isEmpty
+                    ? filtered
+                    : filtered.where((f) {
+                        final name = (f.shipment?.shipper?.user?.fullName ?? '')
+                            .toLowerCase();
+                        final route =
+                            '${f.shipment?.originCountry ?? ''} ${f.shipment?.destinationCity ?? ''}'
+                                .toLowerCase();
+                        final q = _searchQuery.toLowerCase();
+                        return name.contains(q) || route.contains(q);
+                      }).toList();
+
+                if (searched.isEmpty) {
+                  return const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(AppTheme.spaceXl),
+                      child: Center(
+                        child: Text(
+                          'Aucun dû dans cette catégorie.',
+                          style: AppTheme.caption,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => _WalletFeeTile(
+                      fee: searched[index],
+                      onConfirm: () => _confirmFee(searched[index]),
+                      onRefund: () => _refundFee(searched[index]),
+                    ),
+                    childCount: searched.length,
+                  ),
+                );
+              },
+              loading: () => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spaceXl),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+              error: (_, __) => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spaceXl),
+                  child: Center(
+                    child: Text(
+                      'Impossible de charger les dus.',
+                      style: AppTheme.caption,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: AppTheme.spaceXxl),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(Map<String, dynamic>? s) {
+    if (s == null) {
+      return const Text('Totaux indisponibles', style: AppTheme.caption);
+    }
+    final byCurrency = (s['by_currency'] as Map?) ?? const {};
+    return GlassCard(
+      padding: const EdgeInsets.all(AppTheme.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Totaux par devise', style: AppTheme.h3),
+          const SizedBox(height: AppTheme.spaceSm),
+          if (byCurrency.isEmpty)
+            Text(
+              'Encaissé ${_num(s['collected'])} · À confirmer ${_num(s['awaiting'])} '
+              '· Dû ${_num(s['pending'])} · Remboursé ${_num(s['refunded'])}',
+              style: AppTheme.caption,
+            )
+          else
+            for (final entry in byCurrency.entries)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppTheme.spaceXs),
+                child: Text(
+                  '${entry.key} — Encaissé ${_num((entry.value as Map)['collected'])}'
+                  ' · À confirmer ${_num((entry.value as Map)['awaiting'])}'
+                  ' · Dû ${_num((entry.value as Map)['pending'])}'
+                  ' · Remboursé ${_num((entry.value as Map)['refunded'])}',
+                  style: AppTheme.body.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+        ],
+      ),
+    );
+  }
+
+  static String _num(Object? v) => ((v as num?) ?? 0).toStringAsFixed(0);
 }

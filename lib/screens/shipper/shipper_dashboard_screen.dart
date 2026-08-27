@@ -319,6 +319,9 @@ class _ShipperDashboardScreenState
               child: _buildPublishAndScan(shipper),
             ),
             SliverToBoxAdapter(
+              child: _buildSubscriptionBanner(shipper),
+            ),
+            SliverToBoxAdapter(
               child: _buildActiveOrdersCard(shipper.id),
             ),
             SliverToBoxAdapter(
@@ -388,7 +391,6 @@ class _ShipperDashboardScreenState
             child: UnreadNotificationBadge(),
           ),
         ),
-        const LogoutIconButton(),
       ],
     );
   }
@@ -774,6 +776,106 @@ class _ShipperDashboardScreenState
   }
 
   // --------------------------------------------------------------------------
+  // ABONNEMENT — bannière de souscription pour les expéditeurs non abonnés
+  // --------------------------------------------------------------------------
+
+  Widget _buildSubscriptionBanner(Shipper shipper) {
+    final sub = ref.watch(deliverySubscriptionProvider((userId: shipper.userId, role: 'shipper')));
+    return sub.when(
+      data: (activeSub) {
+        if (activeSub != null) return const SizedBox.shrink();
+        final settings = ref.watch(platformSettingsProvider);
+        final price = settings.valueOrNull?.deliveryShipperSubscriptionPrice ?? 0;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.spaceMd,
+            AppTheme.spaceSm,
+            AppTheme.spaceMd,
+            0,
+          ),
+          child: GlassCard(
+            child: Row(
+              children: [
+                const AnimatedIconDot(
+                  icon: Icons.card_membership_rounded,
+                  color: AppTheme.warningColor,
+                ),
+                const SizedBox(width: AppTheme.spaceMd),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Abonnement livraison', style: AppTheme.h3),
+                      Text(
+                        'Activez un abonnement pour proposer des prix '
+                        'et consulter les demandes de livraison.',
+                        style: AppTheme.caption,
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => _showSubscriptionSheet(price),
+                  child: const Text('Activer'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Future<void> _showSubscriptionSheet(double price) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Activer l\'abonnement'),
+        content: Text(
+          'Prix: ${price.toStringAsFixed(0)} DZD\n'
+          'Durée: 30 jours\n\n'
+          'Votre demande sera envoyée au fondateur pour validation.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Demander l\'activation'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    
+    try {
+      final userId = ref.read(authServiceProvider).currentUserId;
+      if (userId == null) throw Exception('Non authentifié');
+      final settings = ref.read(platformSettingsProvider).valueOrNull;
+      await ref.read(deliveryServiceProvider).purchaseSubscription(
+        userId: userId,
+        role: 'shipper',
+        price: settings?.deliveryShipperSubscriptionPrice ?? 0,
+        durationDays: settings?.deliverySubscriptionDurationDays ?? 30,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Demande envoyée au fondateur pour validation.'),
+            backgroundColor: AppTheme.warningColor,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) await showAppErrorDialog(context, message: 'Erreur: $e');
+    }
+  }
+
+  // --------------------------------------------------------------------------
   // COMMANDES EN COURS — carte de synthèse des commandes reçues pas encore
   // livrées. Un appui ouvre la liste complète avec frises de suivi et
   // détails (ShipperOrdersInProgressScreen).
@@ -785,8 +887,34 @@ class _ShipperDashboardScreenState
         .where((b) => b.status != 'delivered' && b.status != 'cancelled')
         .toList();
     if (activeOrders.isEmpty) return const SizedBox.shrink();
+
     final pending =
         activeOrders.where((b) => b.status == 'pending').length;
+    final confirmed =
+        activeOrders.where((b) => b.status == 'confirmed').length;
+    final inTransit = activeOrders
+        .where((b) =>
+            b.status != 'pending' &&
+            b.status != 'confirmed' &&
+            b.status != 'delivered' &&
+            b.status != 'cancelled')
+        .length;
+    final totalValue =
+        activeOrders.fold(0.0, (sum, b) => sum + b.totalPrice);
+
+    final departureDates = activeOrders
+        .map((b) => b.shipment?.departureDate)
+        .whereType<DateTime>()
+        .toList()
+      ..sort();
+    final nextDeparture = departureDates.isNotEmpty ? departureDates.first : null;
+
+    void navigate() => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) =>
+                ShipperOrdersInProgressScreen(shipperId: shipperId),
+          ),
+        );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -796,47 +924,159 @@ class _ShipperDashboardScreenState
         0,
       ),
       child: GlassCard(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) =>
-                ShipperOrdersInProgressScreen(shipperId: shipperId),
-          ),
-        ),
-        child: Row(
+        onTap: navigate,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const AnimatedIconDot(
-              icon: Icons.local_shipping_rounded,
-              color: AppTheme.infoColor,
+            Row(
+              children: [
+                const AnimatedIconDot(
+                  icon: Icons.local_shipping_rounded,
+                  color: AppTheme.infoColor,
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                const Expanded(
+                  child: Text('Commandes en cours', style: AppTheme.h3),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.spaceSm,
+                    vertical: AppTheme.spaceXs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.infoColor.withValues(alpha: 0.12),
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.radiusXs),
+                  ),
+                  child: Text(
+                    '${activeOrders.length}',
+                    style: AppTheme.label.copyWith(
+                      color: AppTheme.infoColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: AppTheme.spaceMd),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: AppTheme.spaceSm),
+            Wrap(
+              spacing: AppTheme.spaceSm,
+              runSpacing: AppTheme.spaceXs,
+              children: [
+                if (pending > 0)
+                  _statusChip(
+                    label: '$pending en attente',
+                    color: AppTheme.warningColor,
+                  ),
+                if (confirmed > 0)
+                  _statusChip(
+                    label: '$confirmed confirmée${confirmed > 1 ? 's' : ''}',
+                    color: AppTheme.accentColor,
+                  ),
+                if (inTransit > 0)
+                  _statusChip(
+                    label: '$inTransit en transit',
+                    color: AppTheme.infoColor,
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            Row(
+              children: [
+                Icon(
+                  Icons.payments_rounded,
+                  size: 16,
+                  color: AppTheme.accentColor.withValues(alpha: 0.8),
+                ),
+                const SizedBox(width: AppTheme.spaceXs),
+                Text(
+                  '${totalValue.toStringAsFixed(0)} DA',
+                  style: AppTheme.body.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.accentColor,
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                const Text(
+                  'valeur totale',
+                  style: AppTheme.caption,
+                ),
+              ],
+            ),
+            if (nextDeparture != null) ...[
+              const SizedBox(height: AppTheme.spaceXs),
+              Row(
                 children: [
-                  const Text('Commandes en cours', style: AppTheme.h3),
+                  const Icon(
+                    Icons.flight_takeoff_rounded,
+                    size: 16,
+                    color: AppTheme.textMutedColor,
+                  ),
+                  const SizedBox(width: AppTheme.spaceXs),
                   Text(
-                    '${activeOrders.length} commande${activeOrders.length > 1 ? 's' : ''} '
-                    'pas encore livrée${activeOrders.length > 1 ? 's' : ''}'
-                    '${pending > 0 ? ' • $pending en attente' : ''}',
+                    'Prochain départ : ${_formatDepartureDate(nextDeparture)}',
                     style: AppTheme.caption,
                   ),
                 ],
               ),
-            ),
-            TextButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      ShipperOrdersInProgressScreen(shipperId: shipperId),
-                ),
+            ],
+            const SizedBox(height: AppTheme.spaceSm),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: navigate,
+                icon: const Icon(Icons.timeline_rounded, size: 18),
+                label: const Text('Suivre'),
               ),
-              icon: const Icon(Icons.timeline_rounded, size: 18),
-              label: const Text('Suivre'),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _statusChip({required String label, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceSm,
+        vertical: AppTheme.spaceXs,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: AppTheme.spaceXs),
+          Text(
+            label,
+            style: AppTheme.label.copyWith(
+              color: AppTheme.textPrimaryColor,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDepartureDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = date.difference(now);
+    if (diff.isNegative) return 'passé';
+    if (diff.inDays == 0) return 'aujourd\'hui';
+    if (diff.inDays == 1) return 'demain';
+    if (diff.inDays < 7) return 'dans ${diff.inDays} jours';
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   // --------------------------------------------------------------------------

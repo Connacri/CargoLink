@@ -913,6 +913,19 @@ final deliverySubscriptionProvider = FutureProvider.family<
       .getActiveSubscription(params.userId, params.role);
 });
 
+final allDeliverySubscriptionsProvider =
+    FutureProvider<List<DeliverySubscription>>((ref) async {
+  return ref.read(deliveryServiceProvider).getAllSubscriptions();
+});
+
+final pendingSubscriptionsCountProvider =
+    FutureProvider<int>((ref) async {
+  final subs = await ref.read(deliveryServiceProvider).getAllSubscriptions(
+    status: 'pending',
+  );
+  return subs.length;
+});
+
 // ============================================================================
 // NAVIGATION STATE
 // ============================================================================

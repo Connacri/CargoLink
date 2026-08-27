@@ -80,7 +80,7 @@ class _QrTicketDialogState extends State<_QrTicketDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Confirmation enregistrée.'),
+            content: Text('Billet enregistre dans la galerie.'),
             backgroundColor: AppTheme.accentColor,
           ),
         );
@@ -88,7 +88,7 @@ class _QrTicketDialogState extends State<_QrTicketDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Échec de l\'enregistrement: $e')),
+          SnackBar(content: Text('Echec : $e')),
         );
       }
     } finally {
@@ -98,60 +98,52 @@ class _QrTicketDialogState extends State<_QrTicketDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final dialogWidth = (screenWidth * 0.85).clamp(300.0, 480.0);
-
     return Dialog(
-      backgroundColor: AppTheme.backgroundColor,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-      ),
-      child: SizedBox(
-        width: dialogWidth,
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(AppTheme.spaceMd),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(AppTheme.spaceMd),
-            child: Column(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text('Mon QR code', style: AppTheme.h3),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
+              // ─── TICKET ───
               RepaintBoundary(
                 key: _ticketKey,
                 child: QrBookingTicket(payload: widget.payload),
               ),
               const SizedBox(height: AppTheme.spaceMd),
-              FilledButton.icon(
-                onPressed: _saving ? null : _save,
-                icon: _saving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.download_rounded, size: 18),
-                label: Text(_saving
-                    ? 'Préparation…'
-                    : (kIsWeb
-                        ? 'Télécharger (PNG)'
-                        : 'Enregistrer dans la galerie')),
+              // ─── ACTIONS ───
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      label: const Text('Fermer'),
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.spaceSm),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: _saving ? null : _save,
+                      icon: _saving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.download_rounded, size: 18),
+                      label: Text(
+                          _saving ? 'Enregistrement...' : 'Enregistrer'),
+                    ),
+                  ),
+                ],
               ),
             ],
-            ),
           ),
         ),
       ),

@@ -17,8 +17,12 @@ enum EntityListType { users, shipments, bookings, payments, disputes }
 
 /// Walks the raw `users` table server-side so a role filter can be applied
 /// without breaking offset pagination (the service has no role parameter).
+/// When [userIds] is set, only those user IDs are returned (shipper-type filter).
 class _UsersScanner {
   int _rawOffset = 0;
+
+  /// Optional: restrict results to these user IDs (shipper-type filter).
+  Set<String>? userIds;
 
   void reset() => _rawOffset = 0;
 
@@ -27,6 +31,12 @@ class _UsersScanner {
     String? role,
     int limit,
   ) async {
+    // Shipper-type filter: load ALL users, then keep only those whose IDs match.
+    if (userIds != null && userIds!.isNotEmpty) {
+      final all = await fetch(500, 0);
+      return all.where((u) => userIds!.contains(u.id)).toList();
+    }
+
     if (role == null) {
       final page = await fetch(limit, _rawOffset);
       _rawOffset += page.length;
@@ -65,13 +75,25 @@ class _UsersPagerNotifier extends PaginatedListNotifier<User> {
 }
 
 final pagedUsersProvider = StateNotifierProvider.family<_UsersPagerNotifier,
-    PaginatedList<User>, ({String? role})>((ref, params) {
+    PaginatedList<User>, ({String? role, String? shipperType})>((ref, params) {
   final scanner = _UsersScanner();
   Future<List<User>> fetch(int limit, int offset) =>
       ref.read(authServiceProvider).getAllUsers(limit: limit, offset: offset);
   return _UsersPagerNotifier(
     scanner,
-    loader: (limit, offset) => scanner.load(fetch, params.role, limit),
+    loader: (limit, offset) async {
+      // Shipper-type filter: load shippers first, then set IDs on the scanner.
+      if (params.shipperType != null) {
+        final shippers = ref.read(allShippersProvider).valueOrNull ?? [];
+        final filtered = shippers
+            .where((s) => s.shipperType == params.shipperType)
+            .toList();
+        scanner.userIds = filtered.map((s) => s.userId).toSet();
+      } else {
+        scanner.userIds = null;
+      }
+      return scanner.load(fetch, params.role, limit);
+    },
     pageSize: 20,
   );
 });
@@ -122,8 +144,14 @@ final pagedDisputesProvider = StateNotifierProvider<
 class EntityListScreen extends ConsumerStatefulWidget {
   final EntityListType type;
   final String? roleFilter;
+  final String? shipperTypeFilter;
 
-  const EntityListScreen({super.key, required this.type, this.roleFilter});
+  const EntityListScreen({
+    super.key,
+    required this.type,
+    this.roleFilter,
+    this.shipperTypeFilter,
+  });
 
   @override
   ConsumerState<EntityListScreen> createState() => _EntityListScreenState();
@@ -151,7 +179,7 @@ class _EntityListScreenState extends ConsumerState<EntityListScreen> {
   }
 
   void _syncPager() {
-    final key = '${widget.type}|${widget.roleFilter}';
+    final key = '${widget.type}|${widget.roleFilter}|${widget.shipperTypeFilter}';
     if (key == _lastKey) return;
     _lastKey = key;
     _loadInitial();
@@ -161,7 +189,7 @@ class _EntityListScreenState extends ConsumerState<EntityListScreen> {
     switch (widget.type) {
       case EntityListType.users:
         ref
-            .read(pagedUsersProvider((role: widget.roleFilter)).notifier)
+            .read(pagedUsersProvider((role: widget.roleFilter, shipperType: widget.shipperTypeFilter)).notifier)
             .loadInitial();
         break;
       case EntityListType.shipments:
@@ -183,7 +211,7 @@ class _EntityListScreenState extends ConsumerState<EntityListScreen> {
     switch (widget.type) {
       case EntityListType.users:
         return ref
-            .read(pagedUsersProvider((role: widget.roleFilter)).notifier)
+            .read(pagedUsersProvider((role: widget.roleFilter, shipperType: widget.shipperTypeFilter)).notifier)
             .refresh();
       case EntityListType.shipments:
         return ref.read(pagedShipmentsProvider.notifier).refresh();
@@ -199,6 +227,11 @@ class _EntityListScreenState extends ConsumerState<EntityListScreen> {
   String get _title {
     switch (widget.type) {
       case EntityListType.users:
+        if (widget.shipperTypeFilter == 'voyageur_ordinaire') {
+          return 'Voyageurs ordinaires';
+        } else if (widget.shipperTypeFilter == 'micro_importateur') {
+          return 'Micro-Importateurs';
+        }
         return widget.roleFilter == null
             ? 'Tous les utilisateurs'
             : 'Utilisateurs · ${_roleLabel(widget.roleFilter!)}';
@@ -267,7 +300,8 @@ class _EntityListScreenState extends ConsumerState<EntityListScreen> {
   List<Widget> _buildBody() {
     switch (widget.type) {
       case EntityListType.users:
-        final pager = ref.watch(pagedUsersProvider((role: widget.roleFilter)));
+        final pager = ref.watch(
+            pagedUsersProvider((role: widget.roleFilter, shipperType: widget.shipperTypeFilter)));
         return [
           PagedSliverGrid<User>(
             paginatedList: pager,

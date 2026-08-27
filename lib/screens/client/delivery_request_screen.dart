@@ -75,12 +75,15 @@ class _DeliveryRequestScreenState
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCreateSheet(context),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nouvelle demande'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 76),
+        child: FloatingActionButton.extended(
+          onPressed: () => _showCreateSheet(context),
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Nouvelle demande'),
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: Colors.white,
+        ),
       ),
     );
   }
@@ -504,7 +507,7 @@ class _CreateRequestSheetState extends ConsumerState<_CreateRequestSheet> {
   String _destinationCity = 'Alger';
   DateTime _deadline = DateTime.now().add(const Duration(days: 14));
   bool _saving = false;
-  List<XFile> _photos = [];
+  final List<XFile> _photos = [];
 
   @override
   void dispose() {

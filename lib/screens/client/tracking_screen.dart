@@ -4,6 +4,7 @@ import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/qr_booking.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/micro_badge.dart';
 import '../../components/tracking_timeline.dart';
@@ -123,7 +124,7 @@ class TrackingScreen extends ConsumerWidget {
                       AppTheme.spaceMd,
                       0,
                     ),
-                    child: _buildHeader(bookingData),
+                    child: _buildHeader(context, bookingData),
                   ),
                 ),
                 if (bookingData.shipment?.shipper?.user != null)
@@ -600,7 +601,7 @@ class TrackingScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(Booking booking) {
+  Widget _buildHeader(BuildContext context, Booking booking) {
     final status = BookingStatusExt.fromString(booking.status);
     return GlassCard(
       child: Column(
@@ -621,24 +622,31 @@ class TrackingScreen extends ConsumerWidget {
           if (booking.trackingNumber != null &&
               booking.trackingNumber!.isNotEmpty) ...[
             const SizedBox(height: AppTheme.spaceSm),
-            Row(
-              children: [
-                const Icon(
-                  Icons.qr_code_2_rounded,
-                  size: 16,
-                  color: AppTheme.textSecondaryColor,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'N° suivi: ${booking.trackingNumber}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryDark,
-                    letterSpacing: 0.5,
+            GestureDetector(
+              onTap: () => showTrackingTicketDialog(context, booking),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.qr_code_2_rounded,
+                    size: 16,
+                    color: AppTheme.primaryColor,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  Text(
+                    'N° suivi: ${booking.trackingNumber}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primaryDark,
+                      letterSpacing: 0.5,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.open_in_new_rounded,
+                      size: 12, color: AppTheme.primaryColor),
+                ],
+              ),
             ),
           ],
           if (booking.shipment != null) ...[
@@ -1029,5 +1037,334 @@ LinearGradient _bookingGradient(String status) {
       return AppTheme.errorGradient;
     default:
       return AppTheme.primaryGradient;
+  }
+}
+
+// ============================================================================
+// TRACKING TICKET DIALOG (professional courier-style)
+// ============================================================================
+
+/// Displays a professional courier-style tracking ticket dialog.
+void showTrackingTicketDialog(BuildContext context, Booking booking) {
+  showDialog<void>(
+    context: context,
+    builder: (_) => _TrackingTicketDialog(booking: booking),
+  );
+}
+
+class _TrackingTicketDialog extends ConsumerWidget {
+  const _TrackingTicketDialog({required this.booking});
+
+  final Booking booking;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tracking = ref.watch(trackingHistoryProvider(booking.id));
+    final latest =
+        tracking.valueOrNull?.isNotEmpty == true ? tracking.valueOrNull!.last : null;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(AppTheme.spaceMd),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 360),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ─── HEADER (gradient) ───
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppTheme.spaceMd),
+              decoration: const BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(AppTheme.radiusLg),
+                  topRight: Radius.circular(AppTheme.radiusLg),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.local_shipping_rounded,
+                          color: Colors.white, size: 20),
+                      const SizedBox(width: AppTheme.spaceSm),
+                      Text(
+                        'CARGOLINK',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 3,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppTheme.spaceSm),
+                  const Text(
+                    'Billet de Suivi',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ─── TRACKING NUMBER ───
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceMd, 0),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.spaceMd, vertical: AppTheme.spaceSm),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLighter,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                  border: Border.all(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  children: [
+                    const Text('N° DE SUIVI',
+                        style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.5,
+                            color: AppTheme.textSecondaryColor)),
+                    const SizedBox(height: 2),
+                    SelectableText(
+                      booking.trackingNumber?.isNotEmpty == true
+                          ? booking.trackingNumber!
+                          : QrBookingPayload.refCodeFor(booking.id),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.5,
+                        color: AppTheme.primaryDark,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ─── DASHED DIVIDER ───
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceSm),
+              child: Row(
+                children: List.generate(
+                  40,
+                  (i) => Expanded(
+                    child: Container(
+                      height: 1,
+                      margin: const EdgeInsets.symmetric(horizontal: 1),
+                      color: i.isEven ? AppTheme.dividerColor : Colors.transparent,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // ─── DETAILS ───
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+              child: Column(
+                children: [
+                  _ticketRow(Icons.inventory_2_outlined, 'Produit',
+                      booking.productName),
+                  _ticketRow(
+                    Icons.flight_rounded,
+                    'Trajet',
+                    '${booking.shipment?.originCountry ?? '—'} → '
+                        '${booking.shipment?.destinationCity ?? '—'}',
+                  ),
+                  if (booking.shipment?.flightNumber?.isNotEmpty == true)
+                    _ticketRow(
+                      Icons.airplanemode_active_rounded,
+                      'Vol',
+                      booking.shipment!.airline != null
+                          ? '${booking.shipment!.airline} · ${booking.shipment!.flightNumber}'
+                          : booking.shipment!.flightNumber!,
+                    ),
+                  if (booking.shipment?.departureDate != null)
+                    _ticketRow(Icons.event_rounded, 'Départ',
+                        _formatTicketDate(booking.shipment!.departureDate)),
+                  _ticketRow(Icons.monitor_weight_outlined, 'Poids',
+                      '${booking.allocatedWeightKg.toStringAsFixed(1)} kg'),
+                  if (booking.shipment?.shipper?.user?.fullName != null)
+                    _ticketRow(Icons.person_outline_rounded, 'Expéditeur',
+                        booking.shipment!.shipper!.user!.fullName),
+                ],
+              ),
+            ),
+
+            // ─── DASHED DIVIDER ───
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceSm),
+              child: Row(
+                children: List.generate(
+                  40,
+                  (i) => Expanded(
+                    child: Container(
+                      height: 1,
+                      margin: const EdgeInsets.symmetric(horizontal: 1),
+                      color: i.isEven ? AppTheme.dividerColor : Colors.transparent,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // ─── STATUS ───
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd, 0, AppTheme.spaceMd, AppTheme.spaceSm),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.spaceMd, vertical: AppTheme.spaceSm),
+                decoration: BoxDecoration(
+                  color: _statusColor(booking.status).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _statusIcon(booking.status),
+                      size: 16,
+                      color: _statusColor(booking.status),
+                    ),
+                    const SizedBox(width: AppTheme.spaceSm),
+                    Text(
+                      latest != null
+                          ? TrackingScreen.statusLabel(latest.status)
+                          : _statusFallbackLabel(booking.status),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: _statusColor(booking.status),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ─── CLOSE BUTTON ───
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceMd, 0, AppTheme.spaceMd, AppTheme.spaceMd),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Fermer'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _ticketRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 14, color: AppTheme.textSecondaryColor),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: AppTheme.caption.copyWith(color: AppTheme.textMutedColor),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _statusFallbackLabel(String status) {
+    switch (status) {
+      case 'pending':
+        return 'En attente de confirmation';
+      case 'confirmed':
+        return 'Confirmée';
+      default:
+        return 'En cours';
+    }
+  }
+
+  static String _formatTicketDate(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}/'
+      '${d.month.toString().padLeft(2, '0')}/${d.year}';
+
+  static Color _statusColor(String status) {
+    switch (status) {
+      case 'delivered':
+        return AppTheme.accentColor;
+      case 'shipped':
+      case 'arrived':
+        return AppTheme.infoColor;
+      case 'collected':
+      case 'verifying':
+      case 'accepted':
+        return AppTheme.primaryColor;
+      case 'pending':
+      case 'confirmed':
+        return AppTheme.warningColor;
+      case 'cancelled':
+        return AppTheme.errorColor;
+      default:
+        return AppTheme.infoColor;
+    }
+  }
+
+  static IconData _statusIcon(String status) {
+    switch (status) {
+      case 'delivered':
+        return Icons.check_circle_rounded;
+      case 'shipped':
+        return Icons.flight_rounded;
+      case 'arrived':
+        return Icons.flight_land_rounded;
+      case 'collected':
+        return Icons.move_to_inbox_rounded;
+      case 'pending':
+      case 'confirmed':
+        return Icons.schedule_rounded;
+      default:
+        return Icons.local_shipping_rounded;
+    }
   }
 }

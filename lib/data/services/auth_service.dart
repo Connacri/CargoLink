@@ -932,6 +932,27 @@ class AuthService {
   // ADMIN / SUPER_ADMIN METHODS (founder = full control)
   // ==========================================================================
 
+  /// Fetch users by a specific set of IDs (admin use — shipper-type drill-down).
+  Future<List<User>> getUsersByIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    try {
+      final response = await SupabaseConfig.client
+          .from('users')
+          .select()
+          .inFilter('id', ids)
+          .order('created_at', ascending: false);
+
+      final userId = currentUserId;
+      return (response as List)
+          .map((item) => User.fromJson(item as Map<String, dynamic>))
+          .where((u) => u.id != userId)
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting users by IDs: $e');
+      return [];
+    }
+  }
+
   /// List all users (admin / super_admin). Excludes own row.
   Future<List<User>> getAllUsers({int limit = 200, int offset = 0}) async {
     try {

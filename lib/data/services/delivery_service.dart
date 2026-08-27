@@ -397,7 +397,7 @@ class DeliveryService {
             'role': role,
             'price': price,
             'currency': 'DZD',
-            'status': 'active',
+            'status': 'pending',
             'starts_at': now.toIso8601String(),
             'expires_at': expiresAt.toIso8601String(),
           })
@@ -408,6 +408,58 @@ class DeliveryService {
       return DeliverySubscription.fromJson(response);
     } catch (e) {
       _logger.e('Error purchasing subscription: $e');
+      rethrow;
+    }
+  }
+
+  /// Get all subscriptions (for founder management).
+  Future<List<DeliverySubscription>> getAllSubscriptions({
+    String? status,
+    String? role,
+  }) async {
+    try {
+      PostgrestFilterBuilder query = _supabase
+          .from('delivery_subscriptions')
+          .select('*, users!inner(full_name, email)');
+      if (status != null) query = query.eq('status', status);
+      if (role != null) query = query.eq('role', role);
+      final response = await query.order('created_at', ascending: false);
+      return (response as List).map((r) => DeliverySubscription.fromJson(r)).toList();
+    } catch (e) {
+      _logger.e('Error getting all subscriptions: $e');
+      return [];
+    }
+  }
+
+  /// Approve a subscription (set status to 'active' with proper expiry).
+  Future<void> approveSubscription(String subscriptionId) async {
+    try {
+      final now = DateTime.now();
+      final settings = await _supabase
+          .from('platform_settings')
+          .select('value')
+          .eq('key', 'delivery_subscription_duration_days')
+          .maybeSingle();
+      final days = int.tryParse(settings?['value'] ?? '') ?? 30;
+      await _supabase.from('delivery_subscriptions').update({
+        'status': 'active',
+        'starts_at': now.toIso8601String(),
+        'expires_at': now.add(Duration(days: days)).toIso8601String(),
+      }).eq('id', subscriptionId);
+    } catch (e) {
+      _logger.e('Error approving subscription: $e');
+      rethrow;
+    }
+  }
+
+  /// Reject/cancel a subscription.
+  Future<void> cancelSubscription(String subscriptionId) async {
+    try {
+      await _supabase.from('delivery_subscriptions').update({
+        'status': 'cancelled',
+      }).eq('id', subscriptionId);
+    } catch (e) {
+      _logger.e('Error cancelling subscription: $e');
       rethrow;
     }
   }

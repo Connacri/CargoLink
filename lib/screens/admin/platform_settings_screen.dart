@@ -134,366 +134,312 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                const CompactSliverHeader(
+                GradientSliverHeader(
                   title: 'Paramètres plateforme',
-                  subtitle:
-                      'Frais, devise et règles de la plateforme — Fondateur',
+                  subtitle: 'Frais, devise et règles de la plateforme',
                   icon: Icons.tune_rounded,
-                  expandedHeight: 140,
+                  trailing: FilledButton.icon(
+                    onPressed: _saving ? null : _save,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 18, height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.save_outlined),
+                    label: Text(_saving ? 'Enregistrement...' : 'Enregistrer'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    ),
+                  ),
                 ),
-                const SliverToBoxAdapter(
+
+                // ── All form sections (single Form for validation) ──
+                SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.all(AppTheme.spaceMd),
-                    child: GlassCard(
-                      padding: EdgeInsets.all(AppTheme.spaceMd),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spaceMd,
+                    ).copyWith(top: AppTheme.spaceMd),
+                    child: Form(
+                      key: _formKey,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                            'Ces réglages s\'appliquent à toute la plateforme.',
-                            style: AppTheme.bodySecondary,
+                          // ── Tarification ──
+                          GlassCard(
+                            padding: const EdgeInsets.all(AppTheme.spaceMd),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(Icons.payments_outlined,
+                                        size: 18, color: AppTheme.primaryColor),
+                                    SizedBox(width: AppTheme.spaceSm),
+                                    Text('Tarification', style: AppTheme.h3),
+                                  ],
+                                ),
+                                const SizedBox(height: AppTheme.spaceSm),
+                                const Divider(height: 1),
+                                const SizedBox(height: AppTheme.spaceMd),
+                                TextFormField(
+                                  controller: _commissionController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Commission plateforme (%)',
+                                    prefixIcon: Icon(Icons.percent_rounded),
+                                  ),
+                                  validator: (v) {
+                                    final value = double.tryParse(v ?? '');
+                                    if (value == null || value < 0 || value > 100) {
+                                      return 'Entre 0 et 100';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: AppTheme.spaceMd),
+                                DropdownButtonFormField<String>(
+                                  initialValue: _currency,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Devise par défaut',
+                                    prefixIcon: Icon(Icons.currency_exchange),
+                                  ),
+                                  items: [
+                                    for (final c in AppConstants.supportedCurrencies)
+                                      DropdownMenuItem(
+                                        value: c,
+                                        child: Text(_currencyLabel(c)),
+                                      ),
+                                  ],
+                                  onChanged: (v) =>
+                                      setState(() => _currency = v ?? _currency),
+                                ),
+                                const SizedBox(height: AppTheme.spaceMd),
+                                TextFormField(
+                                  controller: _minPriceController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: InputDecoration(
+                                    labelText: 'Prix minimum / kg ($_currency)',
+                                    prefixIcon: const Icon(Icons.attach_money_rounded),
+                                  ),
+                                  validator: (v) {
+                                    final value = double.tryParse(v ?? '');
+                                    if (value == null || value <= 0) {
+                                      return 'Prix invalide';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: AppTheme.spaceMd),
+                                TextFormField(
+                                  controller: _precisionController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Précision d\'arrondi',
+                                    prefixIcon: Icon(Icons.precision_manufacturing),
+                                  ),
+                                  validator: (v) {
+                                    final value = int.tryParse(v ?? '');
+                                    if (value == null || value < 0) {
+                                      return 'Entier ≥ 0';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                          SizedBox(height: AppTheme.spaceXs),
-                          Text(
-                            'Ils sont enregistrés dans la table '
-                            'platform_settings et relus au prochain calcul.',
-                            style: AppTheme.caption,
+
+                          // ── Poids ──
+                          const SizedBox(height: AppTheme.spaceMd),
+                          GlassCard(
+                            padding: const EdgeInsets.all(AppTheme.spaceMd),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(Icons.monitor_weight_outlined,
+                                        size: 18, color: AppTheme.primaryColor),
+                                    SizedBox(width: AppTheme.spaceSm),
+                                    Text('Poids', style: AppTheme.h3),
+                                  ],
+                                ),
+                                const SizedBox(height: AppTheme.spaceSm),
+                                const Divider(height: 1),
+                                const SizedBox(height: AppTheme.spaceMd),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _minWeightController,
+                                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                        decoration: const InputDecoration(
+                                          labelText: 'Poids min (kg)',
+                                          prefixIcon: Icon(Icons.monitor_weight),
+                                        ),
+                                        validator: (v) {
+                                          final value = double.tryParse(v ?? '');
+                                          if (value == null || value <= 0) {
+                                            return 'Poids invalide';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppTheme.spaceSm),
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _maxWeightController,
+                                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                        decoration: const InputDecoration(
+                                          labelText: 'Poids max (kg)',
+                                          prefixIcon: Icon(Icons.inventory_2),
+                                        ),
+                                        validator: (v) {
+                                          final value = double.tryParse(v ?? '');
+                                          if (value == null || value <= 0) {
+                                            return 'Poids invalide';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // ── Programme de parrainage ──
+                          const SizedBox(height: AppTheme.spaceMd),
+                          GlassCard(
+                            padding: const EdgeInsets.all(AppTheme.spaceMd),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(Icons.card_giftcard_rounded,
+                                        size: 18, color: AppTheme.primaryColor),
+                                    SizedBox(width: AppTheme.spaceSm),
+                                    Text('Programme de parrainage', style: AppTheme.h3),
+                                  ],
+                                ),
+                                const SizedBox(height: AppTheme.spaceSm),
+                                const Divider(height: 1),
+                                const SizedBox(height: AppTheme.spaceMd),
+                                TextFormField(
+                                  controller: _referralCommissionController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Part du parrain (% commission)',
+                                    prefixIcon: Icon(Icons.percent_rounded),
+                                  ),
+                                  validator: (v) {
+                                    final value = double.tryParse(v ?? '');
+                                    if (value == null || value < 0 || value > 100) {
+                                      return 'Entre 0 et 100';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: AppTheme.spaceXs),
+                                const Text(
+                                  'Pourcentage de la commission plateforme reversé au parrain '
+                                  'pour chaque colis livré et payé par un filleul.',
+                                  style: AppTheme.caption,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // ── Abonnements ──
+                          const SizedBox(height: AppTheme.spaceMd),
+                          GlassCard(
+                            padding: const EdgeInsets.all(AppTheme.spaceMd),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(Icons.local_shipping_outlined,
+                                        size: 18, color: AppTheme.primaryColor),
+                                    SizedBox(width: AppTheme.spaceSm),
+                                    Text('Abonnements', style: AppTheme.h3),
+                                  ],
+                                ),
+                                const SizedBox(height: AppTheme.spaceSm),
+                                const Divider(height: 1),
+                                const SizedBox(height: AppTheme.spaceMd),
+                                TextFormField(
+                                  controller: _deliveryClientSubPriceController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: InputDecoration(
+                                    labelText: 'Prix abonnement client ($_currency)',
+                                    prefixIcon: const Icon(Icons.person_outline),
+                                  ),
+                                  validator: (v) {
+                                    final value = double.tryParse(v ?? '');
+                                    if (value == null || value < 0) {
+                                      return 'Prix invalide';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: AppTheme.spaceMd),
+                                TextFormField(
+                                  controller: _deliveryShipperSubPriceController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: InputDecoration(
+                                    labelText: 'Prix abonnement expéditeur ($_currency)',
+                                    prefixIcon: const Icon(Icons.delivery_dining_outlined),
+                                  ),
+                                  validator: (v) {
+                                    final value = double.tryParse(v ?? '');
+                                    if (value == null || value < 0) {
+                                      return 'Prix invalide';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: AppTheme.spaceMd),
+                                TextFormField(
+                                  controller: _deliverySubDurationController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Durée de l\'abonnement (jours)',
+                                    prefixIcon: Icon(Icons.schedule_outlined),
+                                    suffixText: 'jours',
+                                  ),
+                                  validator: (v) {
+                                    final value = int.tryParse(v ?? '');
+                                    if (value == null || value < 1) {
+                                      return 'Durée invalide';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: AppTheme.spaceXs),
+                                const Text(
+                                  'Les clients/expéditeurs doivent payer un abonnement '
+                                  'pour utiliser la fonctionnalité "Demande de livraison".',
+                                  style: AppTheme.caption,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ),
                 ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.spaceMd,
-                    ),
-                    child: GlassCard(
-                      padding: const EdgeInsets.all(AppTheme.spaceMd),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            TextFormField(
-                              controller: _commissionController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                      decimal: true),
-                              decoration: const InputDecoration(
-                                labelText:
-                                    'Commission plateforme (%)',
-                                prefixIcon: Icon(Icons.percent_rounded),
-                              ),
-                              validator: (v) {
-                                final value = double.tryParse(v ?? '');
-                                if (value == null ||
-                                    value < 0 ||
-                                    value > 100) {
-                                  return 'Entre 0 et 100';
-                                }
-                                return null;
-                              },
-                              onChanged: (_) {},
-                            ),
-                            const SizedBox(height: AppTheme.spaceMd),
-                            DropdownButtonFormField<String>(
-                              initialValue: _currency,
-                              decoration: const InputDecoration(
-                                labelText: 'Devise par défaut',
-                                prefixIcon: Icon(Icons.currency_exchange),
-                              ),
-                              items: [
-                                for (final c in AppConstants.supportedCurrencies)
-                                  DropdownMenuItem(
-                                    value: c,
-                                    child: Text(_currencyLabel(c)),
-                                  ),
-                              ],
-                              onChanged: (v) =>
-                                  setState(() => _currency = v ?? _currency),
-                            ),
-                            const SizedBox(height: AppTheme.spaceMd),
-                            TextFormField(
-                              controller: _minPriceController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                      decimal: true),
-                              decoration: InputDecoration(
-                                labelText:
-                                    'Prix minimum / kg ($_currency)',
-                                prefixIcon:
-                                    const Icon(Icons.attach_money_rounded),
-                              ),
-                              validator: (v) {
-                                final value = double.tryParse(v ?? '');
-                                if (value == null || value <= 0) {
-                                  return 'Prix invalide';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: AppTheme.spaceMd),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _minWeightController,
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                            decimal: true),
-                                    decoration: const InputDecoration(
-                                      labelText: 'Poids min (kg)',
-                                      prefixIcon:
-                                          Icon(Icons.monitor_weight),
-                                    ),
-                                    validator: (v) {
-                                      final value = double.tryParse(v ?? '');
-                                      if (value == null || value <= 0) {
-                                        return 'Poids invalide';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: AppTheme.spaceSm),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _maxWeightController,
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                            decimal: true),
-                                    decoration: const InputDecoration(
-                                      labelText: 'Poids max (kg)',
-                                      prefixIcon:
-                                          Icon(Icons.inventory_2),
-                                    ),
-                                    validator: (v) {
-                                      final value = double.tryParse(v ?? '');
-                                      if (value == null || value <= 0) {
-                                        return 'Poids invalide';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: AppTheme.spaceMd),
-                            TextFormField(
-                              controller: _precisionController,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Précision d\'arrondi',
-                                prefixIcon:
-                                    Icon(Icons.precision_manufacturing),
-                              ),
-                              validator: (v) {
-                                final value = int.tryParse(v ?? '');
-                                if (value == null || value < 0) {
-                                  return 'Entier ≥ 0';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: AppTheme.spaceLg),
-                            Container(
-                              padding: const EdgeInsets.all(AppTheme.spaceSm),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryColor
-                                    .withValues(alpha: 0.06),
-                                borderRadius: BorderRadius.circular(
-                                    AppTheme.radiusSm),
-                              ),
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.stretch,
-                                children: [
-                                  const Row(
-                                    children: [
-                                      Icon(
-                                          Icons.card_giftcard_rounded,
-                                          size: 18,
-                                          color: AppTheme.primaryColor),
-                                      SizedBox(
-                                          width: AppTheme.spaceXs),
-                                      Text(
-                                        'Programme de parrainage',
-                                        style: AppTheme.label,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(
-                                      height: AppTheme.spaceXs),
-                                  TextFormField(
-                                    controller:
-                                        _referralCommissionController,
-                                    keyboardType: const TextInputType
-                                        .numberWithOptions(decimal: true),
-                                    decoration: const InputDecoration(
-                                      labelText:
-                                          'Part du parrain (% commission)',
-                                      prefixIcon:
-                                          Icon(Icons.percent_rounded),
-                                    ),
-                                    validator: (v) {
-                                      final value =
-                                          double.tryParse(v ?? '');
-                                      if (value == null ||
-                                          value < 0 ||
-                                          value > 100) {
-                                        return 'Entre 0 et 100';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(
-                                      height: AppTheme.spaceXs),
-                                  const Text(
-                                    'Pourcentage de la commission '
-                                    'plateforme reversé au parrain '
-                                    'pour chaque colis livré et payé '
-                                    'par un filleul.',
-                                    style: AppTheme.caption,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: AppTheme.spaceLg),
-                            Container(
-                              padding: const EdgeInsets.all(AppTheme.spaceSm),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryColor
-                                    .withValues(alpha: 0.06),
-                                borderRadius: BorderRadius.circular(
-                                    AppTheme.radiusSm),
-                              ),
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.stretch,
-                                children: [
-                                  const Row(
-                                    children: [
-                                      Icon(
-                                          Icons.local_shipping_outlined,
-                                          size: 18,
-                                          color: AppTheme.primaryColor),
-                                      SizedBox(
-                                          width: AppTheme.spaceXs),
-                                      Text(
-                                        'Abonnements « Demande de Livraison »',
-                                        style: AppTheme.label,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(
-                                      height: AppTheme.spaceXs),
-                                  TextFormField(
-                                    controller:
-                                        _deliveryClientSubPriceController,
-                                    keyboardType: const TextInputType
-                                        .numberWithOptions(decimal: true),
-                                    decoration: InputDecoration(
-                                      labelText:
-                                          'Prix abonnement client ($_currency)',
-                                      prefixIcon:
-                                          const Icon(Icons.person_outline),
-                                    ),
-                                    validator: (v) {
-                                      final value =
-                                          double.tryParse(v ?? '');
-                                      if (value == null || value < 0) {
-                                        return 'Prix invalide';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(
-                                      height: AppTheme.spaceXs),
-                                  TextFormField(
-                                    controller:
-                                        _deliveryShipperSubPriceController,
-                                    keyboardType: const TextInputType
-                                        .numberWithOptions(decimal: true),
-                                    decoration: InputDecoration(
-                                      labelText:
-                                          'Prix abonnement expéditeur ($_currency)',
-                                      prefixIcon:
-                                          const Icon(Icons.delivery_dining_outlined),
-                                    ),
-                                    validator: (v) {
-                                      final value =
-                                          double.tryParse(v ?? '');
-                                      if (value == null || value < 0) {
-                                        return 'Prix invalide';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(
-                                      height: AppTheme.spaceXs),
-                                  TextFormField(
-                                    controller:
-                                        _deliverySubDurationController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(
-                                      labelText:
-                                          'Durée de l\'abonnement (jours)',
-                                      prefixIcon:
-                                          Icon(Icons.schedule_outlined),
-                                      suffixText: 'jours',
-                                    ),
-                                    validator: (v) {
-                                      final value =
-                                          int.tryParse(v ?? '');
-                                      if (value == null || value < 1) {
-                                        return 'Durée invalide';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(
-                                      height: AppTheme.spaceXs),
-                                  const Text(
-                                    'Les clients/expéditeurs doivent payer '
-                                    'un abonnement pour utiliser la '
-                                    'fonctionnalité "Demande de livraison".',
-                                    style: AppTheme.caption,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: AppTheme.spaceLg),
-                            FilledButton.icon(
-                              onPressed: _saving ? null : _save,
-                              icon: _saving
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Icon(Icons.save_outlined),
-                              label: Text(
-                                _saving ? 'Enregistrement...' : 'Enregistrer',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: AppTheme.spaceMd),
-                ),
+
+                // ── Section 5 : Tarifs publicitaires ──
                 const SliverToBoxAdapter(
                   child: Padding(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+                    padding: EdgeInsets.fromLTRB(
+                      AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceMd, 0,
+                    ),
                     child: _AdPricingEditor(),
                   ),
                 ),
@@ -745,17 +691,17 @@ class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
             children: [
               const Row(
                 children: [
-                  AnimatedIconDot(
-                    icon: Icons.campaign_rounded,
-                    color: AppTheme.primaryColor,
-                  ),
+                  Icon(Icons.campaign_rounded,
+                      size: 18, color: AppTheme.primaryColor),
                   SizedBox(width: AppTheme.spaceSm),
                   Expanded(
-                    child: Text('Tarifs publicitaires', style: AppTheme.h3),
+                    child: Text('Tarification publicités', style: AppTheme.h3),
                   ),
                 ],
               ),
-              const SizedBox(height: AppTheme.spaceXs),
+              const SizedBox(height: AppTheme.spaceSm),
+              const Divider(height: 1),
+              const SizedBox(height: AppTheme.spaceSm),
               const Text(
                 'Le prix payé par un micro-importateur dépend de la durée '
                 'd\'affichage et de la cible qu\'il choisit.',
@@ -770,8 +716,19 @@ class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
                   label: const Text('Ajouter une durée'),
                 ),
               ),
-              ..._durations.map(_buildDurationGroup),
-              if (_durations.isEmpty)
+              if (_durations.isNotEmpty) ...[
+                for (int i = 0; i < _durations.length; i++) ...[
+                  if (i > 0) ...[
+                    const SizedBox(height: AppTheme.spaceXs),
+                    Divider(
+                      height: 1,
+                      color: AppTheme.dividerColor.withValues(alpha: 0.5),
+                    ),
+                    const SizedBox(height: AppTheme.spaceXs),
+                  ],
+                  _buildDurationGroup(_durations[i]),
+                ],
+              ] else
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: AppTheme.spaceSm),
                   child: Text(
@@ -781,6 +738,8 @@ class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
                   ),
                 ),
               _buildCustomDurationPricing(),
+              const SizedBox(height: AppTheme.spaceMd),
+              const Divider(height: 1),
               const SizedBox(height: AppTheme.spaceSm),
               FilledButton.icon(
                 onPressed: _saving ? null : _save,
@@ -794,8 +753,7 @@ class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
                         ),
                       )
                     : const Icon(Icons.save_outlined),
-                label:
-                    Text(_saving ? 'Enregistrement...' : 'Enregistrer'),
+                label: Text(_saving ? 'Enregistrement...' : 'Enregistrer'),
               ),
             ],
           ),
@@ -889,7 +847,8 @@ class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
         padding: const EdgeInsets.all(AppTheme.spaceSm + 2),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-          border: Border.all(color: AppTheme.textMutedColor.withValues(alpha: 0.25)),
+          border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.15)),
+          color: AppTheme.primaryColor.withValues(alpha: 0.03),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -897,7 +856,7 @@ class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
             Row(
               children: [
                 const Icon(Icons.schedule_rounded,
-                    size: 18, color: AppTheme.primaryColor),
+                    size: 16, color: AppTheme.primaryColor),
                 const SizedBox(width: AppTheme.spaceXs),
                 Expanded(
                   child: Text(
@@ -908,26 +867,25 @@ class _AdPricingEditorState extends ConsumerState<_AdPricingEditor> {
                 IconButton(
                   tooltip: 'Supprimer cette durée',
                   icon: const Icon(Icons.delete_outline,
-                      size: 20, color: AppTheme.errorColor),
+                      size: 18, color: AppTheme.errorColor),
                   onPressed: () => _removeDuration(days),
                 ),
               ],
             ),
-            for (final entry in Ad.audienceLabels.entries)
-              Padding(
-                padding: const EdgeInsets.only(top: AppTheme.spaceXs),
-                child: TextFormField(
-                  controller: _controllers[_key(days, entry.key)],
-                  keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true),
-                  decoration: InputDecoration(
-                    labelText:
-                        'Cible « ${entry.value} » (${AppConstants.defaultCurrency})',
-                    prefixIcon: const Icon(Icons.payments_outlined),
-                    isDense: true,
-                  ),
+            const SizedBox(height: AppTheme.spaceXs),
+            for (final entry in Ad.audienceLabels.entries) ...[
+              TextFormField(
+                controller: _controllers[_key(days, entry.key)],
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'Cible « ${entry.value} » (${AppConstants.defaultCurrency})',
+                  prefixIcon: const Icon(Icons.payments_outlined),
+                  isDense: true,
                 ),
               ),
+              if (entry != Ad.audienceLabels.entries.last)
+                const SizedBox(height: AppTheme.spaceXs),
+            ],
           ],
         ),
       ),

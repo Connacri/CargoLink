@@ -115,9 +115,9 @@ class MyParcelsScreen extends ConsumerWidget {
   }
 }
 
-/// Une carte dépliable par colis : en-tête compact (produit, N°, badge,
-/// bouton QR), contenu déplié = détails + frise de suivi complète + accès
-/// au suivi détaillé.
+/// Une carte depliable par colis : en-tete enrichi avec badge statut,
+/// chips d'infos (poids, prix, vol), route visuelle, contenu deplie
+/// avec details + frise de suivi complete + acces au suivi detaille.
 class _ParcelTile extends ConsumerWidget {
   final Booking booking;
 
@@ -130,6 +130,14 @@ class _ParcelTile extends ConsumerWidget {
     final events = trackingAsync.valueOrNull ?? const <ShipmentTracking>[];
     final latest = events.isEmpty ? null : events.last;
 
+    final statusColor = _statusColor(booking.status);
+    final statusLabel = latest != null
+        ? TrackingScreen.statusLabel(latest.status)
+        : _statusFallbackLabel(booking.status);
+
+    final originCountry = booking.shipment?.originCountry ?? '\u2014';
+    final destCity = booking.shipment?.destinationCity ?? '\u2014';
+
     return GlassCard(
       padding: EdgeInsets.zero,
       child: Theme(
@@ -137,7 +145,7 @@ class _ParcelTile extends ConsumerWidget {
         child: ExpansionTile(
           tilePadding: const EdgeInsets.symmetric(
             horizontal: AppTheme.spaceMd,
-            vertical: AppTheme.spaceXs,
+            vertical: AppTheme.spaceSm,
           ),
           childrenPadding: const EdgeInsets.fromLTRB(
             AppTheme.spaceMd,
@@ -147,46 +155,80 @@ class _ParcelTile extends ConsumerWidget {
           ),
           iconColor: AppTheme.textSecondaryColor,
           collapsedIconColor: AppTheme.textSecondaryColor,
+          leading: Container(
+            width: 4,
+            height: 48,
+            decoration: BoxDecoration(
+              color: statusColor,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
           title: Text(
             booking.productName,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+            style: AppTheme.body.copyWith(fontWeight: FontWeight.w800),
           ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    'N° ${booking.trackingNumber?.isNotEmpty ?? false ? booking.trackingNumber : QrBookingPayload.refCodeFor(booking.id)}',
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                      color: AppTheme.primaryDark,
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(Icons.flight_rounded, size: 12, color: statusColor),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      '$originCountry \u2192 $destCity',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: AppTheme.spaceSm),
-                Flexible(
-                  child: Text(
-                    latest != null
-                        ? TrackingScreen.statusLabel(latest.status)
-                        : _statusFallbackLabel(booking.status),
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: delivered
-                          ? AppTheme.accentColor
-                          : AppTheme.infoColor,
-                    ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  _infoChip(
+                    icon: Icons.tag_rounded,
+                    label:
+                        'N\u00b0 ${booking.trackingNumber?.isNotEmpty ?? false ? booking.trackingNumber : QrBookingPayload.refCodeFor(booking.id)}',
+                    color: AppTheme.primaryColor,
                   ),
-                ),
-              ],
-            ),
+                  _infoChip(
+                    icon: Icons.monitor_weight_outlined,
+                    label:
+                        '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
+                    color: AppTheme.infoColor,
+                  ),
+                  _infoChip(
+                    icon: Icons.payments_outlined,
+                    label: '${booking.totalPrice.toStringAsFixed(0)} DZD',
+                    color: AppTheme.accentColor,
+                  ),
+                  _statusChip(statusLabel, statusColor),
+                  if (booking.paymentStatus == 'paid')
+                    _infoChip(
+                      icon: Icons.check_circle_outline_rounded,
+                      label: 'Pay\u00e9',
+                      color: AppTheme.accentColor,
+                    )
+                  else if (booking.paymentStatus == 'pending')
+                    _infoChip(
+                      icon: Icons.pending_outlined,
+                      label: 'Non pay\u00e9',
+                      color: AppTheme.warningColor,
+                    ),
+                ],
+              ),
+            ],
           ),
           trailing: IconButton(
             tooltip: 'Billet QR',
@@ -201,32 +243,56 @@ class _ParcelTile extends ConsumerWidget {
               alignment: Alignment.centerLeft,
               child: _statusBadge(delivered),
             ),
-            const SizedBox(height: AppTheme.spaceSm),
+            const SizedBox(height: AppTheme.spaceMd),
             _detailRow(
               Icons.flight_takeoff_rounded,
               'Trajet',
-              booking.shipment == null
-                  ? '—'
-                  : '${booking.shipment!.originCountry} → ${booking.shipment!.destinationCity}',
+              '$originCountry \u2192 $destCity',
             ),
             if (booking.shipment?.flightNumber?.isNotEmpty == true)
               _detailRow(
                 Icons.airplanemode_active_rounded,
                 'Vol',
                 booking.shipment!.airline != null
-                    ? '${booking.shipment!.airline} · ${booking.shipment!.flightNumber}'
+                    ? '${booking.shipment!.airline} \u00b7 ${booking.shipment!.flightNumber}'
                     : booking.shipment!.flightNumber!,
+              ),
+            if (booking.shipment?.departureDate != null)
+              _detailRow(
+                Icons.departure_board_rounded,
+                'Depart',
+                _formatDate(booking.shipment!.departureDate),
               ),
             _detailRow(
               Icons.monitor_weight_outlined,
-              'Poids alloué',
+              'Poids alloue',
               '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
             ),
+            if (booking.requestedWeightKg != booking.allocatedWeightKg)
+              _detailRow(
+                Icons.scale_outlined,
+                'Poids demande',
+                '${booking.requestedWeightKg.toStringAsFixed(1)} kg',
+              ),
             if (booking.deliveryAddress?.isNotEmpty == true)
               _detailRow(
                 Icons.location_on_outlined,
                 'Livraison',
                 booking.deliveryAddress!,
+              ),
+            if (booking.deliveryMethod != null)
+              _detailRow(
+                Icons.local_shipping_outlined,
+                'Mode',
+                booking.deliveryMethod == 'courier'
+                    ? 'Livraison par coursier'
+                    : 'En main propre',
+              ),
+            if (booking.shipment?.shipper?.user?.fullName != null)
+              _detailRow(
+                Icons.person_outline_rounded,
+                'Expediteur',
+                booking.shipment!.shipper!.user!.fullName,
               ),
             const SizedBox(height: AppTheme.spaceMd),
             Align(
@@ -248,9 +314,10 @@ class _ParcelTile extends ConsumerWidget {
               ),
               data: (events) => events.isEmpty
                   ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: AppTheme.spaceMd),
+                      padding:
+                          EdgeInsets.symmetric(vertical: AppTheme.spaceMd),
                       child: Text(
-                        'Le suivi sera disponible dès la prise en charge '
+                        'Le suivi sera disponible des la prise en charge '
                         'du colis.',
                         style: AppTheme.bodySecondary,
                       ),
@@ -269,7 +336,7 @@ class _ParcelTile extends ConsumerWidget {
                 onPressed: () => Navigator.of(context)
                     .pushNamed('/tracking', arguments: booking.id),
                 icon: const Icon(Icons.timeline_rounded, size: 18),
-                label: const Text('Ouvrir le suivi détaillé'),
+                label: const Text('Ouvrir le suivi detaille'),
               ),
             ),
           ],
@@ -312,13 +379,15 @@ class _ParcelTile extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            delivered ? Icons.check_circle_rounded : Icons.local_shipping_rounded,
+            delivered
+                ? Icons.check_circle_rounded
+                : Icons.local_shipping_rounded,
             size: 13,
             color: color,
           ),
           const SizedBox(width: 4),
           Text(
-            delivered ? 'Livré avec succès' : 'En cours',
+            delivered ? 'Livre avec succes' : 'En cours',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w800,
@@ -328,6 +397,81 @@ class _ParcelTile extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  static Widget _infoChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _statusChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color, color.withValues(alpha: 0.8)],
+        ),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  static Color _statusColor(String status) {
+    switch (status) {
+      case 'delivered':
+        return AppTheme.accentColor;
+      case 'shipped':
+      case 'arrived':
+        return AppTheme.infoColor;
+      case 'collected':
+      case 'verifying':
+      case 'accepted':
+        return AppTheme.primaryColor;
+      case 'pending':
+      case 'confirmed':
+        return AppTheme.warningColor;
+      case 'cancelled':
+        return AppTheme.errorColor;
+      default:
+        return AppTheme.infoColor;
+    }
+  }
+
+  static String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 }
 

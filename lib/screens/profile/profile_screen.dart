@@ -18,6 +18,7 @@ import '../auth/role_selection_screen.dart';
 import '../referral/referral_screen.dart';
 import '../shipper/live_selfie_screen.dart';
 import '../shipper/shipper_dashboard_screen.dart';
+import 'account_management_screen.dart';
 
 // ============================================================================
 // PAGINATED PROVIDERS (local to this screen — history lists)
@@ -1430,6 +1431,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
       child: Column(
         children: [
+          GlassCard(
+            padding: EdgeInsets.zero,
+            child: ListTile(
+              leading: const AnimatedIconDot(
+                  icon: Icons.settings_outlined, color: AppTheme.primaryColor),
+              title: const Text('Gérer mon compte'),
+              trailing: const Icon(Icons.chevron_right,
+                  color: AppTheme.textSecondaryColor),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const AccountManagementScreen(),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
           GlassCard(
             padding: EdgeInsets.zero,
             child: ListTile(

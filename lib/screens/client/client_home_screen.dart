@@ -424,17 +424,6 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const ChatInboxBadge(),
-                  IconButton(
-                    onPressed: () =>
-                        ref.read(navigationIndexProvider.notifier).state = 1,
-                    tooltip: 'Mes colis',
-                    icon: const Icon(Icons.connecting_airports_rounded),
-                  ),
-                  IconButton(
-                    onPressed: () => _openQrScanner(context),
-                    tooltip: 'Scanner un colis',
-                    icon: const Icon(Icons.qr_code_scanner_rounded),
-                  ),
                   GestureDetector(
                     onTap: () => _showNotificationsSheet(context),
                     child: const Padding(
@@ -442,7 +431,6 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                       child: UnreadNotificationBadge(),
                     ),
                   ),
-                  const LogoutIconButton(),
                 ],
               ),
             ),
@@ -459,6 +447,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             ),
             const SliverToBoxAdapter(
               child: _HomeTrackingCard(),
+            ),
+            SliverToBoxAdapter(
+              child: _buildQrScannerCard(context),
             ),
             SliverToBoxAdapter(
               child: _buildDeliveryCard(context),
@@ -560,6 +551,82 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             gradient: AppTheme.successGradient,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildQrScannerCard(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: InkWell(
+        onTap: () => _openQrScanner(context),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                AppTheme.primaryColor,
+                AppTheme.primaryDark,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+            boxShadow: AppTheme.shadowMd,
+          ),
+          padding: const EdgeInsets.all(AppTheme.spaceLg),
+          child: Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceMd),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Scanner un colis',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Scannez le QR code d\'un colis pour confirmer la reception.',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12.5,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceSm),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.white70,
+                size: 16,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1506,7 +1573,7 @@ class _SubscriptionActivationSheetState
                 ],
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'L\'abonnement vous donne accès à la création '
                 'de demandes de livraison.',
                 style: AppTheme.caption,
@@ -1531,7 +1598,7 @@ class _SubscriptionActivationSheetState
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.schedule_rounded,
+                        const Icon(Icons.schedule_rounded,
                             color: AppTheme.primaryColor,
                             size: 28),
                         const SizedBox(width: 14),
