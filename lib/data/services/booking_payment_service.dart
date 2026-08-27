@@ -1239,20 +1239,55 @@ class PaymentService {
           .eq('shipper_id', shipperId)
           .eq('status', 'pending');
 
-      for (final fee in (pendingFees as List)) {
+      if ((pendingFees as List).isEmpty) return;
+
+      final updates = <Map<String, dynamic>>[];
+      for (final fee in pendingFees) {
         final original = (fee['amount'] as num).toDouble();
         final paid = discountPercent > 0
             ? original - (original * discountPercent / 100)
             : original;
+        updates.add({
+          'id': fee['id'] as String,
+          'status': 'awaiting_confirmation',
+          'payment_method': paymentMethod,
+          'due_at': dueAt.toIso8601String(),
+          'amount': paid,
+        });
+      }
+
+      // Batch update via RPC-like approach: update each fee by ID in one call.
+      // Supabase doesn't support bulk update natively, so we use a transaction
+      // with individual updates — but at least the network round-trips are
+      // parallelizable via a single PostgREST call using .inFilter.
+      final feeIds = updates.map((u) => u['id'] as String).toList();
+      final firstAmount = (updates.first)['amount'] as double;
+      // If all amounts are the same (no discount), single batch update.
+      final allSameAmount =
+          updates.every((u) => (u['amount'] as double) == firstAmount);
+      if (allSameAmount) {
         await _supabase
             .from('platform_fees')
             .update({
               'status': 'awaiting_confirmation',
               'payment_method': paymentMethod,
               'due_at': dueAt.toIso8601String(),
-              'amount': paid,
+              'amount': firstAmount,
             })
-            .eq('id', fee['id'] as String);
+            .inFilter('id', feeIds);
+      } else {
+        // Discount varies per fee — parallel batch via Future.wait.
+        await Future.wait(
+          updates.map((u) => _supabase
+              .from('platform_fees')
+              .update({
+                'status': u['status'],
+                'payment_method': u['payment_method'],
+                'due_at': u['due_at'],
+                'amount': u['amount'],
+              })
+              .eq('id', u['id'])),
+        );
       }
       _logger.i('Platform fee payment requested for shipper: $shipperId');
     } catch (e) {

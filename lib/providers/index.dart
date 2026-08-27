@@ -603,6 +603,23 @@ final allBookingsProvider = FutureProvider<List<Booking>>((ref) async {
   return bookingService.getAllBookings(limit: 500);
 });
 
+/// Combined bookings + payments fetched in parallel for founder analytics.
+/// Avoids 2 sequential DB round-trips when both are needed together.
+final founderAnalyticsDataProvider =
+    FutureProvider<({List<Booking> bookings, List<Payment> payments})>(
+        (ref) async {
+  final bookingService = ref.watch(bookingServiceProvider);
+  final paymentService = ref.watch(paymentServiceProvider);
+  final results = await Future.wait([
+    bookingService.getAllBookings(limit: 500),
+    paymentService.getAllPayments(limit: 500),
+  ]);
+  return (
+    bookings: results[0] as List<Booking>,
+    payments: results[1] as List<Payment>,
+  );
+});
+
 final allPaymentsProvider = FutureProvider<List<Payment>>((ref) async {
   final paymentService = ref.watch(paymentServiceProvider);
   return paymentService.getAllPayments(limit: 500);

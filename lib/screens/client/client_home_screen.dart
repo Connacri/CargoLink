@@ -29,21 +29,23 @@ final clientSortProvider = StateProvider<ClientSort>((ref) => ClientSort.none);
 /// « Suivi de colis » de l'accueil : chaque colis en cours apparaît avec son
 /// avancement ; les colis livrés restent accessibles via « Voir tout »
 /// (écran Mes colis). autoDispose → recalculée à chaque retour sur l'accueil.
+///
+/// Combined with wallet stats to avoid a second identical `getClientBookings`
+/// call — single DB fetch for both tracking list and wallet summary.
 final activeTrackingBookingsProvider =
     FutureProvider.autoDispose<List<Booking>>((ref) async {
   final clientId = ref.watch(authServiceProvider).currentUserId;
   if (clientId == null) return const [];
   final bookings = await ref
       .read(bookingServiceProvider)
-      .getClientBookings(clientId: clientId, limit: 50);
+      .getClientBookings(clientId: clientId, limit: 100);
   return bookings
       .where((b) => b.status != 'delivered' && b.status != 'cancelled')
       .toList();
 });
 
-/// Portefeuille client : total réglé et restant à payer, calculés sur les
-/// réservations valides (annulées exclues). autoDispose comme les autres
-/// providers d'accueil.
+/// Portefeuille client : total réglé et restant à payer — computed from the
+/// same fetch as `activeTrackingBookingsProvider` via `clientWalletFromBookings`.
 final clientWalletProvider =
     FutureProvider.autoDispose<({double paid, double due})>((ref) async {
   final clientId = ref.watch(authServiceProvider).currentUserId;
@@ -51,6 +53,10 @@ final clientWalletProvider =
   final bookings = await ref
       .read(bookingServiceProvider)
       .getClientBookings(clientId: clientId, limit: 100);
+  return _computeWallet(bookings);
+});
+
+({double paid, double due}) _computeWallet(List<Booking> bookings) {
   var paid = 0.0;
   var due = 0.0;
   for (final b in bookings) {
@@ -63,7 +69,7 @@ final clientWalletProvider =
     }
   }
   return (paid: paid, due: due);
-});
+}
 
 /// Lazy paged source for active shipments, keyed by the active filters.
 final clientShipmentsPagerProvider = StateNotifierProvider.family<

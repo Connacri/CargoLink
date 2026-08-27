@@ -57,8 +57,9 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
   Widget build(BuildContext context) {
     final users = ref.watch(allUsersProvider).valueOrNull ?? [];
     final shipments = ref.watch(allShipmentsProvider).valueOrNull ?? [];
-    final bookings = ref.watch(allBookingsProvider).valueOrNull ?? [];
-    final payments = ref.watch(allPaymentsProvider).valueOrNull ?? [];
+    final analyticsData = ref.watch(founderAnalyticsDataProvider).valueOrNull;
+    final bookings = analyticsData?.bookings ?? [];
+    final payments = analyticsData?.payments ?? [];
     final disputes = ref.watch(allDisputesProvider).valueOrNull ?? [];
     final fees = ref.watch(platformFeeSummaryProvider).valueOrNull ?? {};
     final allFees = ref.watch(allPlatformFeesProvider).valueOrNull ?? [];
@@ -107,10 +108,10 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
           onRefresh: () async {
             ref.invalidate(allUsersProvider);
             ref.invalidate(allShipmentsProvider);
-            ref.invalidate(allBookingsProvider);
-            ref.invalidate(allPaymentsProvider);
+            ref.invalidate(founderAnalyticsDataProvider);
             ref.invalidate(allDisputesProvider);
             ref.invalidate(platformFeeSummaryProvider);
+            ref.invalidate(allPlatformFeesProvider);
           },
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
