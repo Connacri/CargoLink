@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../../data/models/models.dart';
+import '../../data/models/delivery_models.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
@@ -117,6 +119,8 @@ class _SuperAdminDashboardScreenState
                   SliverToBoxAdapter(child: _PendingCommissionSection()),
                   SliverToBoxAdapter(child: _PendingDeletionSection()),
                   SliverToBoxAdapter(child: _FeedbackSection()),
+                  SliverToBoxAdapter(child: _ReferralSummarySection()),
+                  SliverToBoxAdapter(child: _SubscriptionSection()),
                   SliverToBoxAdapter(
                     child: SizedBox(height: AppTheme.spaceXxl),
                   ),
@@ -1665,6 +1669,425 @@ class _FeedbackSection extends ConsumerWidget {
     );
   }
 }
+
+// ============================================================================
+// SUBSCRIPTIONS MANAGEMENT
+// ============================================================================
+
+class _SubscriptionSection extends ConsumerWidget {
+  const _SubscriptionSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settingsAsync = ref.watch(platformSettingsProvider);
+    final subsAsync = ref.watch(_allSubscriptionsProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        0,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: GlassCard(
+        padding: EdgeInsets.zero,
+        child: ExpansionTile(
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade50,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.card_membership_rounded,
+                color: Colors.amber.shade700, size: 22),
+          ),
+          title: const Text('Abonnements Demande de Livraison'),
+          subtitle: subsAsync.when(
+              data: (list) {
+              final active =
+                  list.whereType<DeliverySubscription>().where((s) => s.isActive).length;
+              final total = list.length;
+              return Text(
+                '$total souscription(s) — $active active(s)',
+                style: AppTheme.caption,
+              );
+            },
+            loading: () => const Text('Chargement…',
+                style: AppTheme.caption),
+            error: (_, __) => const Text('Erreur',
+                style: AppTheme.caption),
+          ),
+          trailing: subsAsync.when(
+            data: (list) {
+              final count = list.length;
+              return count > 0
+                  ? Text(
+                      '$count',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.primaryColor,
+                      ),
+                    )
+                  : const Icon(Icons.check_circle_rounded,
+                      color: AppTheme.accentColor);
+            },
+            loading: () => const SizedBox(
+              width: 20,
+              height: 20,
+              child:
+                  CircularProgressIndicator(strokeWidth: 2),
+            ),
+            error: (_, __) => const Icon(Icons.error_outline,
+                color: AppTheme.errorColor),
+          ),
+          children: [
+            // Prix client
+            settingsAsync.when(
+              data: (settings) => Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _SubInfoChip(
+                        label: 'Client',
+                        value:
+                            '${settings.deliveryClientSubscriptionPrice} DZD',
+                        icon: Icons.person_rounded,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _SubInfoChip(
+                        label: 'Expéditeur',
+                        value:
+                            '${settings.deliveryShipperSubscriptionPrice} DZD',
+                        icon: Icons.local_shipping_rounded,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _SubInfoChip(
+                        label: 'Durée',
+                        value:
+                            '${settings.deliverySubscriptionDurationDays} j',
+                        icon: Icons.schedule_rounded,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+            // Liste des abonnements
+            subsAsync.when(
+              data: (list) {
+                if (list.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text('Aucune souscription',
+                        style: AppTheme.caption),
+                  );
+                }
+                return Column(
+                  children: list.whereType<DeliverySubscription>().map((sub) {
+                    final isExpired = sub.isExpired;
+                    final daysLeft = sub.isActive
+                        ? sub.expiresAt
+                            .difference(DateTime.now())
+                            .inDays
+                        : 0;
+                    return ListTile(
+                      dense: true,
+                      leading: Icon(
+                        isExpired
+                            ? Icons.event_busy_rounded
+                            : Icons.check_circle_rounded,
+                        color: isExpired
+                            ? AppTheme.errorColor
+                            : AppTheme.accentColor,
+                        size: 20,
+                      ),
+                      title: Text(
+                        '${sub.role == "client" ? "Client" : "Expéditeur"} — ${sub.price} DZD',
+                        style: AppTheme.body.copyWith(
+                            fontSize: 13),
+                      ),
+                      subtitle: Text(
+                        isExpired
+                            ? 'Expiré'
+                            : 'Actif — $daysLeft jour(s) restant(s)',
+                        style: AppTheme.caption.copyWith(
+                          color: isExpired
+                              ? AppTheme.errorColor
+                              : AppTheme.accentColor,
+                        ),
+                      ),
+                      trailing: Text(
+                        _formatDateShort(sub.createdAt),
+                        style: AppTheme.caption,
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+              loading: () => const SizedBox(height: 40),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDateShort(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
+}
+
+class _SubInfoChip extends StatelessWidget {
+  const _SubInfoChip({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon,
+              size: 16, color: AppTheme.primaryColor),
+          const SizedBox(height: 4),
+          Text(value,
+              style: AppTheme.caption.copyWith(
+                  fontWeight: FontWeight.w700, fontSize: 12)),
+          Text(label,
+              style: AppTheme.caption.copyWith(fontSize: 10)),
+        ],
+      ),
+    );
+  }
+}
+
+// Provider pour tous les abonnements (admin view)
+final _allSubscriptionsProvider =
+    FutureProvider<List<DeliverySubscription>>((ref) async {
+  try {
+    final response = await Supabase.instance.client
+        .from('delivery_subscriptions')
+        .select()
+        .order('created_at', ascending: false);
+    return (response as List)
+        .map((e) => DeliverySubscription.fromJson(e))
+        .toList();
+  } catch (_) {
+    return [];
+  }
+});
+
+// ============================================================================
+// REFERRAL SUMMARY CARD (clickable → ReferralAdminScreen)
+// ============================================================================
+
+class _ReferralSummarySection extends ConsumerWidget {
+  const _ReferralSummarySection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final parrainsAsync = ref.watch(_referralSummaryProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd, 0, AppTheme.spaceMd, AppTheme.spaceSm,
+      ),
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ReferralAdminScreen()),
+        ),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple.shade600, Colors.deepPurple.shade400],
+            ),
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+            boxShadow: AppTheme.shadowMd,
+          ),
+          padding: const EdgeInsets.all(AppTheme.spaceLg),
+          child: parrainsAsync.when(
+            data: (data) {
+              final parrains = data['parrains'] as int? ?? 0;
+              final paid = data['paid'] as double? ?? 0.0;
+              final pending = data['pending'] as double? ?? 0.0;
+              final filleuls = data['filleuls'] as int? ?? 0;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.card_giftcard_rounded,
+                          color: Colors.white, size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Programme Parrainage',
+                          style: TextStyle(
+                            color: Colors.white, fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '$parrains parrains',
+                          style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.chevron_right_rounded,
+                          color: Colors.white70, size: 22),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      _ReferralStatPill(
+                        icon: Icons.people_rounded,
+                        label: 'Filleuls',
+                        value: '$filleuls',
+                      ),
+                      const SizedBox(width: 8),
+                      _ReferralStatPill(
+                        icon: Icons.check_circle_rounded,
+                        label: 'Payés',
+                        value: '${paid.toStringAsFixed(0)} DZD',
+                      ),
+                      const SizedBox(width: 8),
+                      _ReferralStatPill(
+                        icon: Icons.hourglass_top_rounded,
+                        label: 'Attente',
+                        value: '${pending.toStringAsFixed(0)} DZD',
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+            loading: () => const SizedBox(
+              height: 80,
+              child: Center(
+                child: CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2),
+              ),
+            ),
+            error: (_, __) => const Text(
+              'Données indisponibles',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReferralStatPill extends StatelessWidget {
+  const _ReferralStatPill({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white70, size: 16),
+            const SizedBox(height: 3),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7), fontSize: 10,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+final _referralSummaryProvider =
+    FutureProvider<Map<String, dynamic>>((ref) async {
+  try {
+    final service = ref.read(referralServiceProvider);
+    final parrains = await service.getAllParrainsOverview();
+    int totalFilleuls = 0;
+    double totalPaid = 0, totalPending = 0;
+    for (final p in parrains) {
+      totalFilleuls += p.filleulsCount;
+      totalPaid += p.totalPaid;
+      totalPending += p.totalPending;
+    }
+    return {
+      'parrains': parrains.length,
+      'filleuls': totalFilleuls,
+      'paid': totalPaid,
+      'pending': totalPending,
+    };
+  } catch (_) {
+    return {
+      'parrains': 0, 'filleuls': 0, 'paid': 0.0, 'pending': 0.0,
+    };
+  }
+});
 
 // ============================================================================
 // PLATFORM STATS

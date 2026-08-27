@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../data/models/referral_models.dart';
+import '../../data/services/deep_link_service.dart';
 import '../../providers/index.dart';
 
 /// Programme de parrainage CargoLink — accessible depuis le profil de TOUS
@@ -50,10 +51,13 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
   String get _playStoreUrl =>
       'https://play.google.com/store/apps/details?id=com.cargolink.dz.cargolink';
 
-  String _shareText(String code) =>
-      'Rejoins CargoLink avec mon code parrain $code ! '
-      'Télécharge l\'app : $_playStoreUrl\n'
-      'Et envoie des colis partout dans le monde avec des voyageurs vérifiés 🌍✈️';
+  String _shareText(String code) {
+    final link = DeepLinkService.referralLink(code);
+    return 'Rejoins CargoLink avec mon code parrain $code ! '
+        'Ouvre ce lien pour t\'inscrire directement :\n$link\n'
+        'Télécharge l\'app si tu ne l\'as pas : $_playStoreUrl\n'
+        '🌍✈️ Envoie des colis partout dans le monde !';
+  }
 
   Future<void> _share(String code) async {
     await Share.share(_shareText(code), subject: 'Rejoins CargoLink !');
@@ -216,8 +220,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                       child: Center(child: CircularProgressIndicator()),
                     ),
                     error: (e, _) => GlassCard(
-                      child:
-                          Text('Erreur : $e', style: AppTheme.bodySecondary),
+                      child: Text('Erreur : $e', style: AppTheme.bodySecondary),
                     ),
                     data: (s) => Column(
                       children: [
@@ -292,7 +295,8 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
               ),
               const SizedBox(width: AppTheme.spaceSm),
               const Expanded(
-                child: Text('Gagnez de l\'argent simplement', style: AppTheme.h3),
+                child:
+                    Text('Gagnez de l\'argent simplement', style: AppTheme.h3),
               ),
             ],
           ),
@@ -351,13 +355,16 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                 color: AppTheme.primaryLighter,
                 borderRadius: BorderRadius.circular(AppTheme.radiusSm),
               ),
-              child: Text(
-                s.code,
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 6,
-                  color: AppTheme.primaryColor,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  s.code,
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 6,
+                    color: AppTheme.primaryColor,
+                  ),
                 ),
               ),
             ),
@@ -463,8 +470,9 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed:
-                  _requestingPayout ? null : () => _requestPayout(pendingAmount),
+              onPressed: _requestingPayout
+                  ? null
+                  : () => _requestPayout(pendingAmount),
               icon: _requestingPayout
                   ? const SizedBox(
                       width: 16,
@@ -472,8 +480,8 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.send_rounded, size: 18),
-              label: Text(
-                  _requestingPayout ? 'Envoi…' : 'Demander le paiement'),
+              label:
+                  Text(_requestingPayout ? 'Envoi…' : 'Demander le paiement'),
             ),
           ),
         ],
@@ -512,8 +520,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
           if (statusText != null) ...[
             const SizedBox(height: AppTheme.spaceXs),
             Text(statusText,
-                style: AppTheme.caption
-                    .copyWith(color: AppTheme.accentColor)),
+                style: AppTheme.caption.copyWith(color: AppTheme.accentColor)),
           ],
           const SizedBox(height: AppTheme.spaceSm),
           LinearProgressIndicator(
@@ -555,7 +562,8 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.send_rounded, size: 18),
-              label: Text(_submitting ? 'Envoi…' : 'Demander le parrainage suivant'),
+              label: Text(
+                  _submitting ? 'Envoi…' : 'Demander le parrainage suivant'),
             ),
           ),
           if (!s.canSubmitBatch && s.lastBatchStatus != 'pending') ...[
@@ -588,7 +596,8 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
             data: (list) {
               if (list.isEmpty) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMd),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: AppTheme.spaceMd),
                   child: Column(
                     children: [
                       Icon(Icons.group_add_rounded,
@@ -660,20 +669,18 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                         dense: true,
                         leading: CircleAvatar(
                           radius: 16,
-                          backgroundColor:
-                              AppTheme.surfaceMuted,
+                          backgroundColor: AppTheme.surfaceMuted,
                           child: Text('${b.batchNumber}',
                               style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700)),
+                                  fontSize: 12, fontWeight: FontWeight.w700)),
                         ),
-                        title: Text('Lot ${b.batchNumber}',
-                            style: AppTheme.body),
+                        title:
+                            Text('Lot ${b.batchNumber}', style: AppTheme.body),
                         trailing: _batchChip(b.status),
-                        subtitle: b.reviewNote != null &&
-                                b.reviewNote!.isNotEmpty
-                            ? Text(b.reviewNote!, style: AppTheme.caption)
-                            : null,
+                        subtitle:
+                            b.reviewNote != null && b.reviewNote!.isNotEmpty
+                                ? Text(b.reviewNote!, style: AppTheme.caption)
+                                : null,
                       )),
                 ],
               ),
@@ -698,9 +705,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       ),
       child: Text(label,
           style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: color)),
+              fontSize: 11, fontWeight: FontWeight.w700, color: color)),
     );
   }
 }
@@ -729,9 +734,12 @@ class _StatBox extends StatelessWidget {
           Icon(icon, size: 18, color: AppTheme.primaryColor),
           const SizedBox(height: 4),
           Text(value,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w800, fontSize: 14)),
-          Text(label, style: AppTheme.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
+              style:
+                  const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+          Text(label,
+              style: AppTheme.caption,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis),
         ],
       ),
     );

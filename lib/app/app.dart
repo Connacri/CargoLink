@@ -53,13 +53,13 @@ class CargoLinkApp extends ConsumerWidget {
             child ?? const SizedBox.shrink(),
             // Écoute des liens profonds (cargolink://offer/<id>).
             const _DeepLinkListener(),
-            // FAB « Feedback » global — positionnée au-dessus de la bottom
-            // navigation bar (~80 px) pour ne pas la masquer.
-            const Positioned(
-              right: 14,
-              bottom: 88,
-              child: GlobalFeedbackFab(),
-            ),
+      // FAB « Feedback » global — positionnée juste au-dessus de la
+      // bottom navigation bar pour ne pas la masquer.
+      const Positioned(
+        right: 16,
+        bottom: 76,
+        child: GlobalFeedbackFab(),
+      ),
           ],
         ),
       ),
@@ -143,17 +143,31 @@ class _DeepLinkListenerState extends ConsumerState<_DeepLinkListener> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(deepLinkServiceProvider).init(onOffer: (shipmentId) {
-        final nav = appNavigatorKey.currentState;
-        if (nav == null) return;
-        final signedIn =
-            ref.read(authServiceProvider).currentUserId != null;
-        if (signedIn) {
-          nav.pushNamed('/booking-wizard', arguments: shipmentId);
-        } else {
-          ref.read(deepLinkServiceProvider).savePendingOffer(shipmentId);
-        }
-      });
+      ref.read(deepLinkServiceProvider).init(
+        onOffer: (shipmentId) {
+          final nav = appNavigatorKey.currentState;
+          if (nav == null) return;
+          final signedIn =
+              ref.read(authServiceProvider).currentUserId != null;
+          if (signedIn) {
+            nav.pushNamed('/booking-wizard', arguments: shipmentId);
+          } else {
+            ref.read(deepLinkServiceProvider).savePendingOffer(shipmentId);
+          }
+        },
+        onReferral: (code) {
+          final nav = appNavigatorKey.currentState;
+          if (nav == null) return;
+          final signedIn =
+              ref.read(authServiceProvider).currentUserId != null;
+          if (!signedIn) {
+            // Sauvegarder le code et le consommer après inscription
+            ref.read(deepLinkServiceProvider).savePendingReferralCode(code);
+            nav.pushNamedAndRemoveUntil('/signup', (route) => false,
+                arguments: code);
+          }
+        },
+      );
     });
   }
 

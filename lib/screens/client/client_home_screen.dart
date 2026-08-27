@@ -464,6 +464,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               child: _buildDeliveryCard(context),
             ),
             SliverToBoxAdapter(
+              child: _buildSubscriptionCard(context),
+            ),
+            SliverToBoxAdapter(
               child: _buildHowItWorks(),
             ),
             SliverToBoxAdapter(
@@ -631,6 +634,165 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSubscriptionCard(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: Consumer(
+        builder: (context, ref, _) {
+          final userId = ref.watch(authServiceProvider).currentUserId;
+          if (userId == null) return const SizedBox.shrink();
+
+          final subAsync = ref.watch(
+            deliverySubscriptionProvider(
+                (userId: userId, role: 'client')),
+          );
+
+          return subAsync.when(
+            data: (sub) {
+              if (sub != null && sub.isActive) {
+                final daysLeft =
+                    sub.expiresAt.difference(DateTime.now()).inDays;
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.radiusLg),
+                    border: Border.all(
+                        color: Colors.green.shade200, width: 1),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle_rounded,
+                          color: Colors.green.shade600, size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Abonnement actif',
+                              style: AppTheme.body.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: Colors.green.shade800,
+                              ),
+                            ),
+                            Text(
+                              'Expire dans $daysLeft jour(s)',
+                              style: AppTheme.caption.copyWith(
+                                color: Colors.green.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.verified_rounded,
+                          color: Colors.green.shade500, size: 20),
+                    ],
+                  ),
+                );
+              }
+              // Pas d'abonnement → card CTA
+              return InkWell(
+                onTap: () =>
+                    _showSubscriptionSheet(context, ref, userId),
+                borderRadius:
+                    BorderRadius.circular(AppTheme.radiusLg),
+                child: Ink(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.amber.shade600,
+                        Colors.orange.shade500,
+                      ],
+                    ),
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.radiusLg),
+                    boxShadow: AppTheme.shadowMd,
+                  ),
+                  padding:
+                      const EdgeInsets.all(AppTheme.spaceLg),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color:
+                              Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.card_membership_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.spaceMd),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Activer l\'abonnement',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            SizedBox(height: 3),
+                            Text(
+                              'Accédez aux demandes de livraison '
+                              '(client)',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12.5,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: Colors.white70,
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showSubscriptionSheet(
+      BuildContext context, WidgetRef ref, String userId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _SubscriptionActivationSheet(
+        userId: userId,
       ),
     );
   }
@@ -1270,6 +1432,188 @@ class _NoSearchResults extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+// ============================================================================
+// SUBSCRIPTION ACTIVATION SHEET
+// ============================================================================
+
+class _SubscriptionActivationSheet extends ConsumerStatefulWidget {
+  const _SubscriptionActivationSheet({required this.userId});
+  final String userId;
+
+  @override
+  ConsumerState<_SubscriptionActivationSheet> createState() =>
+      _SubscriptionActivationSheetState();
+}
+
+class _SubscriptionActivationSheetState
+    extends ConsumerState<_SubscriptionActivationSheet> {
+  bool _purchasing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final settingsAsync = ref.watch(platformSettingsProvider);
+    return DraggableScrollableSheet(
+      initialChildSize: 0.45,
+      minChildSize: 0.3,
+      maxChildSize: 0.7,
+      expand: false,
+      builder: (ctx, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: ListView(
+            controller: scrollCtrl,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            children: [
+              const SizedBox(height: 12),
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.textSecondaryColor
+                        .withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.card_membership_rounded,
+                        color: Colors.amber.shade700, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Activer l\'abonnement',
+                      style: AppTheme.h3,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'L\'abonnement vous donne accès à la création '
+                'de demandes de livraison.',
+                style: AppTheme.caption,
+              ),
+              const SizedBox(height: 24),
+              settingsAsync.when(
+                data: (settings) {
+                  final price =
+                      settings.deliveryClientSubscriptionPrice;
+                  final days =
+                      settings.deliverySubscriptionDurationDays;
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor
+                          .withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: AppTheme.primaryColor
+                            .withValues(alpha: 0.15),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.schedule_rounded,
+                            color: AppTheme.primaryColor,
+                            size: 28),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '$price DZD',
+                                style: AppTheme.h2.copyWith(
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
+                              Text(
+                                'Durée : $days jours',
+                                style: AppTheme.caption,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                loading: () => const SizedBox(height: 80),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: _purchasing
+                    ? null
+                    : () => _purchase(ref),
+                icon: _purchasing
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.check_circle_outline_rounded),
+                label: Text(
+                    _purchasing ? 'Activation...' : 'Activer maintenant'),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _purchase(WidgetRef ref) async {
+    setState(() => _purchasing = true);
+    try {
+      final settings =
+          await ref.read(platformSettingsProvider.future);
+      await ref.read(deliveryServiceProvider).purchaseSubscription(
+            userId: widget.userId,
+            role: 'client',
+            price: settings.deliveryClientSubscriptionPrice,
+            durationDays: settings.deliverySubscriptionDurationDays,
+          );
+      ref.invalidate(deliverySubscriptionProvider(
+          (userId: widget.userId, role: 'client')));
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Abonnement activé !')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _purchasing = false);
+    }
   }
 }
 

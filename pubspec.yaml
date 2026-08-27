@@ -36,6 +36,8 @@ dependencies:
 
   # Airports (recherche mondiale départ/arrivée)
   airport_data: ^1.0.2
+  font_awesome_flutter: ^11.0.0
+  country_flags: ^4.1.2
 
   # Camera & Image
   camera: ^0.10.5

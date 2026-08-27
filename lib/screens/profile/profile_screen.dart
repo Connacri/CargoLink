@@ -1428,22 +1428,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         AppTheme.spaceMd,
         0,
       ),
-      child: GlassCard(
-        padding: EdgeInsets.zero,
-        child: Column(
-          children: [
-            ListTile(
-              leading: const AnimatedIconDot(
-                  icon: Icons.feedback_rounded, color: AppTheme.infoColor),
-              title: const Text('Envoyer un feedback'),
-              subtitle: const Text(
-                  'Signaler un problème ou suggérer une amélioration'),
-              trailing: const Icon(Icons.chevron_right,
-                  color: AppTheme.textSecondaryColor),
-              onTap: () => launchAppFeedback(context, ref),
-            ),
-            const Divider(height: 1, indent: AppTheme.spaceXxl),
-            ListTile(
+      child: Column(
+        children: [
+          GlassCard(
+            padding: EdgeInsets.zero,
+            child: ListTile(
               leading: const AnimatedIconDot(
                   icon: Icons.logout_rounded, color: AppTheme.accentColor),
               title: const Text('Se déconnecter'),
@@ -1451,33 +1440,48 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   color: AppTheme.textSecondaryColor),
               onTap: _signOut,
             ),
-            const Divider(height: 1, indent: AppTheme.spaceXxl),
-            ListTile(
-              leading: const AnimatedIconDot(
-                  icon: Icons.pause_circle_rounded,
-                  color: AppTheme.warningColor),
-              title: const Text('Désactiver le compte'),
-              subtitle: const Text('Masquer temporairement votre compte'),
-              trailing: const Icon(Icons.chevron_right,
-                  color: AppTheme.textSecondaryColor),
-              onTap: _deactivateAccount,
-            ),
-            const Divider(height: 1, indent: AppTheme.spaceXxl),
-            ListTile(
-              leading: const AnimatedIconDot(
-                  icon: Icons.delete_forever_rounded,
-                  color: AppTheme.errorColor),
-              title: const Text(
-                'Supprimer définitivement le compte',
-                style: TextStyle(color: AppTheme.errorColor),
+          ),
+          const SizedBox(height: AppTheme.spaceLg),
+          // Liens discrets en bas — style social media
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              GestureDetector(
+                onTap: _deactivateAccount,
+                child: Text(
+                  'Désactiver le compte',
+                  style: AppTheme.caption.copyWith(
+                    color: AppTheme.textSecondaryColor,
+                    fontSize: 12,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
               ),
-              subtitle: const Text('30 jours avant suppression définitive'),
-              trailing: const Icon(Icons.chevron_right,
-                  color: AppTheme.textSecondaryColor),
-              onTap: _requestDeletion,
-            ),
-          ],
-        ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  '·',
+                  style: AppTheme.caption.copyWith(
+                    color: AppTheme.textSecondaryColor,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: _requestDeletion,
+                child: Text(
+                  'Supprimer le compte',
+                  style: AppTheme.caption.copyWith(
+                    color: AppTheme.errorColor.withValues(alpha: 0.7),
+                    fontSize: 12,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceMd),
+        ],
       ),
     );
   }

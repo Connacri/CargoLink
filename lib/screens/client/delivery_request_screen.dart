@@ -2,6 +2,8 @@
 // DEMANDE DE LIVRAISON — Écran client (créer + gérer)
 // ============================================================================
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -516,7 +518,19 @@ class _CreateRequestSheetState extends ConsumerState<_CreateRequestSheet> {
     final picker = ImagePicker();
     final picked = await picker.pickMultiImage(imageQuality: 80);
     if (picked.isNotEmpty) {
-      setState(() => _photos = picked);
+      final remaining = 8 - _photos.length;
+      setState(() => _photos.addAll(picked.take(remaining)));
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    final picker = ImagePicker();
+    final photo = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 80,
+    );
+    if (photo != null && _photos.length < 8) {
+      setState(() => _photos.add(photo));
     }
   }
 
@@ -734,13 +748,121 @@ class _CreateRequestSheetState extends ConsumerState<_CreateRequestSheet> {
                     onTap: _pickDeadline,
                   ),
                   const SizedBox(height: AppTheme.spaceSm),
-                  OutlinedButton.icon(
-                    onPressed: _pickPhotos,
-                    icon: const Icon(Icons.photo_library_outlined, size: 18),
-                    label: Text(
-                      _photos.isEmpty
-                          ? 'Ajouter des photos'
-                          : '${_photos.length} photo(s) sélectionnée(s)',
+                  // --- Section photos enrichie ---
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppTheme.dividerColor),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.photo_camera_outlined,
+                                size: 18, color: AppTheme.primaryColor),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Photos du produit',
+                              style: AppTheme.body.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Spacer(),
+                            if (_photos.isNotEmpty)
+                              Text(
+                                '${_photos.length}/8',
+                                style: AppTheme.caption.copyWith(
+                                  color: AppTheme.textSecondaryColor,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Grille de preview
+                        if (_photos.isNotEmpty) ...[
+                          SizedBox(
+                            height: 100,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _photos.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: 8),
+                              itemBuilder: (_, i) => Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(
+                                      File(_photos[i].path),
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        width: 100,
+                                        height: 100,
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.surfaceColor,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(
+                                            Icons.broken_image_rounded,
+                                            color: AppTheme.textSecondaryColor),
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: GestureDetector(
+                                      onTap: () => setState(
+                                          () => _photos.removeAt(i)),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(2),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.close_rounded,
+                                            size: 14, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        // Boutons Ajouter
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _photos.length >= 8
+                                    ? null
+                                    : _pickPhotos,
+                                icon: const Icon(
+                                    Icons.photo_library_outlined,
+                                    size: 16),
+                                label: const Text('Galerie'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _photos.length >= 8
+                                    ? null
+                                    : _takePhoto,
+                                icon: const Icon(Icons.camera_alt_outlined,
+                                    size: 16),
+                                label: const Text('Caméra'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: AppTheme.spaceLg),

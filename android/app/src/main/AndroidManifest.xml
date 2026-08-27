@@ -40,6 +40,13 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="cargolink" android:host="offer"/>
             </intent-filter>
+            <!-- Deep links CargoLink : cargolink://referral/<code> -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="cargolink" android:host="referral"/>
+            </intent-filter>
         </activity>
         <!-- Required by the image_cropper plugin (uCrop on Android). -->
         <activity

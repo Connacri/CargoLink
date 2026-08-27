@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
 import '../theme/app_theme.dart';
@@ -40,9 +41,7 @@ class OfferTicketCard extends StatelessWidget {
   }
 
   static String _city(String airport) {
-    return airport
-        .replaceAll(RegExp(r'\s*\([A-Za-z]{2,4}\)\s*$'), '')
-        .trim();
+    return airport.replaceAll(RegExp(r'\s*\([A-Za-z]{2,4}\)\s*$'), '').trim();
   }
 
   @override
@@ -148,11 +147,11 @@ class OfferTicketCard extends StatelessWidget {
                           Expanded(
                             child: Container(
                               height: 2,
-                              color: AppTheme.primaryColor
-                                  .withValues(alpha: 0.35),
+                              color:
+                                  AppTheme.primaryColor.withValues(alpha: 0.35),
                             ),
                           ),
-                          const Icon(Icons.flight_rounded,
+                          const FaIcon(FontAwesomeIcons.plane,
                               size: 15, color: AppTheme.primaryColor),
                         ],
                       ),
@@ -224,8 +223,7 @@ class OfferTicketCard extends StatelessWidget {
                 _DetailRow(
                   icon: Icons.inventory_2_rounded,
                   label: 'Disponible',
-                  value:
-                      '${availableKg.toStringAsFixed(1)} kg',
+                  value: '${availableKg.toStringAsFixed(1)} kg',
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -353,8 +351,8 @@ class _DetailRow extends StatelessWidget {
         Icon(icon, size: 14, color: AppTheme.primaryColor),
         const SizedBox(width: 6),
         Text('$label : ',
-            style: const TextStyle(
-                fontSize: 11, color: AppTheme.textMutedColor)),
+            style:
+                const TextStyle(fontSize: 11, color: AppTheme.textMutedColor)),
         Expanded(
           child: Text(
             value,

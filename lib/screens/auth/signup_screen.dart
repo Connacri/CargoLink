@@ -24,6 +24,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   String _role = 'client';
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _referralFromDeepLink = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Pré-remplir le code parrain depuis un deep link
+    final code = ModalRoute.of(context)?.settings.arguments;
+    if (code is String && code.isNotEmpty && _referralCodeController.text.isEmpty) {
+      _referralCodeController.text = code.toUpperCase();
+      _referralFromDeepLink = true;
+    }
+  }
 
   @override
   void dispose() {
@@ -255,10 +267,20 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           child: TextFormField(
                             controller: _referralCodeController,
                             textCapitalization: TextCapitalization.characters,
-                            decoration: const InputDecoration(
-                              labelText: 'Code de parrainage (optionnel)',
+                            readOnly: _referralFromDeepLink,
+                            decoration: InputDecoration(
+                              labelText: _referralFromDeepLink
+                                  ? 'Code parrain (via lien)'
+                                  : 'Code de parrainage (optionnel)',
                               hintText: 'Ex : AB2CD3EF',
-                              prefixIcon: Icon(Icons.card_giftcard_rounded),
+                              prefixIcon: Icon(
+                                _referralFromDeepLink
+                                    ? Icons.check_circle_rounded
+                                    : Icons.card_giftcard_rounded,
+                              ),
+                              suffixIcon: _referralFromDeepLink
+                                  ? const Icon(Icons.lock_outline, size: 18)
+                                  : null,
                             ),
                           ),
                         ),
