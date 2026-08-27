@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.71** |
-| Code de version (versionCode) | **195** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `43eafc4` |
-| Statut CI | À publier au prochain push → release `v1.0.71` sur GitHub |
+| Version (versionName) | **1.0.72** |
+| Code de version (versionCode) | **196** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `8bf313e` |
+| Statut CI | À publier au prochain push → release `v1.0.72` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.71** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.72** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -48,8 +48,28 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
-### Version 1.0.71
+### Version 1.0.72
 
+- **Deep link parrainage** : le partage de code parrain génère désormais un
+  lien `cargolink://referral/<CODE>` qui ouvre directement l'écran d'inscription
+  avec le code pré-rempli et verrouillé. Le nouveau user est automatiquement
+  rattaché à son parrain à l'inscription.
+- **Formulaire demande client enrichi** : photos en grille de preview avec
+  suppression individuelle, bouton caméra (photo instantanée) + galerie
+  (multi-sélection, max 8 photos).
+- **Abonnement « Demande de livraison »** : card d'activation sur l'accueil
+  client avec prix et durée affichés. Le bouton ouvre une feuille de
+  confirmation d'achat. Le statut (actif/expiré) s'affiche directement.
+- **Dashboard fondateur enrichi** : card « Programme Parrainage » résumé
+  cliquable (filleuls, gains payés/en attente), card « Abonnements » avec
+  la liste des souscriptions actives, paramètres de prix/durée visibles.
+- **FAB Feedback repositionnée** : le bouton flottant de feedback est désormais
+  positionné juste au-dessus de la bottom navigation bar pour une meilleure
+  accessibilité.
+- **Profil nettoyé** : tile « Envoyer un feedback » supprimée (remplacée par
+  le FAB). Liens « Désactiver le compte » et « Supprimer le compte » déplacés
+  en texte discret tout en bas du profil (style Facebook/Instagram/Snapchat)
+  pour éviter les clics accidentels.
 - **Sélecteur pays → ville** : nouveau widget `CountryCityPickerField` utilisant
   l'API gratuite `countries.dev` (34 000 villes, sans clé). L'utilisateur choisit
   d'abord un pays, puis une ville de ce pays. Utilisé côté expéditeur (destination)
