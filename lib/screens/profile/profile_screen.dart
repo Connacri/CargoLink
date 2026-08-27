@@ -13,6 +13,7 @@ import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/micro_badge.dart';
+import '../../core/widgets/subscription_banner.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../auth/role_selection_screen.dart';
 import '../referral/referral_screen.dart';
@@ -511,6 +512,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildProfileHeader(User userData) {
+    final sub = ref
+            .watch(deliverySubscriptionProvider(
+                (userId: userData.id, role: userData.role)))
+            .valueOrNull;
+    final isPremium = sub != null && sub.status == 'active' && sub.isActive;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.spaceMd,
@@ -520,7 +527,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
       child: Column(
         children: [
+          // Avatar avec badge premium
           Stack(
+            clipBehavior: Clip.none,
             children: [
               _avatar(userData),
               if (_isEditing)
@@ -540,6 +549,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                   ),
                 ),
+              if (isPremium)
+                Positioned(
+                  top: -4,
+                  right: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF16A34A),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF16A34A).withValues(alpha: 0.4),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.verified_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: AppTheme.spaceSm + 4),
@@ -555,6 +589,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             style: AppTheme.bodySecondary,
           ),
           const SizedBox(height: AppTheme.spaceSm),
+          // Badges role
           Center(
             child: GradientBadge(
               label: _roleLabel(userData.role).toUpperCase(),
@@ -573,6 +608,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
             ),
           ],
+          // Bandeau abonnement sous les badges
+          const SizedBox(height: AppTheme.spaceSm),
+          SubscriptionBanner(userId: userData.id, role: userData.role),
         ],
       ),
     );
