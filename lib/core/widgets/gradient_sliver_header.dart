@@ -200,7 +200,6 @@ class CompactSliverHeader extends StatelessWidget {
     this.gradient = AppTheme.primaryGradient,
     this.expandedHeight,
     this.bottom,
-    this.showFeedback = true,
   });
 
   final String title;
@@ -210,7 +209,6 @@ class CompactSliverHeader extends StatelessWidget {
   final LinearGradient gradient;
   final double? expandedHeight;
   final PreferredSizeWidget? bottom;
-  final bool showFeedback;
 
   @override
   Widget build(BuildContext context) {
@@ -226,7 +224,7 @@ class CompactSliverHeader extends StatelessWidget {
       automaticallyImplyLeading: true,
       iconTheme: const IconThemeData(color: Colors.white),
       actions: [
-        if (showFeedback) const FeedbackIconButton(),
+        const FeedbackIconButton(),
         if (trailing != null) trailing!,
       ],
       bottom: bottom,

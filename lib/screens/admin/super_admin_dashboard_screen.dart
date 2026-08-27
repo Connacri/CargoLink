@@ -113,7 +113,6 @@ class _SuperAdminDashboardScreenState
                     subtitle: 'Vue d\'ensemble de la plateforme',
                     icon: Icons.dashboard_outlined,
                     trailing: LogoutIconButton(),
-                    showFeedback: false,
                   ),
                   SliverToBoxAdapter(child: _StatsOverview()),
                   SliverToBoxAdapter(child: _ReferralSummarySection()),
@@ -149,7 +148,6 @@ class _SuperAdminDashboardScreenState
                         LogoutIconButton(),
                       ],
                     ),
-                    showFeedback: false,
                   ),
                   ..._buildUsersSliver(),
                   const SliverToBoxAdapter(
@@ -168,7 +166,6 @@ class _SuperAdminDashboardScreenState
                     subtitle: 'Paramètres et modération',
                     icon: Icons.settings_outlined,
                     trailing: LogoutIconButton(),
-                    showFeedback: false,
                   ),
                   SliverToBoxAdapter(
                     child: _SectionTitle(title: 'Modération'),
