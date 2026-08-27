@@ -31,9 +31,20 @@ class _UsersScanner {
     String? role,
     int limit,
   ) async {
-    // Shipper-type filter: load ALL users, then keep only those whose IDs match.
+    // Shipper-type filter: load ALL users (paging through the whole table),
+    // then keep only those whose IDs match. Fetching a single 500-row page
+    // would silently drop users beyond the cutoff.
     if (userIds != null && userIds!.isNotEmpty) {
-      final all = await fetch(500, 0);
+      final all = <User>[];
+      final chunk = limit > 100 ? limit : 100;
+      var offset = 0;
+      while (true) {
+        final page = await fetch(chunk, offset);
+        if (page.isEmpty) break;
+        all.addAll(page);
+        offset += page.length;
+        if (page.length < chunk) break;
+      }
       return all.where((u) => userIds!.contains(u.id)).toList();
     }
 

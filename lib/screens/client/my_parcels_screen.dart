@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../components/tracking_timeline.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/qr_booking.dart';
+import '../../core/widgets/booking_acceptance_chip.dart';
 import '../../core/widgets/qr_ticket_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../data/models/models.dart';
@@ -192,16 +193,22 @@ class _ParcelTile extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: BookingAcceptanceChip(booking: booking),
+              ),
+              const SizedBox(height: 6),
               Wrap(
                 spacing: 6,
                 runSpacing: 4,
                 children: [
-                  _infoChip(
-                    icon: Icons.tag_rounded,
-                    label:
-                        'N\u00b0 ${booking.trackingNumber?.isNotEmpty ?? false ? booking.trackingNumber : QrBookingPayload.refCodeFor(booking.id)}',
-                    color: AppTheme.primaryColor,
-                  ),
+                  if (booking.canSeeTracking)
+                    _infoChip(
+                      icon: Icons.tag_rounded,
+                      label:
+                          'N\u00b0 ${booking.trackingNumber?.isNotEmpty ?? false ? booking.trackingNumber : QrBookingPayload.refCodeFor(booking.id)}',
+                      color: AppTheme.primaryColor,
+                    ),
                   _infoChip(
                     icon: Icons.monitor_weight_outlined,
                     label:
@@ -230,14 +237,16 @@ class _ParcelTile extends ConsumerWidget {
               ),
             ],
           ),
-          trailing: IconButton(
-            tooltip: 'Billet QR',
-            onPressed: () => showQrTicketDialog(context, booking),
-            icon: const Icon(
-              Icons.qr_code_2_rounded,
-              color: AppTheme.primaryColor,
-            ),
-          ),
+          trailing: booking.canSeeTracking
+              ? IconButton(
+                  tooltip: 'Billet QR',
+                  onPressed: () => showQrTicketDialog(context, booking),
+                  icon: const Icon(
+                    Icons.qr_code_2_rounded,
+                    color: AppTheme.primaryColor,
+                  ),
+                )
+              : null,
           children: [
             Align(
               alignment: Alignment.centerLeft,

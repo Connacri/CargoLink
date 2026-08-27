@@ -313,6 +313,10 @@ class _ShipperDashboardScreenState
                 child: AdBannerCarousel(ads: activeAds),
               ),
             SliverToBoxAdapter(
+              child: _buildBookingsHeader(shipper.id),
+            ),
+            ..._buildBookingsList(shipper.id),
+            SliverToBoxAdapter(
               child: _buildStats(shipper),
             ),
             SliverToBoxAdapter(
@@ -324,10 +328,6 @@ class _ShipperDashboardScreenState
             SliverToBoxAdapter(
               child: _buildActiveOrdersCard(shipper.id),
             ),
-            SliverToBoxAdapter(
-              child: _buildBookingsHeader(shipper.id),
-            ),
-            ..._buildBookingsList(shipper.id),
             SliverToBoxAdapter(
               child: _buildSectionHeader(shipper.id),
             ),

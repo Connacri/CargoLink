@@ -947,4 +947,58 @@ class NotificationService {
       _logger.e('Error notifying client of courier deposit: $e');
     }
   }
+
+  /// Notify the client that the shipper accepted (verified) their order: this
+  /// is the step that unlocks the QR ticket and the tracking number.
+  Future<void> notifyClientBookingAccepted({
+    required String clientId,
+    required String bookingId,
+    required String productName,
+  }) async {
+    try {
+      await createNotification(
+        userId: clientId,
+        type: 'booking_accepted',
+        title: 'Commande acceptée',
+        message: 'Votre commande "$productName" a été acceptée par '
+            'l\'expéditeur. Votre numéro de suivi et votre billet QR sont '
+            'maintenant disponibles.',
+        relatedBookingId: bookingId,
+      );
+      await _sendPush(
+        userId: clientId,
+        title: 'Commande acceptée ✅',
+        message: 'Votre billet QR et votre suivi sont disponibles',
+        data: {'bookingId': bookingId, 'type': 'booking_accepted'},
+      );
+    } catch (e) {
+      _logger.e('Error notifying client of accepted booking: $e');
+    }
+  }
+
+  /// Notify the client that the shipper refused their order, with the reason.
+  Future<void> notifyClientBookingRefused({
+    required String clientId,
+    required String bookingId,
+    required String productName,
+    required String reason,
+  }) async {
+    try {
+      await createNotification(
+        userId: clientId,
+        type: 'booking_refused',
+        title: 'Commande refusée',
+        message: 'Votre commande "$productName" a été refusée : $reason',
+        relatedBookingId: bookingId,
+      );
+      await _sendPush(
+        userId: clientId,
+        title: 'Commande refusée ❌',
+        message: reason,
+        data: {'bookingId': bookingId, 'type': 'booking_refused'},
+      );
+    } catch (e) {
+      _logger.e('Error notifying client of refused booking: $e');
+    }
+  }
 }

@@ -10,6 +10,7 @@ import '../../core/enums/app_enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/booking_acceptance_chip.dart';
 import '../../core/widgets/micro_badge.dart';
 import '../../core/widgets/qr_ticket_dialog.dart';
 import '../chat/chat_screen.dart';
@@ -506,13 +507,16 @@ class _DemandsTabState extends ConsumerState<_DemandsTab>
           child: Text('Erreur: $e', style: AppTheme.bodySecondary),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'demandes_fab',
-        onPressed: () => _showCreateSheet(context),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nouvelle demande'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 76),
+        child: FloatingActionButton.extended(
+          heroTag: 'demandes_fab',
+          onPressed: () => _showCreateSheet(context),
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Nouvelle demande'),
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: Colors.white,
+        ),
       ),
     );
   }
@@ -1321,6 +1325,7 @@ class _BookingCard extends ConsumerWidget {
               spacing: AppTheme.spaceSm,
               runSpacing: AppTheme.spaceSm,
               children: [
+                BookingAcceptanceChip(booking: booking),
                 _StatusChip(
                   icon: shipperConfirmed
                       ? Icons.task_alt_rounded
@@ -1376,11 +1381,12 @@ class _BookingCard extends ConsumerWidget {
                   tooltip: 'Suivre',
                   onTap: onTrack,
                 ),
-                _CardIconButton(
-                  icon: Icons.qr_code_2_rounded,
-                  tooltip: 'QR',
-                  onTap: () => showQrTicketDialog(context, booking),
-                ),
+                if (booking.canSeeTracking)
+                  _CardIconButton(
+                    icon: Icons.qr_code_2_rounded,
+                    tooltip: 'QR',
+                    onTap: () => showQrTicketDialog(context, booking),
+                  ),
                 if (onChat != null)
                   _CardIconButton(
                     icon: Icons.chat_rounded,

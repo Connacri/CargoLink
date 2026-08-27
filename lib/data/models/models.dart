@@ -536,6 +536,24 @@ class Booking {
   bool get isPaid => paymentStatus == 'paid';
   bool get isDelivered => status == 'delivered';
   bool get isCancelled => status == 'cancelled';
+
+  /// Statuts où l'expéditeur a accepté la commande au-delà desquels le client
+  /// peut voir le QR code et le numéro de suivi (accepté après vérification
+  /// puis tout le reste du cycle de livraison).
+  static const Set<String> _acceptedForwardStatuses = {
+    'accepted',
+    'shipped',
+    'arrived',
+    'out_for_delivery',
+    'delivered',
+  };
+
+  /// Le client peut-il voir le QR / numéro de suivi ? Non tant que l'expéditeur
+  /// n'a pas accepté la commande (statut « accepted » ou ultérieur, ou
+  /// verification_status = accepted).
+  bool get canSeeTracking =>
+      _acceptedForwardStatuses.contains(status) ||
+      verificationStatus == 'accepted';
 }
 
 // ============================================================================

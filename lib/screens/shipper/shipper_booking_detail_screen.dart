@@ -879,13 +879,20 @@ class _ShipperBookingDetailScreenState
           const SafeArea(top: false, child: _RefusalSheet()),
     );
     if (reason == null) return;
-    await _run(
-      () => ref.read(bookingServiceProvider).cancelBooking(
+    await _run(() async {
+      await ref.read(bookingServiceProvider).cancelBooking(
             booking.id,
             reason: reason,
-          ),
-      'Commande refusée',
-    );
+          );
+      await ref
+          .read(notificationServiceProvider)
+          .notifyClientBookingRefused(
+            clientId: booking.clientId,
+            bookingId: booking.id,
+            productName: booking.productName,
+            reason: reason,
+          );
+    }, 'Commande refusée');
   }
 
   /// Réception physique du colis : photo obligatoire puis passage en
@@ -947,6 +954,13 @@ class _ShipperBookingDetailScreenState
               notes:
                   'Colis vérifié : ${result.weight.toStringAsFixed(1)} kg, articles conformes',
               location: booking.shipment?.originCountry,
+            );
+        await ref
+            .read(notificationServiceProvider)
+            .notifyClientBookingAccepted(
+              clientId: booking.clientId,
+              bookingId: booking.id,
+              productName: booking.productName,
             );
       }, 'Colis vérifié et accepté');
     } else {

@@ -380,78 +380,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  Future<void> _deactivateAccount() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Désactiver le compte'),
-        content: const Text(
-          'Votre compte sera désactivé : il sera masqué et inaccessible, '
-          'mais rien ne sera supprimé. Vous pourrez le réactiver à tout '
-          'moment en vous reconnectant.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Désactiver'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      try {
-        await ref.read(authServiceProvider).deactivateAccount();
-      } catch (e) {
-        if (mounted) {
-          await showAppErrorDialog(context, message: 'Erreur: $e');
-        }
-      }
-    }
-  }
-
-  Future<void> _requestDeletion() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Supprimer définitivement le compte'),
-        content: const Text(
-          'Votre compte et toutes vos données seront définitivement supprimés '
-          'après une période d\'attente de 30 jours. Pendant ce délai, vous '
-          'pouvez annuler la suppression en vous reconnectant.\n\n'
-          'Êtes-vous sûr de vouloir continuer ?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.errorColor,
-            ),
-            child: const Text('Supprimer'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      try {
-        await ref.read(authServiceProvider).requestAccountDeletion();
-      } catch (e) {
-        if (mounted) {
-          await showAppErrorDialog(context, message: 'Erreur: $e');
-        }
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     ref.listen<AsyncValue<User?>>(currentUserProvider, (prev, next) {
@@ -1461,44 +1389,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
           const SizedBox(height: AppTheme.spaceLg),
-          // Liens discrets en bas — style social media
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: _deactivateAccount,
-                child: Text(
-                  'Désactiver le compte',
-                  style: AppTheme.caption.copyWith(
-                    color: AppTheme.textSecondaryColor,
-                    fontSize: 12,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  '·',
-                  style: AppTheme.caption.copyWith(
-                    color: AppTheme.textSecondaryColor,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: _requestDeletion,
-                child: Text(
-                  'Supprimer le compte',
-                  style: AppTheme.caption.copyWith(
-                    color: AppTheme.errorColor.withValues(alpha: 0.7),
-                    fontSize: 12,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: AppTheme.spaceMd),
         ],
       ),

@@ -14,6 +14,7 @@ import '../../core/utils/qr_booking.dart';
 import '../../core/utils/web_download_stub.dart'
     if (dart.library.html) '../../core/utils/web_download.dart';
 import '../../core/widgets/qr_booking_ticket.dart';
+import '../../core/widgets/booking_acceptance_chip.dart';
 import '../../core/widgets/ui_kit.dart';
 
 /// 4-step booking wizard (Product → Photos → Review & Payment → Confirmation)
@@ -47,6 +48,10 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
   int _currentStep = 0;
   bool _submitting = false;
   String? _createdBookingId;
+
+  /// Booking créé — permet d'évaluer `canSeeTracking` : tant que l'expéditeur
+  /// n'a pas accepté la commande, le client ne voit ni QR ni n° de suivi.
+  Booking? _createdBooking;
 
   /// Tracking code réel du booking créé (`tracking_number` en base), le même
   /// que celui affiché dans le QR, le suivi et la page de recherche.
@@ -981,6 +986,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
             airline: shipment.airline ?? '',
           )
         : null;
+    final canSee = _createdBooking?.canSeeTracking ?? false;
     return Center(
       child: ListView(
         padding: const EdgeInsets.all(AppTheme.spaceLg),
@@ -1006,55 +1012,30 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
           const SizedBox(height: AppTheme.spaceLg),
           RepaintBoundary(
             key: _ticketKey,
-            child: payload != null
+            child: canSee && payload != null
                 ? QrBookingTicket(payload: payload)
-                : Container(
-                    padding: const EdgeInsets.all(AppTheme.spaceLg),
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceColor,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                      border: Border.all(color: AppTheme.dividerColor),
-                    ),
-                    child: const Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 160,
-                          height: 160,
-                          child: Icon(
-                            Icons.qr_code_2_rounded,
-                            size: 120,
-                            color: AppTheme.textMutedColor,
-                          ),
-                        ),
-                        SizedBox(height: AppTheme.spaceMd),
-                        Text(
-                          'Réf : RES-PENDING',
-                          style: AppTheme.h3,
-                        ),
-                      ],
-                    ),
-                  ),
+                : _buildPendingAcceptanceCard(shipment),
           ),
           const SizedBox(height: AppTheme.spaceLg),
-          FilledButton.icon(
-            onPressed: _savingTicket ? null : _saveTicketToGallery,
-            icon: _savingTicket
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.download_rounded, size: 18),
-            label: Text(_savingTicket
-                ? 'Préparation…'
-                : (kIsWeb
-                    ? 'Télécharger la confirmation (PNG)'
-                    : 'Enregistrer la confirmation')),
-          ),
+          if (canSee)
+            FilledButton.icon(
+              onPressed: _savingTicket ? null : _saveTicketToGallery,
+              icon: _savingTicket
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.download_rounded, size: 18),
+              label: Text(_savingTicket
+                  ? 'Préparation…'
+                  : (kIsWeb
+                      ? 'Télécharger la confirmation (PNG)'
+                      : 'Enregistrer la confirmation')),
+            ),
           const SizedBox(height: AppTheme.spaceSm),
           FilledButton.icon(
             onPressed: () => _goToPayment(shipment),
@@ -1070,6 +1051,57 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
             icon: const Icon(Icons.track_changes, size: 18),
             label: const Text('Suivre ma réservation'),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Placeholder affiché à l'étape « Terminé » tant que l'expéditeur n'a pas
+  /// accepté la commande : le client ne voit ni QR ni n° de suivi (voir
+  /// `Booking.canSeeTracking`).
+  Widget _buildPendingAcceptanceCard(Shipment shipment) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppTheme.spaceLg),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        border: Border.all(color: AppTheme.dividerColor),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(
+            width: 96,
+            height: 96,
+            child: Icon(
+              Icons.qr_code_2_rounded,
+              size: 72,
+              color: AppTheme.textMutedColor,
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceMd),
+          if (_createdBooking != null) ...[
+            const Text(
+              'Votre réservation a bien été enregistrée !',
+              textAlign: TextAlign.center,
+              style: AppTheme.h3,
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            BookingAcceptanceChip(booking: _createdBooking!),
+            const SizedBox(height: AppTheme.spaceSm),
+            const Text(
+              'Le billet QR et le numéro de suivi seront disponibles dès que '
+              'l\'expéditeur aura accepté votre commande.',
+              textAlign: TextAlign.center,
+              style: AppTheme.bodySecondary,
+            ),
+          ] else ...[
+            const Text(
+              'Réf : RES-PENDING',
+              style: AppTheme.h3,
+            ),
+          ],
         ],
       ),
     );
@@ -1381,6 +1413,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
             .read(shipmentsFeedRefreshTickProvider.notifier)
             .update((tick) => tick + 1);
         setState(() {
+          _createdBooking = booking;
           _createdBookingId = booking.id;
           _createdTrackingCode = booking.trackingNumber ??
               QrBookingPayload.refCodeFor(booking.id);

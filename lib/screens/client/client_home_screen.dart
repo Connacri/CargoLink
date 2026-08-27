@@ -6,6 +6,7 @@ import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/booking_acceptance_chip.dart';
 import '../../core/widgets/airport_picker_field.dart';
 import '../../core/widgets/country_city_picker_field.dart';
 import '../../core/widgets/notification_widgets.dart';
@@ -1408,16 +1409,22 @@ class _ParcelProgressRow extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: AppTheme.spaceSm),
-                Text(
-                  'N° ${booking.trackingNumber?.isNotEmpty ?? false ? booking.trackingNumber : QrBookingPayload.refCodeFor(booking.id)}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                    color: AppTheme.primaryDark,
+                if (booking.canSeeTracking)
+                  Text(
+                    'N° ${booking.trackingNumber?.isNotEmpty ?? false ? booking.trackingNumber : QrBookingPayload.refCodeFor(booking.id)}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                      color: AppTheme.primaryDark,
+                    ),
                   ),
-                ),
               ],
+            ),
+            const SizedBox(height: AppTheme.spaceSm),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: BookingAcceptanceChip(booking: booking),
             ),
           ],
         ),

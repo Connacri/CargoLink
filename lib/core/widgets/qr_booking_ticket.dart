@@ -273,6 +273,73 @@ class QrBookingTicket extends StatelessWidget {
               ),
             ),
           ),
+
+          // ─── INSTRUCTION (imprimer + envoyer au fournisseur) ───
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.fromLTRB(
+                AppTheme.spaceMd, 0, AppTheme.spaceMd, AppTheme.spaceMd),
+            padding: const EdgeInsets.all(AppTheme.spaceMd),
+            decoration: BoxDecoration(
+              color: AppTheme.accentColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+              border:
+                  Border.all(color: AppTheme.accentColor.withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.print_outlined,
+                        size: 16, color: AppTheme.accentColor),
+                    const SizedBox(width: AppTheme.spaceSm),
+                    Expanded(
+                      child: Text(
+                        'IMPORTANT',
+                        style: AppTheme.caption.copyWith(
+                          color: AppTheme.accentColor,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Imprimez ce billet et envoyez-le au fournisseur afin '
+                  'qu\'il imprime ce code et le colle sur le colis / la '
+                  'marchandise, pour ne pas le perdre parmi les colis et '
+                  'faciliter la livraison.',
+                  style: AppTheme.body.copyWith(
+                    fontSize: 12.5,
+                    color: AppTheme.textPrimaryColor,
+                    height: 1.35,
+                  ),
+                ),
+                if (payload.flightDate.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.event_rounded,
+                          size: 14, color: AppTheme.accentColor),
+                      const SizedBox(width: AppTheme.spaceSm),
+                      Expanded(
+                        child: Text(
+                          'Date du vol : ${payload.flightDate}',
+                          style: AppTheme.body.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.accentColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );

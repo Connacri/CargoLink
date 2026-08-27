@@ -619,7 +619,8 @@ class TrackingScreen extends ConsumerWidget {
               ),
             ],
           ),
-          if (booking.trackingNumber != null &&
+          if (booking.canSeeTracking &&
+              booking.trackingNumber != null &&
               booking.trackingNumber!.isNotEmpty) ...[
             const SizedBox(height: AppTheme.spaceSm),
             GestureDetector(
@@ -1125,44 +1126,73 @@ class _TrackingTicketDialog extends ConsumerWidget {
               ),
             ),
 
-            // ─── TRACKING NUMBER ───
+            // ─── TRACKING NUMBER (visible après acceptation expéditeur) ───
             Padding(
               padding: const EdgeInsets.fromLTRB(
                   AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceMd, 0),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.spaceMd, vertical: AppTheme.spaceSm),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryLighter,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                  border: Border.all(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  children: [
-                    const Text('N° DE SUIVI',
-                        style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.5,
-                            color: AppTheme.textSecondaryColor)),
-                    const SizedBox(height: 2),
-                    SelectableText(
-                      booking.trackingNumber?.isNotEmpty == true
-                          ? booking.trackingNumber!
-                          : QrBookingPayload.refCodeFor(booking.id),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.5,
-                        color: AppTheme.primaryDark,
+              child: booking.canSeeTracking
+                  ? Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.spaceMd,
+                          vertical: AppTheme.spaceSm),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryLighter,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                        border: Border.all(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Column(
+                        children: [
+                          const Text('N° DE SUIVI',
+                              style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.5,
+                                  color: AppTheme.textSecondaryColor)),
+                          const SizedBox(height: 2),
+                          SelectableText(
+                            booking.trackingNumber?.isNotEmpty == true
+                                ? booking.trackingNumber!
+                                : QrBookingPayload.refCodeFor(booking.id),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.5,
+                              color: AppTheme.primaryDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(AppTheme.spaceMd),
+                      decoration: BoxDecoration(
+                        color: AppTheme.warningColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                        border: Border.all(
+                            color: AppTheme.warningColor.withValues(alpha: 0.3)),
+                      ),
+                      child: const Column(
+                        children: [
+                          Icon(Icons.lock_outline_rounded,
+                              size: 20, color: AppTheme.warningColor),
+                          SizedBox(height: 6),
+                          Text(
+                            'Numéro de suivi (QR) disponible dès que '
+                            'l\'expéditeur aura accepté votre commande.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: AppTheme.warningColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
             ),
 
             // ─── DASHED DIVIDER ───
