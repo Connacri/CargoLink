@@ -10,9 +10,9 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.76** |
-| Code de version (versionCode) | **205** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `bb65a37` |
+| Version (versionName) | **1.0.77** |
+| Code de version (versionCode) | **207** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `10cef54` |
 | Statut CI | À publier au prochain push → release `v1.0.73` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
@@ -47,6 +47,19 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.77
+
+- **Fiabilisation de l'affichage des modèles** : complétion des champs
+  manquants côté Dart (horodatage de mise à jour de la grille tarifaire
+  `ad_pricing`, identifiants parrain/commande des gains `referral_earnings`
+  et du lot `referral_batches`).
+- **Stabilité de décodage** : lecture tolérante des dates `created_at` /
+  `updated_at` des demandes de livraison, propositions, garanties et
+  abonnements (aucun plantage si une date est absente).
+- **Correction d'un avertissement d'affichage** dans les feuilles
+  « Date limite » de la demande de livraison (l'effet de pression sur la
+  ligne du calendrier n'était pas visible) — enrobage `Material`.
 
 ### Version 1.0.76
 
