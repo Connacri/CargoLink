@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.72** |
-| Code de version (versionCode) | **196** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `8bf313e` |
-| Statut CI | À publier au prochain push → release `v1.0.72` sur GitHub |
+| Version (versionName) | **1.0.73** |
+| Code de version (versionCode) | **197** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `à remplir après push` |
+| Statut CI | À publier au prochain push → release `v1.0.73` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.72** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.73** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -47,6 +47,14 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.73
+
+- **Fix validation date dans `_ProposalSheet`** : la date proposée par
+  l'expéditeur dans une réponse à une demande de livraison est désormais
+  initialisée correctement (bornée à la deadline si elle est trop proche),
+  le sélecteur de date refusé ouvre/ferme correctement, et une validation
+  côté soumission empêche de soumettre une date dépassant la deadline.
 
 ### Version 1.0.72
 

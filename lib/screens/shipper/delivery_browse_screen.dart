@@ -336,8 +336,18 @@ class _ProposalSheetState extends ConsumerState<_ProposalSheet> {
   final _formKey = GlobalKey<FormState>();
   final _priceController = TextEditingController();
   final _messageController = TextEditingController();
-  DateTime _proposedDate = DateTime.now().add(const Duration(days: 7));
+  late DateTime _proposedDate;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final deadline = widget.request.deadline;
+    final defaultDate = DateTime.now().add(const Duration(days: 7));
+    _proposedDate = defaultDate.isAfter(deadline)
+        ? deadline.subtract(const Duration(days: 1))
+        : defaultDate;
+  }
 
   @override
   void dispose() {
@@ -347,11 +357,14 @@ class _ProposalSheetState extends ConsumerState<_ProposalSheet> {
   }
 
   Future<void> _pickDate() async {
+    final firstDate = DateTime.now().add(const Duration(days: 1));
+    final lastDate = widget.request.deadline;
+    if (firstDate.isAfter(lastDate)) return;
     final picked = await showDatePicker(
       context: context,
-      initialDate: _proposedDate,
-      firstDate: DateTime.now().add(const Duration(days: 1)),
-      lastDate: widget.request.deadline,
+      initialDate: _proposedDate.isAfter(lastDate) ? lastDate : _proposedDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
       locale: const Locale('fr'),
     );
     if (picked != null) setState(() => _proposedDate = picked);
@@ -359,6 +372,16 @@ class _ProposalSheetState extends ConsumerState<_ProposalSheet> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final deadline = widget.request.deadline;
+    if (_proposedDate.isAfter(deadline)) {
+      if (mounted) {
+        await showAppErrorDialog(
+          context,
+          message: 'La date proposée ne peut pas dépasser la date limite.',
+        );
+      }
+      return;
+    }
     setState(() => _saving = true);
     try {
       final userId = ref.read(authServiceProvider).currentUserId;
