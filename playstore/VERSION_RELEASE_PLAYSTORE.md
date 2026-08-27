@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.77** |
-| Code de version (versionCode) | **207** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `10cef54` |
-| Statut CI | À publier au prochain push → release `v1.0.73` sur GitHub |
+| Version (versionName) | **1.0.78** |
+| Code de version (versionCode) | **208** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `913dc12` |
+| Statut CI | À publier au prochain push → release `v1.0.78` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.73** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release **v1.0.78** → workflow `release.yml` (job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -47,6 +47,27 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.78
+
+- **Système d'abonnement par packs** : le fondateur crée des packs
+  d'abonnement (nom, durée, prix, rôle) via une nouvelle page dédiée dans
+  l'admin. Les clients et expéditeurs choisissent un pack dans une feuille
+  partagée — le fondateur valide après réception du paiement.
+- **Bandeau d'abonnement** : un badge visible en haut de chaque onglet
+  affiche le type de pack, le statut (actif / en attente / expiré) et le
+  nombre de jours restants.
+- **Verrou DeliveryBrowseScreen** : les expéditeurs sans abonnement actif
+  ne peuvent plus consulter ni répondre aux demandes de livraison.
+- **Drapeaux pays** (`country_flags`) dans le sélecteur d'aéroport, les
+  cartes d'aéroport et les tuiles de recherche — origine/destination
+  illustrées visuellement par le drapeau du pays.
+- **Aéroport d'arrivée obligatoire** : la publication d'un shipment
+  nécessite désormais un aéroport de départ ET un aéroport d'arrivée.
+- **Offres terminées masquées** : les offres dont la date d'arrivée est
+  passée n'apparaissent plus dans les listes actives.
+- **Audit Supabase complet** : 43 tables, 5 buckets et toutes les
+  politiques RLS vérifiées et alignées avec le code.
 
 ### Version 1.0.77
 
