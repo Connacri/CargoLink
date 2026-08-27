@@ -2,7 +2,7 @@ name: cargolink
 description: "Plateforme de logistique pour micro-importateurs en Algérie"
 publish_to: 'none'
 
-version: 1.0.18+150
+version: 1.0.80+210
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
