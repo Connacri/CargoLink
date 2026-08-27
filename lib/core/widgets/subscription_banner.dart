@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/models/delivery_models.dart';
 import 'subscription_pack_sheet.dart';
 
 class SubscriptionBanner extends ConsumerWidget {
@@ -53,6 +54,9 @@ class SubscriptionBanner extends ConsumerWidget {
                 'réception du paiement.',
             titleColor: Colors.amber.shade800,
             subtitleColor: Colors.amber.shade700,
+            trailing: const Icon(Icons.swap_horiz_rounded,
+                color: Colors.amber, size: 18),
+            onTap: () => _subscribe(context, ref, currentSubscription: sub),
           );
         }
         if (sub.isActive) {
@@ -72,6 +76,9 @@ class SubscriptionBanner extends ConsumerWidget {
                 '${days > 1 ? 's' : ''} — renouveler avant expiration',
             titleColor: const Color(0xFF15803D),
             subtitleColor: const Color(0xFF16A34A),
+            trailing: const Icon(Icons.swap_horiz_rounded,
+                color: Color(0xFF16A34A), size: 18),
+            onTap: () => _subscribe(context, ref, currentSubscription: sub),
           );
         }
         // Expiré / annulé
@@ -93,12 +100,17 @@ class SubscriptionBanner extends ConsumerWidget {
     );
   }
 
-  void _subscribe(BuildContext context, WidgetRef ref) {
+  void _subscribe(BuildContext context, WidgetRef ref,
+      {DeliverySubscription? currentSubscription}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => SubscriptionPackSheet(userId: userId, role: role),
+      builder: (_) => SubscriptionPackSheet(
+        userId: userId,
+        role: role,
+        currentSubscription: currentSubscription,
+      ),
     );
   }
 }

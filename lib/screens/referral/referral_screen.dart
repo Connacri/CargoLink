@@ -169,7 +169,10 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     final commissionPct = settings.valueOrNull?.referralCommissionPercent ?? 50;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Programme de parrainage')),
+      appBar: AppBar(
+        title: const Text('Programme de parrainage'),
+        actions: const [FeedbackIconButton()],
+      ),
       body: SafeArea(
         top: false,
         child: programActive.when(

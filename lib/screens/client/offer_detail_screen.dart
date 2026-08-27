@@ -23,7 +23,10 @@ class OfferDetailScreen extends ConsumerWidget {
     final shipmentAsync = ref.watch(shipmentByIdProvider(shipmentId));
 
     return Scaffold(
-        appBar: AppBar(title: const Text('Détail du vol')),
+        appBar: AppBar(
+          title: const Text('Détail du vol'),
+          actions: const [FeedbackIconButton()],
+        ),
         body: SafeArea(
           top: false,
           child: shipmentAsync.when(

@@ -113,10 +113,12 @@ class _SuperAdminDashboardScreenState
                     subtitle: 'Vue d\'ensemble de la plateforme',
                     icon: Icons.dashboard_outlined,
                     trailing: LogoutIconButton(),
+                    showFeedback: false,
                   ),
                   SliverToBoxAdapter(child: _StatsOverview()),
                   SliverToBoxAdapter(child: _ReferralSummarySection()),
                   SliverToBoxAdapter(child: _FounderWalletSection()),
+                  SliverToBoxAdapter(child: _ManagePacksSection()),
                   SliverToBoxAdapter(child: _PendingVerificationSection()),
                   SliverToBoxAdapter(child: _PendingAdsSection()),
                   SliverToBoxAdapter(child: _PendingPublicationSection()),
@@ -136,7 +138,7 @@ class _SuperAdminDashboardScreenState
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  const CompactSliverHeader(
+                  CompactSliverHeader(
                     title: 'Comptes',
                     subtitle: 'Gérer les utilisateurs',
                     icon: Icons.people_alt_outlined,
@@ -147,8 +149,8 @@ class _SuperAdminDashboardScreenState
                         LogoutIconButton(),
                       ],
                     ),
+                    showFeedback: false,
                   ),
-                  SliverToBoxAdapter(child: _buildRoleFilter()),
                   ..._buildUsersSliver(),
                   const SliverToBoxAdapter(
                     child: SizedBox(height: AppTheme.spaceXxl),
@@ -166,6 +168,7 @@ class _SuperAdminDashboardScreenState
                     subtitle: 'Paramètres et modération',
                     icon: Icons.settings_outlined,
                     trailing: LogoutIconButton(),
+                    showFeedback: false,
                   ),
                   SliverToBoxAdapter(
                     child: _SectionTitle(title: 'Modération'),
@@ -1754,6 +1757,72 @@ class _PendingSubscriptionsSection extends ConsumerWidget {
       },
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
+// ============================================================================
+// PACKS D'ABONNEMENT — accès rapide pour le fondateur
+// ============================================================================
+
+class _ManagePacksSection extends StatelessWidget {
+  const _ManagePacksSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: GlassCard(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const SubscriptionPacksScreen(),
+            ),
+          );
+        },
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.amber.shade600, Colors.orange.shade500],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.layers_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: AppTheme.spaceMd),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Packs d\'abonnement',
+                    style: AppTheme.h3,
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Créer et gérer les packs premium (durée, prix)',
+                    style: AppTheme.caption,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                color: AppTheme.textSecondaryColor),
+          ],
+        ),
+      ),
     );
   }
 }

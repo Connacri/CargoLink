@@ -279,7 +279,10 @@ class _AccountManagementScreenState
     final user = ref.watch(currentUserProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Gérer mon compte')),
+      appBar: AppBar(
+        title: const Text('Gérer mon compte'),
+        actions: const [FeedbackIconButton()],
+      ),
       body: user.when(
         data: (userData) {
           if (userData == null) {

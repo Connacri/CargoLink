@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/feedback_launcher.dart';
 import '../../core/widgets/image_viewer.dart';
 import '../../data/services/feedback_service.dart';
 import '../../providers/index.dart';
@@ -26,6 +27,7 @@ class _FeedbackInboxScreenState extends ConsumerState<FeedbackInboxScreen> {
         appBar: AppBar(
           title: const Text('Feedback utilisateurs'),
           backgroundColor: AppTheme.backgroundColor,
+          actions: const [FeedbackIconButton()],
         ),
         body: SafeArea(
           top: false,

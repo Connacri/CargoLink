@@ -27,6 +27,7 @@ class _SubscriptionPacksScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text('Packs d\'abonnement'),
+        actions: const [FeedbackIconButton()],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openForm(),

@@ -207,6 +207,7 @@ class _SubscriptionLockState extends ConsumerState<_SubscriptionLock> {
       builder: (_) => SubscriptionPackSheet(
         userId: widget.userId,
         role: widget.role,
+        currentSubscription: widget.sub,
       ),
     );
   }
@@ -296,6 +297,12 @@ class _SubscriptionLockState extends ConsumerState<_SubscriptionLock> {
                         'Vous serez notifié dès la validation.',
                         style: AppTheme.caption,
                         textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppTheme.spaceSm),
+                      TextButton.icon(
+                        onPressed: _openSheet,
+                        icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+                        label: const Text('Changer de pack'),
                       ),
                     ],
                   ],

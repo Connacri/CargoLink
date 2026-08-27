@@ -159,6 +159,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
           appBar: AppBar(
             title: const Text('Nouvelle Réservation'),
             backgroundColor: Colors.transparent,
+            actions: const [FeedbackIconButton()],
           ),
           body: Column(
             children: [

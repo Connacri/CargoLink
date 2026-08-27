@@ -30,6 +30,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Messages'),
+        actions: const [FeedbackIconButton()],
       ),
       body: SafeArea(
         top: false,

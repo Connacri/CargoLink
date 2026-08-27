@@ -244,6 +244,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ],
         ),
+        actions: const [FeedbackIconButton()],
       ),
       body: Column(
         children: [

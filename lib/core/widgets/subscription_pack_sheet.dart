@@ -6,29 +6,41 @@
 // l'utilisateur clique sur un pack, une demande d'abonnement (status 'pending')
 // est créée ; le fondateur l'approuve après réception du paiement. En l'absence
 // de pack configuré, on se rabat sur le prix/durée des platform_settings.
+//
+// Si [currentSubscription] est fourni, l'utilisateur peut changer/upgrade son
+// abonnement en sélectionnant un nouveau pack.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/models/delivery_models.dart';
 
 class SubscriptionPackSheet extends ConsumerWidget {
   const SubscriptionPackSheet({
     super.key,
     required this.userId,
     required this.role,
+    this.currentSubscription,
   });
 
   final String userId;
   final String role;
+  final DeliverySubscription? currentSubscription;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final packsAsync = ref.watch(subscriptionPacksProvider(role));
     final settingsAsync = ref.watch(platformSettingsProvider);
 
+    final hasActive = currentSubscription != null &&
+        currentSubscription!.status == 'active' &&
+        currentSubscription!.isActive;
+    final hasPending = currentSubscription != null &&
+        currentSubscription!.status == 'pending';
+
     return DraggableScrollableSheet(
-      initialChildSize: 0.7,
+      initialChildSize: hasActive || hasPending ? 0.8 : 0.7,
       minChildSize: 0.4,
       maxChildSize: 0.95,
       expand: false,
@@ -67,22 +79,42 @@ class SubscriptionPackSheet extends ConsumerWidget {
                         color: Colors.amber.shade700, size: 24),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Choisissez votre abonnement',
+                      hasActive
+                          ? 'Changer d\'abonnement'
+                          : hasPending
+                              ? 'Changer de pack en attente'
+                              : 'Choisissez votre abonnement',
                       style: AppTheme.h3,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Sélectionnez un pack. Le fondateur validera votre demande '
-                'après réception du paiement — vous recevrez le badge '
-                '« abonné » une fois approuvé.',
+              Text(
+                hasActive
+                    ? 'Votre abonnement actuel est actif. Vous pouvez '
+                        'sélectionner un nouveau pack — le fondateur '
+                        'devra le valider.'
+                    : hasPending
+                        ? 'Vous avez une demande en attente. Vous pouvez '
+                            'en créer une nouvelle avec un autre pack.'
+                        : 'Sélectionnez un pack. Le fondateur validera votre demande '
+                            'après réception du paiement — vous recevrez le badge '
+                            '« abonné » une fois approuvé.',
                 style: AppTheme.caption,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+              // ── Current subscription info ──
+              if (hasActive || hasPending) ...[
+                _CurrentSubscriptionCard(
+                  subscription: currentSubscription!,
+                  role: role,
+                ),
+                const SizedBox(height: 16),
+              ],
+              // ── Available packs ──
               packsAsync.when(
                 data: (packs) {
                   if (packs.isEmpty) {
@@ -258,6 +290,115 @@ class _PackTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Carte d'information sur l'abonnement en cours.
+class _CurrentSubscriptionCard extends StatelessWidget {
+  const _CurrentSubscriptionCard({
+    required this.subscription,
+    required this.role,
+  });
+
+  final DeliverySubscription subscription;
+  final String role;
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = subscription.status == 'active' && subscription.isActive;
+    final isPending = subscription.status == 'pending';
+    final daysLeft = subscription.daysRemaining;
+    final expiryDate = subscription.expiresAt;
+
+    final statusColor = isActive
+        ? Colors.green
+        : isPending
+            ? Colors.amber
+            : Colors.red;
+    final statusText = isActive
+        ? 'Actif'
+        : isPending
+            ? 'En attente'
+            : 'Expiré';
+    final statusIcon = isActive
+        ? Icons.verified_rounded
+        : isPending
+            ? Icons.hourglass_top_rounded
+            : Icons.cancel_rounded;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(statusIcon, color: statusColor, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  subscription.packName ??
+                      'Pack ${role == 'shipper' ? 'Expéditeur' : 'Client'}',
+                  style: AppTheme.h3.copyWith(fontSize: 14),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  statusText,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.schedule_rounded, size: 14, color: AppTheme.textSecondaryColor),
+              const SizedBox(width: 4),
+              Text(
+                isActive
+                    ? '$daysLeft jour${daysLeft > 1 ? 's' : ''} restant${daysLeft > 1 ? 's' : ''}'
+                    : isPending
+                        ? 'Durée : ${subscription.durationDays} jours'
+                        : 'Expiré',
+                style: AppTheme.caption.copyWith(fontSize: 12),
+              ),
+              const SizedBox(width: 12),
+              const Icon(Icons.event_rounded, size: 14, color: AppTheme.textSecondaryColor),
+              const SizedBox(width: 4),
+              Text(
+                'Exp. ${expiryDate.day}/${expiryDate.month}/${expiryDate.year}',
+                style: AppTheme.caption.copyWith(fontSize: 12),
+              ),
+            ],
+          ),
+          if (isActive) ...[
+            const SizedBox(height: 6),
+            Text(
+              '${subscription.price.toStringAsFixed(0)} ${subscription.currency}',
+              style: AppTheme.caption.copyWith(
+                  fontSize: 11, color: AppTheme.textSecondaryColor),
+            ),
+          ],
+        ],
       ),
     );
   }

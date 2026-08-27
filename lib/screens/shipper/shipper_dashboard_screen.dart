@@ -14,6 +14,7 @@ import '../../core/widgets/country_city_picker_field.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/notification_widgets.dart';
 import '../../core/widgets/chat_widgets.dart';
+import '../../core/widgets/subscription_pack_sheet.dart';
 import '../shared/qr_scan_screen.dart';
 import 'delivery_browse_screen.dart';
 import 'shipper_stats_detail_screen.dart';
@@ -828,51 +829,22 @@ class _ShipperDashboardScreenState
     );
   }
 
-  Future<void> _showSubscriptionSheet(double price) async {
-    final confirmed = await showDialog<bool>(
+  void _showSubscriptionSheet(double price) {
+    final userId = ref.read(authServiceProvider).currentUserId;
+    if (userId == null) return;
+    final sub = ref
+        .read(deliverySubscriptionProvider((userId: userId, role: 'shipper')))
+        .valueOrNull;
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Activer l\'abonnement'),
-        content: Text(
-          'Prix: ${price.toStringAsFixed(0)} DZD\n'
-          'Durée: 30 jours\n\n'
-          'Votre demande sera envoyée au fondateur pour validation.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Demander l\'activation'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    
-    try {
-      final userId = ref.read(authServiceProvider).currentUserId;
-      if (userId == null) throw Exception('Non authentifié');
-      final settings = ref.read(platformSettingsProvider).valueOrNull;
-      await ref.read(deliveryServiceProvider).purchaseSubscription(
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => SubscriptionPackSheet(
         userId: userId,
         role: 'shipper',
-        price: settings?.deliveryShipperSubscriptionPrice ?? 0,
-        durationDays: settings?.deliverySubscriptionDurationDays ?? 30,
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Demande envoyée au fondateur pour validation.'),
-            backgroundColor: AppTheme.warningColor,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) await showAppErrorDialog(context, message: 'Erreur: $e');
-    }
+        currentSubscription: sub,
+      ),
+    );
   }
 
   // --------------------------------------------------------------------------

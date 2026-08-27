@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'feedback_launcher.dart';
 
 /// A large gradient header used as the top of a CustomScrollView.
 ///
@@ -199,6 +200,7 @@ class CompactSliverHeader extends StatelessWidget {
     this.gradient = AppTheme.primaryGradient,
     this.expandedHeight,
     this.bottom,
+    this.showFeedback = true,
   });
 
   final String title;
@@ -208,6 +210,7 @@ class CompactSliverHeader extends StatelessWidget {
   final LinearGradient gradient;
   final double? expandedHeight;
   final PreferredSizeWidget? bottom;
+  final bool showFeedback;
 
   @override
   Widget build(BuildContext context) {
@@ -222,7 +225,10 @@ class CompactSliverHeader extends StatelessWidget {
       backgroundColor: Colors.blue,
       automaticallyImplyLeading: true,
       iconTheme: const IconThemeData(color: Colors.white),
-      actions: trailing != null ? [trailing!] : null,
+      actions: [
+        if (showFeedback) const FeedbackIconButton(),
+        if (trailing != null) trailing!,
+      ],
       bottom: bottom,
       flexibleSpace: FlexibleSpaceBar(
         collapseMode: CollapseMode.none,

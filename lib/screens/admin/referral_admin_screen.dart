@@ -156,6 +156,7 @@ class _ReferralAdminScreenState extends ConsumerState<ReferralAdminScreen>
           ],
         ),
         actions: [
+          const FeedbackIconButton(),
           IconButton(
             onPressed: _reload,
             icon: const Icon(Icons.refresh_rounded),
