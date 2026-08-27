@@ -34,6 +34,7 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
   late final TextEditingController _deliveryShipperSubPriceController;
   late final TextEditingController _deliverySubDurationController;
   String _currency = AppConstants.defaultCurrency;
+  bool _referralActive = false;
   bool _saving = false;
   bool _initialized = false;
 
@@ -79,6 +80,7 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
         'rounding_precision': _precisionController.text,
         'default_currency': _currency,
         'referral_commission_percent': _referralCommissionController.text,
+        'referral_program_active': _referralActive.toString(),
         'delivery_client_subscription_price':
             _deliveryClientSubPriceController.text,
         'delivery_shipper_subscription_price':
@@ -119,6 +121,7 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
           _currency = s.defaultCurrency;
           _referralCommissionController.text =
               s.referralCommissionPercent.toStringAsFixed(0);
+          _referralActive = s.referralProgramActive;
           _deliveryClientSubPriceController.text =
               s.deliveryClientSubscriptionPrice.toStringAsFixed(0);
           _deliveryShipperSubPriceController.text =
@@ -348,6 +351,19 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
                                   'Pourcentage de la commission plateforme reversé au parrain '
                                   'pour chaque colis livré et payé par un filleul.',
                                   style: AppTheme.caption,
+                                ),
+                                const SizedBox(height: AppTheme.spaceMd),
+                                SwitchListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: const Text('Programme actif'),
+                                  subtitle: const Text(
+                                    'Affiche/masque la section parrainage '
+                                    'dans l\'application.',
+                                    style: AppTheme.caption,
+                                  ),
+                                  value: _referralActive,
+                                  onChanged: (v) =>
+                                      setState(() => _referralActive = v),
                                 ),
                               ],
                             ),

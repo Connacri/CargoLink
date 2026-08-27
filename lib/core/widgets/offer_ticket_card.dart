@@ -13,6 +13,7 @@ class OfferTicketCard extends StatelessWidget {
   const OfferTicketCard({
     super.key,
     required this.shipperName,
+    required this.shipper,
     required this.origin,
     required this.destination,
     this.airline,
@@ -25,6 +26,7 @@ class OfferTicketCard extends StatelessWidget {
   });
 
   final String shipperName;
+  final String? shipper;
   final String origin;
   final String destination;
   final String? airline;
@@ -110,7 +112,7 @@ class OfferTicketCard extends StatelessWidget {
                     'OFFRE DE VOL',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 9,
+                      fontSize: 13,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.2,
                     ),
@@ -201,7 +203,7 @@ class OfferTicketCard extends StatelessWidget {
                 _DetailRow(
                   icon: Icons.person_rounded,
                   label: 'Expéditeur',
-                  value: shipperName,
+                  value: '$shipperName  ${shipper ?? ''}',
                 ),
                 const SizedBox(height: 6),
                 _DetailRow(
@@ -355,7 +357,7 @@ class _DetailRow extends StatelessWidget {
                 const TextStyle(fontSize: 11, color: AppTheme.textMutedColor)),
         Expanded(
           child: Text(
-            value,
+            value.toUpperCase(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.right,

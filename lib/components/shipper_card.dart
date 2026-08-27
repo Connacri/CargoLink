@@ -1,3 +1,5 @@
+import 'package:airport_data/airport_data.dart';
+import 'package:country_flags/country_flags.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../core/theme/app_theme.dart';
@@ -29,6 +31,23 @@ String _iataCode(String airport) {
 /// Renvoie le nom complet d'un aéroport (sans le code IATA entre parenthèses).
 String _airportName(String airport) {
   return airport.replaceAll(RegExp(r'\s*\([A-Za-z]{3}\)\s*$'), '').trim();
+}
+
+/// Résout le code pays (2 lettres, ex : « DZ ») correspondant à un libellé
+/// d'aéroport du type « Aéroport d'Alger (ALG) » via la base `airport_data`.
+/// Renvoie null lorsque le libellé n'est pas un aéroport reconnu (ex : une
+/// simple ville) afin d'afficher le drapeau en toute sécurité.
+String? _countryCodeOfAirport(String airport) {
+  final iata = _iataCode(airport);
+  if (!RegExp(r'^[A-Za-z]{3}$').hasMatch(iata)) return null;
+  try {
+    for (final a in AirportData.getAirportByIata(iata.toUpperCase())) {
+      if (a.countryCode.isNotEmpty) return a.countryCode.toUpperCase();
+    }
+  } catch (_) {
+    return null;
+  }
+  return null;
 }
 
 class ShipperCard extends StatefulWidget {
@@ -707,6 +726,8 @@ class _AirportCard extends StatelessWidget {
     final primary = theme.colorScheme.primary;
     final iata = _iataCode(code);
     final name = _airportName(code);
+    final cc = _countryCodeOfAirport(code) ?? '';
+    final showFlag = cc.length == 2;
 
     return Container(
       width: double.infinity,
@@ -729,18 +750,40 @@ class _AirportCard extends StatelessWidget {
         crossAxisAlignment: alignment,
         children: [
           // --------------------------------------------------------------
-          // CODE IATA (3 lettres) en grand
+          // CODE IATA (3 lettres) en grand + drapeau du pays
           // --------------------------------------------------------------
-          Text(
-            iata,
-            textAlign: textAlign,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.2,
-              fontSize: 26,
-            ),
+          Row(
+            mainAxisAlignment: switch (alignment) {
+              CrossAxisAlignment.end => MainAxisAlignment.end,
+              CrossAxisAlignment.center => MainAxisAlignment.center,
+              _ => MainAxisAlignment.start,
+            },
+            children: [
+              if (showFlag) ...[
+                CountryFlag.fromCountryCode(
+                  cc,
+                  theme: const ImageTheme(
+                    width: 22,
+                    height: 16,
+                    shape: RoundedRectangle(3),
+                  ),
+                ),
+                const SizedBox(width: 6),
+              ],
+              Flexible(
+                child: Text(
+                  iata,
+                  textAlign: textAlign,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                    fontSize: 26,
+                  ),
+                ),
+              ),
+            ],
           ),
 
           // --------------------------------------------------------------

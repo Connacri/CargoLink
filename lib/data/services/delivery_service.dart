@@ -402,12 +402,13 @@ class DeliveryService {
     }
   }
 
-  /// Purchase a delivery subscription.
+  /// Purchase a delivery subscription from a chosen pack.
   Future<DeliverySubscription?> purchaseSubscription({
     required String userId,
     required String role,
     required double price,
     required int durationDays,
+    String? packName,
   }) async {
     try {
       _logger.i('Purchasing delivery subscription for $role');
@@ -423,6 +424,8 @@ class DeliveryService {
             'price': price,
             'currency': 'DZD',
             'status': 'pending',
+            'pack_name': packName,
+            'duration_days': durationDays,
             'starts_at': now.toIso8601String(),
             'expires_at': expiresAt.toIso8601String(),
           })
@@ -459,13 +462,26 @@ class DeliveryService {
   /// Approve a subscription (set status to 'active' with proper expiry).
   Future<void> approveSubscription(String subscriptionId) async {
     try {
-      final now = DateTime.now();
-      final settings = await _supabase
-          .from('platform_settings')
-          .select('value')
-          .eq('key', 'delivery_subscription_duration_days')
+      final row = await _supabase
+          .from('delivery_subscriptions')
+          .select('duration_days')
+          .eq('id', subscriptionId)
           .maybeSingle();
-      final days = int.tryParse(settings?['value'] ?? '') ?? 30;
+
+      int days;
+      final storedDays = row?['duration_days'];
+      if (storedDays is num && storedDays.toInt() > 0) {
+        days = storedDays.toInt();
+      } else {
+        final settings = await _supabase
+            .from('platform_settings')
+            .select('value')
+            .eq('key', 'delivery_subscription_duration_days')
+            .maybeSingle();
+        days = int.tryParse(settings?['value'] ?? '') ?? 30;
+      }
+
+      final now = DateTime.now();
       await _supabase.from('delivery_subscriptions').update({
         'status': 'active',
         'starts_at': now.toIso8601String(),
@@ -487,5 +503,92 @@ class DeliveryService {
       _logger.e('Error cancelling subscription: $e');
       rethrow;
     }
+  }
+
+  // ============================================================================
+  // SUBSCRIPTION PACKS (configured by the founder)
+  // ============================================================================
+
+  /// Active packs for a role displayed to users choosing a subscription.
+  Future<List<SubscriptionPack>> getPacks(String role) async {
+    try {
+      final response = await _supabase
+          .from('subscription_packs')
+          .select()
+          .eq('role', role)
+          .eq('active', true)
+          .order('price', ascending: true);
+      return (response as List)
+          .map((r) => SubscriptionPack.fromJson(r))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting packs: $e');
+      return [];
+    }
+  }
+
+  /// All packs including inactive (founder management view).
+  Future<List<SubscriptionPack>> getAllPacks({String? role}) async {
+    try {
+      PostgrestFilterBuilder query =
+          _supabase.from('subscription_packs').select();
+      if (role != null) query = query.eq('role', role);
+      final response = await query.order('created_at', ascending: true);
+      return (response as List)
+          .map((r) => SubscriptionPack.fromJson(r))
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting all packs: $e');
+      return [];
+    }
+  }
+
+  /// Create a subscription pack (founder, via form).
+  Future<void> createPack({
+    required String name,
+    required String role,
+    required int durationDays,
+    required double price,
+    required String currency,
+  }) async {
+    await _supabase.from('subscription_packs').insert({
+      'id': const Uuid().v4(),
+      'name': name,
+      'role': role,
+      'duration_days': durationDays,
+      'price': price,
+      'currency': currency,
+      'active': true,
+    });
+  }
+
+  /// Update a subscription pack (founder, via form).
+  Future<void> updatePack(
+    String packId, {
+    required String name,
+    required String role,
+    required int durationDays,
+    required double price,
+    required String currency,
+  }) async {
+    await _supabase.from('subscription_packs').update({
+      'name': name,
+      'role': role,
+      'duration_days': durationDays,
+      'price': price,
+      'currency': currency,
+    }).eq('id', packId);
+  }
+
+  /// Toggle a pack active/inactive (founder).
+  Future<void> togglePack(String packId, bool active) async {
+    await _supabase.from('subscription_packs').update({
+      'active': active,
+    }).eq('id', packId);
+  }
+
+  /// Delete a pack (founder).
+  Future<void> deletePack(String packId) async {
+    await _supabase.from('subscription_packs').delete().eq('id', packId);
   }
 }

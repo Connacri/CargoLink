@@ -280,6 +280,8 @@ class DeliverySubscription {
   final double price;
   final String currency;
   final String status;
+  final String? packName;
+  final int? durationDays;
   final DateTime startsAt;
   final DateTime expiresAt;
   final DateTime createdAt;
@@ -291,6 +293,8 @@ class DeliverySubscription {
     required this.price,
     this.currency = 'DZD',
     required this.status,
+    this.packName,
+    this.durationDays,
     required this.startsAt,
     required this.expiresAt,
     required this.createdAt,
@@ -304,6 +308,8 @@ class DeliverySubscription {
       price: (json['price'] as num).toDouble(),
       currency: json['currency'] as String? ?? 'DZD',
       status: json['status'] as String? ?? 'active',
+      packName: json['pack_name'] as String?,
+      durationDays: (json['duration_days'] as num?)?.toInt(),
       startsAt: DateTime.tryParse(json['starts_at'] as String? ?? '') ?? DateTime.now(),
       expiresAt:
           DateTime.tryParse(json['expires_at'] as String? ?? '') ?? DateTime.now(),
@@ -320,6 +326,8 @@ class DeliverySubscription {
       'price': price,
       'currency': currency,
       'status': status,
+      'pack_name': packName,
+      'duration_days': durationDays,
       'starts_at': startsAt.toIso8601String(),
       'expires_at': expiresAt.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
@@ -329,4 +337,58 @@ class DeliverySubscription {
   bool get isActive => status == 'active' && expiresAt.isAfter(DateTime.now());
   bool get isExpired => status == 'expired' || expiresAt.isBefore(DateTime.now());
   bool get isCancelled => status == 'cancelled';
+
+  /// Nombre de jours restants avant expiration (arrondi supérieur).
+  int get daysRemaining {
+    if (!isActive) return 0;
+    return expiresAt.difference(DateTime.now()).inDays.ceil().clamp(0, 9999);
+  }
+}
+
+// ============================================================================
+// SUBSCRIPTION PACK MODEL
+// ============================================================================
+
+class SubscriptionPack {
+  final String id;
+  final String name;
+  final String role;
+  final int durationDays;
+  final double price;
+  final String currency;
+  final bool active;
+
+  SubscriptionPack({
+    required this.id,
+    required this.name,
+    required this.role,
+    required this.durationDays,
+    required this.price,
+    this.currency = 'DZD',
+    required this.active,
+  });
+
+  factory SubscriptionPack.fromJson(Map<String, dynamic> json) {
+    return SubscriptionPack(
+      id: json['id'] as String,
+      name: json['name'] as String? ?? '',
+      role: json['role'] as String? ?? 'shipper',
+      durationDays: (json['duration_days'] as num?)?.toInt() ?? 30,
+      price: (json['price'] as num?)?.toDouble() ?? 0,
+      currency: json['currency'] as String? ?? 'DZD',
+      active: json['active'] as bool? ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'role': role,
+      'duration_days': durationDays,
+      'price': price,
+      'currency': currency,
+      'active': active,
+    };
+  }
 }

@@ -10,6 +10,7 @@ import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../data/models/delivery_models.dart';
 import '../../providers/index.dart';
+import '../../core/widgets/subscription_pack_sheet.dart';
 
 class DeliveryBrowseScreen extends ConsumerStatefulWidget {
   const DeliveryBrowseScreen({super.key});
@@ -29,6 +30,25 @@ class _DeliveryBrowseScreenState extends ConsumerState<DeliveryBrowseScreen> {
       destinationCity: _destinationFilter,
       originCountry: _originFilter,
     )));
+
+    final user = ref.watch(currentUserProvider).valueOrNull;
+    final sub = user == null
+        ? null
+        : ref
+            .watch(deliverySubscriptionProvider(
+                (userId: user.id, role: 'shipper')))
+            .valueOrNull;
+
+    final canBrowse =
+        sub != null && sub.status == 'active' && sub.isActive;
+
+    if (!canBrowse) {
+      return _SubscriptionLock(
+        userId: user?.id ?? '',
+        role: 'shipper',
+        sub: sub,
+      );
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -149,6 +169,139 @@ class _DeliveryBrowseScreenState extends ConsumerState<DeliveryBrowseScreen> {
             ),
             const SliverToBoxAdapter(
                 child: SizedBox(height: AppTheme.spaceXxl)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// VERROU D'ABONNEMENT
+// ============================================================================
+
+/// Écran affiché quand l'expéditeur n'a pas d'abonnement actif validé par le
+/// fondateur : il ne peut pas visualiser/répondre aux demandes de livraison.
+class _SubscriptionLock extends ConsumerStatefulWidget {
+  const _SubscriptionLock({
+    required this.userId,
+    required this.role,
+    required this.sub,
+  });
+
+  final String userId;
+  final String role;
+  final DeliverySubscription? sub;
+
+  @override
+  ConsumerState<_SubscriptionLock> createState() =>
+      _SubscriptionLockState();
+}
+
+class _SubscriptionLockState extends ConsumerState<_SubscriptionLock> {
+  void _openSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => SubscriptionPackSheet(
+        userId: widget.userId,
+        role: widget.role,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pending = widget.sub?.status == 'pending';
+    final expired = widget.sub != null && !widget.sub!.isActive;
+    final icon = pending
+        ? Icons.hourglass_top_rounded
+        : Icons.lock_clock_outlined;
+    final title = pending
+        ? 'Validation en attente'
+        : expired
+            ? 'Abonnement expiré'
+            : 'Vous n\'êtes pas abonné';
+    final message = pending
+        ? 'Le fondateur doit approuver votre abonnement avant de visualiser '
+            'les demandes de livraison.'
+        : 'Pour visualiser les demandes de livraison des autres utilisateurs '
+            'et accepter leurs demandes, souscrivez à un pack '
+            'd\'abonnement.';
+
+    return Scaffold(
+      body: SafeArea(
+        top: false,
+        child: CustomScrollView(
+          slivers: [
+            const CompactSliverHeader(
+              title: 'Demandes ouvertes',
+              subtitle: 'Trouvez des colis à livrer',
+              icon: Icons.search_rounded,
+              expandedHeight: 140,
+            ),
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: const EdgeInsets.all(AppTheme.spaceXl),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 84,
+                      height: 84,
+                      decoration: BoxDecoration(
+                        color: pending
+                            ? Colors.amber.shade50
+                            : AppTheme.surfaceColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: pending
+                              ? Colors.amber.shade200
+                              : AppTheme.textSecondaryColor
+                                  .withValues(alpha: 0.15),
+                        ),
+                      ),
+                      child: Icon(
+                        icon,
+                        size: 40,
+                        color: pending
+                            ? Colors.amber.shade700
+                            : AppTheme.textSecondaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: AppTheme.spaceLg),
+                    Text(title, style: AppTheme.h2, textAlign: TextAlign.center),
+                    const SizedBox(height: AppTheme.spaceSm),
+                    Text(
+                      message,
+                      style: AppTheme.body,
+                      textAlign: TextAlign.center,
+                    ),
+                    if (!pending) ...[
+                      const SizedBox(height: AppTheme.spaceLg),
+                      FilledButton.icon(
+                        onPressed: _openSheet,
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(52),
+                        ),
+                        icon: const Icon(Icons.card_membership_rounded),
+                        label: const Text('S\'abonner'),
+                      ),
+                    ],
+                    if (pending) ...[
+                      const SizedBox(height: AppTheme.spaceLg),
+                      const Text(
+                        'Vous serez notifié dès la validation.',
+                        style: AppTheme.caption,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),

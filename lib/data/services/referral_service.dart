@@ -470,7 +470,14 @@ class ReferralService {
           .from('users')
           .select('full_name')
           .eq('id', parrainId)
-          .single();
+          .maybeSingle();
+
+      final parrainName =
+          (parrain?['full_name'] as String?)?.trim();
+      final displayName =
+          parrainName != null && parrainName.isNotEmpty
+              ? parrainName
+              : 'Un parrain';
 
       for (final admin in admins as List) {
         await _supabase.from('notifications').insert({
@@ -478,7 +485,7 @@ class ReferralService {
           'type': 'payout_request',
           'title': 'Demande de paiement parrain',
           'message':
-              '${parrain['full_name']} demande le paiement de '
+              '$displayName demande le paiement de '
               '${amount.toStringAsFixed(0)} DZD de gains parrainage.',
           'related_booking_id': null,
         });

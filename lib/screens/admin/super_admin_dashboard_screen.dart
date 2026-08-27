@@ -19,6 +19,7 @@ import 'inventory_screen.dart';
 import 'ads_screen.dart';
 import 'referral_admin_screen.dart';
 import 'subscription_management_screen.dart';
+import 'subscription_packs_screen.dart';
 import 'shipper_type_finance_screen.dart';
 
 /// Founder (super_admin) dashboard — accès total et contrôle de la plateforme :
@@ -1866,6 +1867,21 @@ class _SubscriptionSection extends ConsumerWidget {
               ),
               loading: () => const SizedBox.shrink(),
               error: (_, __) => const SizedBox.shrink(),
+            ),
+            // Gestion des packs (créés via form)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const SubscriptionPacksScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.layers_rounded, size: 18),
+                label: const Text('Gérer les packs d\'abonnement'),
+              ),
             ),
             // Liste des abonnements
             subsAsync.when(

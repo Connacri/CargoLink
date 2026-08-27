@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
@@ -87,6 +91,131 @@ class _AccountManagementScreenState
     }
   }
 
+  Future<void> _exportData() async {
+    try {
+      final data =
+          await ref.read(authServiceProvider).generateDataExport();
+      final json = const JsonEncoder.withIndent('  ').convert(data);
+      final bytes = utf8.encode(json);
+      final fileName =
+          'cargolink-donnees-${DateTime.now().toIso8601String().substring(0, 10)}.json';
+      final file = XFile.fromData(
+        Uint8List.fromList(bytes),
+        name: fileName,
+        mimeType: 'application/json',
+      );
+      await Share.shareXFiles([file],
+          text: 'Mes données CargoLink (RGPD)');
+    } catch (e) {
+      if (mounted) {
+        await showAppErrorDialog(context, message: 'Erreur: $e');
+      }
+    }
+  }
+
+  Future<void> _changePassword() async {
+    final formKey = GlobalKey<FormState>();
+    final currentCtrl = TextEditingController();
+    final newCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    var saving = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Changer le mot de passe'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: currentCtrl,
+                    obscureText: true,
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Mot de passe actuel',
+                      prefixIcon: Icon(Icons.lock_outline_rounded),
+                    ),
+                    validator: (v) =>
+                        (v == null || v.isEmpty) ? 'Requis' : null,
+                  ),
+                  const SizedBox(height: AppTheme.spaceMd),
+                  TextFormField(
+                    controller: newCtrl,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Nouveau mot de passe',
+                      prefixIcon: Icon(Icons.lock_reset_rounded),
+                    ),
+                    validator: (v) => (v == null || v.length < 6)
+                        ? '6 caractères minimum'
+                        : null,
+                  ),
+                  const SizedBox(height: AppTheme.spaceMd),
+                  TextFormField(
+                    controller: confirmCtrl,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Confirmer le nouveau mot de passe',
+                      prefixIcon: Icon(Icons.verified_user_outlined),
+                    ),
+                    validator: (v) =>
+                        (v != newCtrl.text) ? 'Les mots de passe diffèrent' : null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: saving
+                  ? null
+                  : () => Navigator.of(context).pop(),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: saving
+                  ? null
+                  : () async {
+                      if (!(formKey.currentState?.validate() ?? false)) return;
+                      setDialogState(() => saving = true);
+                      try {
+                        await ref.read(authServiceProvider).changePassword(
+                              currentPassword: currentCtrl.text,
+                              newPassword: newCtrl.text,
+                            );
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Mot de passe mis à jour')),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          setDialogState(() => saving = false);
+                          await showAppErrorDialog(
+                              context, message: 'Erreur: $e');
+                        }
+                      }
+                    },
+              child: saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Mettre à jour'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   String _roleLabel(String role) {
     switch (role) {
       case 'client':
@@ -101,7 +230,6 @@ class _AccountManagementScreenState
         return role;
     }
   }
-
   Widget _buildSection({
     required IconData icon,
     required String title,
@@ -191,12 +319,7 @@ class _AccountManagementScreenState
                         color: AppTheme.primaryColor),
                     title: const Text('Changer le mot de passe'),
                     trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Fonctionnalité à venir')),
-                      );
-                    },
+                    onTap: _changePassword,
                   ),
                 ],
               ),
@@ -216,12 +339,7 @@ class _AccountManagementScreenState
                       style: AppTheme.caption,
                     ),
                     trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Fonctionnalité à venir')),
-                      );
-                    },
+                    onTap: _exportData,
                   ),
                 ],
               ),

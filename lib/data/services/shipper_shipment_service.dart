@@ -327,6 +327,7 @@ class ShipmentService {
     required String shipperId,
     required String originCountry,
     required String destinationCity,
+    String? arrivalAirport,
     required double availableWeightKg,
     required double pricePerKg,
     required DateTime departureDate,
@@ -347,6 +348,7 @@ class ShipmentService {
             'shipper_id': shipperId,
             'origin_country': originCountry,
             'destination_city': destinationCity,
+            'arrival_airport': arrivalAirport,
             'available_weight_kg': availableWeightKg,
             'reserved_weight_kg': 0,
             'price_per_kg': pricePerKg,
@@ -529,6 +531,14 @@ class ShipmentService {
     return (rows as List).map((r) => r['id'] as String).toList();
   }
 
+  /// Clause `or` PostgREST qui ne garde que les offres dont l'arrivée n'est
+  /// pas encore dépassée (à l'instant T) — alignée sur `Shipment.isActive`.
+  /// Les offres avec `arrival_date` null (vol non daté) restent affichées.
+  static String _notYetFlownOrArrivedClause() {
+    final now = DateTime.now().toUtc().toIso8601String();
+    return 'arrival_date.is.null,arrival_date.gte.$now';
+  }
+
   /// Get active shipments with filters. Only offers whose publication fee was
   /// confirmed by the founder (publication_fee_status = 'paid') are shown to
   /// clients.
@@ -553,7 +563,10 @@ class ShipmentService {
           .select('*, shippers(*, users!shippers_user_id_fkey(*))')
           .eq('status', 'active')
           .eq('publication_fee_status', 'paid')
-          .gt('available_weight_kg', 0);
+          .gt('available_weight_kg', 0)
+          // Exclut les offres « terminées » : arrivée déjà dépassée pour les
+          // vols, ou vol déjà parti pour les expéditions sans date d'arrivée.
+          .or(_notYetFlownOrArrivedClause());
 
       if (destinationCity != null) {
         query = query.ilike('destination_city', '%$destinationCity%');
@@ -693,7 +706,8 @@ class ShipmentService {
           // Même filtre que getActiveShipments : une offre dont le paiement
           // Visa n'a pas été confirmé par le fondateur ne doit pas fuiter
           // dans les résultats de recherche.
-          .eq('publication_fee_status', 'paid');
+          .eq('publication_fee_status', 'paid')
+          .or(_notYetFlownOrArrivedClause());
 
       if (shipperIds != null) {
         searchQuery = searchQuery.inFilter('shipper_id', shipperIds);

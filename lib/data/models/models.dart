@@ -236,6 +236,7 @@ class Shipment {
   final int maxHopCount;
   final String originCountry;
   final String destinationCity;
+  final String? arrivalAirport;
   final double availableWeightKg;
   final double reservedWeightKg;
   final double pricePerKg;
@@ -269,6 +270,7 @@ class Shipment {
     this.maxHopCount = 5,
     required this.originCountry,
     required this.destinationCity,
+    this.arrivalAirport,
     required this.availableWeightKg,
     required this.reservedWeightKg,
     required this.pricePerKg,
@@ -296,6 +298,7 @@ class Shipment {
       maxHopCount: (json['max_hop_count'] as num?)?.toInt() ?? 5,
       originCountry: json['origin_country'] as String,
       destinationCity: json['destination_city'] as String,
+      arrivalAirport: json['arrival_airport'] as String?,
       availableWeightKg: (json['available_weight_kg'] as num).toDouble(),
       reservedWeightKg: (json['reserved_weight_kg'] as num? ?? 0).toDouble(),
       pricePerKg: (json['price_per_kg'] as num).toDouble(),
@@ -331,6 +334,7 @@ class Shipment {
       'max_hop_count': maxHopCount,
       'origin_country': originCountry,
       'destination_city': destinationCity,
+      'arrival_airport': arrivalAirport,
       'available_weight_kg': availableWeightKg,
       'reserved_weight_kg': reservedWeightKg,
       'price_per_kg': pricePerKg,

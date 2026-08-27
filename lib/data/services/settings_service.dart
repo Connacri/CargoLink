@@ -29,6 +29,10 @@ class PlatformSettings {
   /// `apply_referral_on_booking_delivery` (table `referral_earnings`).
   final double referralCommissionPercent;
 
+  /// Le programme de parrainage est-il actif ? Lorsqu'il est désactivé, la
+  /// section parrainage est masquée dans l'app (même si un code existe).
+  final bool referralProgramActive;
+
   /// Prix de l'abonnement « Demande de Livraison » pour le client (DZD).
   final double deliveryClientSubscriptionPrice;
 
@@ -48,6 +52,7 @@ class PlatformSettings {
     this.adCustomFixedPrice = 0.0,
     this.adCustomVariablePrice = 0.0,
     this.referralCommissionPercent = 50.0,
+    this.referralProgramActive = false,
     this.deliveryClientSubscriptionPrice = 0.0,
     this.deliveryShipperSubscriptionPrice = 0.0,
     this.deliverySubscriptionDurationDays = 30,
@@ -63,6 +68,7 @@ class PlatformSettings {
     'ad_custom_fixed_price',
     'ad_custom_variable_price',
     'referral_commission_percent',
+    'referral_program_active',
     'delivery_client_subscription_price',
     'delivery_shipper_subscription_price',
     'delivery_subscription_duration_days',
@@ -82,6 +88,13 @@ class PlatformSettings {
     double d(String key, double fallback) =>
         double.tryParse(map[key] ?? '') ?? fallback;
     int i(String key, int fallback) => int.tryParse(map[key] ?? '') ?? fallback;
+    bool b(String key, bool fallback) {
+      final raw = map[key]?.trim().toLowerCase();
+      if (raw == 'true' || raw == '1') return true;
+      if (raw == 'false' || raw == '0') return false;
+      return fallback;
+    }
+
     return PlatformSettings(
       commissionPercent: d('platform_commission_percent', 5.0),
       minPricePerKg: d('min_price_per_kg', 500.0),
@@ -92,6 +105,7 @@ class PlatformSettings {
       adCustomFixedPrice: d('ad_custom_fixed_price', 0.0),
       adCustomVariablePrice: d('ad_custom_variable_price', 0.0),
       referralCommissionPercent: d('referral_commission_percent', 50.0),
+      referralProgramActive: b('referral_program_active', false),
       deliveryClientSubscriptionPrice:
           d('delivery_client_subscription_price', 0.0),
       deliveryShipperSubscriptionPrice:
@@ -113,6 +127,7 @@ class PlatformSettings {
       'ad_custom_fixed_price': adCustomFixedPrice.toString(),
       'ad_custom_variable_price': adCustomVariablePrice.toString(),
       'referral_commission_percent': referralCommissionPercent.toString(),
+      'referral_program_active': referralProgramActive.toString(),
       'delivery_client_subscription_price':
           deliveryClientSubscriptionPrice.toString(),
       'delivery_shipper_subscription_price':

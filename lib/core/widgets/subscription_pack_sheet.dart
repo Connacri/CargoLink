@@ -1,0 +1,333 @@
+// ============================================================================
+// CHOIX D'ABONNEMENT — feuille partagée (client & expéditeur)
+// ============================================================================
+//
+// Affiche les packs d'abonnement actifs configurés par le fondateur. Quand
+// l'utilisateur clique sur un pack, une demande d'abonnement (status 'pending')
+// est créée ; le fondateur l'approuve après réception du paiement. En l'absence
+// de pack configuré, on se rabat sur le prix/durée des platform_settings.
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/index.dart';
+import '../../core/theme/app_theme.dart';
+
+class SubscriptionPackSheet extends ConsumerWidget {
+  const SubscriptionPackSheet({
+    super.key,
+    required this.userId,
+    required this.role,
+  });
+
+  final String userId;
+  final String role;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final packsAsync = ref.watch(subscriptionPacksProvider(role));
+    final settingsAsync = ref.watch(platformSettingsProvider);
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (ctx, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: ListView(
+            controller: scrollCtrl,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            children: [
+              const SizedBox(height: 12),
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.textSecondaryColor.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.card_membership_rounded,
+                        color: Colors.amber.shade700, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Choisissez votre abonnement',
+                      style: AppTheme.h3,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Sélectionnez un pack. Le fondateur validera votre demande '
+                'après réception du paiement — vous recevrez le badge '
+                '« abonné » une fois approuvé.',
+                style: AppTheme.caption,
+              ),
+              const SizedBox(height: 20),
+              packsAsync.when(
+                data: (packs) {
+                  if (packs.isEmpty) {
+                    return _FallbackPack(
+                      role: role,
+                      userId: userId,
+                      settingsAsync: settingsAsync,
+                      title:
+                          'Abonnement ${role == 'shipper' ? 'Expéditeur' : 'Client'}',
+                    );
+                  }
+                  return Column(
+                    children: [
+                      for (final pack in packs)
+                        _PackTile(
+                          key: ValueKey(pack.id),
+                          name: pack.name,
+                          durationDays: pack.durationDays,
+                          price: pack.price,
+                          currency: pack.currency,
+                          roleIcon: role == 'shipper'
+                              ? Icons.local_shipping_rounded
+                              : Icons.person_rounded,
+                          onTap: () => _purchase(
+                              ref, context, pack.durationDays, pack.price,
+                              packName: pack.name),
+                        ),
+                    ],
+                  );
+                },
+                loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (_, __) => _FallbackPack(
+                  role: role,
+                  userId: userId,
+                  settingsAsync: settingsAsync,
+                  title: 'Abonnement',
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _purchase(
+    WidgetRef ref,
+    BuildContext context,
+    int durationDays,
+    double price, {
+    String? packName,
+  }) async {
+    try {
+      await ref.read(deliveryServiceProvider).purchaseSubscription(
+            userId: userId,
+            role: role,
+            price: price,
+            durationDays: durationDays,
+            packName: packName,
+          );
+      ref.invalidate(deliverySubscriptionProvider((userId: userId, role: role)));
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+            'Demande envoyée — validation par le fondateur en attente',
+          )),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e')),
+        );
+      }
+    }
+  }
+}
+
+/// Carte d'un pack (nom, durée, prix) cliquable.
+class _PackTile extends StatelessWidget {
+  const _PackTile({
+    super.key,
+    required this.name,
+    required this.durationDays,
+    required this.price,
+    required this.currency,
+    required this.roleIcon,
+    required this.onTap,
+  });
+
+  final String name;
+  final int durationDays;
+  final double price;
+  final String currency;
+  final IconData roleIcon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.amber.shade600, Colors.orange.shade500],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: AppTheme.shadowMd,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(roleIcon, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        const Icon(Icons.schedule_rounded,
+                            color: Colors.white70, size: 15),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$durationDays jours',
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 12.5),
+                        ),
+                        const SizedBox(width: 10),
+                        const Icon(Icons.payments_rounded,
+                            color: Colors.white70, size: 15),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${price.toStringAsFixed(0)} $currency',
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 12.5),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.check_circle_outline_rounded,
+                  color: Colors.white),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Repli si aucun pack n'est configuré : prix/durée depuis les réglages.
+class _FallbackPack extends ConsumerWidget {
+  const _FallbackPack({
+    required this.role,
+    required this.userId,
+    required this.settingsAsync,
+    required this.title,
+  });
+
+  final String role;
+  final String userId;
+  final AsyncValue settingsAsync;
+  final String title;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final priceAsync = settingsAsync.when(
+      data: (s) => role == 'shipper'
+          ? s.deliveryShipperSubscriptionPrice
+          : s.deliveryClientSubscriptionPrice,
+      loading: () => 0.0,
+      error: (_, __) => 0.0,
+    );
+    final daysAsync = settingsAsync.when(
+      data: (s) => s.deliverySubscriptionDurationDays,
+      loading: () => 0,
+      error: (_, __) => 0,
+    );
+    return _PackTile(
+      name: title,
+      durationDays: daysAsync,
+      price: priceAsync,
+      currency: 'DZD',
+      roleIcon:
+          role == 'shipper' ? Icons.local_shipping_rounded : Icons.person_rounded,
+      onTap: () {
+        if (priceAsync <= 0 || daysAsync <= 0) return;
+        ref
+            .read(deliveryServiceProvider)
+            .purchaseSubscription(
+              userId: userId,
+              role: role,
+              price: priceAsync,
+              durationDays: daysAsync,
+            )
+            .then((_) {
+          ref.invalidate(
+              deliverySubscriptionProvider((userId: userId, role: role)));
+          if (context.mounted) {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text(
+                'Demande envoyée — validation par le fondateur en attente',
+              )),
+            );
+          }
+        }).catchError((e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erreur : $e')),
+            );
+          }
+        });
+      },
+    );
+  }
+}

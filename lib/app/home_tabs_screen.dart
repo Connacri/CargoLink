@@ -11,6 +11,8 @@ import '../screens/client/my_parcels_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/shipper/shipper_dashboard_screen.dart';
 import '../screens/shipper/shipper_finance_screen.dart';
+import '../core/widgets/subscription_banner.dart';
+import '../data/models/models.dart';
 import 'app_widgets.dart';
 
 // ============================================================================
@@ -90,14 +92,15 @@ class _HomeTabsScreenState extends ConsumerState<HomeTabsScreen> {
   ) {
     // Borne défensive : 4 onglets client (0..3).
     final index = navIndex.clamp(0, 3);
+    final user = ref.watch(currentUserProvider).valueOrNull;
     return Scaffold(
       body: IndexedStack(
         index: index,
-        children: const [
-          ClientHomeScreen(),
-          MyParcelsScreen(),
-          MyOrdersScreen(),
-          ProfileScreen(),
+        children: [
+          _withBanner(const ClientHomeScreen(), user),
+          _withBanner(const MyParcelsScreen(), user),
+          _withBanner(const MyOrdersScreen(), user),
+          _withBanner(const ProfileScreen(), user),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -135,14 +138,15 @@ class _HomeTabsScreenState extends ConsumerState<HomeTabsScreen> {
   ) {
     // Borne défensive : 4 onglets expéditeur (0..3).
     final index = navIndex.clamp(0, 3);
+    final user = ref.watch(currentUserProvider).valueOrNull;
     return Scaffold(
       body: IndexedStack(
         index: index,
-        children: const [
-          ShipperDashboardScreen(),
-          ActiveShipmentsScreen(),
-          ShipperFinanceScreen(),
-          ProfileScreen(),
+        children: [
+          _withBanner(const ShipperDashboardScreen(), user),
+          _withBanner(const ActiveShipmentsScreen(), user),
+          _withBanner(const ShipperFinanceScreen(), user),
+          _withBanner(const ProfileScreen(), user),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -176,6 +180,19 @@ class _HomeTabsScreenState extends ConsumerState<HomeTabsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Enveloppe l'écran d'un onglet avec le bandeau d'abonnement en haut.
+  Widget _withBanner(Widget child, User? user) {
+    final id = user?.id;
+    final role = user?.role;
+    if (id == null || role == null) return child;
+    return Column(
+      children: [
+        SubscriptionBanner(userId: id, role: role),
+        Expanded(child: child),
+      ],
     );
   }
 }

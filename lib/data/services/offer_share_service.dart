@@ -15,8 +15,7 @@ import '../models/models.dart';
 /// non-inscrits) + lien deep link pour ouverture directe dans l'app.
 class OfferShareService {
   static const _deepLinkScheme = 'cargolink';
-  static const _webBaseUrl =
-      'https://connacri.github.io/CargoLink/offer.html';
+  static const _webBaseUrl = 'https://connacri.github.io/CargoLink/offer.html';
   static const _playStoreUrl =
       'https://play.google.com/store/apps/details?id=com.cargolink.dz.cargolink';
 
@@ -25,8 +24,7 @@ class OfferShareService {
       '$_deepLinkScheme://offer/$shipmentId';
 
   /// Lien web fallback (accessible aux non-inscrits, ouvre la page de partage).
-  static String webLinkFor(String shipmentId) =>
-      '$_webBaseUrl?id=$shipmentId';
+  static String webLinkFor(String shipmentId) => '$_webBaseUrl?id=$shipmentId';
 
   Future<void> shareOffer(BuildContext context, Shipment shipment) async {
     final shipper = shipment.shipper;
@@ -39,16 +37,18 @@ class OfferShareService {
         airline: shipment.airline,
         flightNumber: shipment.flightNumber,
         departureDate: shipment.departureDate,
-        arrivalDate: shipment.arrivalDate ?? shipment.departureDate.add(const Duration(days: 1)),
+        arrivalDate: shipment.arrivalDate ??
+            shipment.departureDate.add(const Duration(days: 1)),
         pricePerKg: shipment.pricePerKg,
         availableKg: shipment.remainingWeightKg,
         currency: AppConstants.defaultCurrency,
+        shipper: shipper?.user?.phone,
       ),
     );
 
     final webUrl = webLinkFor(shipment.id);
     final text = '✈️ ${shipment.originCountry} → ${shipment.destinationCity} '
-       'à partir de ${shipment.pricePerKg.toStringAsFixed(0)} '
+        'à partir de ${shipment.pricePerKg.toStringAsFixed(0)} '
         '${AppConstants.defaultCurrency}/kg avec CargoLink !\n'
         'Voir l\'offre : $webUrl\n'
         'Télécharger l\'app : $_playStoreUrl';

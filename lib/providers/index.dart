@@ -926,6 +926,18 @@ final pendingSubscriptionsCountProvider =
   return subs.length;
 });
 
+/// Packs d'abonnement actifs disponibles pour un rôle (choix de l'utilisateur).
+final subscriptionPacksProvider = FutureProvider.family<List<SubscriptionPack>, String>(
+    (ref, role) async {
+  return ref.read(deliveryServiceProvider).getPacks(role);
+});
+
+/// Tous les packs (y compris inactifs) — vue fondateur.
+final allSubscriptionPacksProvider =
+    FutureProvider<List<SubscriptionPack>>((ref) async {
+  return ref.read(deliveryServiceProvider).getAllPacks();
+});
+
 // ============================================================================
 // NAVIGATION STATE
 // ============================================================================

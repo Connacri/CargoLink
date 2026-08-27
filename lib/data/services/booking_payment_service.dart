@@ -992,7 +992,7 @@ class PaymentService {
       // status = 'delivered'). Sinon, elle est affichée dans les dûs mais
       // différée.
       final deliveredByBookingId = <String, bool>{};
-      final byMonth = <int, double>{};
+      final byMonth = <String, double>{};
       for (final b in bookingList) {
         final shipment = b['shipments'] as Map<String, dynamic>?;
         final shipperPrice =
@@ -1016,8 +1016,9 @@ class PaymentService {
           final created =
               DateTime.tryParse(b['created_at'] as String? ?? '');
           if (created != null) {
-            final month = created.month;
-            byMonth[month] = (byMonth[month] ?? 0) + gain;
+            final key =
+                '${created.year}-${created.month.toString().padLeft(2, '0')}';
+            byMonth[key] = (byMonth[key] ?? 0) + gain;
           }
         } else {
           receivable += gain;

@@ -309,17 +309,21 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
 
   Widget _buildMonthlyChart(List<Booking> allBookings) {
     const months = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
-    final byMonth = <int, double>{};
+    final byMonth = <String, double>{};
     final now = DateTime.now();
     final currentYear = now.year;
     for (final b in allBookings) {
       if (b.createdAt.year != currentYear) continue;
       if (b.paymentStatus != 'paid' || b.status == 'cancelled') continue;
-      byMonth[b.createdAt.month] = (byMonth[b.createdAt.month] ?? 0) + b.totalPrice;
+      final key =
+          '$currentYear-${b.createdAt.month.toString().padLeft(2, '0')}';
+      byMonth[key] = (byMonth[key] ?? 0) + b.totalPrice;
     }
     final data = <RevenueBar>[
       for (var m = 1; m <= 12; m++)
-        RevenueBar(label: months[m - 1], value: byMonth[m] ?? 0),
+        RevenueBar(
+            label: months[m - 1],
+            value: byMonth['$currentYear-${m.toString().padLeft(2, '0')}'] ?? 0),
     ];
 
     return Padding(

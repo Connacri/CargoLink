@@ -504,6 +504,59 @@ class AuthService {
     }
   }
 
+  /// Change the Firebase password of the signed-in user.
+  ///
+  /// Re-authenticates with the current password before applying the change, so
+  /// that a lingering or stolen session cannot silently swap the password.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw AuthServiceException('Session expirée, reconnectez-vous');
+      }
+      final email = user.email;
+      if (email == null || email.isEmpty) {
+        throw AuthServiceException(
+            'Impossible de changer le mot de passe : aucun email associé');
+      }
+
+      final credential = fbauth.EmailAuthProvider.credential(
+        email: email,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+      _logger.i('changePassword: reauthenticated');
+
+      await user.updatePassword(newPassword);
+      _logger.i('changePassword: password updated');
+    } on fbauth.FirebaseAuthException catch (e) {
+      _logger.e('Change password error: ${e.code} ${e.message}');
+      throw AuthServiceException(_passwordErrorToMessage(e.code, e.message));
+    } catch (e) {
+      _logger.e('Unexpected error during password change: $e');
+      rethrow;
+    }
+  }
+
+  String _passwordErrorToMessage(String? code, String? message) {
+    switch (code) {
+      case 'weak-password':
+        return 'Le mot de passe est trop faible (6 caractères minimum).';
+      case 'wrong-password':
+        return 'Le mot de passe actuel est incorrect.';
+      case 'invalid-credential':
+      case 'invalid-login-credentials':
+        return 'Le mot de passe actuel est incorrect.';
+      case 'requires-recent-login':
+        return 'Veuillez vous reconnecter avant de changer votre mot de passe.';
+      default:
+        return message ?? 'Erreur lors du changement de mot de passe';
+    }
+  }
+
   // ==========================================================================
   // ACCOUNT STATUS (deactivate / delete with 30-day grace period)
   // ==========================================================================
@@ -910,6 +963,84 @@ class AuthService {
       _logger.e('Error updating user profile: $e');
       rethrow;
     }
+  }
+
+  /// RGPD export : rassemble les données personnelles de l'utilisateur courant
+  /// (profil + tables liées) dans une structure JSON-encodable. Chaque section
+  /// est collectée de façon isolée : une erreur sur une table ne casse pas le
+  /// reste de l'export.
+  Future<Map<String, dynamic>> generateDataExport() async {
+    final userId = currentUserId;
+    final stamp = DateTime.now().toIso8601String();
+    final data = <String, dynamic>{
+      'generated_at': stamp,
+      'user_id': userId,
+    };
+
+    Future<List<dynamic>> trySelect(
+      String table,
+      String column,
+      String value,
+    ) async {
+      try {
+        final res = await SupabaseConfig.client
+            .from(table)
+            .select()
+            .eq(column, value);
+        return res;
+      } catch (e) {
+        _logger.e('Export: cannot read $table: $e');
+        return [];
+      }
+    }
+
+    // --- Profil public.
+    if (userId != null) {
+      try {
+        final profile = await SupabaseConfig.client
+            .from('users')
+            .select()
+            .eq('id', userId)
+            .maybeSingle();
+        data['profile'] = profile ?? <String, dynamic>{};
+      } catch (e) {
+        _logger.e('Export: cannot read profile: $e');
+        data['profile'] = <String, dynamic>{};
+      }
+    }
+
+    data['bookings'] =
+        await trySelect('bookings', 'client_id', userId ?? '');
+    data['delivery_subscriptions'] =
+        await trySelect('delivery_subscriptions', 'user_id', userId ?? '');
+    data['referral_codes'] =
+        await trySelect('referral_codes', 'user_id', userId ?? '');
+    data['referrals_parrain'] =
+        await trySelect('referrals', 'parrain_id', userId ?? '');
+    data['referrals_filleul'] =
+        await trySelect('referrals', 'filleul_id', userId ?? '');
+    data['referral_batches'] =
+        await trySelect('referral_batches', 'parrain_id', userId ?? '');
+    data['referral_earnings'] =
+        await trySelect('referral_earnings', 'parrain_id', userId ?? '');
+    data['payments'] =
+        await trySelect('payments', 'user_id', userId ?? '');
+
+    // Conversations où l'utilisateur est participant.
+    if (userId != null) {
+      try {
+        final convos = await SupabaseConfig.client
+            .from('conversations')
+            .select()
+            .or('user1_id.eq.$userId,user2_id.eq.$userId');
+        data['conversations'] = convos;
+      } catch (e) {
+        _logger.e('Export: cannot read conversations: $e');
+        data['conversations'] = [];
+      }
+    }
+
+    return data;
   }
 
   /// Get user by ID (Supabase UUID).

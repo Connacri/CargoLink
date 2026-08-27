@@ -111,7 +111,11 @@ class _LiveSelfieScreenState extends State<LiveSelfieScreen>
       _controller = controller;
       await controller.initialize();
       if (mounted) setState(() {});
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) {
+        _showError('Impossible de redémarrer la caméra : $e');
+      }
+    }
   }
 
   Future<void> _capture() async {

@@ -1386,6 +1386,7 @@ class _ShipperDashboardScreenState
     final descriptionController = TextEditingController();
     final collectionAddressCtrl = TextEditingController();
     String? originCountry;
+    String? arrivalAirport;
     String? destinationCity;
     DateTime departure = DateTime.now().add(const Duration(days: 3));
     bool submitting = false;
@@ -1450,10 +1451,18 @@ class _ShipperDashboardScreenState
                           setSheetState(() => originCountry = v),
                     ),
                     const SizedBox(height: 12),
-                    CountryCityPickerField(
-                      label: 'Arrivée — ville de destination',
-                      value: destinationCity,
+                    AirportPickerField(
+                      label: 'Arrivée — aéroport de destination',
+                      value: arrivalAirport,
                       prefixIcon: Icons.flight_land_rounded,
+                      onChanged: (v) =>
+                          setSheetState(() => arrivalAirport = v),
+                    ),
+                    const SizedBox(height: 12),
+                    CountryCityPickerField(
+                      label: 'Point de collecte — ville',
+                      value: destinationCity,
+                      prefixIcon: Icons.location_city_rounded,
                       onChanged: (v) =>
                           setSheetState(() => destinationCity = v),
                     ),
@@ -1674,13 +1683,15 @@ class _ShipperDashboardScreenState
                           : () async {
                               if (!formKey.currentState!.validate()) return;
                               if (originCountry == null ||
+                                  arrivalAirport == null ||
                                   destinationCity == null) {
                                 ScaffoldMessenger.of(sheetContext)
                                     .showSnackBar(
                                   const SnackBar(
                                     content: Text(
                                         'Choisissez les aéroports de départ '
-                                        'et d\'arrivée'),
+                                        'et d\'arrivée ainsi que la ville de '
+                                        'collecte'),
                                   ),
                                 );
                                 return;
@@ -1700,6 +1711,7 @@ class _ShipperDashboardScreenState
                                     .publishShipment(
                                       shipperId: shipperId,
                                       originCountry: originCountry!,
+                                      arrivalAirport: arrivalAirport!,
                                       destinationCity: destinationCity!,
                                       availableWeightKg: weight,
                                       pricePerKg: price,

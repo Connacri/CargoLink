@@ -250,8 +250,12 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
 
   /// Filet de sécurité local : même si le filtre serveur régressait, aucune
   /// offre hors critères ne doit jamais s'afficher. Vérifie le type
-  /// d'expéditeur sur les données embarquées de chaque offre.
+  /// d'expéditeur sur les données embarquées de chaque offre, et exclut les
+  /// offres « terminées » (arrivée dépassée) ou pleines — un statut encore
+  /// `active` en base mais dont la date de vol est passée ne doit jamais être
+  /// montré au client.
   bool _passesLocalFilters(Shipment shipment, String? shipperType) {
+    if (!shipment.isActive || shipment.isFull) return false;
     if (shipperType != null) {
       final matches = shipment.shipper?.isMicroImportateur ==
           (shipperType == 'micro_importateur');
@@ -1220,7 +1224,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       isVerified: shipper?.isVerified ?? false,
       isMicroImportateur: shipper?.isMicroImportateur ?? false,
       origin: shipment.originCountry,
-      destination: shipment.destinationCity,
+      destination: shipment.arrivalAirport ?? shipment.destinationCity,
       airline: shipment.airline,
       flightNumber: shipment.flightNumber,
       availableKg: shipment.remainingWeightKg,

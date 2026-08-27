@@ -1,4 +1,5 @@
 import 'package:airport_data/airport_data.dart';
+import 'package:country_flags/country_flags.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
@@ -271,33 +272,41 @@ class _AirportSearchSheetState extends State<_AirportSearchSheet> {
                                 );
                               }
                               final airport = _results[index];
-                              final flag = AirportPickerField
-                                  .flagFromCountryCode(
-                                      airport.countryCode);
+                              final cc = airport.countryCode.trim().toUpperCase();
+                              final valid = cc.length == 2;
                               return ListTile(
-                                leading: CircleAvatar(
-                                  radius: 18,
-                                  backgroundColor:
-                                      Theme.of(context)
-                                          .colorScheme
-                                          .primaryContainer,
-                                  child: Text(
-                                    airport.iata.isNotEmpty
-                                        ? airport.iata.substring(0, 2)
-                                        : '?',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
+                                leading: valid
+                                    ? CountryFlag.fromCountryCode(
+                                        cc,
+                                        theme: const ImageTheme(
+                                          width: 30,
+                                          height: 22,
+                                          shape: RoundedRectangle(4),
+                                        ),
+                                      )
+                                    : CircleAvatar(
+                                        radius: 18,
+                                        backgroundColor:
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .primaryContainer,
+                                        child: Text(
+                                          airport.iata.isNotEmpty
+                                              ? airport.iata.substring(0, 2)
+                                              : '?',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
                                 title: Text(
                                   airport.airport,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 subtitle: Text(
-                                  '$flag ${airport.countryCode}'
+                                  '${airport.countryCode}'
                                   '${airport.scheduledService ? '' : ' • sans service régulier'}'
                                   ' • ${airport.iata}',
                                   maxLines: 1,

@@ -424,10 +424,15 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
     ];
     final summary = ref.watch(shipperFinanceSummaryProvider(shipperId));
     final monthly = (summary.valueOrNull?['monthly'] as Map?) ?? const {};
+    final now = DateTime.now();
     final data = <RevenueBar>[
       for (var m = 1; m <= 12; m++)
         RevenueBar(
-            label: months[m - 1], value: (monthly[m] as num?)?.toDouble() ?? 0),
+            label: months[m - 1],
+            value: (monthly['${now.year}-${m.toString().padLeft(2, '0')}']
+                    as num?)
+                ?.toDouble() ??
+                0),
     ];
 
     return Padding(

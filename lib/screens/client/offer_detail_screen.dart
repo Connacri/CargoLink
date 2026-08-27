@@ -56,6 +56,7 @@ class OfferDetailScreen extends ConsumerWidget {
                         arrivalDate: shipment.arrivalDate,
                         pricePerKg: clientPrice,
                         availableKg: shipment.remainingWeightKg,
+                        shipper: shipper?.user?.phone,
                       ),
                     ),
                     const SizedBox(height: AppTheme.spaceLg),

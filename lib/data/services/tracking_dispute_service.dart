@@ -80,8 +80,9 @@ class TrackingService {
           .eq('booking_id', bookingId)
           .order('timestamp', ascending: false)
           .limit(1)
-          .single();
+          .maybeSingle();
 
+      if (response == null) return null;
       return ShipmentTracking.fromJson(response);
     } catch (e) {
       _logger.e('Error getting latest tracking: $e');
