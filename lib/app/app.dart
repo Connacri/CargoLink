@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../core/theme/app_theme.dart';
 import '../core/widgets/feedback_launcher.dart';
@@ -46,6 +47,16 @@ class CargoLinkApp extends ConsumerWidget {
       title: 'CargoLink',
       theme: AppTheme.darkTheme,
       navigatorKey: appNavigatorKey,
+      locale: const Locale('fr'),
+      supportedLocales: const [
+        Locale('fr'),
+        Locale('en'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       builder: (context, child) => WebAndroidDownloadBanner(
         navigatorKey: appNavigatorKey,
         child: Stack(

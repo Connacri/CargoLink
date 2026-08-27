@@ -19,6 +19,7 @@ import 'inventory_screen.dart';
 import 'ads_screen.dart';
 import 'referral_admin_screen.dart';
 import 'subscription_management_screen.dart';
+import 'shipper_type_finance_screen.dart';
 
 /// Founder (super_admin) dashboard — accès total et contrôle de la plateforme :
 /// stats globales, gestion de tous les comptes (rôles, activation,
@@ -2311,8 +2312,14 @@ class _StatsOverview extends ConsumerWidget {
           fees: fees,
           color: AppTheme.infoColor,
           shipperType: 'voyageur_ordinaire',
-          onTap: () => _openList(context, EntityListType.users,
-              role: 'shipper', shipperType: 'voyageur_ordinaire'),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const ShipperTypeFinanceScreen(
+                shipperType: 'voyageur_ordinaire',
+                title: 'Finance Voyageurs ordinaires',
+              ),
+            ),
+          ),
         ),
         const SizedBox(height: AppTheme.spaceSm + 4),
         _shipperTypeCard(
@@ -2324,8 +2331,14 @@ class _StatsOverview extends ConsumerWidget {
           fees: fees,
           color: AppTheme.accentColor,
           shipperType: 'micro_importateur',
-          onTap: () => _openList(context, EntityListType.users,
-              role: 'shipper', shipperType: 'micro_importateur'),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const ShipperTypeFinanceScreen(
+                shipperType: 'micro_importateur',
+                title: 'Finance Micro-Importateurs',
+              ),
+            ),
+          ),
         ),
       ],
     );

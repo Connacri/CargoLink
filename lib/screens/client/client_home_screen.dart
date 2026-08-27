@@ -772,6 +772,52 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                   ),
                 );
               }
+              // Abonnement en attente de validation par le fondateur
+              if (sub != null && sub.status == 'pending') {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.radiusLg),
+                    border: Border.all(
+                        color: Colors.amber.shade200, width: 1),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.hourglass_top_rounded,
+                          color: Colors.amber.shade700, size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Validation en attente',
+                              style: AppTheme.body.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: Colors.amber.shade800,
+                              ),
+                            ),
+                            Text(
+                              'Votre abonnement sera actif dès que le '
+                              'fondateur l\'aura approuvé.',
+                              style: AppTheme.caption.copyWith(
+                                color: Colors.amber.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.verified_user_outlined,
+                          color: Colors.amber.shade500, size: 20),
+                    ],
+                  ),
+                );
+              }
               // Pas d'abonnement → card CTA
               return InkWell(
                 onTap: () =>
@@ -1676,7 +1722,9 @@ class _SubscriptionActivationSheetState
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Abonnement activé !')),
+          const SnackBar(
+              content: Text(
+                  'Demande envoyée — validation par le fondateur en attente')),
         );
       }
     } catch (e) {

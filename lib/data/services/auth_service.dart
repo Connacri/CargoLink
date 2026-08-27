@@ -953,12 +953,52 @@ class AuthService {
     }
   }
 
-  /// List all users (admin / super_admin). Excludes own row.
-  Future<List<User>> getAllUsers({int limit = 200, int offset = 0}) async {
+  /// Résout les ids des utilisateurs (expéditeurs) d'un type donné via la
+  /// table `shippers`. Filtre effectué côté serveur (`inFilter`), préférable
+  /// à un filtre embedded dont la sémantique semi-jointure s'est révélée non
+  /// fiable (voir `_shipperIdsOfType` dans shipper_shipment_service.dart).
+  Future<List<String>> getShipperUserIdsOfType(String shipperType) async {
     try {
-      final response = await SupabaseConfig.client
+      final rows = await SupabaseConfig.client
+          .from('shippers')
+          .select('user_id')
+          .eq('shipper_type', shipperType);
+      return (rows as List)
+          .map((r) => r['user_id'] as String)
+          .toSet()
+          .toList();
+    } catch (e) {
+      _logger.e('Error getting shipper user ids of type: $e');
+      return const [];
+    }
+  }
+
+  /// List all users (admin / super_admin). Excludes own row.
+  ///
+  /// Optional server-side filters: [filterIds] restricts to the given user ids
+  /// (shipper-type filter resolved beforehand), [role] restricts by role.
+  /// Both are applied by PostgREST so pagination stays correct server-side.
+  Future<List<User>> getAllUsers({
+    int limit = 200,
+    int offset = 0,
+    List<String>? filterIds,
+    String? role,
+  }) async {
+    try {
+      var query = SupabaseConfig.client
           .from('users')
-          .select()
+          .select();
+
+      if (filterIds != null && filterIds.isNotEmpty) {
+        query = query.inFilter('id', filterIds);
+      } else if (filterIds != null) {
+        return const [];
+      }
+      if (role != null) {
+        query = query.eq('role', role);
+      }
+
+      final response = await query
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
 

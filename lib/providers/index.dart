@@ -904,13 +904,13 @@ final myDeliveryResponsesProvider =
   return ref.watch(deliveryServiceProvider).getMyResponses(shipper.id);
 });
 
-/// User's active delivery subscription status.
+/// User's delivery subscription status (active or awaiting founder approval).
 final deliverySubscriptionProvider = FutureProvider.family<
     DeliverySubscription?,
     ({String userId, String role})>((ref, params) async {
   return ref
       .watch(deliveryServiceProvider)
-      .getActiveSubscription(params.userId, params.role);
+      .getMySubscription(params.userId, params.role);
 });
 
 final allDeliverySubscriptionsProvider =

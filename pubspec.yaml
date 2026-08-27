@@ -56,6 +56,9 @@ dependencies:
   # Date & Time
   intl: ^0.20.2
   timezone: ^0.10.0
+  # Localizations (DatePicker/built-in Material strings in French)
+  flutter_localizations:
+    sdk: flutter
 
   # UI/UX
   flutter_svg: ^2.0.0

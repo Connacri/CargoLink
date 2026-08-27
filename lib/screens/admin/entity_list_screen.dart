@@ -15,98 +15,31 @@ enum EntityListType { users, shipments, bookings, payments, disputes }
 // PAGINATED PROVIDERS (local to this screen — infinite scroll)
 // ============================================================================
 
-/// Walks the raw `users` table server-side so a role filter can be applied
-/// without breaking offset pagination (the service has no role parameter).
-/// When [userIds] is set, only those user IDs are returned (shipper-type filter).
-class _UsersScanner {
-  int _rawOffset = 0;
-
-  /// Optional: restrict results to these user IDs (shipper-type filter).
-  Set<String>? userIds;
-
-  void reset() => _rawOffset = 0;
-
-  Future<List<User>> load(
-    Future<List<User>> Function(int limit, int offset) fetch,
-    String? role,
-    int limit,
-  ) async {
-    // Shipper-type filter: load ALL users (paging through the whole table),
-    // then keep only those whose IDs match. Fetching a single 500-row page
-    // would silently drop users beyond the cutoff.
-    if (userIds != null && userIds!.isNotEmpty) {
-      final all = <User>[];
-      final chunk = limit > 100 ? limit : 100;
-      var offset = 0;
-      while (true) {
-        final page = await fetch(chunk, offset);
-        if (page.isEmpty) break;
-        all.addAll(page);
-        offset += page.length;
-        if (page.length < chunk) break;
-      }
-      return all.where((u) => userIds!.contains(u.id)).toList();
-    }
-
-    if (role == null) {
-      final page = await fetch(limit, _rawOffset);
-      _rawOffset += page.length;
-      return page;
-    }
-    final collected = <User>[];
-    final chunk = limit > 100 ? limit : 100;
-    while (collected.length < limit) {
-      final page = await fetch(chunk, _rawOffset);
-      if (page.isEmpty) break;
-      _rawOffset += page.length;
-      collected.addAll(page.where((u) => u.role == role));
-      if (page.length < chunk) break;
-    }
-    return collected.take(limit).toList();
-  }
-}
-
+/// Pager notifier for the admin/super-admin user lists. Kept as a thin
+/// subclass so the provider stays a family keyed by (role, shipperType).
 class _UsersPagerNotifier extends PaginatedListNotifier<User> {
-  _UsersPagerNotifier(this._scanner,
-      {required super.loader, super.pageSize = 20});
-
-  final _UsersScanner _scanner;
-
-  @override
-  Future<void> loadInitial() async {
-    _scanner.reset();
-    await super.loadInitial();
-  }
-
-  @override
-  Future<void> refresh() async {
-    _scanner.reset();
-    await super.refresh();
-  }
+  _UsersPagerNotifier({required super.loader, super.pageSize = 20});
 }
 
 final pagedUsersProvider = StateNotifierProvider.family<_UsersPagerNotifier,
     PaginatedList<User>, ({String? role, String? shipperType})>((ref, params) {
-  final scanner = _UsersScanner();
-  Future<List<User>> fetch(int limit, int offset) =>
-      ref.read(authServiceProvider).getAllUsers(limit: limit, offset: offset);
-  return _UsersPagerNotifier(
-    scanner,
-    loader: (limit, offset) async {
-      // Shipper-type filter: load shippers first, then set IDs on the scanner.
-      if (params.shipperType != null) {
-        final shippers = ref.read(allShippersProvider).valueOrNull ?? [];
-        final filtered = shippers
-            .where((s) => s.shipperType == params.shipperType)
-            .toList();
-        scanner.userIds = filtered.map((s) => s.userId).toSet();
-      } else {
-        scanner.userIds = null;
-      }
-      return scanner.load(fetch, params.role, limit);
-    },
-    pageSize: 20,
-  );
+  Future<List<User>> load(int limit, int offset) async {
+    // Résout les ids des expéditeurs du type demandé côté serveur, puis filtre
+    // la table `users` par `inFilter` — pagination correcte, sans tout charger.
+    final ids = params.shipperType == null
+        ? null
+        : await ref
+            .read(authServiceProvider)
+            .getShipperUserIdsOfType(params.shipperType!);
+    return ref.read(authServiceProvider).getAllUsers(
+          limit: limit,
+          offset: offset,
+          filterIds: ids,
+          role: params.role,
+        );
+  }
+
+  return _UsersPagerNotifier(loader: load, pageSize: 20);
 });
 
 final pagedShipmentsProvider = StateNotifierProvider<

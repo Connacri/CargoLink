@@ -376,6 +376,32 @@ class DeliveryService {
     }
   }
 
+  /// Latest subscription for a user + role, regardless of status
+  /// (active, pending or expired). Lets the UI distinguish « awaiting founder
+  /// approval » from « no subscription ».
+  Future<DeliverySubscription?> getMySubscription(
+    String userId,
+    String role,
+  ) async {
+    try {
+      final response = await _supabase
+          .from('delivery_subscriptions')
+          .select()
+          .eq('user_id', userId)
+          .eq('role', role)
+          .inFilter('status', const ['active', 'pending'])
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (response == null) return null;
+      return DeliverySubscription.fromJson(response);
+    } catch (e) {
+      _logger.e('Error getting my subscription: $e');
+      return null;
+    }
+  }
+
   /// Purchase a delivery subscription.
   Future<DeliverySubscription?> purchaseSubscription({
     required String userId,
@@ -385,7 +411,6 @@ class DeliveryService {
   }) async {
     try {
       _logger.i('Purchasing delivery subscription for $role');
-
       final now = DateTime.now();
       final expiresAt = now.add(Duration(days: durationDays));
 
