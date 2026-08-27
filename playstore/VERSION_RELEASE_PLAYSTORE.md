@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.94** |
-| Code de version (versionCode) | **210** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `a2c4ca8` |
-| Statut CI | À publier au prochain push → release `v1.0.94` sur GitHub |
+| Version (versionName) | **1.0.97** |
+| Code de version (versionCode) | **216** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `21678d9` |
+| Statut CI | À publier au prochain push → release `v1.0.97` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.94** → workflow `release.yml` (job `android-aab`) |
@@ -47,6 +47,16 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.97
+
+- **Bouton feedback dans l'AppBar** : le FAB global a été remplacé par un
+  icône `feedback_outlined` dans l'AppBar de tous les écrans (sauf super_admin).
+  Utilisable par tous les rôles pour envoyer un feedback au fondateur.
+- **Changement/upgrade d'abonnement** : les utilisateurs avec un abonnement
+  actif ou en attente peuvent maintenant changer de pack à tout moment.
+  Le bandeau d'abonnement affiche un bouton « Changer » (icône `swap_horiz`).
+  Une nouvelle demande est créée et doit être validée par le fondateur.
 
 ### Version 1.0.80
 
