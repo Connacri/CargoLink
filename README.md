@@ -23,10 +23,14 @@ Connecter des **micro-importateurs** (voyageurs disposant d'une franchise bagage
 ### 🧑 Pour les clients
 - 🔍 **Recherche & filtres** : destinations, origine, prix, tri (smart filters).
 - 📦 **Assistant de réservation** en 4 étapes : *Produit → Photos → Paiement → Terminé*.
-- 🎫 **Confirmation avec QR code** : ticket récapitulatif (référence, produit, poids) + bouton *« Enregistrer la confirmation »* (sauvegarde en galerie).
+- 🎫 **Confirmation avec QR code** : ticket récapitulatif redessiné (en-tête dégradé « CARGOLINK / Billet de Réservation », pointillés, détails produit) + bouton *« Enregistrer la confirmation »* (sauvegarde en galerie via `RepaintBoundary`).
 - 💳 **Paiement** : Espèces, Virement bancaire, CCP/CIB, **Chargily** (EDAHABIA / carte), **Stripe** (international).
-- 🗂 **Mes commandes** : filtres par statut, annulation, icônes de statut (« Expéditeur a confirmé », « Paiement reçu / en attente »), profil expéditeur cliquable, mise à jour en temps réel.
+- 🗂 **Mes commandes** : deux onglets (*Mes commandes* + *Mes demandes de livraison*), filtres par statut, annulation, icônes de statut, profil expéditeur cliquable, mise à jour en temps réel.
+- 📦 **Mes colis** : tuiles enrichies (liseré de couleur, itinéraire, puces statut/poids/prix, badge de paiement) + **dialog de suivi façon billet** (n° de suivi sélectionnable, statut gradient).
 - 🛰 **Suivi de colis** : timeline DHL/UPS-style, barre de progression, preuve de livraison photo, confirmation de réception, notation de l'expéditeur.
+- 🚚 **Demandes de livraison** : publier une demande (abonnement requis, validé par le fondateur), recevoir des propositions d'expéditeurs, accepter une réponse.
+- 🎁 **Programme de parrainage** : code de parrainage, badge, commissions reversées pour chaque colis livré/payé par un filleul.
+- 🔗 **Deep links** : `cargolink://offer/<shipmentId>` et `cargolink://referral/<CODE>`.
 - 💬 **Chat** avec l'expéditeur (statuts envoyé / délivré / lu, push FCM).
 - 🔔 **Notifications** : annonces ciblées + notifications personnelles, badge non-lu, « tout marquer comme lu ».
 - ⚖️ **Litiges** : signalement de litige / fraude (saisie douane, colis non livré, etc.).
@@ -35,19 +39,26 @@ Connecter des **micro-importateurs** (voyageurs disposant d'une franchise bagage
 ### 🧳 Pour les micro-importateurs
 - 🪪 **KYC complet** : passeport + **live selfie** (détection de visage ML Kit), dossier modifiable et re-vérifiable.
 - 🚢 **Publier des shipments** : poids, prix, destination, numéro de vol, photos.
-- 📥 **Gérer les commandes reçues** : confirmer / refuser, poids alloué, carte client.
+- 📥 **Gérer les commandes reçues** : confirmée enrichie (répartition par statut, montant total, prochaine date de départ), confirmer / refuser, poids alloué, carte client.
 - 🛰 **Mettre à jour le suivi** (événements + points GPS).
+- 🚚 **Demandes de livraison** : consulter les demandes des clients et proposer un prix/une date (abonnement requis, validé par le fondateur).
 - 💰 **Revenus & statistiques** : tableau de bord, graphique CA, commissions, historique.
 - ⭐ **Profil public** : note, avis, badge vérifié.
 
-### 🛡 Pour l'admin
+### 🛡 Pour l'admin / fondateur
 - 🔎 **Centre de vérification** KYC (approuver / rejeter / re-vérifier).
 - ⚖️ **Litiges & fraudes**, flags expéditeur.
-- 💸 **Transactions & commissions**, allocations de paiement, payouts.
+- 💸 **Transactions & commissions**, allocations de paiement, payouts, **portefeuille détaillé** (historique filtrable + recherche).
 - 📣 **Broadcasts** ciblés par rôle.
 - ✍️ **Feedback inbox** (retours utilisateurs).
-- ⚙️ **Paramètres plateforme** (commission, payouts, devise).
+- ⚙️ **Paramètres plateforme** redessinés en sections (Tarification, Poids, Parrainage, Abonnements) avec bouton d'enregistrement dans l'en-tête.
+- 🎁 **Programme de parrainage** en haut du tableau de bord (récapitulatif + vidéo/paramétrage).
+- 📊 **Tableau de bord fondateur enrichi** : cartes Voyageurs/Micro-Importateurs avec données financières (CA/expéditeur, actifs 30 j, commandes en attente, route la plus fréquentée).
+- 🗂 **Validation des abonnements** : écran dédié listant les demandes (en attente / actifs / archives) avec Approuver / Rejeter.
 - 📈 **Analytics fondateur** (super admin).
+
+### 👤 Pour tous (profil)
+- 📋 **Écran « Gérer mon compte »** : informations du compte, sécurité, données personnelles, zone dangereuse (désactivation / suppression avec délai de 30 j) — séparé de l'écran de profil.
 
 ---
 
@@ -124,6 +135,27 @@ sequenceDiagram
     R-->>C: Statut « lu »
 ```
 
+### 5. Workflow demande de livraison + abonnement
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor C as Client
+    actor F as Fondateur
+    actor S as Expéditeur
+    participant P as Plateforme (Supabase)
+
+    C->>P: Achète un abonnement « Demande de livraison »
+    P-->>F: Abonnement en statut « en attente »
+    F->>P: Approuve / rejette
+    P-->>C: Abonnement « actif » si validé
+    C->>P: Publie une demande de livraison (produit, poids, origine→destination)
+    Note over P,S: Notif + realtime → expéditeurs abonnés
+    S->>P: Propose un prix + une date (abonnement expéditeur requis)
+    C->>P: Accepte une proposition
+    P-->>C: Commandé créée
+```
+
 ---
 
 ## 🎨 Animations & UI
@@ -134,6 +166,7 @@ sequenceDiagram
 - **Glass cards** + **entêtes en dégradé** (`GradientSliverHeader`) : effet « glassmorphism » moderne.
 - **Fade-in au scroll** : apparition douce des sections pendant le défilement.
 - **Timeline de suivi animée** : progression par étapes (DHL/UPS/FedEx style).
+- **Tickets façon billet** (QR + suivi colis) : en-tête en dégradé « CARGOLINK », diviseurs en pointillés, rendu `RepaintBoundary` pour capture d'écran.
 - **Réponse haptique** et transitions Material 3 natives.
 - Feedback utilisateur avec **annotation au doigt** (mode dessin).
 
@@ -159,7 +192,7 @@ Le passage au multilangage s'appuiera sur `flutter_localizations` + `gen-l10n` (
 **Backend** — Supabase (PostgreSQL + Realtime + RLS) · Auth (Email/Google/Apple + pont Firebase) · Storage
 **Paiement** — Chargily · Stripe
 **Notifications** — Firebase Cloud Messaging + Supabase Realtime (statuts de message)
-**Autres** — Google Maps / geolocator · ML Kit (live selfie) · QR (`qr_flutter`) · Galerie (`gal`) · BetterFeedback
+**Autres** — Google Maps / geolocator · ML Kit (live selfie) · QR (`qr_flutter`) · Galerie (`gal`) · BetterFeedback · deep links (`cargolink://`) · Géo-sélecteurs (pays/ville, aéroports)
 
 ---
 
@@ -178,19 +211,26 @@ cargolink/
 │   │                                      #   paginated_list, notification_widgets, chat_widgets…
 │   ├── data/
 │   │   ├── models/                        # User, Shipper, Shipment, Booking, Notification,
-│   │   │                                  #   Chat, Payment, Dispute, Review, Broadcast…
+│   │   │                                  #   Chat, Payment, Dispute, Review, Broadcast,
+│   │   │                                  #   Delivery (Request/Response/Guarantee/Subscription),
+│   │   │                                  #   Referral, utility_models (flags, tokens, logs…)
 │   │   └── services/                      # auth, shipper_shipment, booking_payment, tracking_dispute,
-│   │                                      #   chat, broadcast, feedback, review, storage, realtime, fcm…
+│   │                                      #   chat, broadcast, feedback, review, storage, realtime, fcm,
+│   │                                      #   delivery, referral, settings…
 │   ├── providers/index.dart               # Tous les providers Riverpod (+ pagers + realtime)
 │   ├── components/                        # tracking_timeline, shipper_card, revenue_bar_chart
 │   └── screens/
 │       ├── auth/                          # Login, signup, role selection, KYC gate, vérif email
-│       ├── client/                        # Home, booking wizard, my orders, payment, tracking
-│       ├── shipper/                       # Dashboard, registration/live selfie, bookings, stats
+│       ├── client/                        # Home, booking wizard, my orders (2 onglets), my parcels,
+│       │                                  #   delivery request, tracking
+│       ├── shipper/                       # Dashboard, registration/live selfie, bookings, stats,
+│       │                                  #   delivery browse (proposer)
 │       ├── chat/                          # Conversations + chat
-│       ├── profile/                       # Profil utilisateur
-│       └── admin/                         # Vérification, litiges, transactions, broadcasts, settings…
-├── .github/workflows/                     # deploy.yml (web) + release.yml (APK/Windows versionné)
+│       ├── profile/                       # Profil utilisateur + Gérer mon compte
+│       │                                  #   (désactivation / suppression)
+│       └── admin/                         # Vérification, litiges, transactions, broadcasts, settings,
+│                                          #   références (Réf), gestion abonnements, wallet détail…
+├── .github/workflows/                     # deploy.yml (web) + release.yml (AAB signé versionné)
 └── pubspec.yaml
 ```
 
@@ -198,7 +238,9 @@ cargolink/
 
 ## 🗄 Base de données (Supabase)
 
-**Tables principales** : `users` · `shippers` · `shipments` · `bookings` · `shipment_tracking` · `shipment_events` · `shipment_proofs` · `payments` · `payment_allocations` · `payouts` · `platform_fees` · `disputes` · `claims` · `notifications` · `messages` · `conversations` · `reviews` · `broadcasts` · `feedback` · `shipper_flags` · `tracking_points` · `trips` · `device_tokens`
+**Tables principales** : `users` · `shippers` · `shipments` · `bookings` · `shipment_tracking` · `shipment_events` · `shipment_proofs` · `payments` · `payment_allocations` · `payouts` · `platform_fees` · `disputes` · `claims` · `notifications` · `messages` · `conversations` · `reviews` · `broadcasts` · `feedback` · `shipper_flags` · `tracking_points` · `trips` · `device_tokens` · `delivery_requests` · `delivery_responses` · `delivery_guarantees` · `delivery_subscriptions` · `referral_codes` · `referrals` · `referral_earnings` · `referral_batches` · `transfer_tokens` · `delivery_attempts` · `audit_logs` · `device_keys` · `platform_settings` · `account_deletion_requests` · `deleted_accounts`
+
+> 📦 **Modèles Dart alignés** : toutes les tables Supabase ont leur classe Dart correspondante (dont `ShipperFlag`, `DeviceToken`, `TransferToken`, `DeliveryAttempt`, `AuditLog`, `DeviceKey`, `PlatformSetting`, `ReferralCode`, `DeliverySubscription`, etc.).
 
 **Sécurité & Realtime**
 - ✅ RLS activé sur toutes les tables, policies par rôle (client / micro-importateur / admin).
@@ -300,7 +342,7 @@ flutter build windows --release
 `.github/workflows/deploy.yml` — déclenché sur chaque push vers `master` : build Flutter web avec la clé anon (secret) puis déploiement GitHub Pages.
 
 ### Release versionnée
-`.github/workflows/release.yml` — build **APK signé** + **installateur Windows (Inno Setup)** + **site web**, version bump + **tag** + **GitHub Release**.
+`.github/workflows/release.yml` — build **App Bundle (.aab) signé** (format Play Console) + **site web**, version bump + **tag** + **GitHub Release**. Le `app-release.aab` est publié en GitHub Release puis déposé dans la Play Console (test interne → fermé → production).
 
 **Secrets GitHub à configurer** (Settings → Actions → Secrets → New repository secret) :
 
@@ -347,7 +389,11 @@ Configurer via la CLI : `supabase secrets set NOM_SECRET=...`
 | Notifications push (FCM) + statuts de message | ✅ |
 | QR de confirmation + sauvegarde galerie | ✅ |
 | Mise à jour temps réel sans redémarrage (patch pagers) | ✅ |
-| Web dashboard + CI/CD releases | ✅ automatisé |
+| Programme de parrainage (code, badge, commissions) | ✅ |
+| Demande de livraison + abonnements (validation fondateur) | ✅ |
+| Deep links (offres / parrainage) | ✅ |
+| Écran « Gérer mon compte » | ✅ |
+| Web dashboard + CI/CD releases (AAB signé) | ✅ automatisé |
 | Multi-langues (FR/EN/AR) | 🔜 Phase 3 |
 
 ---
