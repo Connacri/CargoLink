@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.97** |
-| Code de version (versionCode) | **216** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `21678d9` |
-| Statut CI | À publier au prochain push → release `v1.0.97` sur GitHub |
+| Version (versionName) | **1.0.99** |
+| Code de version (versionCode) | **218** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `8690725` |
+| Statut CI | À publier au prochain push → release `v1.0.99` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.94** → workflow `release.yml` (job `android-aab`) |
@@ -47,6 +47,17 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.99
+
+- **Workflow abonnement corrigé** : le client utilise maintenant les packs
+  configurés par le fondateur (plus le prix fixe ancien).
+- **FAB feedback restaurée** : le bouton flottant global est conservé, avec
+  en plus un icône dans l'AppBar de tous les écrans (sauf super_admin).
+- **Erreurs d'abonnement gérées** : les écrans delivery_request et my_orders
+  affichent un dialogue avec bouton « S'abonner » au lieu d'un dead-end.
+- **Dashboard expéditeur** : le statut « Validation en attente » s'affiche
+  quand un abonnement pending existe (plus caché silencieusement).
 
 ### Version 1.0.97
 
