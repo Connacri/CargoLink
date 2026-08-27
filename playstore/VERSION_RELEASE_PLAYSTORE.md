@@ -10,9 +10,9 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.73** |
-| Code de version (versionCode) | **197** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `dee84b7` |
+| Version (versionName) | **1.0.74** |
+| Code de version (versionCode) | **199** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `e5b7c72` |
 | Statut CI | À publier au prochain push → release `v1.0.73` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
@@ -47,6 +47,34 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.74
+
+- **Dashboard Fondateur enrichi** : la carte « Programme de parrainage » est
+  désormais affichée en haut du tableau de bord. Les cartes « Voyageurs
+  ordinaires » et « Micro-Importateurs » affichent plus de données
+  financières (CA/expéditeur, effectifs actifs sur 30 j, commandes en
+  attente, route la plus fréquentée).
+- **Abonnements « Demande de livraison » avec validation Fondateur** :
+  l'achat d'un abonnement (client ou expéditeur) passe désormais par un
+  statut « en attente » que le Fondateur doit approuver ou rejeter. Un
+  bandeau d'activation apparaît sur le tableau de bord expéditeur, et un
+  écran dédié listant les demandes (en attente / actifs / archives) avec
+  boutons Approuver / Rejeter a été ajouté au dashboard Fondateur.
+- **Commande en cours enrichie (expéditeur)** : la carte « Commandes en
+  cours » détaille désormais le nombre de commandes, la répartition par
+  statut (en attente, confirmées, en transit), le montant total des
+  commandes actives et la prochaine date de départ.
+- **Écran « Gérer mon compte »** : déconnexion, désactivation et suppression
+  de compte déplacées vers une page dédiée (Zones info, sécurité, données,
+  zone dangereuse), accessible depuis le profil.
+- **Modèles Dart alignés sur Supabase** : ajout des classes de données
+  manquantes (shipper_flags, device_tokens, transfer_tokens,
+  delivery_attempts, audit_logs, device_keys, platform_settings,
+  referral_codes, etc.).
+- **Redesign de l'écran Paramètres plateforme** : sections claires
+  (Tarification, Poids, Programme de parrainage, Abonnements), bouton
+  d'enregistrement déplacé dans l'en-tête, interface plus lisible.
 
 ### Version 1.0.73
 
