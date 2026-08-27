@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.99** |
-| Code de version (versionCode) | **218** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `8690725` |
-| Statut CI | À publier au prochain push → release `v1.0.99` sur GitHub |
+| Version (versionName) | **1.0.101** |
+| Code de version (versionCode) | **220** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `1f8d262` |
+| Statut CI | À publier au prochain push → release `v1.0.101` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.94** → workflow `release.yml` (job `android-aab`) |
@@ -47,6 +47,12 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.101
+
+- **Nettoyage code mort** : suppression de `_SubscriptionActivationSheet`
+  (ancien sheet abonnement client prix fixe, remplacé par
+  `SubscriptionPackSheet`) et `_buildRoleFilter` (fonction non référencée).
 
 ### Version 1.0.99
 
