@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../core/theme/app_theme.dart';
-import '../core/widgets/feedback_launcher.dart';
 import '../providers/index.dart';
 import '../screens/auth/account_gate_screen.dart';
 import '../screens/auth/email_verification_screen.dart';
@@ -62,15 +61,7 @@ class CargoLinkApp extends ConsumerWidget {
         child: Stack(
           children: [
             child ?? const SizedBox.shrink(),
-            // Écoute des liens profonds (cargolink://offer/<id>).
             const _DeepLinkListener(),
-            // FAB « Feedback » global — positionnée juste au-dessus de la
-            // bottom navigation bar pour ne pas la masquer.
-            const Positioned(
-              right: 16,
-              bottom: 76,
-              child: GlobalFeedbackFab(),
-            ),
           ],
         ),
       ),
