@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.79** |
-| Code de version (versionCode) | **209** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `17f3927` |
-| Statut CI | À publier au prochain push → release `v1.0.79` sur GitHub |
+| Version (versionName) | **1.0.80** |
+| Code de version (versionCode) | **210** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `bd8fb0f` |
+| Statut CI | À publier au prochain push → release `v1.0.80` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.78** → workflow `release.yml` (job `android-aab`) |
@@ -47,6 +47,14 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.80
+
+- **Badge premium sur l'avatar** : un cercle vert avec icône `verified`
+  apparaît en overlay sur la photo de profil quand l'abonnement est actif.
+- **Bandeau d'abonnement dans le profil** : le bandeau (statut, type de
+  pack, jours restants) est maintenant affiché uniquement dans l'écran
+  Profil, sous les badges de rôle (client/expéditeur) et chips.
 
 ### Version 1.0.79
 
