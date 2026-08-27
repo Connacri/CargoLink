@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.0.78** |
-| Code de version (versionCode) | **208** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `913dc12` |
-| Statut CI | À publier au prochain push → release `v1.0.78` sur GitHub |
+| Version (versionName) | **1.0.79** |
+| Code de version (versionCode) | **209** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `17f3927` |
+| Statut CI | À publier au prochain push → release `v1.0.79` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release **v1.0.78** → workflow `release.yml` (job `android-aab`) |
@@ -47,6 +47,19 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.0.79
+
+- **Optimisation des performances** :
+  - `payPlatformFees` : les mises à jour des commissions en attente sont
+    maintenant groupées via `.inFilter` (1 requête au lieu de N) avec
+    `Future.wait` pour les remises variables.
+  - Analytics fondateur : bookings et payments sont fetchés en parallèle
+    via un provider combiné (`founderAnalyticsDataProvider`) — 1 round-trip
+    réseau au lieu de 2 séquentiels.
+  - Écran d'accueil client : le calcul du portefeuille (`wallet`) réutilise
+    le même fetch que la liste de suivi — 1 seul appel `getClientBookings`
+    au lieu de 2.
 
 ### Version 1.0.78
 
