@@ -1189,11 +1189,13 @@ class AdPricingRule {
   final int durationDays;
   final String audience; // all, clients, shippers
   final double priceDzd;
+  final DateTime? updatedAt;
 
   const AdPricingRule({
     required this.durationDays,
     this.audience = 'all',
     required this.priceDzd,
+    this.updatedAt,
   });
 
   factory AdPricingRule.fromJson(Map<String, dynamic> json) {
@@ -1201,6 +1203,9 @@ class AdPricingRule {
       durationDays: (json['duration_days'] as num).toInt(),
       audience: json['audience'] as String? ?? 'all',
       priceDzd: (json['price_dzd'] as num?)?.toDouble() ?? 0,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.tryParse(json['updated_at'] as String)
+          : null,
     );
   }
 
@@ -1208,6 +1213,7 @@ class AdPricingRule {
         'duration_days': durationDays,
         'audience': audience,
         'price_dzd': priceDzd,
+        if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
       };
 
   String get audienceLabel => Ad.audienceLabels[audience] ?? audience;

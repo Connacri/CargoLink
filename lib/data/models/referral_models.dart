@@ -62,6 +62,8 @@ class ReferralFilleul {
 /// Un gain de parrainage.
 class ReferralEarning {
   final String id;
+  final String parrainId;
+  final String bookingId;
   final double amount;
   final String status; // pending, paid, cancelled
   final DateTime createdAt;
@@ -69,6 +71,8 @@ class ReferralEarning {
 
   const ReferralEarning({
     required this.id,
+    required this.parrainId,
+    required this.bookingId,
     required this.amount,
     required this.status,
     required this.createdAt,
@@ -78,6 +82,8 @@ class ReferralEarning {
   factory ReferralEarning.fromJson(Map<String, dynamic> json) {
     return ReferralEarning(
       id: json['id'] as String,
+      parrainId: json['parrain_id'] as String,
+      bookingId: json['booking_id'] as String,
       amount: (json['amount'] as num).toDouble(),
       status: json['status'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -91,6 +97,7 @@ class ReferralEarning {
 /// Lot de vidéos témoignages soumises à validation admin.
 class ReferralBatch {
   final String id;
+  final String parrainId;
   final int batchNumber;
   final List<String> videoUrls;
   final String status; // pending, approved, rejected, suspended
@@ -101,6 +108,7 @@ class ReferralBatch {
 
   const ReferralBatch({
     required this.id,
+    required this.parrainId,
     required this.batchNumber,
     required this.videoUrls,
     required this.status,
@@ -113,6 +121,7 @@ class ReferralBatch {
   factory ReferralBatch.fromJson(Map<String, dynamic> json) {
     return ReferralBatch(
       id: json['id'] as String,
+      parrainId: json['parrain_id'] as String,
       batchNumber: (json['batch_number'] as num).toInt(),
       videoUrls: [
         if (json['video_url_1'] != null) json['video_url_1'] as String,

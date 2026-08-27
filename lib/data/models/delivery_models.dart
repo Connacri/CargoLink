@@ -111,8 +111,10 @@ class DeliveryRequest {
       requestedWeightKg: (json['requested_weight_kg'] as num).toDouble(),
       deadline: DateTime.parse(json['deadline'] as String),
       status: json['status'] as String? ?? 'open',
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt:
+          DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+      updatedAt:
+          DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now(),
     );
   }
 
@@ -175,7 +177,8 @@ class DeliveryResponse {
       proposedDate: DateTime.parse(json['proposed_date'] as String),
       message: json['message'] as String?,
       status: json['status'] as String? ?? 'pending',
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt:
+          DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
     );
   }
 
@@ -238,7 +241,8 @@ class DeliveryGuarantee {
       confirmedAt: json['confirmed_at'] != null
           ? DateTime.tryParse(json['confirmed_at'] as String)
           : null,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt:
+          DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
     );
   }
 
@@ -300,9 +304,11 @@ class DeliverySubscription {
       price: (json['price'] as num).toDouble(),
       currency: json['currency'] as String? ?? 'DZD',
       status: json['status'] as String? ?? 'active',
-      startsAt: DateTime.parse(json['starts_at'] as String),
-      expiresAt: DateTime.parse(json['expires_at'] as String),
-      createdAt: DateTime.parse(json['created_at'] as String),
+      startsAt: DateTime.tryParse(json['starts_at'] as String? ?? '') ?? DateTime.now(),
+      expiresAt:
+          DateTime.tryParse(json['expires_at'] as String? ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
     );
   }
 

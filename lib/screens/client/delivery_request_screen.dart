@@ -739,16 +739,19 @@ class _CreateRequestSheetState extends ConsumerState<_CreateRequestSheet> {
                     },
                   ),
                   const SizedBox(height: AppTheme.spaceMd),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading:
-                        const Icon(Icons.calendar_today_outlined),
-                    title: const Text('Date limite'),
-                    subtitle: Text(
-                      DateFormat('dd MMMM yyyy', 'fr').format(_deadline),
+                  Material(
+                    type: MaterialType.transparency,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading:
+                          const Icon(Icons.calendar_today_outlined),
+                      title: const Text('Date limite'),
+                      subtitle: Text(
+                        DateFormat('dd MMMM yyyy', 'fr').format(_deadline),
+                      ),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: _pickDeadline,
                     ),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: _pickDeadline,
                   ),
                   const SizedBox(height: AppTheme.spaceSm),
                   // --- Section photos enrichie ---

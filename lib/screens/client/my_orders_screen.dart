@@ -1065,14 +1065,17 @@ class _CreateDeliveryRequestSheetState
                     },
                   ),
                   const SizedBox(height: AppTheme.spaceMd),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.calendar_today_outlined),
-                    title: const Text('Date limite'),
-                    subtitle: Text(
-                        DateFormat('dd/MM/yyyy').format(_deadline)),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: _pickDeadline,
+                  Material(
+                    type: MaterialType.transparency,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.calendar_today_outlined),
+                      title: const Text('Date limite'),
+                      subtitle: Text(
+                          DateFormat('dd/MM/yyyy').format(_deadline)),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: _pickDeadline,
+                    ),
                   ),
                   const SizedBox(height: AppTheme.spaceMd),
                   FilledButton.icon(
