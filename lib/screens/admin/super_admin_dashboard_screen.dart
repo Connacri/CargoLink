@@ -219,57 +219,6 @@ class _SuperAdminDashboardScreenState
     );
   }
 
-  Widget _buildRoleFilter() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.spaceMd,
-        0,
-        AppTheme.spaceMd,
-        AppTheme.spaceSm,
-      ),
-      child: DropdownButtonFormField<String?>(
-        initialValue: _roleFilter,
-        decoration: const InputDecoration(
-          labelText: 'Filtrer par rôle',
-          prefixIcon: Icon(Icons.filter_alt_outlined),
-        ),
-        items: const [
-          DropdownMenuItem(
-            value: null,
-            child: Text(
-              'Tous',
-              style: TextStyle(color: AppTheme.textSecondaryColor),
-            ),
-          ),
-          DropdownMenuItem(
-            value: 'client',
-            child: Text('Clients',
-                style: TextStyle(color: AppTheme.textSecondaryColor)),
-          ),
-          DropdownMenuItem(
-            value: 'shipper',
-            child: Text('Expéditeurs',
-                style: TextStyle(color: AppTheme.textSecondaryColor)),
-          ),
-          DropdownMenuItem(
-            value: 'admin',
-            child: Text('Admins',
-                style: TextStyle(color: AppTheme.textSecondaryColor)),
-          ),
-          DropdownMenuItem(
-            value: 'super_admin',
-            child: Text('Fondateurs',
-                style: TextStyle(color: AppTheme.textSecondaryColor)),
-          ),
-        ],
-        onChanged: (v) {
-          setState(() => _roleFilter = v);
-          _syncPager();
-        },
-      ),
-    );
-  }
-
   List<Widget> _buildUsersSliver() {
     final pager = ref.watch(pagedUsersProvider((role: _roleFilter, shipperType: null)));
     return [
