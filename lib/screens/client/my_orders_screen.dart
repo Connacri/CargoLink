@@ -13,6 +13,7 @@ import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/booking_acceptance_chip.dart';
 import '../../core/widgets/micro_badge.dart';
 import '../../core/widgets/qr_ticket_dialog.dart';
+import '../../core/widgets/subscription_pack_sheet.dart';
 import '../chat/chat_screen.dart';
 import '../shipper/shipper_public_profile_screen.dart';
 
@@ -961,12 +962,39 @@ class _CreateDeliveryRequestSheetState
           .getActiveSubscription(userId, 'client');
       if (subscription == null) {
         if (mounted) {
-          await showAppErrorDialog(
-            context,
-            message:
+          final result = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              icon: const Icon(Icons.card_membership_rounded,
+                  color: AppTheme.warningColor, size: 36),
+              title: const Text('Abonnement requis'),
+              content: const Text(
                 'Vous devez activer un abonnement "Demande de livraison" '
                 'client pour publier des demandes.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Annuler'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('S\'abonner'),
+                ),
+              ],
+            ),
           );
+          if (result == true && mounted) {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => SubscriptionPackSheet(
+                userId: userId,
+                role: 'client',
+              ),
+            );
+          }
         }
         return;
       }

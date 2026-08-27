@@ -11,6 +11,7 @@ import '../../core/widgets/airport_picker_field.dart';
 import '../../core/widgets/country_city_picker_field.dart';
 import '../../core/widgets/notification_widgets.dart';
 import '../../core/widgets/chat_widgets.dart';
+import '../../core/widgets/subscription_pack_sheet.dart';
 import '../../core/utils/qr_booking.dart';
 import '../../components/shipper_card.dart';
 import '../../components/workflow_slider.dart';
@@ -902,7 +903,52 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               );
             },
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, __) => Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppTheme.spaceMd, AppTheme.spaceSm, AppTheme.spaceMd, 0,
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                onTap: () => _showSubscriptionSheet(context, ref, userId),
+                child: Ink(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.amber.shade600, Colors.orange.shade500],
+                    ),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                    boxShadow: AppTheme.shadowMd,
+                  ),
+                  padding: const EdgeInsets.all(AppTheme.spaceLg),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52, height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(Icons.card_membership_rounded,
+                            color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(width: AppTheme.spaceMd),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Activer l\'abonnement',
+                                style: TextStyle(color: Colors.white,
+                                    fontSize: 16, fontWeight: FontWeight.w800)),
+                            SizedBox(height: 4),
+                            Text('Choisissez un pack d\'abonnement',
+                                style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           );
         },
       ),
@@ -911,12 +957,17 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
 
   void _showSubscriptionSheet(
       BuildContext context, WidgetRef ref, String userId) {
+    final sub = ref
+        .read(deliverySubscriptionProvider((userId: userId, role: 'client')))
+        .valueOrNull;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _SubscriptionActivationSheet(
+      builder: (_) => SubscriptionPackSheet(
         userId: userId,
+        role: 'client',
+        currentSubscription: sub,
       ),
     );
   }

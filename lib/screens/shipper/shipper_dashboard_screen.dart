@@ -784,7 +784,37 @@ class _ShipperDashboardScreenState
     final sub = ref.watch(deliverySubscriptionProvider((userId: shipper.userId, role: 'shipper')));
     return sub.when(
       data: (activeSub) {
-        if (activeSub != null) return const SizedBox.shrink();
+        if (activeSub != null && activeSub.status == 'active') return const SizedBox.shrink();
+        if (activeSub != null && activeSub.status == 'pending') {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.spaceMd, AppTheme.spaceSm, AppTheme.spaceMd, 0,
+            ),
+            child: GlassCard(
+              child: Row(
+                children: [
+                  const AnimatedIconDot(
+                    icon: Icons.hourglass_top_rounded,
+                    color: AppTheme.warningColor,
+                  ),
+                  const SizedBox(width: AppTheme.spaceMd),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Validation en attente', style: AppTheme.h3),
+                        Text(
+                          'Le fondateur approuvera votre abonnement.',
+                          style: AppTheme.caption,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
         final settings = ref.watch(platformSettingsProvider);
         final price = settings.valueOrNull?.deliveryShipperSubscriptionPrice ?? 0;
         return Padding(
