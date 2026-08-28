@@ -10,13 +10,13 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.1.5** |
-| Code de version (versionCode) | **225** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `f2e04bd` |
-| Statut CI | À publier au prochain push → release `v1.1.5` sur GitHub |
+| Version (versionName) | **1.1.8** (alignée sur le dernier tag CI `v1.0.91` + 17 commits → `1.1.8`) |
+| Code de version (versionCode) | **228** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `579be14` |
+| Statut CI | À publier au prochain push → release `v1.1.8` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
-| Origine du fichier | GitHub Release **v1.0.94** → workflow `release.yml` (job `android-aab`) |
+| Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
 | Nom du package | `com.cargolink.dz.cargolink` (aligné sur `google-services.json`, nécessaire pour Firebase/push) |
 | SDK cible | Android 13 (API 36) compilé dans la CI (`platforms;android-36`) |
 
@@ -47,6 +47,14 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.8
+
+- **Version de l'app alignée sur le dernier tag GitHub** : `pubspec.yaml` passée
+  à `1.1.8+228` (versionName `1.1.8`, versionCode `228` = nombre total de commits),
+  cohérente avec ce que la CI `release.yml` dérive depuis le dernier tag `v1.0.91`
+  (17 commits depuis → INC 108 → `1.1.8`). La CI écrase de toute façon la valeur
+  locale via `--build-name/--build-number`, mais la version source reste cohérente.
 
 ### Version 1.1.5
 
