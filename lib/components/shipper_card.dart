@@ -60,6 +60,7 @@ class ShipperCard extends StatefulWidget {
     this.reviewCount,
     this.origin,
     required this.destination,
+    this.destinationCityLabel,
     this.airline,
     this.flightNumber,
     required this.availableKg,
@@ -90,6 +91,7 @@ class ShipperCard extends StatefulWidget {
   /// "recent shipments" gallery).
   final String? origin;
   final String destination;
+  final String? destinationCityLabel;
   final String? airline;
   final String? flightNumber;
 
@@ -154,6 +156,7 @@ class _ShipperCardState extends State<ShipperCard> {
             FlightRouteCard(
               origin: widget.origin!,
               destination: widget.destination,
+              destinationCityLabel: widget.destinationCityLabel,
               airline: widget.airline,
               flightNumber: widget.flightNumber,
               departureTime: _hasTime(widget.departureDate)
@@ -464,6 +467,7 @@ class _ShipperCardState extends State<ShipperCard> {
 class FlightRouteCard extends StatelessWidget {
   final String origin;
   final String destination;
+  final String? destinationCityLabel;
   final String? airline;
   final String? flightNumber;
   final String? departureTime;
@@ -473,6 +477,7 @@ class FlightRouteCard extends StatelessWidget {
     super.key,
     required this.origin,
     required this.destination,
+    this.destinationCityLabel,
     this.airline,
     this.flightNumber,
     this.departureTime,
@@ -642,6 +647,7 @@ class FlightRouteCard extends StatelessWidget {
                 Expanded(
                   child: _AirportCard(
                     code: destination,
+                    subtitle: destinationCityLabel,
                     time: arrivalTime,
                     alignment: CrossAxisAlignment.end,
                     textAlign: TextAlign.right,
@@ -708,6 +714,7 @@ class FlightRouteCard extends StatelessWidget {
 
 class _AirportCard extends StatelessWidget {
   final String code; // chaîne complète ex: "Aéroport d'Alger (ALG)"
+  final String? subtitle;
   final String? time;
   final CrossAxisAlignment alignment;
   final TextAlign textAlign;
@@ -715,6 +722,7 @@ class _AirportCard extends StatelessWidget {
 
   const _AirportCard({
     required this.code,
+    this.subtitle,
     required this.time,
     required this.alignment,
     required this.textAlign,
@@ -817,6 +825,24 @@ class _AirportCard extends StatelessWidget {
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: theme.textTheme.bodySmall?.color?.withValues(alpha:0.60),
+              ),
+            ),
+          ],
+
+          // --------------------------------------------------------------
+          // VILLE D'ARRIVÉE (sous l'aéroport)
+          // --------------------------------------------------------------
+          if (subtitle != null && subtitle!.isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(
+              subtitle!,
+              textAlign: textAlign,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: primary.withValues(alpha:0.85),
               ),
             ),
           ],

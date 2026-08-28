@@ -1295,6 +1295,10 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       isMicroImportateur: shipper?.isMicroImportateur ?? false,
       origin: shipment.originCountry,
       destination: shipment.arrivalAirport ?? shipment.destinationCity,
+      destinationCityLabel: (shipment.arrivalAirport != null &&
+              shipment.arrivalAirport!.isNotEmpty)
+          ? shipment.destinationCity
+          : null,
       airline: shipment.airline,
       flightNumber: shipment.flightNumber,
       availableKg: shipment.remainingWeightKg,
