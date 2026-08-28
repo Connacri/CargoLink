@@ -585,6 +585,7 @@ class _CreateRequestSheetState extends ConsumerState<_CreateRequestSheet> {
             ),
           );
           if (result == true && mounted) {
+            ref.invalidate(subscriptionPacksProvider('client'));
             showModalBottomSheet(
               context: context,
               isScrollControlled: true,

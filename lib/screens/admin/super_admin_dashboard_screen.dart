@@ -134,7 +134,7 @@ class _SuperAdminDashboardScreenState
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  CompactSliverHeader(
+                  const CompactSliverHeader(
                     title: 'Comptes',
                     subtitle: 'Gérer les utilisateurs',
                     icon: Icons.people_alt_outlined,
@@ -1745,10 +1745,10 @@ class _ManagePacksSection extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppTheme.spaceMd),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
                     'Packs d\'abonnement',
                     style: AppTheme.h3,

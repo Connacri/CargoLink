@@ -370,13 +370,14 @@ class SubscriptionPack {
 
   factory SubscriptionPack.fromJson(Map<String, dynamic> json) {
     return SubscriptionPack(
-      id: json['id'] as String,
-      name: json['name'] as String? ?? '',
-      role: json['role'] as String? ?? 'shipper',
-      durationDays: (json['duration_days'] as num?)?.toInt() ?? 30,
-      price: (json['price'] as num?)?.toDouble() ?? 0,
-      currency: json['currency'] as String? ?? 'DZD',
-      active: json['active'] as bool? ?? true,
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      role: json['role']?.toString() ?? 'shipper',
+      durationDays:
+          (num.tryParse(json['duration_days']?.toString() ?? '') ?? 30).toInt(),
+      price: (num.tryParse(json['price']?.toString() ?? '') ?? 0).toDouble(),
+      currency: json['currency']?.toString() ?? 'DZD',
+      active: json['active'] == true || json['active']?.toString() == 'true',
     );
   }
 

@@ -985,6 +985,7 @@ class _CreateDeliveryRequestSheetState
             ),
           );
           if (result == true && mounted) {
+            ref.invalidate(subscriptionPacksProvider('client'));
             showModalBottomSheet(
               context: context,
               isScrollControlled: true,

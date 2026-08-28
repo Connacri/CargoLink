@@ -512,18 +512,19 @@ class DeliveryService {
   /// Active packs for a role displayed to users choosing a subscription.
   Future<List<SubscriptionPack>> getPacks(String role) async {
     try {
+      final normalizedRole = role.toLowerCase().trim();
       final response = await _supabase
           .from('subscription_packs')
           .select()
-          .eq('role', role)
+          .eq('role', normalizedRole)
           .eq('active', true)
           .order('price', ascending: true);
-      return (response as List)
-          .map((r) => SubscriptionPack.fromJson(r))
+      return response
+          .map((r) => SubscriptionPack.fromJson(Map<String, dynamic>.from(r)))
           .toList();
     } catch (e) {
-      _logger.e('Error getting packs: $e');
-      rethrow;
+      _logger.e('Error getting packs(role=$role): $e');
+      return [];
     }
   }
 
@@ -532,10 +533,11 @@ class DeliveryService {
     try {
       PostgrestFilterBuilder query =
           _supabase.from('subscription_packs').select();
-      if (role != null) query = query.eq('role', role);
+      if (role != null) query = query.eq('role', role.toLowerCase().trim());
       final response = await query.order('created_at', ascending: true);
       return (response as List)
-          .map((r) => SubscriptionPack.fromJson(r))
+          .map((r) => SubscriptionPack.fromJson(
+              Map<String, dynamic>.from(r as Map)))
           .toList();
     } catch (e) {
       _logger.e('Error getting all packs: $e');

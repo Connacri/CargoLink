@@ -71,6 +71,12 @@ class _SubscriptionPacksScreenState
     );
   }
 
+  void _invalidateAll() {
+    ref.invalidate(allSubscriptionPacksProvider);
+    ref.invalidate(subscriptionPacksProvider('client'));
+    ref.invalidate(subscriptionPacksProvider('shipper'));
+  }
+
   Future<void> _openForm({SubscriptionPack? pack}) async {
     final changed = await showModalBottomSheet<bool>(
       context: context,
@@ -79,7 +85,7 @@ class _SubscriptionPacksScreenState
       builder: (_) => _PackFormSheet(pack: pack),
     );
     if (changed == true) {
-      ref.invalidate(allSubscriptionPacksProvider);
+      _invalidateAll();
     }
   }
 
@@ -88,7 +94,7 @@ class _SubscriptionPacksScreenState
       await ref
           .read(deliveryServiceProvider)
           .togglePack(pack.id, !pack.active);
-      ref.invalidate(allSubscriptionPacksProvider);
+      _invalidateAll();
     } catch (e) {
       if (mounted) await showAppErrorDialog(context, message: 'Erreur: $e');
     }
@@ -117,7 +123,7 @@ class _SubscriptionPacksScreenState
     if (confirm != true) return;
     try {
       await ref.read(deliveryServiceProvider).deletePack(pack.id);
-      ref.invalidate(allSubscriptionPacksProvider);
+      _invalidateAll();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pack supprimé')),

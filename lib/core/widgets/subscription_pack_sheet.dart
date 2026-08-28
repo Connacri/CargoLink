@@ -16,7 +16,7 @@ import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/delivery_models.dart';
 
-class SubscriptionPackSheet extends ConsumerWidget {
+class SubscriptionPackSheet extends ConsumerStatefulWidget {
   const SubscriptionPackSheet({
     super.key,
     required this.userId,
@@ -29,17 +29,42 @@ class SubscriptionPackSheet extends ConsumerWidget {
   final DeliverySubscription? currentSubscription;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final packsAsync = ref.watch(subscriptionPacksProvider(role));
+  ConsumerState<SubscriptionPackSheet> createState() =>
+      _SubscriptionPackSheetState();
+}
 
-    final hasActive = currentSubscription != null &&
-        currentSubscription!.status == 'active' &&
-        currentSubscription!.isActive;
-    final hasPending = currentSubscription != null &&
-        currentSubscription!.status == 'pending';
+class _SubscriptionPackSheetState extends ConsumerState<SubscriptionPackSheet> {
+  late String _selectedRole;
+
+  @override
+  void initState() {
+    super.initState();
+    // Normalize role: default to 'client' or 'shipper'
+    final raw = widget.role.toLowerCase().trim();
+    if (raw == 'client') {
+      _selectedRole = 'client';
+    } else {
+      _selectedRole = 'shipper';
+    }
+  }
+
+  bool get _isAdminOrFounder {
+    final raw = widget.role.toLowerCase().trim();
+    return raw == 'admin' || raw == 'super_admin';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final packsAsync = ref.watch(subscriptionPacksProvider(_selectedRole));
+
+    final hasActive = widget.currentSubscription != null &&
+        widget.currentSubscription!.status == 'active' &&
+        widget.currentSubscription!.isActive;
+    final hasPending = widget.currentSubscription != null &&
+        widget.currentSubscription!.status == 'pending';
 
     return DraggableScrollableSheet(
-      initialChildSize: hasActive || hasPending ? 0.8 : 0.7,
+      initialChildSize: hasActive || hasPending ? 0.85 : 0.75,
       minChildSize: 0.4,
       maxChildSize: 0.95,
       expand: false,
@@ -104,12 +129,33 @@ class SubscriptionPackSheet extends ConsumerWidget {
                             '« abonné » une fois approuvé.',
                 style: AppTheme.caption,
               ),
+              if (_isAdminOrFounder) ...[
+                const SizedBox(height: 14),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(
+                      value: 'shipper',
+                      label: Text('Expéditeur'),
+                      icon: Icon(Icons.local_shipping_rounded),
+                    ),
+                    ButtonSegment(
+                      value: 'client',
+                      label: Text('Client'),
+                      icon: Icon(Icons.person_rounded),
+                    ),
+                  ],
+                  selected: {_selectedRole},
+                  onSelectionChanged: (set) {
+                    setState(() => _selectedRole = set.first);
+                  },
+                ),
+              ],
               const SizedBox(height: 16),
               // ── Current subscription info ──
               if (hasActive || hasPending) ...[
                 _CurrentSubscriptionCard(
-                  subscription: currentSubscription!,
-                  role: role,
+                  subscription: widget.currentSubscription!,
+                  role: _selectedRole,
                 ),
                 const SizedBox(height: 16),
               ],
@@ -117,7 +163,7 @@ class SubscriptionPackSheet extends ConsumerWidget {
               packsAsync.when(
                 data: (packs) {
                   if (packs.isEmpty) {
-                    return const _EmptyPackMessage();
+                    return _EmptyPackMessage(role: _selectedRole);
                   }
                   return Column(
                     children: [
@@ -128,12 +174,14 @@ class SubscriptionPackSheet extends ConsumerWidget {
                           durationDays: pack.durationDays,
                           price: pack.price,
                           currency: pack.currency,
-                          roleIcon: role == 'shipper'
+                          roleIcon: _selectedRole == 'shipper'
                               ? Icons.local_shipping_rounded
                               : Icons.person_rounded,
                           onTap: () => _purchase(
-                              ref, context, pack.durationDays, pack.price,
-                              packName: pack.name),
+                            pack.durationDays,
+                            pack.price,
+                            packName: pack.name,
+                          ),
                         ),
                     ],
                   );
@@ -144,7 +192,8 @@ class SubscriptionPackSheet extends ConsumerWidget {
                 ),
                 error: (err, _) => _ErrorCard(
                   message: 'Impossible de charger les packs : $err',
-                  onRetry: () => ref.invalidate(subscriptionPacksProvider(role)),
+                  onRetry: () =>
+                      ref.invalidate(subscriptionPacksProvider(_selectedRole)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -156,32 +205,32 @@ class SubscriptionPackSheet extends ConsumerWidget {
   }
 
   Future<void> _purchase(
-    WidgetRef ref,
-    BuildContext context,
     int durationDays,
     double price, {
     String? packName,
   }) async {
     try {
       await ref.read(deliveryServiceProvider).purchaseSubscription(
-            userId: userId,
-            role: role,
+            userId: widget.userId,
+            role: _selectedRole,
             price: price,
             durationDays: durationDays,
             packName: packName,
           );
-      ref.invalidate(deliverySubscriptionProvider((userId: userId, role: role)));
-      if (context.mounted) {
+      ref.invalidate(deliverySubscriptionProvider(
+          (userId: widget.userId, role: _selectedRole)));
+      if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text(
-            'Demande envoyée — validation par le fondateur en attente',
-          )),
+            content: Text(
+              'Demande envoyée — validation par le fondateur en attente',
+            ),
+          ),
         );
       }
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erreur : $e')),
         );
@@ -213,19 +262,21 @@ class _PackTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Ink(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.amber.shade600, Colors.orange.shade500],
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Ink(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.amber.shade600, Colors.orange.shade500],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: AppTheme.shadowMd,
             ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: AppTheme.shadowMd,
-          ),
-          child: Row(
+            child: Row(
             children: [
               Container(
                 width: 48,
@@ -281,6 +332,7 @@ class _PackTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -434,31 +486,34 @@ class _ErrorCard extends StatelessWidget {
 
 /// Message affiché quand aucun pack actif n'est configuré pour ce rôle.
 class _EmptyPackMessage extends StatelessWidget {
-  const _EmptyPackMessage();
+  final String role;
+  const _EmptyPackMessage({required this.role});
 
   @override
   Widget build(BuildContext context) {
+    final roleLabel = role == 'client' ? 'clients' : 'expéditeurs';
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.amber.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
           const Icon(Icons.card_membership_rounded,
-              color: AppTheme.textMutedColor, size: 28),
-          const SizedBox(height: 8),
+              color: AppTheme.textMutedColor, size: 32),
+          const SizedBox(height: 10),
+          Text(
+            'Aucun pack actif pour les $roleLabel',
+            textAlign: TextAlign.center,
+            style: AppTheme.h3.copyWith(fontSize: 15),
+          ),
+          const SizedBox(height: 6),
           const Text(
-            'Aucun pack d\'abonnement actif pour le moment.',
+            'Le fondateur doit activer ou créer un pack d\'abonnement dans « Abonnements ».',
             textAlign: TextAlign.center,
             style: AppTheme.caption,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Le fondateur doit créer des packs dans « Abonnements ».',
-            textAlign: TextAlign.center,
-            style: AppTheme.caption.copyWith(fontSize: 11),
           ),
         ],
       ),

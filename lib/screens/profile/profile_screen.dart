@@ -608,9 +608,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
             ),
           ],
-          // Bandeau abonnement sous les badges
-          const SizedBox(height: AppTheme.spaceSm),
-          SubscriptionBanner(userId: userData.id, role: userData.role),
+          // Bandeau abonnement sous les badges (clients & expéditeurs)
+          if (userData.role == 'client' || userData.role == 'shipper') ...[
+            const SizedBox(height: AppTheme.spaceSm),
+            SubscriptionBanner(userId: userData.id, role: userData.role),
+          ],
         ],
       ),
     );

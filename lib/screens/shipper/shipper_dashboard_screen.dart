@@ -821,19 +821,19 @@ class _ShipperDashboardScreenState
           );
         }
         if (activeSub != null && activeSub.status == 'pending') {
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(
+          return const Padding(
+            padding: EdgeInsets.fromLTRB(
               AppTheme.spaceMd, AppTheme.spaceSm, AppTheme.spaceMd, 0,
             ),
             child: GlassCard(
               child: Row(
                 children: [
-                  const AnimatedIconDot(
+                  AnimatedIconDot(
                     icon: Icons.hourglass_top_rounded,
                     color: AppTheme.warningColor,
                   ),
-                  const SizedBox(width: AppTheme.spaceMd),
-                  const Expanded(
+                  SizedBox(width: AppTheme.spaceMd),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
