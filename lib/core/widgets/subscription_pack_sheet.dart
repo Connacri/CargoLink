@@ -2,10 +2,10 @@
 // CHOIX D'ABONNEMENT — feuille partagée (client & expéditeur)
 // ============================================================================
 //
-// Affiche les packs d'abonnement actifs configurés par le fondateur. Quand
-// l'utilisateur clique sur un pack, une demande d'abonnement (status 'pending')
-// est créée ; le fondateur l'approuve après réception du paiement. En l'absence
-// de pack configuré, on se rabat sur le prix/durée des platform_settings.
+// Affiche les packs d'abonnement actifs configurés par le fondateur (source
+// unique). Quand l'utilisateur clique sur un pack, une demande d'abonnement
+// (status 'pending') est créée ; le fondateur l'approuve après réception du
+// paiement.
 //
 // Si [currentSubscription] est fourni, l'utilisateur peut changer/upgrade son
 // abonnement en sélectionnant un nouveau pack.
@@ -31,7 +31,6 @@ class SubscriptionPackSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final packsAsync = ref.watch(subscriptionPacksProvider(role));
-    final settingsAsync = ref.watch(platformSettingsProvider);
 
     final hasActive = currentSubscription != null &&
         currentSubscription!.status == 'active' &&
@@ -118,13 +117,7 @@ class SubscriptionPackSheet extends ConsumerWidget {
               packsAsync.when(
                 data: (packs) {
                   if (packs.isEmpty) {
-                    return _FallbackPack(
-                      role: role,
-                      userId: userId,
-                      settingsAsync: settingsAsync,
-                      title:
-                          'Abonnement ${role == 'shipper' ? 'Expéditeur' : 'Client'}',
-                    );
+                    return const _EmptyPackMessage();
                   }
                   return Column(
                     children: [
@@ -439,71 +432,36 @@ class _ErrorCard extends StatelessWidget {
   }
 }
 
-/// Repli si aucun pack n'est configuré : prix/durée depuis les réglages.
-class _FallbackPack extends ConsumerWidget {
-  const _FallbackPack({
-    required this.role,
-    required this.userId,
-    required this.settingsAsync,
-    required this.title,
-  });
-
-  final String role;
-  final String userId;
-  final AsyncValue settingsAsync;
-  final String title;
+/// Message affiché quand aucun pack actif n'est configuré pour ce rôle.
+class _EmptyPackMessage extends StatelessWidget {
+  const _EmptyPackMessage();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final priceAsync = settingsAsync.when(
-      data: (s) => role == 'shipper'
-          ? s.deliveryShipperSubscriptionPrice
-          : s.deliveryClientSubscriptionPrice,
-      loading: () => 0.0,
-      error: (_, __) => 0.0,
-    );
-    final daysAsync = settingsAsync.when(
-      data: (s) => s.deliverySubscriptionDurationDays,
-      loading: () => 0,
-      error: (_, __) => 0,
-    );
-    return _PackTile(
-      name: title,
-      durationDays: daysAsync,
-      price: priceAsync,
-      currency: 'DZD',
-      roleIcon:
-          role == 'shipper' ? Icons.local_shipping_rounded : Icons.person_rounded,
-      onTap: () {
-        if (priceAsync <= 0 || daysAsync <= 0) return;
-        ref
-            .read(deliveryServiceProvider)
-            .purchaseSubscription(
-              userId: userId,
-              role: role,
-              price: priceAsync,
-              durationDays: daysAsync,
-            )
-            .then((_) {
-          ref.invalidate(
-              deliverySubscriptionProvider((userId: userId, role: role)));
-          if (context.mounted) {
-            Navigator.pop(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text(
-                'Demande envoyée — validation par le fondateur en attente',
-              )),
-            );
-          }
-        }).catchError((e) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Erreur : $e')),
-            );
-          }
-        });
-      },
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.card_membership_rounded,
+              color: AppTheme.textMutedColor, size: 28),
+          const SizedBox(height: 8),
+          const Text(
+            'Aucun pack d\'abonnement actif pour le moment.',
+            textAlign: TextAlign.center,
+            style: AppTheme.caption,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Le fondateur doit créer des packs dans « Abonnements ».',
+            textAlign: TextAlign.center,
+            style: AppTheme.caption.copyWith(fontSize: 11),
+          ),
+        ],
+      ),
     );
   }
 }

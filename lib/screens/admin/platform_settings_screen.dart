@@ -30,9 +30,6 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
   late final TextEditingController _minWeightController;
   late final TextEditingController _precisionController;
   late final TextEditingController _referralCommissionController;
-  late final TextEditingController _deliveryClientSubPriceController;
-  late final TextEditingController _deliveryShipperSubPriceController;
-  late final TextEditingController _deliverySubDurationController;
   String _currency = AppConstants.defaultCurrency;
   bool _referralActive = false;
   bool _saving = false;
@@ -47,9 +44,6 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
     _minWeightController = TextEditingController();
     _precisionController = TextEditingController();
     _referralCommissionController = TextEditingController();
-    _deliveryClientSubPriceController = TextEditingController();
-    _deliveryShipperSubPriceController = TextEditingController();
-    _deliverySubDurationController = TextEditingController();
   }
 
   @override
@@ -61,9 +55,6 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
     _minWeightController.dispose();
     _precisionController.dispose();
     _referralCommissionController.dispose();
-    _deliveryClientSubPriceController.dispose();
-    _deliveryShipperSubPriceController.dispose();
-    _deliverySubDurationController.dispose();
     super.dispose();
   }
 
@@ -81,12 +72,6 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
         'default_currency': _currency,
         'referral_commission_percent': _referralCommissionController.text,
         'referral_program_active': _referralActive.toString(),
-        'delivery_client_subscription_price':
-            _deliveryClientSubPriceController.text,
-        'delivery_shipper_subscription_price':
-            _deliveryShipperSubPriceController.text,
-        'delivery_subscription_duration_days':
-            _deliverySubDurationController.text,
       });
       ref.invalidate(platformSettingsProvider);
       if (mounted) {
@@ -122,12 +107,6 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
           _referralCommissionController.text =
               s.referralCommissionPercent.toStringAsFixed(0);
           _referralActive = s.referralProgramActive;
-          _deliveryClientSubPriceController.text =
-              s.deliveryClientSubscriptionPrice.toStringAsFixed(0);
-          _deliveryShipperSubPriceController.text =
-              s.deliveryShipperSubscriptionPrice.toStringAsFixed(0);
-          _deliverySubDurationController.text =
-              s.deliverySubscriptionDurationDays.toString();
         }
 
         return Scaffold(
@@ -364,82 +343,6 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
                                   value: _referralActive,
                                   onChanged: (v) =>
                                       setState(() => _referralActive = v),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // ── Abonnements ──
-                          const SizedBox(height: AppTheme.spaceMd),
-                          GlassCard(
-                            padding: const EdgeInsets.all(AppTheme.spaceMd),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                const Row(
-                                  children: [
-                                    Icon(Icons.local_shipping_outlined,
-                                        size: 18, color: AppTheme.primaryColor),
-                                    SizedBox(width: AppTheme.spaceSm),
-                                    Text('Abonnements', style: AppTheme.h3),
-                                  ],
-                                ),
-                                const SizedBox(height: AppTheme.spaceSm),
-                                const Divider(height: 1),
-                                const SizedBox(height: AppTheme.spaceMd),
-                                TextFormField(
-                                  controller: _deliveryClientSubPriceController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  decoration: InputDecoration(
-                                    labelText: 'Prix abonnement client ($_currency)',
-                                    prefixIcon: const Icon(Icons.person_outline),
-                                  ),
-                                  validator: (v) {
-                                    final value = double.tryParse(v ?? '');
-                                    if (value == null || value < 0) {
-                                      return 'Prix invalide';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: AppTheme.spaceMd),
-                                TextFormField(
-                                  controller: _deliveryShipperSubPriceController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  decoration: InputDecoration(
-                                    labelText: 'Prix abonnement expéditeur ($_currency)',
-                                    prefixIcon: const Icon(Icons.delivery_dining_outlined),
-                                  ),
-                                  validator: (v) {
-                                    final value = double.tryParse(v ?? '');
-                                    if (value == null || value < 0) {
-                                      return 'Prix invalide';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: AppTheme.spaceMd),
-                                TextFormField(
-                                  controller: _deliverySubDurationController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Durée de l\'abonnement (jours)',
-                                    prefixIcon: Icon(Icons.schedule_outlined),
-                                    suffixText: 'jours',
-                                  ),
-                                  validator: (v) {
-                                    final value = int.tryParse(v ?? '');
-                                    if (value == null || value < 1) {
-                                      return 'Durée invalide';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: AppTheme.spaceXs),
-                                const Text(
-                                  'Les clients/expéditeurs doivent payer un abonnement '
-                                  'pour utiliser la fonctionnalité "Demande de livraison".',
-                                  style: AppTheme.caption,
                                 ),
                               ],
                             ),

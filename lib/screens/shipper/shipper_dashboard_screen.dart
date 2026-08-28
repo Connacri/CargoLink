@@ -812,7 +812,7 @@ class _ShipperDashboardScreenState
                     ),
                   ),
                   TextButton(
-                    onPressed: () => _showSubscriptionSheet(0),
+                    onPressed: () => _showSubscriptionSheet(),
                     child: const Text('Changer'),
                   ),
                 ],
@@ -850,8 +850,6 @@ class _ShipperDashboardScreenState
             ),
           );
         }
-        final settings = ref.watch(platformSettingsProvider);
-        final price = settings.valueOrNull?.deliveryShipperSubscriptionPrice ?? 0;
         return Padding(
           padding: const EdgeInsets.fromLTRB(
             AppTheme.spaceMd,
@@ -881,7 +879,7 @@ class _ShipperDashboardScreenState
                   ),
                 ),
                 TextButton(
-                  onPressed: () => _showSubscriptionSheet(price),
+                  onPressed: () => _showSubscriptionSheet(),
                   child: const Text('Activer'),
                 ),
               ],
@@ -894,7 +892,7 @@ class _ShipperDashboardScreenState
     );
   }
 
-  void _showSubscriptionSheet(double price) {
+  void _showSubscriptionSheet() {
     final userId = ref.read(authServiceProvider).currentUserId;
     if (userId == null) return;
     ref.invalidate(subscriptionPacksProvider('shipper'));
