@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|
-| Version (versionName) | **1.1.8** (alignée sur le dernier tag CI `v1.0.91` + 17 commits → `1.1.8`) |
-| Code de version (versionCode) | **228** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `579be14` |
-| Statut CI | À publier au prochain push → release `v1.1.8` sur GitHub |
+| Version (versionName) | **1.1.11** |
+| Code de version (versionCode) | **231** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `fb262fa` |
+| Statut CI | À publier au prochain push → release `v1.1.11` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,21 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.11
+
+- **Abonnement consolidé sur les packs (suppression de l'ancien système prix fixes)** :
+  l'intégralité de l'abonnement repose désormais sur les **packs** configurés par le
+  fondateur. Les réglages plateforme « Abonnements » (prix client / expéditeur / durée)
+  et le repli `_FallbackPack` ont été supprimés ; la feuille de choix affiche un message
+  « Aucun pack d'abonnement actif pour le moment » quand aucun pack n'existe. La section
+  Abonnements du dashboard fondateur (doublon de la gestion des packs et des demandes à
+  valider) a été retirée. Les clés `platform_settings` legacy
+  (`delivery_client_subscription_price`, `delivery_shipper_subscription_price`,
+  `delivery_subscription_duration_days`) sont supprimées de la base.
+- **Cartes d'offres : ville d'arrivée sous l'aéroport** : la carte d'offre (feed client)
+  affiche l'**aéroport d'arrivée** et, en dessous, la **ville d'arrivée**. Le départ
+  conserve le pays/origine.
 
 ### Version 1.1.8
 
