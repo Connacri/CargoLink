@@ -102,6 +102,7 @@ class SubscriptionBanner extends ConsumerWidget {
 
   void _subscribe(BuildContext context, WidgetRef ref,
       {DeliverySubscription? currentSubscription}) {
+    ref.invalidate(subscriptionPacksProvider(role));
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

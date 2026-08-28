@@ -740,92 +740,104 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               if (sub != null && sub.isActive) {
                 final daysLeft =
                     sub.expiresAt.difference(DateTime.now()).inDays;
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius:
-                        BorderRadius.circular(AppTheme.radiusLg),
-                    border: Border.all(
-                        color: Colors.green.shade200, width: 1),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.check_circle_rounded,
-                          color: Colors.green.shade600, size: 22),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Abonnement actif',
-                              style: AppTheme.body.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: Colors.green.shade800,
+                return InkWell(
+                  onTap: () =>
+                      _showSubscriptionSheet(context, ref, userId),
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.radiusLg),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.radiusLg),
+                      border: Border.all(
+                          color: Colors.green.shade200, width: 1),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle_rounded,
+                            color: Colors.green.shade600, size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Abonnement actif',
+                                style: AppTheme.body.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.green.shade800,
+                                ),
                               ),
-                            ),
-                            Text(
-                              'Expire dans $daysLeft jour(s)',
-                              style: AppTheme.caption.copyWith(
-                                color: Colors.green.shade600,
+                              Text(
+                                'Expire dans $daysLeft jour(s) — appuyez pour changer',
+                                style: AppTheme.caption.copyWith(
+                                  color: Colors.green.shade600,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      Icon(Icons.verified_rounded,
-                          color: Colors.green.shade500, size: 20),
-                    ],
+                        Icon(Icons.swap_horiz_rounded,
+                            color: Colors.green.shade500, size: 20),
+                      ],
+                    ),
                   ),
                 );
               }
               // Abonnement en attente de validation par le fondateur
               if (sub != null && sub.status == 'pending') {
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade50,
-                    borderRadius:
-                        BorderRadius.circular(AppTheme.radiusLg),
-                    border: Border.all(
-                        color: Colors.amber.shade200, width: 1),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.hourglass_top_rounded,
-                          color: Colors.amber.shade700, size: 22),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Validation en attente',
-                              style: AppTheme.body.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: Colors.amber.shade800,
+                return InkWell(
+                  onTap: () =>
+                      _showSubscriptionSheet(context, ref, userId),
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.radiusLg),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.radiusLg),
+                      border: Border.all(
+                          color: Colors.amber.shade200, width: 1),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.hourglass_top_rounded,
+                            color: Colors.amber.shade700, size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Validation en attente',
+                                style: AppTheme.body.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.amber.shade800,
+                                ),
                               ),
-                            ),
-                            Text(
-                              'Votre abonnement sera actif dès que le '
-                              'fondateur l\'aura approuvé.',
-                              style: AppTheme.caption.copyWith(
-                                color: Colors.amber.shade700,
+                              Text(
+                                'Approuvé dès validation du fondateur — '
+                                'appuyez pour changer de pack',
+                                style: AppTheme.caption.copyWith(
+                                  color: Colors.amber.shade700,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      Icon(Icons.verified_user_outlined,
-                          color: Colors.amber.shade500, size: 20),
-                    ],
+                        Icon(Icons.swap_horiz_rounded,
+                            color: Colors.amber.shade500, size: 20),
+                      ],
+                    ),
                   ),
                 );
               }
@@ -957,6 +969,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
 
   void _showSubscriptionSheet(
       BuildContext context, WidgetRef ref, String userId) {
+    ref.invalidate(subscriptionPacksProvider('client'));
     final sub = ref
         .read(deliverySubscriptionProvider((userId: userId, role: 'client')))
         .valueOrNull;

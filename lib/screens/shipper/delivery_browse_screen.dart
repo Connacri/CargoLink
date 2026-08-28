@@ -200,6 +200,7 @@ class _SubscriptionLock extends ConsumerStatefulWidget {
 
 class _SubscriptionLockState extends ConsumerState<_SubscriptionLock> {
   void _openSheet() {
+    ref.invalidate(subscriptionPacksProvider('shipper'));
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

@@ -784,7 +784,42 @@ class _ShipperDashboardScreenState
     final sub = ref.watch(deliverySubscriptionProvider((userId: shipper.userId, role: 'shipper')));
     return sub.when(
       data: (activeSub) {
-        if (activeSub != null && activeSub.status == 'active') return const SizedBox.shrink();
+        if (activeSub != null && activeSub.status == 'active') {
+          final pack = activeSub.packName ?? 'Abonnement';
+          final days = activeSub.daysRemaining;
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.spaceMd, AppTheme.spaceSm, AppTheme.spaceMd, 0,
+            ),
+            child: GlassCard(
+              child: Row(
+                children: [
+                  const AnimatedIconDot(
+                    icon: Icons.verified_rounded,
+                    color: Color(0xFF16A34A),
+                  ),
+                  const SizedBox(width: AppTheme.spaceMd),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Abonné · $pack', style: AppTheme.h3),
+                        Text(
+                          '$days jour${days > 1 ? 's' : ''} restant${days > 1 ? 's' : ''}',
+                          style: AppTheme.caption,
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _showSubscriptionSheet(0),
+                    child: const Text('Changer'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
         if (activeSub != null && activeSub.status == 'pending') {
           return Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -862,6 +897,7 @@ class _ShipperDashboardScreenState
   void _showSubscriptionSheet(double price) {
     final userId = ref.read(authServiceProvider).currentUserId;
     if (userId == null) return;
+    ref.invalidate(subscriptionPacksProvider('shipper'));
     final sub = ref
         .read(deliverySubscriptionProvider((userId: userId, role: 'shipper')))
         .valueOrNull;
