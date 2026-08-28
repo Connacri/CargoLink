@@ -149,11 +149,9 @@ class SubscriptionPackSheet extends ConsumerWidget {
                   padding: EdgeInsets.symmetric(vertical: 40),
                   child: Center(child: CircularProgressIndicator()),
                 ),
-                error: (_, __) => _FallbackPack(
-                  role: role,
-                  userId: userId,
-                  settingsAsync: settingsAsync,
-                  title: 'Abonnement',
+                error: (err, _) => _ErrorCard(
+                  message: 'Impossible de charger les packs : $err',
+                  onRetry: () => ref.invalidate(subscriptionPacksProvider(role)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -398,6 +396,43 @@ class _CurrentSubscriptionCard extends StatelessWidget {
                   fontSize: 11, color: AppTheme.textSecondaryColor),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Repli si aucun pack n'est configuré : prix/durée depuis les réglages.
+class _ErrorCard extends StatelessWidget {
+  const _ErrorCard({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.cloud_off_rounded, color: Colors.red.shade400, size: 28),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: AppTheme.caption.copyWith(color: Colors.red.shade700),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('Réessayer'),
+          ),
         ],
       ),
     );

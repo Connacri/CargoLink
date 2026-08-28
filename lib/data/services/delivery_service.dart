@@ -523,7 +523,7 @@ class DeliveryService {
           .toList();
     } catch (e) {
       _logger.e('Error getting packs: $e');
-      return [];
+      rethrow;
     }
   }
 
