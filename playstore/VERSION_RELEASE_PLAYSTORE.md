@@ -9,11 +9,11 @@
 ## Dernière version
 
 | Élément | Valeur |
-|---|---|
-| Version (versionName) | **1.1.11** |
-| Code de version (versionCode) | **231** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `fb262fa` |
-| Statut CI | À publier au prochain push → release `v1.1.11` sur GitHub |
+|---|---|---|
+| Version (versionName) | **1.1.12** |
+| Code de version (versionCode) | **233** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `7906411` |
+| Statut CI | À publier au prochain push → release `v1.1.12` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,20 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.12
+
+- **Packs d'abonnement affichés correctement selon le rôle et souscription** :
+  la feuille « Choisissez votre abonnement » affiche désormais les bons packs selon le
+  rôle (client → pack « Black » ; expéditeur → Silver/Gold/Platinum) et permet à
+  l'utilisateur de **s'abonner** (création d'une demande `pending` validée ensuite par
+  le fondateur). Le rendu des cartes de pack est fiabilisé (enveloppe `Material`) et le
+  rôle transmis est normalisé (minuscules/trim). Le bandeau d'abonnement du profil est
+  affiché tant pour les clients que pour les expéditeurs. Les données des packs sont
+  rafraîchies (invalidation) après création/modification/suppression côté fondateur.
+- **Parsing robuste des packs** : `SubscriptionPack.fromJson` accepte les nombres
+  encodés en chaîne (prix/durée) et ne lève plus d'exception, évitant un écran vide
+  silencieux.
 
 ### Version 1.1.11
 
