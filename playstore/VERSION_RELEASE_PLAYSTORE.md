@@ -50,6 +50,12 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 
 ### Version 1.1.5
 
+- **Réinitialisation complète de la plateforme** : la fonction `admin_reset_tables`
+  vide désormais **toutes les 48 tables** public (ajout des tables récentes :
+  abonnements, packs, dépôts, feedbacks, conversations/messages, publicités,
+  parrainages, demandes de suppression, etc.) + **tous les buckets Storage**
+  (ads, bookings, documents, feedbacks, profiles — purgés récursivement par la
+  fonction Edge `admin-reset`).
 - **Changement d'abonnement accessible partout** : un utilisateur déjà abonné
   (statut actif ou en attente) peut changer de pack depuis le tableau de bord
   expéditeur, l'accueil client et le profil — avec validation du fondateur.
