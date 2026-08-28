@@ -56,6 +56,11 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
   parrainages, demandes de suppression, etc.) + **tous les buckets Storage**
   (ads, bookings, documents, feedbacks, profiles — purgés récursivement par la
   fonction Edge `admin-reset`).
+- **Suppression totale des comptes** : la réinitialisation des comptes liste et
+  supprime TOUS les comptes Firebase Auth (via `accounts:query` — énumération
+  fiable et complète, sans comptes oubliés) **et** tous les comptes Supabase Auth
+  (suppression un par un via l'API admin), puis **vérifie** que les deux sont vides
+  (`firebaseAuthEmptied` / `supabaseAuthEmptied` renvoyés dans la réponse).
 - **Changement d'abonnement accessible partout** : un utilisateur déjà abonné
   (statut actif ou en attente) peut changer de pack depuis le tableau de bord
   expéditeur, l'accueil client et le profil — avec validation du fondateur.
