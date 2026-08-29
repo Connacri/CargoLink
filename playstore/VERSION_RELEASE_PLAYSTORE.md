@@ -62,6 +62,14 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
   encodés en chaîne (prix/durée) et ne lève plus d'exception, évitant un écran vide
   silencieux.
 
+### CI — build iOS signé
+
+> Infra (n'impacte pas le versioning de l'app Android) : le workflow `release.yml`
+> compile désormais un **IPA iOS signé** (`app-store-connect`) sur runner `macos-latest`
+> avec un certificat de distribution + provisioning profile App Store. Le `ios/Podfile`
+> a été ajouté. Secrets requis : `IOS_CERTIFICATE_P12_BASE64`, `IOS_CERTIFICATE_PASSWORD`,
+> `IOS_PROVISIONING_PROFILE_BASE64`, `IOS_TEAM_ID`, `IOS_KEYCHAIN_PASSWORD`.
+
 ### Version 1.1.11
 
 - **Abonnement consolidé sur les packs (suppression de l'ancien système prix fixes)** :
