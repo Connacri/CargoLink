@@ -718,58 +718,58 @@ class _ShipperDashboardScreenState
                   boxShadow: AppTheme.shadowMd,
                 ),
                 padding: const EdgeInsets.all(AppTheme.spaceLg),
-              child: Row(
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(18),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: const Icon(
+                        Icons.campaign_rounded,
+                        color: Colors.white,
+                        size: 38,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.campaign_rounded,
-                      color: Colors.white,
-                      size: 38,
-                    ),
-                  ),
-                  const SizedBox(width: AppTheme.spaceMd),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Publier une publicité',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
+                    const SizedBox(width: AppTheme.spaceMd),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Publier une publicité',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Sponsorisez votre activité : votre bannière sera '
-                          'affichée aux clients après validation de '
-                          'l\u2019administration et règlement des frais.',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            height: 1.35,
+                          SizedBox(height: 4),
+                          Text(
+                            'Sponsorisez votre activité : votre bannière sera '
+                            'affichée aux clients après validation de '
+                            'l\u2019administration et règlement des frais.',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                              height: 1.35,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: AppTheme.spaceSm),
-                  const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: Colors.white70,
-                    size: 18,
-                  ),
-                ],
+                    const SizedBox(width: AppTheme.spaceSm),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: Colors.white70,
+                      size: 18,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
           ],
         ],
       ),
@@ -781,7 +781,8 @@ class _ShipperDashboardScreenState
   // --------------------------------------------------------------------------
 
   Widget _buildSubscriptionBanner(Shipper shipper) {
-    final sub = ref.watch(deliverySubscriptionProvider((userId: shipper.userId, role: 'shipper')));
+    final sub = ref.watch(deliverySubscriptionProvider(
+        (userId: shipper.userId, role: 'shipper')));
     return sub.when(
       data: (activeSub) {
         if (activeSub != null && activeSub.status == 'active') {
@@ -789,7 +790,10 @@ class _ShipperDashboardScreenState
           final days = activeSub.daysRemaining;
           return Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppTheme.spaceMd, AppTheme.spaceSm, AppTheme.spaceMd, 0,
+              AppTheme.spaceMd,
+              AppTheme.spaceSm,
+              AppTheme.spaceMd,
+              0,
             ),
             child: GlassCard(
               child: Row(
@@ -823,7 +827,10 @@ class _ShipperDashboardScreenState
         if (activeSub != null && activeSub.status == 'pending') {
           return const Padding(
             padding: EdgeInsets.fromLTRB(
-              AppTheme.spaceMd, AppTheme.spaceSm, AppTheme.spaceMd, 0,
+              AppTheme.spaceMd,
+              AppTheme.spaceSm,
+              AppTheme.spaceMd,
+              0,
             ),
             child: GlassCard(
               child: Row(
@@ -924,10 +931,8 @@ class _ShipperDashboardScreenState
         .toList();
     if (activeOrders.isEmpty) return const SizedBox.shrink();
 
-    final pending =
-        activeOrders.where((b) => b.status == 'pending').length;
-    final confirmed =
-        activeOrders.where((b) => b.status == 'confirmed').length;
+    final pending = activeOrders.where((b) => b.status == 'pending').length;
+    final confirmed = activeOrders.where((b) => b.status == 'confirmed').length;
     final inTransit = activeOrders
         .where((b) =>
             b.status != 'pending' &&
@@ -935,20 +940,19 @@ class _ShipperDashboardScreenState
             b.status != 'delivered' &&
             b.status != 'cancelled')
         .length;
-    final totalValue =
-        activeOrders.fold(0.0, (sum, b) => sum + b.totalPrice);
+    final totalValue = activeOrders.fold(0.0, (sum, b) => sum + b.totalPrice);
 
     final departureDates = activeOrders
         .map((b) => b.shipment?.departureDate)
         .whereType<DateTime>()
         .toList()
       ..sort();
-    final nextDeparture = departureDates.isNotEmpty ? departureDates.first : null;
+    final nextDeparture =
+        departureDates.isNotEmpty ? departureDates.first : null;
 
     void navigate() => Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) =>
-                ShipperOrdersInProgressScreen(shipperId: shipperId),
+            builder: (_) => ShipperOrdersInProgressScreen(shipperId: shipperId),
           ),
         );
 
@@ -981,8 +985,7 @@ class _ShipperDashboardScreenState
                   ),
                   decoration: BoxDecoration(
                     color: AppTheme.infoColor.withValues(alpha: 0.12),
-                    borderRadius:
-                        BorderRadius.circular(AppTheme.radiusXs),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusXs),
                   ),
                   child: Text(
                     '${activeOrders.length}',
@@ -1125,7 +1128,7 @@ class _ShipperDashboardScreenState
   Widget _buildBookingsHeader(String shipperId) {
     final pager = ref.watch(shipperBookingsPagerProvider(shipperId));
     final pending = pager.items.where((b) => b.status == 'pending').length;
-
+    //if (pager.items.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.spaceMd,
@@ -1366,10 +1369,12 @@ class _ShipperDashboardScreenState
             ),
             const SizedBox(height: AppTheme.spaceXs),
             _PricingRow(
-              label: 'Dus plateforme (${commissionPercent.toStringAsFixed(0)}%)',
+              label:
+                  'Dus plateforme (${commissionPercent.toStringAsFixed(0)}%)',
               value: '${discountedDues.toStringAsFixed(0)} $currency',
               highlight: true,
-              strikethrough: payByVisa ? '${dues.toStringAsFixed(0)} $currency' : null,
+              strikethrough:
+                  payByVisa ? '${dues.toStringAsFixed(0)} $currency' : null,
             ),
             const SizedBox(height: AppTheme.spaceXs),
             _PricingRow(
@@ -1483,16 +1488,14 @@ class _ShipperDashboardScreenState
                       label: 'Départ — aéroport d\'origine',
                       value: originCountry,
                       prefixIcon: Icons.flight_takeoff_rounded,
-                      onChanged: (v) =>
-                          setSheetState(() => originCountry = v),
+                      onChanged: (v) => setSheetState(() => originCountry = v),
                     ),
                     const SizedBox(height: 12),
                     AirportPickerField(
                       label: 'Arrivée — aéroport de destination',
                       value: arrivalAirport,
                       prefixIcon: Icons.flight_land_rounded,
-                      onChanged: (v) =>
-                          setSheetState(() => arrivalAirport = v),
+                      onChanged: (v) => setSheetState(() => arrivalAirport = v),
                     ),
                     const SizedBox(height: 12),
                     CountryCityPickerField(
@@ -1602,8 +1605,8 @@ class _ShipperDashboardScreenState
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
                                 ),
-                                onPressed: () => setSheetState(() =>
-                                    collectionAddressCtrl.text = addr),
+                                onPressed: () => setSheetState(
+                                    () => collectionAddressCtrl.text = addr),
                               ),
                           ],
                         ),
@@ -1652,8 +1655,7 @@ class _ShipperDashboardScreenState
                               });
                             } catch (_) {
                               if (sheetContext.mounted) {
-                                ScaffoldMessenger.of(sheetContext)
-                                    .showSnackBar(
+                                ScaffoldMessenger.of(sheetContext).showSnackBar(
                                   const SnackBar(
                                       content: Text(
                                           'Impossible d\'obtenir la position')),
@@ -1721,8 +1723,7 @@ class _ShipperDashboardScreenState
                               if (originCountry == null ||
                                   arrivalAirport == null ||
                                   destinationCity == null) {
-                                ScaffoldMessenger.of(sheetContext)
-                                    .showSnackBar(
+                                ScaffoldMessenger.of(sheetContext).showSnackBar(
                                   const SnackBar(
                                     content: Text(
                                         'Choisissez les aéroports de départ '
@@ -1752,10 +1753,9 @@ class _ShipperDashboardScreenState
                                       availableWeightKg: weight,
                                       pricePerKg: price,
                                       departureDate: departure,
-                                      airline:
-                                          airlineController.text.isEmpty
-                                              ? null
-                                              : airlineController.text,
+                                      airline: airlineController.text.isEmpty
+                                          ? null
+                                          : airlineController.text,
                                       flightNumber:
                                           flightController.text.isEmpty
                                               ? null
@@ -1764,12 +1764,12 @@ class _ShipperDashboardScreenState
                                           descriptionController.text.isEmpty
                                               ? null
                                               : descriptionController.text,
-                                      collectionAddress:
-                                          collectionAddressCtrl.text.trim()
-                                                  .isEmpty
-                                              ? null
-                                              : collectionAddressCtrl.text
-                                                  .trim(),
+                                      collectionAddress: collectionAddressCtrl
+                                              .text
+                                              .trim()
+                                              .isEmpty
+                                          ? null
+                                          : collectionAddressCtrl.text.trim(),
                                       publicationFee: publicationFee,
                                       publicationFeeDiscount: discount,
                                     );
@@ -1811,11 +1811,11 @@ class _ShipperDashboardScreenState
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                          payByVisa
-                                              ? 'Offre publiée — paiement Visa en '
-                                                  'attente de confirmation du fondateur'
-                                              : 'Offre publiée — visible des '
-                                                  'clients immédiatement',
+                                        payByVisa
+                                            ? 'Offre publiée — paiement Visa en '
+                                                'attente de confirmation du fondateur'
+                                            : 'Offre publiée — visible des '
+                                                'clients immédiatement',
                                       ),
                                       backgroundColor: AppTheme.accentColor,
                                     ),
@@ -2546,7 +2546,9 @@ class _ShipperShipmentDetailScreenState
             const SizedBox(height: AppTheme.spaceSm),
             _SummaryRow(
               label: 'Arrivée',
-              value: shipment.arrivalDate != null ? _formatDate(shipment.arrivalDate!) : 'N/A',
+              value: shipment.arrivalDate != null
+                  ? _formatDate(shipment.arrivalDate!)
+                  : 'N/A',
             ),
             const SizedBox(height: AppTheme.spaceSm),
             _SummaryRow(
@@ -2752,8 +2754,9 @@ class _DashboardBookingCard extends ConsumerWidget {
                     icon: booking.isPaid
                         ? Icons.paid_rounded
                         : Icons.schedule_rounded,
-                    label:
-                        booking.isPaid ? 'Paiement reçu' : 'Paiement en attente',
+                    label: booking.isPaid
+                        ? 'Paiement reçu'
+                        : 'Paiement en attente',
                     color: booking.isPaid
                         ? AppTheme.accentColor
                         : AppTheme.warningColor,

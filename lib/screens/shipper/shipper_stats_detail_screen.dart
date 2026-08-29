@@ -515,9 +515,11 @@ class _ShipperStatsDetailScreenState
         AppTheme.spaceMd,
         AppTheme.spaceXxl,
       ),
-      emptyState: const _EmptyDetail(
-        icon: Icons.receipt_long_outlined,
-        message: 'Aucune commande reçue',
+      emptyState: const Center(
+        child: _EmptyDetail(
+          icon: Icons.receipt_long_outlined,
+          message: 'Aucune commande reçue',
+        ),
       ),
       itemBuilder: (context, booking, index) => StaggeredEntrance(
         delay: Duration(milliseconds: (index % 10) * 40),
