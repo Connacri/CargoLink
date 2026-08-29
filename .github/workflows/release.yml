@@ -211,12 +211,23 @@ jobs:
           path: cargolink-web.zip
 
   # ============================================================================
-  # iOS — IPA signé (App Store / TestFlight)
+  # iOS — IPA signé (App Store / TestFlight / Ad Hoc)
   # ----------------------------------------------------------------------------
+  # NOTE IMPORTANTE : la signature iOS « externe » exige un compte Apple
+  # Developer PAYANT (99 $/an). Sans lui, on ne peut que signer gratuitement
+  # (AltStore/Sideloadly) pour SES PROPRES appareils — pas de distribution
+  # externe universelle possible (Apple l'interdit par construction).
+  # Ce job est OPTIONNEL : il ne tourne que si les secrets `IOS_*` sont définis.
+  #
+  # Pour distribuer en externe SANS l'App Store (mise à disposition directe du
+  # .ipa) : utiliser la méthode « ad-hoc » ci-dessous et ajouter les UDID des
+  # appareils cibles au provisioning profile. (App Store via TestFlight reste
+  # possible avec la méthode « app-store-connect ».)
+  #
   # Un build iOS SIGNÉ ne peut se faire que sur un runner macOS (présence de
   # Xcode). Le job importe un certificat de distribution (.p12) dans le trousseau
-  # de la CI, installe le provisioning profile de distribution App Store, génère
-  # l'ExportOptions.plist et produit un `.ipa` prêt à monter sur App Store Connect.
+  # de la CI, installe le provisioning profile, génère l'ExportOptions.plist et
+  # produit un `.ipa` prêt à charger sur App Store Connect (ou à distribuer).
   #
   # 🗝️ SECRETS GITHUB NÉCESSAIRES (Settings → Secrets and variables → Actions) :
   #
@@ -252,8 +263,12 @@ jobs:
   #   - Sans quoi Xcode refuse l'export « app-store-connect » et le build échoue.
   # ============================================================================
   ios:
-    name: iOS IPA (App Store / TestFlight)
+    name: iOS IPA
     needs: version
+    # Job OPTIONNEL : ne tourne que si les secrets de signature Apple sont définis
+    # (compte Apple Developer payant). Sans eux (ex. signature gratuite AltStore
+    # sur appareils personnels), il est ignoré sans bloquer la Release Android.
+    if: ${{ secrets.IOS_TEAM_ID != '' && secrets.IOS_CERTIFICATE_P12_BASE64 != '' }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -327,7 +342,7 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: [version, android, android-aab, windows, web, ios]
+    needs: [version, android, android-aab, windows, web]
     runs-on: ubuntu-latest
     permissions:
       contents: write
