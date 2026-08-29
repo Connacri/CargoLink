@@ -12,7 +12,7 @@
 |---|---|---|
 | Version (versionName) | **1.1.12** |
 | Code de version (versionCode) | **233** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `7906411` |
+| Commit de référence | `9663808` |
 | Statut CI | À publier au prochain push → release `v1.1.12` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
@@ -62,13 +62,19 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
   encodés en chaîne (prix/durée) et ne lève plus d'exception, évitant un écran vide
   silencieux.
 
-### CI — build iOS signé
+### CI — build iOS signé (optionnel)
 
 > Infra (n'impacte pas le versioning de l'app Android) : le workflow `release.yml`
-> compile désormais un **IPA iOS signé** (`app-store-connect`) sur runner `macos-latest`
-> avec un certificat de distribution + provisioning profile App Store. Le `ios/Podfile`
-> a été ajouté. Secrets requis : `IOS_CERTIFICATE_P12_BASE64`, `IOS_CERTIFICATE_PASSWORD`,
-> `IOS_PROVISIONING_PROFILE_BASE64`, `IOS_TEAM_ID`, `IOS_KEYCHAIN_PASSWORD`.
+> inclut un job `ios` (runner `macos-latest`) qui produit un **IPA signé**
+> (`app-store-connect` ou `ad-hoc` pour distribuer en externe sans store). Le
+> `ios/Podfile` a été ajouté (cible iOS 13.0, plugins natifs).
+>
+> Ce job est **OPTIONNEL** : il ne tourne que si les secrets `IOS_*` sont définis
+> (`IOS_CERTIFICATE_P12_BASE64`, `IOS_CERTIFICATE_PASSWORD`,
+> `IOS_PROVISIONING_PROFILE_BASE64`, `IOS_TEAM_ID`, `IOS_KEYCHAIN_PASSWORD`).
+> Sans compte Apple Developer payant, il est ignoré **et ne bloque pas** la
+> Release Android. Signature gratuite possible sur ses propres appareils via
+> AltStore/Sideloadly (re-signature 7 j, non externe).
 
 ### Version 1.1.11
 
