@@ -210,9 +210,124 @@ jobs:
           name: cargolink-web
           path: cargolink-web.zip
 
+  # ============================================================================
+  # iOS — IPA signé (App Store / TestFlight)
+  # ----------------------------------------------------------------------------
+  # Un build iOS SIGNÉ ne peut se faire que sur un runner macOS (présence de
+  # Xcode). Le job importe un certificat de distribution (.p12) dans le trousseau
+  # de la CI, installe le provisioning profile de distribution App Store, génère
+  # l'ExportOptions.plist et produit un `.ipa` prêt à monter sur App Store Connect.
+  #
+  # 🗝️ SECRETS GITHUB NÉCESSAIRES (Settings → Secrets and variables → Actions) :
+  #
+  #   IOS_CERTIFICATE_P12_BASE64
+  #       Le fichier du certificat de distribution (.p12) encodé en base64.
+  #       Générer depuis Keychain : clic droit sur le certificat + clé privée →
+  #       « Export » (Apple Distribution …) → exporter au format .p12 puis :
+  #         base64 -i AppleDistribution.p12   (Linux/macOS) |  certutil + PowerShell
+  #         $c=[Convert]::ToBase64String([IO.File]::ReadAllBytes("AppleDistribution.p12"))
+  #
+  #   IOS_CERTIFICATE_PASSWORD
+  #       Le mot de passe du fichier .p12 (celui saisi à l'export).
+  #
+  #   IOS_PROVISIONING_PROFILE_BASE64
+  #       Le profil de distribution « App Store » (bundle ID
+  #       `com.cargolink.dz.cargolink`) encodé en base64.
+  #       Sur developer.apple.com → Certificates/Profiles → App Store Distribution
+  #       profile (type « App Store ») pour l'App ID `com.cargolink.dz.cargolink`,
+  #       téléchargé en .mobileprovision puis : `base64 -i profile.mobileprovision`.
+  #
+  #   IOS_TEAM_ID
+  #       Votre Team ID Apple (identifiant type « ABCD1234EF », visible sur
+  #       developer.apple.com → Membership). Sert à l'ExportOptions.plist.
+  #
+  #   IOS_KEYCHAIN_PASSWORD
+  #       Mot de passe temporaire du trousseau créé dans la CI (n'importe quelle
+  #       chaîne aléatoire ; sert uniquement à verrouiller le trousseau éphémère).
+  #
+  # ⚠️ Compatibilité certificat/profil :
+  #   - Utiliser un CERTIFICAT DE DISTRIBUTION (pas un certificat de dev).
+  #   - Le provisioning profile doit être de type « App Store » et couvrir le
+  #     bundle ID `com.cargolink.dz.cargolink` avec votre Team ID.
+  #   - Sans quoi Xcode refuse l'export « app-store-connect » et le build échoue.
+  # ============================================================================
+  ios:
+    name: iOS IPA (App Store / TestFlight)
+    needs: version
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.0
+          channel: stable
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod repo update || true
+          pod install
+          cd ..
+
+      - name: Import Apple Distribution certificate
+        env:
+          IOS_CERTIFICATE_P12_BASE64: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+        run: |
+          CERT_PATH=$RUNNER_TEMP/build_certificate.p12
+          echo "$IOS_CERTIFICATE_P12_BASE64" | base64 --decode > "$CERT_PATH"
+          KEYCHAIN=$RUNNER_TEMP/app-signing.keychain-db
+          security create-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$CERT_PATH" -P "$IOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security list-keychain -d user -s "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$IOS_KEYCHAIN_PASSWORD" "$KEYCHAIN" || true
+
+      - name: Install App Store provisioning profile
+        env:
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          PROFILE_PATH=$RUNNER_TEMP/profile.mobileprovision
+          echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          PROFILE_UUID=$(security cms -D -i "$PROFILE_PATH" | plutil -extract UUID raw -)
+          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+
+      - name: Write ExportOptions.plist
+        run: |
+          cat > ios/ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store-connect</string>
+              <key>teamID</key>
+              <string>${{ secrets.IOS_TEAM_ID }}</string>
+              <key>signingStyle</key>
+              <string>automatic</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Build signed Release IPA
+        run: flutter build ipa --release --export-options-plist=ios/ExportOptions.plist --build-name=${{ needs.version.outputs.version }} --build-number=${{ needs.version.outputs.build }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cargolink-ipa
+          path: build/ios/ipa/*.ipa
+
   release:
     name: Publish GitHub Release
-    needs: [version, android, android-aab, windows, web]
+    needs: [version, android, android-aab, windows, web, ios]
     runs-on: ubuntu-latest
     permissions:
       contents: write
