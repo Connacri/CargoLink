@@ -109,22 +109,69 @@ class _SuperAdminDashboardScreenState
                 slivers: [
                   CompactSliverHeader(
                     title: 'Tableau de bord',
-                    subtitle: 'Vue d\'ensemble de la plateforme',
+                    subtitle: 'Pilotez votre plateforme CargoLink',
                     icon: Icons.dashboard_outlined,
                     trailing: LogoutIconButton(),
                   ),
-                  SliverToBoxAdapter(child: _StatsOverview()),
+                  SliverToBoxAdapter(child: _FounderHeroSection()),
+                  SliverToBoxAdapter(
+                    child: _FounderSection(
+                      title: 'Accès rapide',
+                      icon: Icons.bolt_rounded,
+                      child: _QuickActionsSection(),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: _FounderSection(
+                      title: 'Vue d\'ensemble',
+                      icon: Icons.insights_rounded,
+                      child: _StatsOverview(),
+                    ),
+                  ),
                   SliverToBoxAdapter(child: _ReferralSummarySection()),
-                  SliverToBoxAdapter(child: _FounderWalletSection()),
-                  SliverToBoxAdapter(child: _ManagePacksSection()),
-                  SliverToBoxAdapter(child: _ManageForbiddenItemsSection()),
-                  SliverToBoxAdapter(child: _PendingVerificationSection()),
-                  SliverToBoxAdapter(child: _PendingAdsSection()),
-                  SliverToBoxAdapter(child: _PendingPublicationSection()),
-                  SliverToBoxAdapter(child: _PendingCommissionSection()),
-                  SliverToBoxAdapter(child: _PendingDeletionSection()),
-                  SliverToBoxAdapter(child: _PendingSubscriptionsSection()),
-                  SliverToBoxAdapter(child: _FeedbackSection()),
+                  SliverToBoxAdapter(
+                    child: _FounderSection(
+                      title: 'Finance',
+                      icon: Icons.account_balance_wallet_rounded,
+                      child: _FounderWalletSection(),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: _FounderSection(
+                      title: 'Gestion',
+                      icon: Icons.tune_rounded,
+                      child: Column(
+                        children: [
+                          _ManagePacksSection(),
+                          SizedBox(height: AppTheme.spaceSm),
+                          _ManageForbiddenItemsSection(),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: _FounderSection(
+                      title: 'À traiter',
+                      icon: Icons.assignment_turned_in_rounded,
+                      child: Column(
+                        children: [
+                          _PendingVerificationSection(),
+                          SizedBox(height: AppTheme.spaceSm),
+                          _PendingAdsSection(),
+                          SizedBox(height: AppTheme.spaceSm),
+                          _PendingPublicationSection(),
+                          SizedBox(height: AppTheme.spaceSm),
+                          _PendingCommissionSection(),
+                          SizedBox(height: AppTheme.spaceSm),
+                          _PendingDeletionSection(),
+                          SizedBox(height: AppTheme.spaceSm),
+                          _PendingSubscriptionsSection(),
+                          SizedBox(height: AppTheme.spaceSm),
+                          _FeedbackSection(),
+                        ],
+                      ),
+                    ),
+                  ),
                   SliverToBoxAdapter(
                     child: SizedBox(height: AppTheme.spaceXxl),
                   ),
@@ -259,6 +306,481 @@ class _SectionTitle extends StatelessWidget {
         AppTheme.spaceSm,
       ),
       child: Text(title, style: AppTheme.h2),
+    );
+  }
+}
+
+// ============================================================================
+// FONDATEUR — NOUVEAU HOME (réorganisation premium, rien n'est supprimé)
+// ============================================================================
+
+/// En-tête de section du home : petite icône teintée + titre de groupe.
+class _FounderSection extends StatelessWidget {
+  const _FounderSection({
+    required this.title,
+    required this.icon,
+    required this.child,
+  });
+
+  final String title;
+  final IconData icon;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.spaceMd,
+            AppTheme.spaceSm,
+            AppTheme.spaceMd,
+            AppTheme.spaceSm,
+          ),
+          child: Row(
+            children: [
+              AnimatedIconDot(
+                icon: icon,
+                color: AppTheme.primaryColor,
+                size: 18,
+              ),
+              const SizedBox(width: AppTheme.spaceSm),
+              Text(title, style: AppTheme.h3),
+            ],
+          ),
+        ),
+        child,
+      ],
+    );
+  }
+}
+
+/// Héro du home : accueil personnalisé + total des actions à traiter en valeur
+/// forte, avec un résumé condensé par type (chips), chaque chip restant
+/// cliquable vers son écran de traitement.
+class _FounderHeroSection extends ConsumerWidget {
+  const _FounderHeroSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pendingCommissions = ref.watch(awaitingCommissionCountProvider);
+    final pendingPublications = ref.watch(awaitingPublicationCountProvider);
+    final pendingDeletions = ref.watch(pendingDeletionRequestsCountProvider);
+    final pendingVerifications = ref.watch(pendingShippersCountProvider);
+    final pendingAds = ref.watch(pendingAdsCountProvider);
+    final pendingSubs = ref.watch(pendingSubscriptionsCountProvider);
+    final feedback = ref.watch(unreadFeedbackCountProvider);
+
+    final total = (pendingCommissions.valueOrNull ?? 0) +
+        (pendingPublications.valueOrNull ?? 0) +
+        (pendingDeletions.valueOrNull ?? 0) +
+        (pendingVerifications.valueOrNull ?? 0) +
+        (pendingAds.valueOrNull ?? 0) +
+        (pendingSubs.valueOrNull ?? 0) +
+        (feedback.valueOrNull ?? 0);
+
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12
+        ? 'Bonjour'
+        : hour < 18
+            ? 'Bon après-midi'
+            : 'Bonsoir';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        0,
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppTheme.spaceLg),
+        decoration: BoxDecoration(
+          gradient: AppTheme.primaryGradient,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          boxShadow: AppTheme.shadowLg,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.admin_panel_settings_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spaceSm + 2),
+                Expanded(
+                  child: Text(
+                    '$greeting, Fondateur',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            Text(
+              '$total',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 40,
+                fontWeight: FontWeight.w800,
+                height: 1,
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceXs),
+            Text(
+              total == 0
+                  ? 'Tout est à jour. Aucune action en attente.'
+                  : 'action(s) à traiter sur la plateforme',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.9),
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            Wrap(
+              spacing: AppTheme.spaceSm,
+              runSpacing: AppTheme.spaceSm,
+              children: [
+                _heroChip(
+                  context,
+                  ref,
+                  Icons.fact_check_outlined,
+                  'Vérifications',
+                  pendingVerifications.valueOrNull ?? 0,
+                  () => _pushVerification(context),
+                ),
+                _heroChip(
+                  context,
+                  ref,
+                  Icons.payments_outlined,
+                  'Commissions',
+                  pendingCommissions.valueOrNull ?? 0,
+                  () => _pushCommission(context),
+                ),
+                _heroChip(
+                  context,
+                  ref,
+                  Icons.publish_rounded,
+                  'Publications',
+                  pendingPublications.valueOrNull ?? 0,
+                  () => _pushWallet(context),
+                ),
+                _heroChip(
+                  context,
+                  ref,
+                  Icons.campaign_outlined,
+                  'Publicités',
+                  pendingAds.valueOrNull ?? 0,
+                  () => _pushAds(context),
+                ),
+                _heroChip(
+                  context,
+                  ref,
+                  Icons.delete_forever_outlined,
+                  'Suppressions',
+                  pendingDeletions.valueOrNull ?? 0,
+                  () => _pushDeletions(context),
+                ),
+                _heroChip(
+                  context,
+                  ref,
+                  Icons.feedback_outlined,
+                  'Feedback',
+                  feedback.valueOrNull ?? 0,
+                  () => Navigator.of(context).pushNamed('/feedback-inbox'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _heroChip(
+    BuildContext context,
+    WidgetRef ref,
+    IconData icon,
+    String label,
+    int count,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.16),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size: 14),
+            const SizedBox(width: 6),
+            Text(
+              count > 0 ? '$label : $count' : label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _pushVerification(BuildContext context) => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const VerificationCenterScreen()),
+      );
+
+  void _pushWallet(BuildContext context) => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const FounderWalletDetailScreen()),
+      );
+
+  void _pushCommission(BuildContext context) => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const CommissionScreen()),
+      );
+
+  void _pushDeletions(BuildContext context) => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const AccountDeletionRequestsScreen(),
+        ),
+      );
+
+  void _pushAds(BuildContext context) => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const AdsScreen(openOnValidationQueue: true),
+        ),
+      );
+}
+
+/// Grille d'accès rapide 2 colonnes : chaque action ouvre son écran dédié et
+/// affiche un badge en direct si des éléments attendent.
+class _QuickActionsSection extends ConsumerWidget {
+  const _QuickActionsSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final actions = <_QuickAction>[
+      _QuickAction(
+        Icons.fact_check_outlined,
+        'Vérifications',
+        ref.watch(pendingShippersCountProvider).valueOrNull ?? 0,
+        AppTheme.warningGradient,
+        () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const VerificationCenterScreen()),
+        ),
+      ),
+      _QuickAction(
+        Icons.payments_outlined,
+        'Commissions',
+        ref.watch(awaitingCommissionCountProvider).valueOrNull ?? 0,
+        AppTheme.errorGradient,
+        () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const CommissionScreen()),
+        ),
+      ),
+      _QuickAction(
+        Icons.delete_forever_outlined,
+        'Suppressions',
+        ref.watch(pendingDeletionRequestsCountProvider).valueOrNull ?? 0,
+        AppTheme.errorGradient,
+        () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const AccountDeletionRequestsScreen(),
+          ),
+        ),
+      ),
+      _QuickAction(
+        Icons.publish_rounded,
+        'Publications',
+        ref.watch(awaitingPublicationCountProvider).valueOrNull ?? 0,
+        AppTheme.infoGradient,
+        () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const FounderWalletDetailScreen(),
+          ),
+        ),
+      ),
+      _QuickAction(
+        Icons.campaign_outlined,
+        'Publicités',
+        ref.watch(pendingAdsCountProvider).valueOrNull ?? 0,
+        AppTheme.warningGradient,
+        () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const AdsScreen(openOnValidationQueue: true),
+          ),
+        ),
+      ),
+      _QuickAction(
+        Icons.card_membership_rounded,
+        'Abonnements',
+        ref.watch(pendingSubscriptionsCountProvider).valueOrNull ?? 0,
+        AppTheme.primaryGradient,
+        () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const SubscriptionManagementScreen(),
+          ),
+        ),
+      ),
+      _QuickAction(
+        Icons.feedback_outlined,
+        'Feedback',
+        ref.watch(unreadFeedbackCountProvider).valueOrNull ?? 0,
+        AppTheme.infoGradient,
+        () => Navigator.of(context).pushNamed('/feedback-inbox'),
+      ),
+      _QuickAction(
+        Icons.card_giftcard_rounded,
+        'Parrainages',
+        0,
+        AppTheme.successGradient,
+        () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ReferralAdminScreen()),
+        ),
+      ),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final cols = constraints.maxWidth >= 560 ? 4 : 2;
+          const spacing = AppTheme.spaceSm;
+          final width =
+              (constraints.maxWidth - spacing * (cols - 1)) / cols;
+          return Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: [
+              for (final a in actions)
+                SizedBox(width: width, child: _QuickActionTile(action: a)),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _QuickAction {
+  const _QuickAction(
+    this.icon,
+    this.label,
+    this.count,
+    this.gradient,
+    this.onTap,
+  );
+
+  final IconData icon;
+  final String label;
+  final int count;
+  final LinearGradient gradient;
+  final VoidCallback onTap;
+}
+
+class _QuickActionTile extends StatelessWidget {
+  const _QuickActionTile({required this.action});
+
+  final _QuickAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final count = action.count;
+    return Material(
+      color: AppTheme.surfaceColor,
+      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+      child: InkWell(
+        onTap: action.onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        child: Container(
+          padding: const EdgeInsets.all(AppTheme.spaceSm + 2),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            border: Border.all(color: AppTheme.dividerColor),
+            boxShadow: AppTheme.shadowSm,
+          ),
+          child: Column(
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      gradient: action.gradient,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                    ),
+                    child: Icon(
+                      action.icon,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                  if (count > 0)
+                    Positioned(
+                      right: -6,
+                      top: -6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        constraints: const BoxConstraints(minWidth: 18),
+                        decoration: BoxDecoration(
+                          color: AppTheme.errorColor,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppTheme.surfaceColor,
+                            width: 2,
+                          ),
+                        ),
+                        child: Text(
+                          count > 99 ? '99+' : '$count',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppTheme.spaceSm),
+              Text(
+                action.label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTheme.body.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
