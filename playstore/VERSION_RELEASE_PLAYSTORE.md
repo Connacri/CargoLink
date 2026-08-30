@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.14** |
-| Code de version (versionCode) | **235** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `7e2f6bd` |
-| Statut CI | À publier au prochain push → release `v1.1.14` sur GitHub |
+| Version (versionName) | **1.1.15** |
+| Code de version (versionCode) | **236** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `e94c7d8` |
+| Statut CI | À publier au prochain push → release `v1.1.15` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,26 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.15
+
+- **Refonte complète du home fondateur (UX premium)** : le tableau de bord
+  fondateur est réorganisé en sections claires et hiérarchisées, **sans aucune
+  suppression de fonctionnalité** :
+  - **Héro d'accueil** : carte dégradée indigo avec salutation contextuelle
+    (« Bonjour / Bon après-midi / Bonsoir »), **total des actions à traiter** en
+    valeur forte et chips cliquables par type (Vérifications, Commissions,
+    Publications, Publicités, Suppressions, Feedback) menant à chaque écran de
+    traitement.
+  - **Accès rapide** : grille tactile de 8 cartes (Vérifications, Commissions,
+    Suppressions, Publications, Publicités, Abonnements, Feedback, Parrainages)
+    avec icône dégradée, label et **badge de compteur en direct**.
+  - **Sections groupées avec titres** : « Vue d'ensemble » (KPIs), Parrainage,
+    « Finance » (Portefeuille), « Gestion » (Packs d'abonnement + Articles
+    interdits), « À traiter » (vérifications, publicités, publications,
+    commissions, suppressions, abonnements, feedback).
+  - Toutes les actions existantes restent accessibles (confirmation inline,
+    accès rapides, écrans dédiés).
 
 ### Version 1.1.14
 
