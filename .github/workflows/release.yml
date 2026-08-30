@@ -270,6 +270,10 @@ jobs:
   # Le job `ios` se base ensuite sur ce `output` dans son `if` (autorisé).
   ios-check:
     name: Check iOS signing secrets
+    # DÉSACTIVÉ : pas de compte Apple Developer payant / certificat invalide.
+    # Pour réactiver le build iOS signé : mettre `if:` à l'état ci-dessous
+    # (ou supprimer cette ligne) une fois un vrai .p12 + profil fournis.
+    if: false
     runs-on: ubuntu-latest
     outputs:
       enabled: ${{ steps.chk.outputs.enabled }}
@@ -289,10 +293,12 @@ jobs:
   ios:
     name: iOS IPA
     needs: [version, ios-check]
-    # Job OPTIONNEL : ne tourne que si les secrets de signature Apple sont définis
-    # (compte Apple Developer payant). Sans eux (ex. signature gratuite AltStore
-    # sur appareils personnels), il est ignoré sans bloquer la Release Android.
-    if: needs.ios-check.outputs.enabled == 'true'
+    # DÉSACTIVÉ : le job iOS ne doit pas tourner tant qu'aucun certificat de
+    # distribution Apple valide n'est fourni. Le `if: false` le skip sans rien
+    # lancer. Pour réactiver : remplacer par
+    #   if: needs.ios-check.outputs.enabled == 'true'
+    # (et retirer le `if: false` du job ios-check ci-dessus).
+    if: false
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
