@@ -2106,6 +2106,8 @@ class _StatsOverview extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: AppTheme.spaceMd),
+              _buildActivityFinance(context, ref),
+              const SizedBox(height: AppTheme.spaceMd),
               _buildShipperTypeBreakdown(context, ref),
             ],
           ),
@@ -2136,6 +2138,108 @@ class _StatsOverview extends ConsumerWidget {
           shipperTypeFilter: shipperType,
         ),
       ),
+    );
+  }
+
+  /// Bloc « Activité & Finance » : 6 KPI globaux regroupés par thème, calculés à
+  /// partir des données déjà chargées (aucune requête backend supplémentaire).
+  Widget _buildActivityFinance(BuildContext context, WidgetRef ref) {
+    final stats = ref.watch(platformStatsProvider).valueOrNull ?? const {};
+    final bookings =
+        ref.watch(allBookingsProvider).valueOrNull ?? const <Booking>[];
+    final fees =
+        ref.watch(allPlatformFeesProvider).valueOrNull ?? const <PlatformFee>[];
+    final shippers =
+        ref.watch(allShippersProvider).valueOrNull ?? const <Shipper>[];
+
+    var ca = 0.0;
+    var paid = 0.0;
+    var due = 0.0;
+    final now = DateTime.now();
+    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+    final activeShipperIds = <String>{};
+    for (final b in bookings) {
+      if (b.paymentStatus != 'paid' || b.status == 'cancelled') continue;
+      ca += b.totalPrice;
+      final sid = b.shipment?.shipper?.id;
+      if (sid != null && b.createdAt.isAfter(thirtyDaysAgo)) {
+        activeShipperIds.add(sid);
+      }
+    }
+    for (final f in fees) {
+      if (f.isPaid) {
+        paid += f.amount;
+      } else {
+        due += f.amount;
+      }
+    }
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWide = screenWidth >= 700;
+    final cardWidth = isWide ? 170.0 : (screenWidth - 56) / 3;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text('Activité & Finance', style: AppTheme.h3),
+        const SizedBox(height: AppTheme.spaceSm),
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: AppTheme.spaceSm + 4,
+          runSpacing: AppTheme.spaceSm + 4,
+          children: [
+            _statCard(
+              context,
+              Icons.flight_takeoff_rounded,
+              'Vols actifs',
+              '${stats['active_shipments'] ?? 0}',
+              AppTheme.accentColor,
+              cardWidth,
+            ),
+            _statCard(
+              context,
+              Icons.local_shipping_rounded,
+              'Commandes en cours',
+              '${stats['active_bookings'] ?? 0}',
+              AppTheme.infoColor,
+              cardWidth,
+            ),
+            _statCard(
+              context,
+              Icons.account_balance_wallet_rounded,
+              'CA encaissé',
+              '${ca.toStringAsFixed(0)} DZD',
+              AppTheme.accentColor,
+              cardWidth,
+            ),
+            _statCard(
+              context,
+              Icons.check_circle_outline_rounded,
+              'Commissions réglées',
+              '${paid.toStringAsFixed(0)} DZD',
+              AppTheme.accentDark,
+              cardWidth,
+            ),
+            _statCard(
+              context,
+              Icons.schedule_rounded,
+              'Commissions dues',
+              '${due.toStringAsFixed(0)} DZD',
+              AppTheme.warningColor,
+              cardWidth,
+            ),
+            _statCard(
+              context,
+              Icons.groups_rounded,
+              'Expéditeurs actifs (30 j)',
+              '${activeShipperIds.length}/${shippers.length}',
+              AppTheme.primaryColor,
+              cardWidth,
+            ),
+          ],
+        ),
+      ],
     );
   }
 
