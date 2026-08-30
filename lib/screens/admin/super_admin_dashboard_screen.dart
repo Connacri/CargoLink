@@ -18,6 +18,7 @@ import 'ads_screen.dart';
 import 'referral_admin_screen.dart';
 import 'subscription_management_screen.dart';
 import 'subscription_packs_screen.dart';
+import 'forbidden_items_screen.dart';
 import 'shipper_type_finance_screen.dart';
 
 /// Founder (super_admin) dashboard — accès total et contrôle de la plateforme :
@@ -116,6 +117,7 @@ class _SuperAdminDashboardScreenState
                   SliverToBoxAdapter(child: _ReferralSummarySection()),
                   SliverToBoxAdapter(child: _FounderWalletSection()),
                   SliverToBoxAdapter(child: _ManagePacksSection()),
+                  SliverToBoxAdapter(child: _ManageForbiddenItemsSection()),
                   SliverToBoxAdapter(child: _PendingVerificationSection()),
                   SliverToBoxAdapter(child: _PendingAdsSection()),
                   SliverToBoxAdapter(child: _PendingPublicationSection()),
@@ -1756,6 +1758,72 @@ class _ManagePacksSection extends StatelessWidget {
                   SizedBox(height: 2),
                   Text(
                     'Créer et gérer les packs premium (durée, prix)',
+                    style: AppTheme.caption,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                color: AppTheme.textSecondaryColor),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// ARTICLES INTERDITS — accès rapide pour le fondateur
+// ============================================================================
+
+class _ManageForbiddenItemsSection extends StatelessWidget {
+  const _ManageForbiddenItemsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: GlassCard(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const ForbiddenItemsScreen(),
+            ),
+          );
+        },
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.red.shade600, Colors.red.shade400],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.block_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: AppTheme.spaceMd),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Articles interdits',
+                    style: AppTheme.h3,
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Gérer la liste des articles interdits lors du contrôle colis',
                     style: AppTheme.caption,
                   ),
                 ],

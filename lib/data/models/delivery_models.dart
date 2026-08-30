@@ -393,3 +393,43 @@ class SubscriptionPack {
     };
   }
 }
+
+/// Article interdit ("interdit") configuré par le fondateur, affiché lors de la
+/// vérification d'un colis par l'expéditeur. Groupé par catégorie et ordonné
+/// via [sortOrder] (réordonnable par drag & drop dans le panneau fondateur).
+class ForbiddenItem {
+  final String id;
+  final String name;
+  final String category;
+  final int sortOrder;
+  final bool active;
+
+  const ForbiddenItem({
+    required this.id,
+    required this.name,
+    required this.category,
+    required this.sortOrder,
+    required this.active,
+  });
+
+  factory ForbiddenItem.fromJson(Map<String, dynamic> json) {
+    return ForbiddenItem(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      category: json['category']?.toString() ?? 'Général',
+      sortOrder: (num.tryParse(json['sort_order']?.toString() ?? '') ?? 0.0)
+          .toInt(),
+      active: json['active'] == true || json['active']?.toString() == 'true',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'category': category,
+      'sort_order': sortOrder,
+      'active': active,
+    };
+  }
+}

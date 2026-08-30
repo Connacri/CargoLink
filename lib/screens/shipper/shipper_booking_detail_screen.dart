@@ -1187,15 +1187,17 @@ LinearGradient _statusGradient(String status) {
 /// renvoyé (motif).
 typedef _VerifyResult = ({bool accepted, double weight, String reason});
 
-class _VerificationSheet extends StatefulWidget {
+class _VerificationSheet extends ConsumerStatefulWidget {
   const _VerificationSheet();
 
   @override
-  State<_VerificationSheet> createState() => _VerificationSheetState();
+  ConsumerState<_VerificationSheet> createState() => _VerificationSheetState();
 }
 
-class _VerificationSheetState extends State<_VerificationSheet> {
-  static const _forbiddenItems = <String>[
+class _VerificationSheetState extends ConsumerState<_VerificationSheet> {
+  /// Liste de repli si la table Supabase des articles interdits est vide ou
+  /// inaccessible : garde une liste cohérente par défaut.
+  static const _fallbackItems = <String>[
     'Drogues et substances illicites',
     'Médicaments sans ordonnance / produits de santé',
     'Armes, couteaux et objets tranchants',
@@ -1212,10 +1214,18 @@ class _VerificationSheetState extends State<_VerificationSheet> {
   bool _hasForbidden = false;
   bool _busy = false;
 
+  /// Articles interdits actifs configurés par le fondateur (table Supabase),
+  /// avec repli sur la liste statique par défaut si elle est vide.
+  List<String> get _forbiddenItems {
+    final items = ref.watch(activeForbiddenItemsProvider).value;
+    if (items == null || items.isEmpty) return _fallbackItems;
+    return items.map((e) => e.name).toList();
+  }
+
   @override
   void initState() {
     super.initState();
-    _checked.addAll(List.filled(_forbiddenItems.length, false));
+    _checked.addAll(List.filled(_fallbackItems.length, false));
   }
 
   @override
@@ -1283,6 +1293,11 @@ class _VerificationSheetState extends State<_VerificationSheet> {
             const Text('Articles interdits', style: AppTheme.h3),
             const SizedBox(height: AppTheme.spaceXs),
             ...List.generate(_forbiddenItems.length, (i) {
+              if (_checked.length != _forbiddenItems.length) {
+                _checked
+                  ..clear()
+                  ..addAll(List.filled(_forbiddenItems.length, false));
+              }
               return CheckboxListTile(
                 dense: true,
                 contentPadding: EdgeInsets.zero,

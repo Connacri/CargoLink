@@ -22,6 +22,7 @@ import '../data/services/deep_link_service.dart';
 import '../data/services/offer_share_service.dart';
 import '../data/services/referral_service.dart';
 import '../data/services/delivery_service.dart';
+import '../data/services/forbidden_item_service.dart';
 import '../data/models/referral_models.dart';
 
 // ============================================================================
@@ -954,6 +955,24 @@ final allSubscriptionPacksProvider =
     FutureProvider<List<SubscriptionPack>>((ref) async {
   return ref.read(deliveryServiceProvider).getAllPacks();
 });
+
+// ============================================================================
+// FORBIDDEN ITEM PROVIDERS (Articles interdits — fondateur + vérification colis)
+// ============================================================================
+
+final forbiddenItemServiceProvider = Provider<ForbiddenItemService>((ref) {
+  return ForbiddenItemService();
+});
+
+/// Items actifs affichés dans la feuille de vérification colis (expéditeur).
+final activeForbiddenItemsProvider = FutureProvider<List<ForbiddenItem>>(
+    (ref) => ref.watch(forbiddenItemServiceProvider).getActiveItems());
+
+/// Tous les items (actifs et inactifs) — vue de gestion du fondateur.
+final allForbiddenItemsProvider =
+    FutureProvider<List<ForbiddenItem>>((ref) => ref
+        .watch(forbiddenItemServiceProvider)
+        .getAllItems());
 
 // ============================================================================
 // NAVIGATION STATE
