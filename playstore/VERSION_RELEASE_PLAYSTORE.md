@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.13** |
-| Code de version (versionCode) | **234** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `8cff18f` |
-| Statut CI | À publier au prochain push → release `v1.1.13` sur GitHub |
+| Version (versionName) | **1.1.14** |
+| Code de version (versionCode) | **235** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `7e2f6bd` |
+| Statut CI | À publier au prochain push → release `v1.1.14` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,22 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.14
+
+- **Fix CI — les builds ne se déclenchaient plus** : le workflow `release.yml`
+  était rejeté en 0 s et **aucune release n'était plus buildée à chaque push**.
+  Cause : `secrets` utilisé illégalement dans le `if` du job iOS (interdit par
+  GitHub Actions → workflow entier invalide). Correction : ajout d'un job
+  `ios-check` qui lit les secrets via `env` (autorisé) et expose un `output`,
+  sur lequel le job iOS se base désormais. Le workflow se déclenche de nouveau
+  à chaque commit/push sur `master` (AAB + APK signés, Windows, web) et crée la
+  release GitHub. Le job iOS reste optionnel et ne bloque pas l'Android.
+- **Dashboard fondateur — bloc KPI « Activité & Finance »** : nouvelle rangée
+  de 6 indicateurs sous la vue d'ensemble existante — **Vols actifs**,
+  **Commandes en cours**, **CA encaissé (global)**, **Commissions réglées**,
+  **Commissions dues** et **Expéditeurs actifs (30 j)** — calculés à partir des
+  données déjà chargées (aucune requête backend supplémentaire).
 
 ### Version 1.1.13
 
