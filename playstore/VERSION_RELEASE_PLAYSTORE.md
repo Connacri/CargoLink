@@ -54,10 +54,14 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
   était rejeté en 0 s et **aucune release n'était plus buildée à chaque push**.
   Cause : `secrets` utilisé illégalement dans le `if` du job iOS (interdit par
   GitHub Actions → workflow entier invalide). Correction : ajout d'un job
-  `ios-check` qui lit les secrets via `env` (autorisé) et expose un `output`,
+  `ios-check`   qui lit les secrets via `env` (autorisé) et expose un `output`,
   sur lequel le job iOS se base désormais. Le workflow se déclenche de nouveau
   à chaque commit/push sur `master` (AAB + APK signés, Windows, web) et crée la
   release GitHub. Le job iOS reste optionnel et ne bloque pas l'Android.
+- **Fix CI iOS — cible de déploiement 15.0** : `google_maps_flutter_ios`
+  (v2.18.4) exige iOS 15.0 minimum ; `pod install` échouait en CI. La cible de
+  déploiement passe de 13.0 à 15.0 (Podfile `platform :ios, '15.0'` +
+  `IPHONEOS_DEPLOYMENT_TARGET`), rendant le job iOS buildable sous CocoaPods.
 - **Dashboard fondateur — bloc KPI « Activité & Finance »** : nouvelle rangée
   de 6 indicateurs sous la vue d'ensemble existante — **Vols actifs**,
   **Commandes en cours**, **CA encaissé (global)**, **Commissions réglées**,
