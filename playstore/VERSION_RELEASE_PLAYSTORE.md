@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.12** |
-| Code de version (versionCode) | **233** (nombre total de commits — monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `9663808` |
-| Statut CI | À publier au prochain push → release `v1.1.12` sur GitHub |
+| Version (versionName) | **1.1.13** |
+| Code de version (versionCode) | **234** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `8cff18f` |
+| Statut CI | À publier au prochain push → release `v1.1.13` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -48,7 +48,23 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
-### Version 1.1.12
+### Version 1.1.13
+
+- **Gestion des « Articles interdits » (fondateur)** : le fondateur gère
+  désormais la liste des articles interdits vérifiés lors du contrôle colis
+  depuis une nouvelle entrée « Articles interdits » du tableau de bord (carte
+  rouge, icône bloc). L'écran permet d'**ajouter** un article (nom + catégorie),
+  de le **réordonner par glisser-déposer**, de l'**activer/désactiver**, de le
+  **modifier** et de le **supprimer**. La liste est stockée dans la table
+  Supabase `forbidden_items` (lecture publique des actifs, écriture réservée
+  admin/super_admin via RLS).
+- **Feuille de vérification colis dynamique (expéditeur)** : la liste des
+  articles interdits de la vérification colis n'est plus codée en dur — elle se
+  charge depuis `forbidden_items` (articles actifs, ordre du fondateur). Un
+  repli sur la liste par défaut s'affiche si la table est vide ou inaccessible.
+  Le poids réel et le motif de renvoi restent inchangés.
+
+### CI — build iOS signé (optionnel)
 
 - **Packs d'abonnement affichés correctement selon le rôle et souscription** :
   la feuille « Choisissez votre abonnement » affiche désormais les bons packs selon le
