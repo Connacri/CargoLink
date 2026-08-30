@@ -262,13 +262,37 @@ jobs:
   #     bundle ID `com.cargolink.dz.cargolink` avec votre Team ID.
   #   - Sans quoi Xcode refuse l'export « app-store-connect » et le build échoue.
   # ============================================================================
+  #
+  # NOTE — GARDÉ UN PATTERN VALIDE POUR LES SECRETS :
+  # GitHub Actions interdit d'utiliser le contexte `secrets` directement dans le
+  # `if` d'un job (le workflow entier serait rejeté). On passe donc par un job
+  # `ios-check` qui lit les secrets via `env` (autorisé) et expose un `output`.
+  # Le job `ios` se base ensuite sur ce `output` dans son `if` (autorisé).
+  ios-check:
+    name: Check iOS signing secrets
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.chk.outputs.enabled }}
+    steps:
+      - name: Detect iOS secrets
+        id: chk
+        env:
+          HAS_TEAM: ${{ secrets.IOS_TEAM_ID }}
+          HAS_CERT: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+        run: |
+          if [ -n "$HAS_TEAM" ] && [ -n "$HAS_CERT" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
   ios:
     name: iOS IPA
-    needs: version
+    needs: [version, ios-check]
     # Job OPTIONNEL : ne tourne que si les secrets de signature Apple sont définis
     # (compte Apple Developer payant). Sans eux (ex. signature gratuite AltStore
     # sur appareils personnels), il est ignoré sans bloquer la Release Android.
-    if: ${{ secrets.IOS_TEAM_ID != '' && secrets.IOS_CERTIFICATE_P12_BASE64 != '' }}
+    if: needs.ios-check.outputs.enabled == 'true'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
