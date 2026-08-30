@@ -62,6 +62,12 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
   (v2.18.4) exige iOS 15.0 minimum ; `pod install` échouait en CI. La cible de
   déploiement passe de 13.0 à 15.0 (Podfile `platform :ios, '15.0'` +
   `IPHONEOS_DEPLOYMENT_TARGET`), rendant le job iOS buildable sous CocoaPods.
+- **Job iOS désactivé** : sans compte Apple Developer payant, le certificat
+  `.p12` fourni est invalide (échec d'import à la signature). Le job `ios` (et
+  son `ios-check`) est mis à `if: false` pour garder le workflow vert ; la
+  Release Android (AAB/APK) reste publiée à chaque push et n'est pas bloquée par
+  iOS. Réactivation documentée dans le workflow quand un vrai certificat est
+  fourni.
 - **Dashboard fondateur — bloc KPI « Activité & Finance »** : nouvelle rangée
   de 6 indicateurs sous la vue d'ensemble existante — **Vols actifs**,
   **Commandes en cours**, **CA encaissé (global)**, **Commissions réglées**,
