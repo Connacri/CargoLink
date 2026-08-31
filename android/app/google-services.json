@@ -15,11 +15,27 @@
       },
       "oauth_client": [
         {
+          "client_id": "41156395312-07ctvhuaer3f6milgkugkgrc46i1jorr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cargolink.dz.cargolink",
+            "certificate_hash": "92eadda76d99f30f6658b434763a316304be5811"
+          }
+        },
+        {
           "client_id": "41156395312-8jodeuqmfdha15j846oh60koh8dsvhil.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.cargolink.dz.cargolink",
             "certificate_hash": "33b5e26a818650de78828244b961c898b920a4ca"
+          }
+        },
+        {
+          "client_id": "41156395312-9pmmmtuv6gim7101vigeodlqgen56sfa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cargolink.dz.cargolink",
+            "certificate_hash": "711a46a00a55168150e5c08e75afb68ddf9b2619"
           }
         },
         {
