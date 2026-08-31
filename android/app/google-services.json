@@ -47,6 +47,14 @@
           }
         },
         {
+          "client_id": "41156395312-q9kujkmr4okhe6vgn0sqi791lr5gal56.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cargolink.dz.cargolink",
+            "certificate_hash": "64542c27820006522207f82717609743831c2e93"
+          }
+        },
+        {
           "client_id": "41156395312-qceqhovlaoaejdjajb7orl9l9gqvnkpi.apps.googleusercontent.com",
           "client_type": 3
         }
