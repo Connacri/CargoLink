@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.34** |
-| Code de version (versionCode) | **256** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `6949a06` |
-| Statut CI | À publier au prochain push → release `v1.1.34` sur GitHub |
+| Version (versionName) | **1.1.35** |
+| Code de version (versionCode) | **257** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `68214ff` |
+| Statut CI | À publier au prochain push → release `v1.1.35` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,30 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.35
+
+- **Notifications push routées vers le bon écran** : un appui sur une
+  notification (app ouverte, en arrière-plan ou fermée) ouvre désormais le
+  suivi du colis pour le client et les administrateurs, et le détail de la
+  réservation pour l'expéditeur. Si l'utilisateur n'est pas connecté, la
+  notification est mise en attente et ouverte juste après la connexion.
+- **Suivi de colis en temps réel** : la frise de suivi (statut, progression,
+  points de suivi) se met à jour en direct dans l'écran de suivi et dans
+  « Mes colis », sans quitter l'écran — nouvelle étape livraison, arrivée,
+  livraison renseignées par l'expéditeur apparaissent immédiatement.
+- **Noteurs in-app cliquables côté client** : les notifications de
+  réservation (acceptation, poids, suivi…) de l'écran d'accueil client
+  ouvrent maintenant le suivi du colis.
+- **Pages administrateur en temps réel** : centre de vérification KYC,
+  transactions, boîte de feedback, tableaux de bord admin et fondateur
+  (compteurs, listes, chiffres), inventaire/dépôts, publicités, commissions,
+  abonnements, parrainage et analytics se rafraîchissent en direct à chaque
+  changement en base.
+- **Détails client/expéditeur synchronisés** : paiement (statut, promo,
+  wallet), détail d'offre (capacité restante, prix), demandes de livraison
+  (client et expéditeur), profil et dashboard parrainage suivent les mises à
+  jour en temps réel.
 
 ### Version 1.1.34
 
