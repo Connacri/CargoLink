@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.33** |
-| Code de version (versionCode) | **253** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `ee71e15` |
-| Statut CI | À publier au prochain push → release `v1.1.33` sur GitHub |
+| Version (versionName) | **1.1.34** |
+| Code de version (versionCode) | **256** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `6949a06` |
+| Statut CI | À publier au prochain push → release `v1.1.34` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,41 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.34
+
+- **Workflow « écart de poids » pendant la vérification (ref/QR inchangés)** :
+  si le colis réel n'a pas le poids demandé, l'expéditeur refuse la réservation
+  avec « Écart de poids » → le statut passe `waiting_client_update` et le client
+  reçoit une notification push + une bannière sur son écran d'accueil et dans le
+  suivi (« Corriger le poids »). La correction se fait dans une feuille dédiée
+  (recalcul automatique du montant et de la commission), la demande repart en
+  vérification (`awaiting_verification`) **sans changer le n° de suivi ni le QR**,
+  puis l'expéditeur est notifié que le poids a été corrigé.
+- **Bannière « demande acceptée » sur le home client** : quand une réservation
+  est acceptée par l'expéditeur, un bandeau succès « Demande acceptée ! » (avec
+  lien direct vers le suivi/QR) apparaît en haut de l'accueil client.
+- **Bannière « demandes de réservation reçues » sur le home expéditeur** :
+  bandeau flottant indiquant le nombre de nouvelles demandes en attente, qui
+  mène directement à la première demande et disparaît une fois une demande
+  ouverte.
+- **Dialog « Billet de réservation » enrichi** : suppression des deux cartes
+  « IMPORTANT » (redondantes), photos du produit agrandissables (plein écran,
+  zoom + swipe), actions « Fermer / Enregistrer » et bouton « Voir le détail
+  complet » selon le contexte (expéditeur → détail commande, client → suivi).
+- **Fusion des étapes de vérification** : une fois le colis collecté, l'action
+  devient directement « Finaliser la vérification » (étape séparée supprimée) ;
+  l'écran de vérification s'affiche avec un titre vert.
+- **Wording cohérent « réservation »** : bouton « Réservé » à l'étape finale du
+  wizard client, « Accepter la réservation » (au lieu de « Confirmer la
+  commande ») et « Demandes de réservation reçues » sur le tableau de bord
+  expéditeur.
+- **Prise de preuve photo « caméra seule »** : la collecte du colis lance la
+  caméra arrière directement (sans passer par le tiroir galerie/caméra), pour
+  accélérer la prise de photo sur le terrain.
+- **Masquage des lignes label/valeur vides** : les lignes optionnelles
+  (courrier, n° de suivi, compagnie, vol…) ne s'affichent que si la valeur est
+  non vide sur les écrans de détail et de suivi.
 
 ### Version 1.1.33
 
