@@ -15,6 +15,17 @@ class TransactionsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final transactions = ref.watch(allTransactionsProvider);
 
+    // Temps réel : un nouveau paiement met à jour la liste en direct.
+    ref.listen(
+      tableChangesProvider(('payments', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(allTransactionsProvider);
+        });
+      },
+    );
+
     return Scaffold(
       body: SafeArea(
         top: false,

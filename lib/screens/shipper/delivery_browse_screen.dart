@@ -31,6 +31,22 @@ class _DeliveryBrowseScreenState extends ConsumerState<DeliveryBrowseScreen> {
       originCountry: _originFilter,
     )));
 
+    // Temps réel : une nouvelle demande client publiée apparaît ici et les
+    // demandes déjà répondues sortent de la liste.
+    ref.listen(
+      tableChangesProvider(('delivery_requests', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(openDeliveryRequestsProvider((
+            destinationCity: _destinationFilter,
+            originCountry: _originFilter,
+          )));
+          ref.invalidate(myDeliveryResponsesProvider);
+        });
+      },
+    );
+
     final user = ref.watch(currentUserProvider).valueOrNull;
     final sub = user == null
         ? null

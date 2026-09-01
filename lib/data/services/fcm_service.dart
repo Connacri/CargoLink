@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -10,7 +12,10 @@ import '../../core/config/supabase_config.dart';
 /// Wires Firebase Cloud Messaging:
 ///  - requests permission and registers the device token (stored in Supabase
 ///    `device_tokens` so the Edge Functions can push to this device),
-///  - shows a local notification for foreground messages.
+///  - shows a local notification for foreground messages,
+///  - exposes a stream of "opened" messages (tap on a notification while the
+///    app was killed or in background) so the router can navigate to the
+///    related screen.
 ///
 /// Only active on Android / iOS / macOS (FirebaseMessaging has no desktop/web
 /// implementation; web push is handled by the browser SDK separately).
@@ -21,6 +26,15 @@ class FcmService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _local =
       FlutterLocalNotificationsPlugin();
+
+  /// Messages tapped by the user while the app was terminated (cold start via
+  /// [FirebaseMessaging.getInitialMessage]) or in background
+  /// ([FirebaseMessaging.onMessageOpenedApp]). The router consumes this stream
+  /// to open the related screen (booking tracking, shipper detail…).
+  final StreamController<RemoteMessage> _opened = StreamController.broadcast();
+  Stream<RemoteMessage> get openedMessages => _opened.stream;
+
+  bool _wired = false;
 
   String? _token;
 
@@ -38,8 +52,31 @@ class FcmService {
       await _messaging.requestPermission(alert: true, badge: true, sound: true);
       await _initLocalNotifications();
       FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+      _wireOpenedMessages();
     } catch (e) {
       debugPrint('FCM init failed: $e');
+    }
+  }
+
+  /// Route taps on system notifications (app killed or in background) to the
+  /// [_opened] stream. Called once to avoid duplicate listeners when [init]
+  /// is re-invoked.
+  void _wireOpenedMessages() {
+    if (_wired) return;
+    _wired = true;
+    try {
+      _messaging.getInitialMessage().then((message) {
+        if (message != null) _opened.add(message);
+      }).catchError((Object e) {
+        debugPrint('FCM getInitialMessage failed: $e');
+      });
+      FirebaseMessaging.onMessageOpenedApp.listen((message) {
+        if (!_opened.isClosed) _opened.add(message);
+      }, onError: (Object e) {
+        debugPrint('FCM onMessageOpenedApp failed: $e');
+      });
+    } catch (e) {
+      debugPrint('FCM failed to wire opened-messages: $e');
     }
   }
 

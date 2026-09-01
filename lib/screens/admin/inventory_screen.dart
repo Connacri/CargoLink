@@ -70,6 +70,15 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   Widget build(BuildContext context) {
     final depots = ref.watch(depotsProvider);
 
+    // Temps réel : un dépôt créé, modifié ou supprimé ailleurs apparaît ici.
+    ref.listen(
+      tableChangesProvider(('depots', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+      },
+    );
+
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'inventory_add',

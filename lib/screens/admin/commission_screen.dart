@@ -18,6 +18,29 @@ class CommissionScreen extends ConsumerWidget {
     final currency =
         settings.valueOrNull?.defaultCurrency ?? AppConstants.defaultCurrency;
 
+    // Temps réel : une commission confirmée/remboursée ou un changement de
+    // réglage met à jour l'écran en direct.
+    ref.listen(
+      tableChangesProvider(('platform_fees', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(platformFeeSummaryProvider);
+          ref.invalidate(awaitingCommissionCountProvider);
+          ref.invalidate(awaitingCommissionFeesProvider);
+        });
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('platform_settings', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(platformSettingsProvider);
+        });
+      },
+    );
+
     return Scaffold(
       body: SafeArea(
         top: false,

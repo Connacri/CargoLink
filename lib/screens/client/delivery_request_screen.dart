@@ -30,6 +30,18 @@ class _DeliveryRequestScreenState
   Widget build(BuildContext context) {
     final requests = ref.watch(myDeliveryRequestsProvider);
 
+    // Temps réel : une demande créée, mise à jour ou fermée ailleurs
+    // (expéditeur) se reflète ici.
+    ref.listen(
+      tableChangesProvider(('delivery_requests', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(myDeliveryRequestsProvider);
+        });
+      },
+    );
+
     return Scaffold(
       body: SafeArea(
         top: false,

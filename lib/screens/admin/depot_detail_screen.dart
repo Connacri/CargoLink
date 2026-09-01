@@ -87,6 +87,15 @@ class _DepotDetailScreenState extends ConsumerState<DepotDetailScreen> {
     final items = ref.watch(depotItemsProvider(widget.depot.id));
     final stats = ref.watch(depotStatsProvider(widget.depot.id));
 
+    // Temps réel : un colis ajouté/matché/modifié rafraîchit dépôt et stats.
+    ref.listen(
+      tableChangesProvider(('depot_items', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+      },
+    );
+
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'depot_add_item',

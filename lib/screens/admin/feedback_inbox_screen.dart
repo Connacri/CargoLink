@@ -22,6 +22,18 @@ class _FeedbackInboxScreenState extends ConsumerState<FeedbackInboxScreen> {
   Widget build(BuildContext context) {
     final feedbackAsync = ref.watch(feedbackListProvider);
 
+    // Temps réel : un nouveau feedback apparaît immédiatement dans la boîte.
+    ref.listen(
+      tableChangesProvider(('feedbacks', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(feedbackListProvider);
+          ref.invalidate(unreadFeedbackCountProvider);
+        });
+      },
+    );
+
     return Scaffold(
         backgroundColor: AppTheme.backgroundColor,
         appBar: AppBar(

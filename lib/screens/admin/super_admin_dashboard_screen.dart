@@ -38,6 +38,7 @@ class _SuperAdminDashboardScreenState
   int _tabIndex = 0;
   String? _roleFilter;
   String _lastKey = '';
+  bool _listeningStarted = false;
 
   @override
   void initState() {
@@ -82,8 +83,38 @@ class _SuperAdminDashboardScreenState
     await _refreshUsers();
   }
 
+  void _listenRealtime() {
+    // Temps réel : les changements sur les tables suivies par le fondateur
+    // rafraîchissent le tableau de bord en direct (compteurs, listes, stats).
+    const tables = <String>[
+      'shippers', // dossiers KYC
+      'ads', // publicités à valider
+      'feedbacks', // retours utilisateurs
+      'platform_fees', // commissions à confirmer
+      'account_deletion_requests', // suppressions demandées
+      'shipments', // publications à valider
+      'subscriptions', // abonnements à traiter
+      'payments', // revenus
+      'referrals', // parrainage
+    ];
+    for (final table in tables) {
+      ref.listen(
+        tableChangesProvider((table, null, null)),
+        (previous, next) {
+          if (!next.hasValue) return;
+          WidgetsBinding.instance.addPostFrameCallback((_) => _refreshAll());
+        },
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_listeningStarted) {
+      _listeningStarted = true;
+      _listenRealtime();
+    }
+
     final pendingCommissions = ref.watch(awaitingCommissionCountProvider);
     final pendingPublications = ref.watch(awaitingPublicationCountProvider);
     final pendingDeletions = ref.watch(pendingDeletionRequestsCountProvider);

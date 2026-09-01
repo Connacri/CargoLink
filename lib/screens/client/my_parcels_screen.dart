@@ -127,6 +127,16 @@ class _ParcelTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final delivered = booking.status == 'delivered';
+
+    // Temps réel : un nouveau point de suivi rafraîchit la frise dépliée.
+    ref.listen(trackingStreamProvider(booking.id), (previous, next) {
+      if (!next.hasValue) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.invalidate(trackingHistoryProvider(booking.id));
+        ref.invalidate(latestTrackingProvider(booking.id));
+      });
+    });
+
     final trackingAsync = ref.watch(trackingHistoryProvider(booking.id));
     final events = trackingAsync.valueOrNull ?? const <ShipmentTracking>[];
     final latest = events.isEmpty ? null : events.last;

@@ -9,6 +9,7 @@ import '../screens/client/client_home_screen.dart';
 import '../screens/client/my_orders_screen.dart';
 import '../screens/client/my_parcels_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/shipper/shipper_booking_detail_screen.dart';
 import '../screens/shipper/shipper_dashboard_screen.dart';
 import '../screens/shipper/shipper_finance_screen.dart';
 import 'app_widgets.dart';
@@ -31,6 +32,7 @@ class _HomeTabsScreenState extends ConsumerState<HomeTabsScreen> {
     // Deep link arrivé avant connexion : ouvrir l'offre mise en attente.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _openPendingOffer();
+      _openPendingBooking();
     });
   }
 
@@ -40,6 +42,28 @@ class _HomeTabsScreenState extends ConsumerState<HomeTabsScreen> {
           await ref.read(deepLinkServiceProvider).consumePendingOffer();
       if (!mounted || shipmentId == null) return;
       Navigator.of(context).pushNamed('/booking-wizard', arguments: shipmentId);
+    } catch (_) {}
+  }
+
+  /// Notification push / deep link `tracking/<id>` arrivé avant connexion :
+  /// ouvre le bon écran (suivi client ou détail réservation expéditeur) une
+  /// fois authentifié.
+  Future<void> _openPendingBooking() async {
+    try {
+      final bookingId =
+          await ref.read(deepLinkServiceProvider).consumePendingBooking();
+      if (!mounted || bookingId == null) return;
+      final role = ref.read(currentUserProvider).valueOrNull?.role;
+      if (role == 'shipper') {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ShipperBookingDetailScreen(bookingId: bookingId),
+          ),
+        );
+      } else {
+        Navigator.of(context)
+            .pushNamed('/tracking', arguments: bookingId);
+      }
     } catch (_) {}
   }
 

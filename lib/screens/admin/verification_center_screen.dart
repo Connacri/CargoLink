@@ -34,6 +34,18 @@ class VerificationCenterScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pager = ref.watch(verificationCenterPagerProvider);
 
+    // Temps réel : un nouveau dossier KYC rafraîchit la liste en direct.
+    ref.listen(
+      tableChangesProvider(('shippers', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(verificationCenterPagerProvider.notifier).refresh();
+          ref.invalidate(pendingShippersCountProvider);
+        });
+      },
+    );
+
     return Scaffold(
       body: SafeArea(
         top: false,

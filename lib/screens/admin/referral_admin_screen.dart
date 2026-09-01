@@ -145,6 +145,23 @@ class _ReferralAdminScreenState extends ConsumerState<ReferralAdminScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Temps réel : un lot soumis ou des gains mis à jour rafraîchissent
+    // le dashboard parrains en direct.
+    ref.listen(
+      tableChangesProvider(('referrals', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _reload());
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('referral_earnings', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _reload());
+      },
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard parrains'),

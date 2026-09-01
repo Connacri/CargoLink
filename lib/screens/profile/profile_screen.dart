@@ -411,6 +411,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     final user = ref.watch(currentUserProvider);
 
+    // Temps réel : profil (nom, photo, rôle, expéditeur) ou historique
+    // (commandes) changé ailleurs → écran rafraîchi sans quitter le tab.
+    ref.listen(
+      tableChangesProvider(('users', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(currentUserProvider);
+          ref.invalidate(currentShipperProvider);
+        });
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('bookings', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _reloadHistory());
+      },
+    );
+
     return user.when(
       data: (userData) {
         if (userData == null) {

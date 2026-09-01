@@ -13,8 +13,10 @@ class DeepLinkService {
 
   static const _pendingOfferKey = 'pending_offer_id';
   static const _pendingReferralKey = 'pending_referral_code';
+  static const _pendingBookingKey = 'pending_booking_id';
   static final _offerRegex = RegExp(r'^offer/([A-Za-z0-9\-]+)$');
   static final _referralRegex = RegExp(r'^referral/([A-Z0-9]{6,14})$');
+  static final _trackingRegex = RegExp(r'^tracking/([A-Za-z0-9\-]+)$');
 
   final AppLinks _links = AppLinks();
   StreamSubscription<Uri>? _sub;
@@ -25,6 +27,7 @@ class DeepLinkService {
   void init({
     required void Function(String shipmentId) onOffer,
     required void Function(String code) onReferral,
+    void Function(String bookingId)? onTracking,
   }) {
     if (_initialized) return;
     _initialized = true;
@@ -34,6 +37,11 @@ class DeepLinkService {
       final offerId = _extractOfferId(uri);
       if (offerId != null) {
         onOffer(offerId);
+        return;
+      }
+      final trackingId = _extractTrackingId(uri);
+      if (trackingId != null) {
+        onTracking?.call(trackingId);
         return;
       }
       final referralCode = _extractReferralCode(uri);
@@ -72,6 +80,20 @@ class DeepLinkService {
     return null;
   }
 
+  String? _extractTrackingId(Uri uri) {
+    // cargolink://tracking/<bookingId>
+    if (uri.scheme == 'cargolink') {
+      final path = uri.host.isEmpty ? uri.path : '${uri.host}${uri.path}';
+      final m = _trackingRegex.firstMatch(path.trim());
+      if (m != null) return m.group(1);
+    }
+    // https://…/tracking/<bookingId> (compatibilité future)
+    if (uri.pathSegments.length == 2 && uri.pathSegments[0] == 'tracking') {
+      return uri.pathSegments[1];
+    }
+    return null;
+  }
+
   // ── Offres ──
 
   Future<void> savePendingOffer(String shipmentId) async {
@@ -102,6 +124,24 @@ class DeepLinkService {
     if (code != null && code.isNotEmpty) {
       await prefs.remove(_pendingReferralKey);
       return code;
+    }
+    return null;
+  }
+
+  // ── Booking (notification push / deep link) ──
+
+  Future<void> savePendingBooking(String bookingId) async {
+    if (bookingId.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_pendingBookingKey, bookingId);
+  }
+
+  Future<String?> consumePendingBooking() async {
+    final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getString(_pendingBookingKey);
+    if (id != null && id.isNotEmpty) {
+      await prefs.remove(_pendingBookingKey);
+      return id;
     }
     return null;
   }

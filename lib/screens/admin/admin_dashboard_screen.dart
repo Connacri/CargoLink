@@ -68,6 +68,56 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Temps réel : chaque table suivie sur ce tableau de bord (dossiers KYC,
+    // litiges, revenus, publicités) se rafraîchit en direct.
+    ref.listen(
+      tableChangesProvider(('shippers', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(pendingShippersPagerProvider.notifier).refresh();
+          ref.invalidate(pendingShippersCountProvider);
+        });
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('disputes', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(openDisputesPagerProvider.notifier).refresh();
+        });
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('payments', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(revenueStatsProvider((startDate: null, endDate: null)));
+          ref.invalidate(allTransactionsProvider);
+        });
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('ads', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(pendingAdsCountProvider);
+        });
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('depots', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(depotsProvider);
+        });
+      },
+    );
+
     return Scaffold(
       body: SafeArea(
         top: false,

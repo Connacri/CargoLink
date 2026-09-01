@@ -93,6 +93,17 @@ class _PlatformSettingsScreenState extends ConsumerState<PlatformSettingsScreen>
   Widget build(BuildContext context) {
     final settings = ref.watch(platformSettingsProvider);
 
+    // Temps réel : réglages plateforme modifiés ailleurs → rechargés ici.
+    ref.listen(
+      tableChangesProvider(('platform_settings', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(platformSettingsProvider);
+        });
+      },
+    );
+
     return settings.when(
       data: (s) {
         if (!_initialized) {

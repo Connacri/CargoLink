@@ -221,6 +221,30 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
   /// Carte « Être parrainé » : champ manuel pour saisir un code parrain.
   Widget _buildSponsorCard() {
     final userId = ref.watch(authServiceProvider).currentUserId;
+
+    // Temps réel : un filleul inscrit, un lot approuvé ou des gains crédités
+    // ailleurs rafraîchissent le dashboard parrainage.
+    ref.listen(
+      tableChangesProvider(('referrals', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(myReferralStatsProvider);
+          ref.invalidate(myReferralFilleulsProvider);
+          ref.invalidate(myReferralBatchesProvider);
+        });
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('referral_earnings', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(myReferralStatsProvider);
+          ref.invalidate(myReferralBatchesProvider);
+        });
+      },
+    );
     final filled = _sponsorCodeCtrl.text.trim().isNotEmpty;
     return GlassCard(
       padding: const EdgeInsets.all(AppTheme.spaceMd),

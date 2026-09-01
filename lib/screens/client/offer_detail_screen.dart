@@ -22,6 +22,18 @@ class OfferDetailScreen extends ConsumerWidget {
         settings?.commissionPercent ?? AppConstants.platformCommissionPercent;
     final shipmentAsync = ref.watch(shipmentByIdProvider(shipmentId));
 
+    // Temps réel : capacité restante, statut ou prix de l'offre mis à jour
+    // ailleurs → le détail se rafraîchit.
+    ref.listen(
+      tableChangesProvider(('shipments', 'id', shipmentId)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(shipmentByIdProvider(shipmentId));
+        });
+      },
+    );
+
     return Scaffold(
         appBar: AppBar(
           title: const Text('Détail du vol'),

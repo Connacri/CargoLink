@@ -1,9 +1,13 @@
+import 'dart:async';
+
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../core/theme/app_theme.dart';
 import '../providers/index.dart';
+import '../data/services/fcm_service.dart';
 import '../screens/auth/account_gate_screen.dart';
 import '../screens/auth/email_verification_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
@@ -27,6 +31,7 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/referral/referral_screen.dart';
 import '../screens/client/delivery_request_screen.dart';
 import '../screens/shipper/delivery_browse_screen.dart';
+import '../screens/shipper/shipper_booking_detail_screen.dart';
 import '../screens/shipper/shipper_ads_screen.dart';
 import '../screens/shipper/shipper_registration_screen.dart';
 import 'app_widgets.dart';
@@ -176,8 +181,48 @@ class _DeepLinkListenerState extends ConsumerState<_DeepLinkListener> {
                 arguments: code);
           }
         },
+        onTracking: (bookingId) => _openBooking(bookingId),
+      );
+      _subNotifications = FcmService.instance.openedMessages.listen(
+        (message) {
+          final bookingId = message.data['bookingId'];
+          if (bookingId != null && bookingId.isNotEmpty) {
+            _openBooking(bookingId);
+          }
+        },
+        onError: (Object _) {},
       );
     });
+  }
+
+  StreamSubscription<RemoteMessage>? _subNotifications;
+
+  /// Ouvre le bon écran pour une réservation (notification push / deep link) :
+  /// expéditeur → détail de réservation ; administrateurs et clients → suivi de
+  /// colis. Utilisateur non connecté → la demande est mise en attente et
+  /// consommée après connexion (voir [HomeTabsScreen]).
+  Future<void> _openBooking(String bookingId) async {
+    final nav = appNavigatorKey.currentState;
+    if (nav == null) return;
+    final signedIn = ref.read(authServiceProvider).currentUserId != null;
+    if (!signedIn) {
+      await ref.read(deepLinkServiceProvider).savePendingBooking(bookingId);
+      return;
+    }
+    final role = ref.read(currentUserProvider).valueOrNull?.role;
+    if (role == 'shipper') {
+      nav.push(MaterialPageRoute(
+        builder: (_) => ShipperBookingDetailScreen(bookingId: bookingId),
+      ));
+    } else {
+      nav.pushNamed('/tracking', arguments: bookingId);
+    }
+  }
+
+  @override
+  void dispose() {
+    _subNotifications?.cancel();
+    super.dispose();
   }
 
   @override

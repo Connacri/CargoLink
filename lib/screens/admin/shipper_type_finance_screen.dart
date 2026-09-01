@@ -33,6 +33,36 @@ class ShipperTypeFinanceScreen extends ConsumerWidget {
     final fees =
         ref.watch(allPlatformFeesProvider).valueOrNull ?? const <PlatformFee>[];
 
+    // Temps réel : expéditeurs, commandes ou commissions mis à jour ailleurs
+    // rafraîchissent tous les agrégats en direct.
+    ref.listen(
+      tableChangesProvider(('shippers', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(allShippersProvider);
+        });
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('bookings', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(allBookingsProvider);
+        });
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('platform_fees', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(allPlatformFeesProvider);
+        });
+      },
+    );
+
     final group =
         shippers.where((s) => s.shipperType == shipperType).toList(growable: false);
     final ids = group.map((s) => s.id).toSet();

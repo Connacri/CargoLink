@@ -88,6 +88,25 @@ class TrackingScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Temps réel : un nouveau point de suivi (expédié, arrivé, livré…) ou une
+    // mise à jour de la réservation rafraîchit l'écran sans le quitter.
+    ref.listen(trackingStreamProvider(bookingId), (previous, next) {
+      if (!next.hasValue) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.invalidate(trackingHistoryProvider(bookingId));
+        ref.invalidate(latestTrackingProvider(bookingId));
+      });
+    });
+    ref.listen(
+      tableChangesProvider(('bookings', 'id', bookingId)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(bookingByIdProvider(bookingId));
+        });
+      },
+    );
+
     final booking = ref.watch(bookingByIdProvider(bookingId));
     final tracking = ref.watch(trackingHistoryProvider(bookingId));
 
@@ -110,8 +129,15 @@ class TrackingScreen extends ConsumerWidget {
               : null,
           body: SafeArea(
             top: false,
-            child: CustomScrollView(
-              slivers: [
+            child: RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(trackingHistoryProvider(bookingId));
+                ref.invalidate(latestTrackingProvider(bookingId));
+                ref.invalidate(bookingByIdProvider(bookingId));
+              },
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
                 CompactSliverHeader(
                   title: 'Suivi de colis',
                   subtitle: bookingData.productName,
@@ -260,6 +286,7 @@ class TrackingScreen extends ConsumerWidget {
                   ],
                 ),
               ],
+            ),
             ),
           ),
         );

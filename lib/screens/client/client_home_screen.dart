@@ -1196,11 +1196,16 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => const SafeArea(
+      builder: (context) => SafeArea(
         top: false,
         child: FractionallySizedBox(
           heightFactor: 0.85,
-          child: NotificationsSheet(),
+          child: NotificationsSheet(
+            onBookingTap: (bookingId) {
+              Navigator.of(context)
+                  .pushNamed('/tracking', arguments: bookingId);
+            },
+          ),
         ),
       ),
     );

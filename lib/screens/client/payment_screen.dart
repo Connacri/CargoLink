@@ -57,6 +57,29 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     final booking = ref.watch(bookingByIdProvider(widget.bookingId));
     final payment = ref.watch(paymentByBookingProvider(widget.bookingId));
 
+    // Temps réel : statut du paiement ou de la réservation mis à jour ailleurs
+    // (code promo, wallet, validation expéditeur…) → écran mis à jour.
+    ref.listen(
+      tableChangesProvider(('payments', 'booking_id', widget.bookingId)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(paymentByBookingProvider(widget.bookingId));
+          ref.invalidate(bookingByIdProvider(widget.bookingId));
+        });
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('bookings', 'id', widget.bookingId)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(paymentByBookingProvider(widget.bookingId));
+          ref.invalidate(bookingByIdProvider(widget.bookingId));
+        });
+      },
+    );
+
     return booking.when(
       data: (bookingData) {
         if (bookingData == null) {

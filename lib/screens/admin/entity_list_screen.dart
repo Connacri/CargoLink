@@ -221,6 +221,31 @@ class _EntityListScreenState extends ConsumerState<EntityListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Temps réel : toute modification de la table courante (utilisateurs,
+    // vols, commandes, paiements, litiges) rafraîchit la liste en direct.
+    String tableFor(EntityListType type) {
+      switch (type) {
+        case EntityListType.users:
+          return 'users';
+        case EntityListType.shipments:
+          return 'shipments';
+        case EntityListType.bookings:
+          return 'bookings';
+        case EntityListType.payments:
+          return 'payments';
+        case EntityListType.disputes:
+          return 'disputes';
+      }
+    }
+
+    ref.listen(
+      tableChangesProvider((tableFor(widget.type), null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+      },
+    );
+
     return Scaffold(
       body: SafeArea(
         top: false,

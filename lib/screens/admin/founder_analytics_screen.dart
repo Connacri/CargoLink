@@ -64,6 +64,63 @@ class _FounderAnalyticsScreenState extends ConsumerState<FounderAnalyticsScreen>
     final fees = ref.watch(platformFeeSummaryProvider).valueOrNull ?? {};
     final allFees = ref.watch(allPlatformFeesProvider).valueOrNull ?? [];
 
+    // Temps réel : nouveaux utilisateurs, vols, commandes, paiements,
+    // commissions ou retours → les KPIs se recalculent en direct.
+    ref.listen(
+      tableChangesProvider(('users', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback(
+            (_) => ref.invalidate(allUsersProvider));
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('shipments', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(allShipmentsProvider);
+          ref.invalidate(founderAnalyticsDataProvider);
+        });
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('bookings', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback(
+            (_) => ref.invalidate(founderAnalyticsDataProvider));
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('payments', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(founderAnalyticsDataProvider);
+          ref.invalidate(platformFeeSummaryProvider);
+        });
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('disputes', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback(
+            (_) => ref.invalidate(allDisputesProvider));
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('platform_fees', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(allPlatformFeesProvider);
+          ref.invalidate(platformFeeSummaryProvider);
+        });
+      },
+    );
+
     final start = _startDate;
 
     final filteredBookings =

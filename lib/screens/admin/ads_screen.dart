@@ -280,6 +280,22 @@ class _AdsScreenState extends ConsumerState<AdsScreen> {
   Widget build(BuildContext context) {
     final ads = ref.watch(allAdsProvider);
 
+    // Temps réel : une publicité créée, validée ou payée apparaît en direct.
+    ref.listen(
+      tableChangesProvider(('ads', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _invalidateAll());
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('ad_pricing', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _invalidateAll());
+      },
+    );
+
     return Scaffold(
       body: SafeArea(
         top: false,

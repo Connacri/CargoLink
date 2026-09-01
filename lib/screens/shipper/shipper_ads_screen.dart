@@ -245,6 +245,27 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
     final pricing =
         ref.watch(adPricingProvider).valueOrNull ?? AdPricingRule.fallback;
 
+    // Temps réel : statut de paiement/validation ou grille tarifaire mis à
+    // jour ailleurs → écran rafraîchi.
+    ref.listen(
+      tableChangesProvider(('ads', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(myAdsProvider);
+        });
+      },
+    );
+    ref.listen(
+      tableChangesProvider(('ad_pricing', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(adPricingProvider);
+        });
+      },
+    );
+
     return Scaffold(
       body: SafeArea(
         top: false,
