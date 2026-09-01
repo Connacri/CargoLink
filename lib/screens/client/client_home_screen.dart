@@ -1288,6 +1288,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     return ShipperCard(
       shipperId: shipper?.id ?? shipment.shipperId,
       name: shipper?.user?.fullName ?? 'Expéditeur',
+      shipperPhone: shipper?.user?.phone,
       avatarUrl: shipper?.user?.profilePictureUrl,
       rating: shipper?.rating ?? 0,
       shipmentsCount: shipper?.totalShipments,

@@ -15,6 +15,7 @@ import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/notification_widgets.dart';
 import '../../core/widgets/chat_widgets.dart';
 import '../../core/widgets/subscription_pack_sheet.dart';
+import '../../data/services/offer_share_service.dart';
 import '../shared/qr_scan_screen.dart';
 import 'delivery_browse_screen.dart';
 import 'shipper_stats_detail_screen.dart';
@@ -2019,6 +2020,21 @@ class _ShipmentMiniCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (shipment.isPublished) ...[
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final cardWidth = constraints.maxWidth;
+                  final ticketWidth = cardWidth >= 340 ? 340.0 : cardWidth;
+                  return Center(
+                    child: OfferShareService.ticketFor(
+                      shipment,
+                      width: ticketWidth,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: AppTheme.spaceMd),
+            ],
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

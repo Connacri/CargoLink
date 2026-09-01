@@ -711,11 +711,24 @@ class _BookingTile extends ConsumerWidget {
                 ),
                 const SizedBox(width: AppTheme.spaceSm),
                 Expanded(
-                  child: Text(
-                    '${booking.client?.fullName ?? 'Client'}'
-                    '${booking.client?.phone.isNotEmpty ?? false ? ' · ${booking.client!.phone}' : ''}',
-                    style: AppTheme.caption,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        booking.client?.fullName ?? 'Client',
+                        style: AppTheme.caption,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (booking.client?.phone.isNotEmpty == true)
+                        TappablePhone(
+                          phone: booking.client!.phone,
+                          style: AppTheme.caption.copyWith(
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],

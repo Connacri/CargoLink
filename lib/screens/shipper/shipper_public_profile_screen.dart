@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
-import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/micro_badge.dart';
+import '../../data/services/offer_share_service.dart';
 
 /// Public profile of a shipper, shown when tapping their avatar on an offer.
 class ShipperPublicProfileScreen extends ConsumerWidget {
@@ -253,6 +253,10 @@ class _ShipperProfileBody extends ConsumerWidget {
       }
     }
 
+    if (user.phone.isNotEmpty) {
+      tiles.add(const SizedBox(height: AppTheme.spaceXs));
+      tiles.add(_PhoneRow(phone: user.phone));
+    }
     add('WhatsApp', user.whatsapp, Icons.chat_rounded);
     add('Télégram', user.telegram, Icons.send_rounded);
     add('Facebook', user.facebook, Icons.facebook_rounded);
@@ -314,6 +318,42 @@ class _MetaRow extends StatelessWidget {
   }
 }
 
+class _PhoneRow extends StatelessWidget {
+  const _PhoneRow({required this.phone});
+
+  final String phone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppTheme.spaceXs),
+      child: Row(
+        children: [
+          const Icon(Icons.phone_outlined,
+              size: 15, color: AppTheme.textMutedColor),
+          const SizedBox(width: 6),
+          const Text('Téléphone : ',
+              style: TextStyle(fontSize: 12, color: AppTheme.textMutedColor)),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: TappablePhone(
+                phone: phone,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor),
+                textAlign: TextAlign.right,
+                maxLines: 1,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PublicShipmentCard extends StatelessWidget {
   final Shipment shipment;
 
@@ -327,45 +367,20 @@ class _PublicShipmentCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${shipment.originCountry} → ${shipment.destinationCity}',
-                    style: AppTheme.h3,
-                    overflow: TextOverflow.ellipsis,
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final cardWidth = constraints.maxWidth;
+                final ticketWidth =
+                    cardWidth >= 340 ? 340.0 : cardWidth;
+                return Center(
+                  child: OfferShareService.ticketFor(
+                    shipment,
+                    width: ticketWidth,
                   ),
-                ),
-                const SizedBox(width: AppTheme.spaceSm),
-                GradientBadge(
-                  label:
-                      '${shipment.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}/kg',
-                  gradient: AppTheme.primaryGradient,
-                  compact: true,
-                ),
-              ],
+                );
+              },
             ),
             const SizedBox(height: AppTheme.spaceSm),
-            if (shipment.flightNumber != null) ...[
-              Row(
-                children: [
-                  const Icon(
-                    Icons.confirmation_number_rounded,
-                    size: 15,
-                    color: AppTheme.textMutedColor,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      shipment.airline != null
-                          ? '${shipment.airline} · Vol ${shipment.flightNumber}'
-                          : 'Vol ${shipment.flightNumber}',
-                      style: AppTheme.caption,
-                    ),
-                  ),
-                ],
-              ),
-            ],
             Row(
               children: [
                 const Icon(

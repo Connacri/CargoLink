@@ -375,7 +375,7 @@ class _ProfileTab extends ConsumerWidget {
                 const SizedBox(height: AppTheme.spaceSm + 4),
                 _infoCard('Informations du compte', [
                   if (user.phone.trim().isNotEmpty)
-                    _row('Téléphone', user.phone),
+                    _phoneRow(user.phone),
                   _row('Membre depuis', _formatDate(user.createdAt)),
                   if (user.deactivatedAt != null)
                     _row('Désactivé le', _formatDate(user.deactivatedAt!)),
@@ -455,6 +455,31 @@ class _ProfileTab extends ConsumerWidget {
               child: Text(
                 value,
                 style: AppTheme.body.copyWith(fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _phoneRow(String phone) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceXs - 1),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(
+              width: 140,
+              child: Text('Téléphone', style: AppTheme.caption),
+            ),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: TappablePhone(
+                  phone: phone,
+                  style: AppTheme.body.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
               ),
             ),
           ],

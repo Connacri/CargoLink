@@ -254,7 +254,7 @@ class _AccountManagementScreenState
     );
   }
 
-  Widget _infoTile(String label, String value) {
+  Widget _infoTile(String label, String value, {bool isPhone = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -262,12 +262,21 @@ class _AccountManagementScreenState
         children: [
           Text(label, style: AppTheme.bodySecondary),
           Flexible(
-            child: Text(
-              value,
-              style: AppTheme.body,
-              textAlign: TextAlign.end,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: isPhone
+                ? Align(
+                    alignment: Alignment.centerRight,
+                    child: TappablePhone(
+                      phone: value,
+                      style: AppTheme.body
+                          .copyWith(color: AppTheme.primaryColor),
+                    ),
+                  )
+                : Text(
+                    value,
+                    style: AppTheme.body,
+                    textAlign: TextAlign.end,
+                    overflow: TextOverflow.ellipsis,
+                  ),
           ),
         ],
       ),
@@ -299,7 +308,8 @@ class _AccountManagementScreenState
                   _infoTile('Nom', userData.fullName),
                   _infoTile('Rôle', _roleLabel(userData.role)),
                   if (userData.phone.isNotEmpty)
-                    _infoTile('Téléphone', userData.phone),
+                    _infoTile('Téléphone', userData.phone,
+                        isPhone: true),
                   _infoTile(
                     'Statut du compte',
                     userData.isActive ? 'Actif' : 'Désactivé',

@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.15** |
-| Code de version (versionCode) | **236** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `e94c7d8` |
-| Statut CI | À publier au prochain push → release `v1.1.15` sur GitHub |
+| Version (versionName) | **1.1.33** |
+| Code de version (versionCode) | **253** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | snippet à renseigner au commit |
+| Statut CI | À publier au prochain push → release `v1.1.33` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,35 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.33
+
+- **Billet d'avion complet dans chaque offre publiée (tous les rôles)** : le
+  vrai billet CargoLink (aéroport de départ, aéroport d'arrivée **et ville
+  d'arrivée clairement affichée** sous l'aéroport, compagnie, n° de vol,
+  dates, poids disponible, prix/kg, téléphone expéditeur cliquable) s'affiche
+  désormais dans **toutes** les offres publiées — feed client
+  (`ShipperCard`), profil public expéditeur (offres actives), tableau de bord
+  expéditeur (offres publiées) et liste des envois admin. Le billet est
+  **flexible** (s'adapte à la largeur de l'écran) et réutilise le même
+  composant que le partage social via un helper unique `OfferShareService.ticketFor`.
+  Le code mort (`FlightRouteCard`, `_AirportCard`) a été supprimé.
+- **Chaque numéro de téléphone est cliquable (appel direct `tel:`)** dans
+  tous les écrans et rôles, avec **label masqué et zéro espace vide quand le
+  numéro est absent** — ticket d'offre, détail offre, profils publics client
+  et expéditeur, détail user admin, inventaire admin, scan QR, commandes
+  expéditeur (détail + stats), gestion de compte. Nouveau widget
+  `TappablePhone` (exporté par `ui_kit`).
+- **Fix UX — dialog « Billet de réservation » (clic QR dans Mes colis /
+  Suivi)** : la zone « IMPORTANT » était transparente/illisible. La dialog est
+  redessinée sur une surface dégradée indigo (`primaryLighter`), le billet
+  blanc ressort nettement, et l'en-tête répétée a été retirée — rendu
+  professionnel et cohérent avec le design system.
+- **Fix débordements du billet** : l'en-tête et les lignes du billet
+  compressent (Flexible/ellipsis) au lieu de déborder sur les petits écrans
+  ou gros réglages de police.
+- **Google Sign-In (support Play Store)** : ajout pour un futur diagnostic
+  (non activé).
 
 ### Version 1.1.15
 

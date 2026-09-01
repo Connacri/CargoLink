@@ -468,7 +468,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
                   Icons.inventory_2_outlined, 'Produit', booking.productName),
               _infoRow(Icons.person_outline, 'Client', clientName),
               if (clientPhone.isNotEmpty)
-                _infoRow(Icons.phone_outlined, 'Téléphone', clientPhone),
+                _phoneRow(clientPhone),
               _infoRow(
                 Icons.flight_takeoff_rounded,
                 'Itinéraire',
@@ -547,6 +547,34 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
           Flexible(
             child:
                 Text(value, textAlign: TextAlign.right, style: AppTheme.body),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _phoneRow(String phone) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceXs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.phone_outlined,
+              size: 18, color: AppTheme.textSecondaryColor),
+          const SizedBox(width: AppTheme.spaceSm),
+          const Expanded(child: Text('Téléphone : ', style: AppTheme.caption)),
+          Flexible(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: TappablePhone(
+                phone: phone,
+                style: AppTheme.body.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.primaryColor,
+                ),
+                textAlign: TextAlign.right,
+              ),
+            ),
           ),
         ],
       ),

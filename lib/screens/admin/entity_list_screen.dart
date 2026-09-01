@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/profile_navigation.dart';
 import '../../core/widgets/micro_badge.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../data/services/offer_share_service.dart';
 import 'user_details_screen.dart';
 import 'entity_detail_screen.dart';
 
@@ -434,59 +435,46 @@ class _ShipmentCard extends ConsumerWidget {
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => EntityDetailScreen(shipment: s)),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const AnimatedIconDot(
-              icon: Icons.flight_rounded,
-              color: AppTheme.accentColor,
-            ),
-            const SizedBox(width: AppTheme.spaceSm + 4),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${s.originCountry} → ${s.destinationCity}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTheme.body.copyWith(fontWeight: FontWeight.w700),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final cardWidth = constraints.maxWidth;
+                final ticketWidth = cardWidth >= 340 ? 340.0 : cardWidth;
+                return Center(
+                  child: OfferShareService.ticketFor(
+                    s,
+                    width: ticketWidth,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${s.pricePerKg.toStringAsFixed(0)} DZD/kg · '
-                    '${s.availableWeightKg.toStringAsFixed(0)}kg dispo',
-                    style: AppTheme.caption,
-                  ),
-                  if (s.flightNumber != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      s.airline != null
-                          ? '${s.airline} · Vol ${s.flightNumber}'
-                          : 'Vol ${s.flightNumber}',
-                      style: AppTheme.caption,
-                    ),
-                  ],
-                ],
-              ),
+                );
+              },
             ),
-            GradientBadge(
-              label: _statusLabel(s.status),
-              gradient: _statusGradient(s.status),
-              compact: true,
-            ),
-            if (s.shipper?.user != null)
-              GestureDetector(
-                onTap: () =>
-                    openUserProfileFromUser(context, ref, s.shipper!.user!),
-                child: Padding(
-                  padding: const EdgeInsets.only(left: AppTheme.spaceSm + 4),
-                  child: GradientAvatar(
-                    initial: s.shipper!.user!.fullName,
-                    imageUrl: s.shipper!.user!.profilePictureUrl,
-                    radius: 14,
-                  ),
+            const SizedBox(height: AppTheme.spaceSm),
+            Row(
+              children: [
+                GradientBadge(
+                  label: _statusLabel(s.status),
+                  gradient: _statusGradient(s.status),
+                  compact: true,
                 ),
-              ),
+                if (s.shipper?.user != null) ...[
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () =>
+                        openUserProfileFromUser(context, ref, s.shipper!.user!),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: AppTheme.spaceSm + 4),
+                      child: GradientAvatar(
+                        initial: s.shipper!.user!.fullName,
+                        imageUrl: s.shipper!.user!.profilePictureUrl,
+                        radius: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ],
         ),
       ),

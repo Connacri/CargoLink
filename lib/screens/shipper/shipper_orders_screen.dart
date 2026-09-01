@@ -244,6 +244,7 @@ class _OrderTile extends ConsumerWidget {
                 Icons.phone_outlined,
                 'Téléphone',
                 booking.deliveryPhone!,
+                tappablePhone: true,
               ),
             Row(
               children: [
@@ -320,6 +321,7 @@ class _OrderTile extends ConsumerWidget {
     String value, {
     VoidCallback? onAvatarTap,
     String? avatarUrl,
+    bool tappablePhone = false,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.spaceXs + 2),
@@ -330,10 +332,23 @@ class _OrderTile extends ConsumerWidget {
           const SizedBox(width: AppTheme.spaceXs + 2),
           Text('$label : ', style: AppTheme.caption),
           Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: AppTheme.caption.copyWith(fontWeight: FontWeight.w700),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: tappablePhone
+                  ? TappablePhone(
+                      phone: value,
+                      style: AppTheme.caption.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.primaryColor,
+                      ),
+                      textAlign: TextAlign.right,
+                    )
+                  : Text(
+                      value,
+                      textAlign: TextAlign.right,
+                      style:
+                          AppTheme.caption.copyWith(fontWeight: FontWeight.w700),
+                    ),
             ),
           ),
           if (onAvatarTap != null) ...[

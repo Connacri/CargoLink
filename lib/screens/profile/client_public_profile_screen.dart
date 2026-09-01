@@ -116,7 +116,9 @@ class _ClientProfileBody extends StatelessWidget {
       }
     }
 
-    add('Téléphone', user.phone, Icons.phone_outlined);
+    if (user.phone.isNotEmpty) {
+      tiles.add(_PhoneRow(phone: user.phone));
+    }
     add('WhatsApp', user.whatsapp, Icons.chat_rounded);
     add('Télégram', user.telegram, Icons.send_rounded);
     add('Facebook', user.facebook, Icons.facebook_rounded);
@@ -159,6 +161,43 @@ class _MetaRow extends StatelessWidget {
           Icon(icon, size: 15, color: AppTheme.textMutedColor),
           const SizedBox(width: 6),
           Expanded(child: Text(label, style: AppTheme.caption)),
+        ],
+      ),
+    );
+  }
+}
+
+class _PhoneRow extends StatelessWidget {
+  const _PhoneRow({required this.phone});
+
+  final String phone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppTheme.spaceXs),
+      child: Row(
+        children: [
+          const Icon(Icons.phone_outlined,
+              size: 15, color: AppTheme.textMutedColor),
+          const SizedBox(width: 6),
+          const Text('Téléphone : ',
+              style: TextStyle(
+                  fontSize: 12, color: AppTheme.textMutedColor)),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: TappablePhone(
+                phone: phone,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor),
+                textAlign: TextAlign.right,
+                maxLines: 1,
+              ),
+            ),
+          ),
         ],
       ),
     );

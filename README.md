@@ -22,6 +22,8 @@ Connecter des **micro-importateurs** (voyageurs disposant d'une franchise bagage
 
 ### 🧑 Pour les clients
 - 🔍 **Recherche & filtres** : destinations, origine, prix, tri (smart filters).
+- 🎫 **Chaque offre publiée affiche le billet d'avion complet** : aéroport de départ, aéroport d'arrivée + **ville d'arrivée** claire, compagnie, n° de vol, dates, poids disponible, prix/kg et **téléphone expéditeur cliquable** (appel direct) — dans le feed, les profils publics et les dashboards (expéditeur/admin).
+- 📞 **Téléphones cliquables partout** : chaque numéro affiché (offres, profils, inventaire, scan QR, commandes, gestion de compte) lance un appel direct `tel:` ; quand le numéro est absent, le label est masqué (aucun espace vide).
 - 📦 **Assistant de réservation** en 4 étapes : *Produit → Photos → Paiement → Terminé*.
 - 🎫 **Confirmation avec QR code** : ticket récapitulatif redessiné (en-tête dégradé « CARGOLINK / Billet de Réservation », pointillés, détails produit) + bouton *« Enregistrer la confirmation »* (sauvegarde en galerie via `RepaintBoundary`).
 - 💳 **Paiement** : Espèces, Virement bancaire, CCP/CIB, **Chargily** (EDAHABIA / carte), **Stripe** (international).
@@ -166,7 +168,7 @@ sequenceDiagram
 - **Glass cards** + **entêtes en dégradé** (`GradientSliverHeader`) : effet « glassmorphism » moderne.
 - **Fade-in au scroll** : apparition douce des sections pendant le défilement.
 - **Timeline de suivi animée** : progression par étapes (DHL/UPS/FedEx style).
-- **Tickets façon billet** (QR + suivi colis) : en-tête en dégradé « CARGOLINK », diviseurs en pointillés, rendu `RepaintBoundary` pour capture d'écran.
+- **Tickets façon billet** (QR + suivi colis + offres) : en-tête en dégradé « CARGOLINK / OFFRE DE VOL », diviseurs en pointillés, rendu `RepaintBoundary` pour capture d'écran, surface dégradée indigo dans la dialog billet (zone « IMPORTANT » lisible).
 - **Réponse haptique** et transitions Material 3 natives.
 - Feedback utilisateur avec **annotation au doigt** (mode dessin).
 

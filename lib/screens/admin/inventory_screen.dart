@@ -195,7 +195,10 @@ class _DepotCard extends ConsumerWidget {
             ],
             if (depot.phone != null) ...[
               const SizedBox(height: AppTheme.spaceXs),
-              _InfoLine(icon: Icons.phone_outlined, text: depot.phone!),
+              _InfoLine(
+                  icon: Icons.phone_outlined,
+                  text: depot.phone!,
+                  isPhone: true),
             ],
             const SizedBox(height: AppTheme.spaceSm),
             stats.when(
@@ -235,10 +238,12 @@ class _DepotCard extends ConsumerWidget {
 }
 
 class _InfoLine extends StatelessWidget {
-  const _InfoLine({required this.icon, required this.text});
+  const _InfoLine(
+      {required this.icon, required this.text, this.isPhone = false});
 
   final IconData icon;
   final String text;
+  final bool isPhone;
 
   @override
   Widget build(BuildContext context) {
@@ -247,7 +252,15 @@ class _InfoLine extends StatelessWidget {
         Icon(icon, size: 16, color: AppTheme.textSecondaryColor),
         const SizedBox(width: 6),
         Expanded(
-          child: Text(text, style: AppTheme.bodySecondary),
+          child: isPhone
+              ? TappablePhone(
+                  phone: text,
+                  style: AppTheme.bodySecondary.copyWith(
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                )
+              : Text(text, style: AppTheme.bodySecondary),
         ),
       ],
     );

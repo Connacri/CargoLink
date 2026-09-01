@@ -101,112 +101,134 @@ class _QrTicketDialogState extends State<_QrTicketDialog> {
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(AppTheme.spaceMd),
-      child: ConstrainedBox(
+      child: Container(
         constraints: const BoxConstraints(maxWidth: 360),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryLighter,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.12)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ─── TICKET ───
-              RepaintBoundary(
-                key: _ticketKey,
-                child: QrBookingTicket(payload: widget.payload),
-              ),
-              const SizedBox(height: AppTheme.spaceMd),
-              // ─── INSTRUCTION ───
-              Container(
-                width: double.infinity,
+              // ─── TICKET (zone d'enregistrement uniquement) ───
+              Padding(
                 padding: const EdgeInsets.all(AppTheme.spaceMd),
-                decoration: BoxDecoration(
-                  color: AppTheme.accentColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                  border: Border.all(
-                      color: AppTheme.accentColor.withValues(alpha: 0.3)),
+                child: RepaintBoundary(
+                  key: _ticketKey,
+                  child: QrBookingTicket(payload: widget.payload),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.print_outlined,
-                            size: 16, color: AppTheme.accentColor),
-                        const SizedBox(width: AppTheme.spaceSm),
-                        Expanded(
-                          child: Text(
-                            'IMPORTANT',
-                            style: AppTheme.caption.copyWith(
-                              color: AppTheme.accentColor,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Imprimez ce billet et envoyez-le au fournisseur afin '
-                      'qu\'il imprime ce code et le colle sur le colis / la '
-                      'marchandise, pour ne pas le perdre parmi les colis et '
-                      'faciliter la livraison.',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        height: 1.35,
-                        color: AppTheme.textPrimaryColor,
-                      ),
-                    ),
-                    if (widget.payload.flightDate.isNotEmpty) ...[
-                      const SizedBox(height: 6),
+              ),
+              const SizedBox(height: AppTheme.spaceXs),
+              // ─── INSTRUCTION ───
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppTheme.spaceMd),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                    border: Border.all(
+                        color: AppTheme.accentColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Row(
                         children: [
-                          const Icon(Icons.event_rounded,
-                              size: 14, color: AppTheme.accentColor),
+                          const Icon(Icons.print_outlined,
+                              size: 16, color: AppTheme.accentColor),
                           const SizedBox(width: AppTheme.spaceSm),
                           Expanded(
                             child: Text(
-                              'Date du vol : ${widget.payload.flightDate}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
+                              'IMPORTANT',
+                              style: AppTheme.caption.copyWith(
                                 color: AppTheme.accentColor,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.2,
                               ),
                             ),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Imprimez ce billet et envoyez-le au fournisseur afin '
+                        'qu\'il imprime ce code et le colle sur le colis / la '
+                        'marchandise, pour ne pas le perdre parmi les colis et '
+                        'faciliter la livraison.',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          height: 1.35,
+                          color: AppTheme.textPrimaryColor,
+                        ),
+                      ),
+                      if (widget.payload.flightDate.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.event_rounded,
+                                size: 14, color: AppTheme.accentColor),
+                            const SizedBox(width: AppTheme.spaceSm),
+                            Expanded(
+                              child: Text(
+                                'Date du vol : ${widget.payload.flightDate}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.accentColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(height: AppTheme.spaceMd),
               // ─── ACTIONS ───
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close_rounded, size: 18),
-                      label: const Text('Fermer'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppTheme.spaceMd, 0, AppTheme.spaceMd, AppTheme.spaceMd),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                        label: const Text('Fermer'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: AppTheme.spaceSm),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: _saving ? null : _save,
-                      icon: _saving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.download_rounded, size: 18),
-                      label: Text(
-                          _saving ? 'Enregistrement...' : 'Enregistrer'),
+                    const SizedBox(width: AppTheme.spaceSm),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: _saving ? null : _save,
+                        icon: _saving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.download_rounded, size: 18),
+                        label: Text(
+                            _saving ? 'Enregistrement...' : 'Enregistrer'),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

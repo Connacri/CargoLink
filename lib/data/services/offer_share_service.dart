@@ -19,6 +19,35 @@ class OfferShareService {
   static const _playStoreUrl =
       'https://play.google.com/store/apps/details?id=com.cargolink.dz.cargolink';
 
+  /// Construit le « billet » stylisé d'une offre, prêt à être affiché en liste
+  /// ([width] flexible) ou capturé en PNG pour le partage (340 par défaut).
+  static Widget ticketFor(
+    Shipment shipment, {
+    double width = 340,
+    double? pricePerKg,
+  }) {
+    final shipper = shipment.shipper;
+    return OfferTicketCard(
+      shipperName: shipper?.user?.fullName ?? 'Expéditeur vérifié',
+      shipperPhone: shipper?.user?.phone,
+      origin: shipment.originCountry,
+      destination: shipment.arrivalAirport ?? shipment.destinationCity,
+      destinationCityLabel:
+          (shipment.arrivalAirport != null && shipment.arrivalAirport!.isNotEmpty)
+              ? shipment.destinationCity
+              : null,
+      airline: shipment.airline,
+      flightNumber: shipment.flightNumber,
+      departureDate: shipment.departureDate,
+      arrivalDate: shipment.arrivalDate ??
+          shipment.departureDate.add(const Duration(days: 1)),
+      pricePerKg: pricePerKg ?? shipment.pricePerKg,
+      availableKg: shipment.remainingWeightKg,
+      currency: AppConstants.defaultCurrency,
+      width: width,
+    );
+  }
+
   /// Lien profond direct vers une offre (si l'app est installée).
   static String deepLinkFor(String shipmentId) =>
       '$_deepLinkScheme://offer/$shipmentId';
@@ -27,24 +56,7 @@ class OfferShareService {
   static String webLinkFor(String shipmentId) => '$_webBaseUrl?id=$shipmentId';
 
   Future<void> shareOffer(BuildContext context, Shipment shipment) async {
-    final shipper = shipment.shipper;
-    final bytes = await _captureTicket(
-      context,
-      OfferTicketCard(
-        shipperName: shipper?.user?.fullName ?? 'Expéditeur vérifié',
-        origin: shipment.originCountry,
-        destination: shipment.destinationCity,
-        airline: shipment.airline,
-        flightNumber: shipment.flightNumber,
-        departureDate: shipment.departureDate,
-        arrivalDate: shipment.arrivalDate ??
-            shipment.departureDate.add(const Duration(days: 1)),
-        pricePerKg: shipment.pricePerKg,
-        availableKg: shipment.remainingWeightKg,
-        currency: AppConstants.defaultCurrency,
-        shipper: shipper?.user?.phone,
-      ),
-    );
+    final bytes = await _captureTicket(context, ticketFor(shipment));
 
     final webUrl = webLinkFor(shipment.id);
     final text = '✈️ ${shipment.originCountry} → ${shipment.destinationCity} '

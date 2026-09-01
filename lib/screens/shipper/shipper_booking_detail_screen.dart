@@ -408,11 +408,25 @@ class _ShipperBookingDetailScreenState
               ),
           ],
         ),
-        const SizedBox(height: AppTheme.spaceSm),
-        Text(
-          'Téléphone: ${client?.phone ?? '—'}',
-          style: AppTheme.bodySecondary,
-        ),
+        if (client?.phone.isNotEmpty == true) ...[
+          const SizedBox(height: AppTheme.spaceSm),
+          Row(
+            children: [
+              const Icon(Icons.phone_outlined,
+                  size: 16, color: AppTheme.primaryColor),
+              const SizedBox(width: AppTheme.spaceXs),
+              Expanded(
+                child: TappablePhone(
+                  phone: client!.phone,
+                  style: AppTheme.body.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
         if (_socials(client).isNotEmpty) ...[
           const SizedBox(height: AppTheme.spaceMd),
           Wrap(
@@ -430,24 +444,26 @@ class _ShipperBookingDetailScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const Icon(
-              Icons.phone_outlined,
-              size: 16,
-              color: AppTheme.primaryColor,
-            ),
-            const SizedBox(width: AppTheme.spaceXs),
-            Expanded(
-              child: Text(
-                booking.deliveryPhone?.isNotEmpty == true
-                    ? booking.deliveryPhone!
-                    : '—',
-                style: AppTheme.body.copyWith(fontWeight: FontWeight.w600),
+        if (booking.deliveryPhone?.isNotEmpty == true)
+          Row(
+            children: [
+              const Icon(
+                Icons.phone_outlined,
+                size: 16,
+                color: AppTheme.primaryColor,
               ),
-            ),
-          ],
-        ),
+              const SizedBox(width: AppTheme.spaceXs),
+              Expanded(
+                child: TappablePhone(
+                  phone: booking.deliveryPhone!,
+                  style: AppTheme.body.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
         if (booking.deliveryAddress?.isNotEmpty == true) ...[
           const SizedBox(height: AppTheme.spaceSm),
           Row(
@@ -636,7 +652,20 @@ class _ShipperBookingDetailScreenState
           _SummaryRow(label: 'Courrier', value: booking.courierName!),
           if (booking.courierPhone != null) ...[
             const SizedBox(height: AppTheme.spaceSm),
-            _SummaryRow(label: 'Tél. courrier', value: booking.courierPhone!),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Tél. courrier', style: AppTheme.bodySecondary),
+                TappablePhone(
+                  phone: booking.courierPhone!,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ],
+            ),
           ],
           if (booking.courierTrackingCode != null) ...[
             const SizedBox(height: AppTheme.spaceSm),

@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
 import '../theme/app_theme.dart';
+import 'tappable_phone.dart';
 
 /// Returns `true` when the [date] carries a meaningful time (non-midnight).
 bool _hasTime(DateTime date) => date.hour != 0 || date.minute != 0;
@@ -13,9 +14,10 @@ class OfferTicketCard extends StatelessWidget {
   const OfferTicketCard({
     super.key,
     required this.shipperName,
-    required this.shipper,
+    this.shipperPhone,
     required this.origin,
     required this.destination,
+    this.destinationCityLabel,
     this.airline,
     this.flightNumber,
     required this.departureDate,
@@ -23,12 +25,18 @@ class OfferTicketCard extends StatelessWidget {
     required this.pricePerKg,
     required this.availableKg,
     this.currency = 'DZD',
+    this.width = 340,
   });
 
   final String shipperName;
-  final String? shipper;
+  final String? shipperPhone;
   final String origin;
   final String destination;
+
+  /// Nom de la ville d'arrivée (libellé libre, ex « Oran »). Affiché sous
+  /// l'aéroport de destination pour lever toute ambiguïté sur la ville.
+  final String? destinationCityLabel;
+
   final String? airline;
   final String? flightNumber;
   final DateTime departureDate;
@@ -36,6 +44,10 @@ class OfferTicketCard extends StatelessWidget {
   final double pricePerKg;
   final double availableKg;
   final String currency;
+
+  /// Largeur du billet. 340 par défaut (rendu hors écran pour le partage) ;
+  /// passez une largeur flexible pour l'intégrer dans des listes.
+  final double width;
 
   static String _iata(String airport) {
     final m = RegExp(r'\(([A-Za-z]{2,4})\)').firstMatch(airport);
@@ -60,7 +72,7 @@ class OfferTicketCard extends StatelessWidget {
         : null;
 
     return Container(
-      width: 340,
+      width: width,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -91,30 +103,38 @@ class OfferTicketCard extends StatelessWidget {
                 const Icon(Icons.flight_takeoff_rounded,
                     color: Colors.white, size: 22),
                 const SizedBox(width: 8),
-                const Text(
-                  'CargoLink',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 17,
-                    letterSpacing: 0.5,
+                const Flexible(
+                  child: Text(
+                    'CargoLink',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 17,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
                 const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    'OFFRE DE VOL',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
+                Flexible(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Text(
+                      'OFFRE DE VOL',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                      ),
                     ),
                   ),
                 ),
@@ -164,6 +184,7 @@ class OfferTicketCard extends StatelessWidget {
                   child: _RoutePoint(
                     code: _iata(destination),
                     city: _city(destination),
+                    subtitle: destinationCityLabel,
                     time: arrTime,
                     alignEnd: true,
                   ),
@@ -203,8 +224,11 @@ class OfferTicketCard extends StatelessWidget {
                 _DetailRow(
                   icon: Icons.person_rounded,
                   label: 'Expéditeur',
-                  value: '$shipperName  ${shipper ?? ''}',
+                  value: shipperName,
                 ),
+                const SizedBox(height: 6),
+                if (shipperPhone != null && shipperPhone!.trim().isNotEmpty)
+                  _PhoneDetailRow(phone: shipperPhone!),
                 const SizedBox(height: 6),
                 _DetailRow(
                   icon: Icons.flight_class_rounded,
@@ -276,12 +300,17 @@ class _RoutePoint extends StatelessWidget {
   const _RoutePoint({
     required this.code,
     required this.city,
+    this.subtitle,
     this.time,
     required this.alignEnd,
   });
 
   final String code;
   final String city;
+
+  /// Texte secondaire (ex : ville d'arrivée) affiché sous le nom de l'aéroport.
+  final String? subtitle;
+
   final String? time;
   final bool alignEnd;
 
@@ -301,6 +330,14 @@ class _RoutePoint extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+        if (subtitle != null && subtitle!.isNotEmpty)
+          Text(subtitle!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.primaryColor)),
         if (time != null)
           Text(time!,
               style: TextStyle(
@@ -348,23 +385,58 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return value.isEmpty
+        ? const SizedBox.shrink()
+        : Row(
+            children: [
+              Icon(icon, size: 14, color: AppTheme.primaryColor),
+              const SizedBox(width: 6),
+              Text('$label : ',
+                  style: const TextStyle(
+                      fontSize: 11, color: AppTheme.textMutedColor)),
+              Expanded(
+                child: Text(
+                  value.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF111827)),
+                ),
+              ),
+            ],
+          );
+  }
+}
+
+class _PhoneDetailRow extends StatelessWidget {
+  const _PhoneDetailRow({required this.phone});
+
+  final String phone;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: AppTheme.primaryColor),
+        const Icon(Icons.phone, size: 14, color: AppTheme.primaryColor),
         const SizedBox(width: 6),
-        Text('$label : ',
-            style:
-                const TextStyle(fontSize: 11, color: AppTheme.textMutedColor)),
+        const Text('Téléphone : ',
+            style: TextStyle(fontSize: 11, color: AppTheme.textMutedColor)),
         Expanded(
-          child: Text(
-            value.toUpperCase(),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: TappablePhone(
+              phone: phone,
+              style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF111827)),
+                color: Color(0xFF111827),
+              ),
+              textAlign: TextAlign.right,
+              maxLines: 1,
+            ),
           ),
         ),
       ],

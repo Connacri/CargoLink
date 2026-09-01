@@ -8,6 +8,13 @@ import 'package:cargolink/components/revenue_bar_chart.dart';
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
+/// Les cartes d'offres sont rendues dans des listes défilantes en
+/// production (ListView) ; on les teste donc dans une zone scrollable pour
+/// éviter tout débordement vertical dans le viewport de test.
+Widget _wrapScrollable(Widget child) => MaterialApp(
+      home: Scaffold(body: SingleChildScrollView(child: child)),
+    );
+
 void main() {
   setUpAll(() async {
     await initializeDateFormatting('fr_FR');
@@ -15,7 +22,7 @@ void main() {
   group('ShipperCard', () {
     testWidgets('renders name, availability and book button', (tester) async {
       var booked = false;
-      await tester.pumpWidget(_wrap(ShipperCard(
+      await tester.pumpWidget(_wrapScrollable(ShipperCard(
         shipperId: 's1',
         name: 'Mohamed Karim',
         avatarUrl: null,
@@ -48,7 +55,7 @@ void main() {
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
-      await tester.pumpWidget(_wrap(ShipperCard(
+      await tester.pumpWidget(_wrapScrollable(ShipperCard(
         shipperId: 's1',
         name: 'Fatima B.',
         rating: 4.6,

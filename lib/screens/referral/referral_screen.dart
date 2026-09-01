@@ -19,7 +19,11 @@ import '../../providers/index.dart';
 /// - Tous les 3 filleuls qualifiés : 3 vidéos témoignages à soumettre,
 ///   validées par le fondateur, pour débloquer la suite.
 class ReferralScreen extends ConsumerStatefulWidget {
-  const ReferralScreen({super.key});
+  /// Code parrain à pré-remplir dans le champ « Être parrainé » (ex. reçu via
+  /// un lien profond `cargolink://referral/<code>`).
+  final String? initialCode;
+
+  const ReferralScreen({super.key, this.initialCode});
 
   @override
   ConsumerState<ReferralScreen> createState() => _ReferralScreenState();
@@ -29,14 +33,26 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
   final _url1Ctrl = TextEditingController();
   final _url2Ctrl = TextEditingController();
   final _url3Ctrl = TextEditingController();
+  final _sponsorCodeCtrl = TextEditingController();
   bool _submitting = false;
   bool _requestingPayout = false;
+  bool _applyingSponsor = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final code = widget.initialCode;
+    if (code != null && code.trim().isNotEmpty) {
+      _sponsorCodeCtrl.text = code.trim().toUpperCase();
+    }
+  }
 
   @override
   void dispose() {
     _url1Ctrl.dispose();
     _url2Ctrl.dispose();
     _url3Ctrl.dispose();
+    _sponsorCodeCtrl.dispose();
     super.dispose();
   }
 
@@ -158,6 +174,125 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     }
   }
 
+  /// Applique un code parrain saisi (ou reçu par lien) pour devenir filleul.
+  Future<void> _applySponsorCode() async {
+    final code = _sponsorCodeCtrl.text.trim().toUpperCase();
+    if (code.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Saisissez un code parrain')),
+      );
+      return;
+    }
+    final userId = ref.read(authServiceProvider).currentUserId;
+    if (userId == null) return;
+
+    setState(() => _applyingSponsor = true);
+    try {
+      final ok = await ref
+          .read(referralServiceProvider)
+          .applyReferralCode(filleulId: userId, code: code);
+      if (!mounted) return;
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Vous êtes maintenant parrainé ✓'),
+            backgroundColor: AppTheme.accentColor,
+          ),
+        );
+        _sponsorCodeCtrl.clear();
+        ref.invalidate(myReferralStatsProvider);
+        ref.invalidate(myReferralFilleulsProvider);
+        ref.invalidate(myReferralBatchesProvider);
+        ref.invalidate(isCurrentUserParrainProvider);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Code invalide, déjà rattaché à un parrain, ou votre propre code.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _applyingSponsor = false);
+    }
+  }
+
+  /// Carte « Être parrainé » : champ manuel pour saisir un code parrain.
+  Widget _buildSponsorCard() {
+    final userId = ref.watch(authServiceProvider).currentUserId;
+    final filled = _sponsorCodeCtrl.text.trim().isNotEmpty;
+    return GlassCard(
+      padding: const EdgeInsets.all(AppTheme.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                ),
+                child: const Icon(Icons.group_add_rounded,
+                    color: AppTheme.accentColor, size: 22),
+              ),
+              const SizedBox(width: AppTheme.spaceSm),
+              const Expanded(
+                child: Text('Être parrainé', style: AppTheme.h3),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
+          const Text(
+            'Vous avez le code d\'un ami ou d\'un expéditeur ? Saisissez-le ici '
+            'pour devenir son filleul et bénéficier de son parrainage.',
+            style: AppTheme.bodySecondary,
+          ),
+          const SizedBox(height: AppTheme.spaceMd),
+          TextField(
+            controller: _sponsorCodeCtrl,
+            textCapitalization: TextCapitalization.characters,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _applySponsorCode(),
+            decoration: InputDecoration(
+              labelText: filled ? 'Code parrain' : 'Code de parrainage',
+              hintText: 'Ex : AB2CD3EF',
+              prefixIcon: const Icon(Icons.card_giftcard_rounded),
+              border: const OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceMd),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _applyingSponsor ? null : _applySponsorCode,
+              icon: _applyingSponsor
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.verified_rounded, size: 18),
+              label: Text(
+                  _applyingSponsor ? 'Application…' : 'Valider le code parrain'),
+            ),
+          ),
+          if (filled && userId != null) ...[
+            const SizedBox(height: AppTheme.spaceXs),
+            const Text(
+              'Le code s\'appliquera à votre compte dès validation.',
+              style: AppTheme.caption,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final programActive = ref.watch(referralProgramActiveProvider);
@@ -215,6 +350,8 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(AppTheme.spaceMd),
                 children: [
+                  _buildSponsorCard(),
+                  const SizedBox(height: AppTheme.spaceMd),
                   _buildHowItWorks(commissionPct),
                   const SizedBox(height: AppTheme.spaceMd),
                   stats.when(

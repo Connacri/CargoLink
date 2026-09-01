@@ -24,6 +24,7 @@ import '../screens/client/offer_detail_screen.dart';
 import '../screens/client/payment_screen.dart';
 import '../screens/client/tracking_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/referral/referral_screen.dart';
 import '../screens/client/delivery_request_screen.dart';
 import '../screens/shipper/delivery_browse_screen.dart';
 import '../screens/shipper/shipper_ads_screen.dart';
@@ -162,7 +163,13 @@ class _DeepLinkListenerState extends ConsumerState<_DeepLinkListener> {
           if (nav == null) return;
           final signedIn =
               ref.read(authServiceProvider).currentUserId != null;
-          if (!signedIn) {
+          if (signedIn) {
+            // Déjà connecté : ouvrir la page parrainage avec le code
+            // pré-rempli pour être parrainé en un clic.
+            nav.push(MaterialPageRoute(
+              builder: (_) => ReferralScreen(initialCode: code),
+            ));
+          } else {
             // Sauvegarder le code et le consommer après inscription
             ref.read(deepLinkServiceProvider).savePendingReferralCode(code);
             nav.pushNamedAndRemoveUntil('/signup', (route) => false,

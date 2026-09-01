@@ -51,15 +51,16 @@ class OfferDetailScreen extends ConsumerWidget {
                       child: OfferTicketCard(
                         shipperName:
                             shipper?.user?.fullName ?? 'Expéditeur vérifié',
+                        shipperPhone: shipper?.user?.phone,
                         origin: shipment.originCountry,
-                        destination: shipment.destinationCity,
+                        destination:
+                            shipment.arrivalAirport ?? shipment.destinationCity,
                         airline: shipment.airline,
                         flightNumber: shipment.flightNumber,
                         departureDate: shipment.departureDate,
                         arrivalDate: shipment.arrivalDate,
                         pricePerKg: clientPrice,
                         availableKg: shipment.remainingWeightKg,
-                        shipper: shipper?.user?.phone,
                       ),
                     ),
                     const SizedBox(height: AppTheme.spaceLg),
