@@ -12,7 +12,7 @@
 |---|---|---|
 | Version (versionName) | **1.1.33** |
 | Code de version (versionCode) | **253** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | snippet à renseigner au commit |
+| Commit de référence | `ee71e15` |
 | Statut CI | À publier au prochain push → release `v1.1.33` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
