@@ -483,6 +483,63 @@ class BookingService {
     }
   }
 
+  /// The parcel was refused during verification with a *weight only*
+  /// discrepancy. The booking moves to `waiting_client_update` so the client
+  /// can correct the requested weight and resubmit (ref/QR unchanged) before
+  /// the shipper verifies again. The client keeps [trackingNumber]/[ref].
+  Future<Booking?> returnBookingForWeight(String bookingId,
+      {String? reason}) async {
+    try {
+      final response = await _supabase
+          .from('bookings')
+          .update({
+            'status': 'verifying',
+            'verification_status': 'waiting_client_update',
+            'refusal_reason': reason,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', bookingId)
+          .select(
+              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
+          .single();
+      return Booking.fromJson(response);
+    } catch (e) {
+      _logger.e('Error returning booking for weight: $e');
+      rethrow;
+    }
+  }
+
+  /// The client corrects the requested weight after a weight discrepancy and
+  /// resubmits. Recalculates the total price, keeps [trackingNumber]/ref (QR
+  /// never regenerated) and puts the shipper back on the verification step.
+  Future<Booking?> clientResubmitBookingWeight(
+    String bookingId, {
+    required double requestedWeightKg,
+    required double totalPrice,
+  }) async {
+    try {
+      final response = await _supabase
+          .from('bookings')
+          .update({
+            'requested_weight_kg': requestedWeightKg,
+            'allocated_weight_kg': requestedWeightKg,
+            'total_price': totalPrice,
+            'status': 'collected',
+            'verification_status': 'awaiting_verification',
+            'refusal_reason': null,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', bookingId)
+          .select(
+              '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
+          .single();
+      return Booking.fromJson(response);
+    } catch (e) {
+      _logger.e('Error resubmitting booking weight: $e');
+      rethrow;
+    }
+  }
+
   /// Mark booking as arrived at destination (geolocation + notification).
   Future<Booking?> markAsArrived(String bookingId,
       {double? latitude, double? longitude, String? location}) async {

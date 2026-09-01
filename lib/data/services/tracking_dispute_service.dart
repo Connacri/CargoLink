@@ -734,6 +734,35 @@ class NotificationService {
     }
   }
 
+  /// Notify the shipper that the client corrected the weight after a weight
+  /// discrepancy and resubmitted the demand (ref/QR unchanged). The shipper
+  /// can re-run the verification step.
+  Future<void> notifyShipperBookingWeightCorrected({
+    required String shipperUserId,
+    required String bookingId,
+    required String productName,
+    required double weightKg,
+  }) async {
+    try {
+      await createNotification(
+        userId: shipperUserId,
+        type: 'booking_weight_updated',
+        title: 'Poids corrigé par le client',
+        message: 'Le client a corrigé le poids de "$productName" '
+            '($weightKg kg). Vérifiez à nouveau le colis.',
+        relatedBookingId: bookingId,
+      );
+      await _sendPush(
+        userId: shipperUserId,
+        title: 'Poids corrigé ⚖️',
+        message: 'Le client a corrigé le poids de "$productName"',
+        data: {'bookingId': bookingId, 'type': 'booking_weight_updated'},
+      );
+    } catch (e) {
+      _logger.e('Error notifying shipper of corrected weight: $e');
+    }
+  }
+
   /// Notify the client that the shipper confirmed their booking.
   Future<void> notifyClientBookingConfirmed({
     required String clientId,
@@ -889,6 +918,36 @@ class NotificationService {
       );
     } catch (e) {
       _logger.e('Error notifying client of returned verification: $e');
+    }
+  }
+
+  /// Notify the client that the shipper found a weight-only discrepancy and
+  /// that they can correct the weight and resubmit (ref/QR unchanged).
+  Future<void> notifyClientWeightUpdateRequired({
+    required String clientId,
+    required String bookingId,
+    String? reason,
+  }) async {
+    try {
+      await createNotification(
+        userId: clientId,
+        type: 'weight_update_required',
+        title: 'Écart de poids détecté',
+        message: reason != null && reason.isNotEmpty
+            ? 'Le poids de votre colis doit être corrigé : $reason. '
+                'Modifiez le poids pour recalculer le montant.'
+            : 'Le poids de votre colis doit être corrigé. Modifiez-le pour '
+                'recalculer le montant.',
+        relatedBookingId: bookingId,
+      );
+      await _sendPush(
+        userId: clientId,
+        title: 'Écart de poids ⚖️',
+        message: 'Corrigez le poids de votre colis pour renvoyer la demande',
+        data: {'bookingId': bookingId, 'type': 'weight_update_required'},
+      );
+    } catch (e) {
+      _logger.e('Error notifying client of weight update: $e');
     }
   }
 

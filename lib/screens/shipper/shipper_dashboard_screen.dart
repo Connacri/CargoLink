@@ -76,6 +76,9 @@ class _ShipperDashboardScreenState
   final _scrollController = ScrollController();
   String? _statusFilter;
   String _lastShipperId = '';
+  /// Bannière « X demandes de réservation » : cachée dès que l'expéditeur
+  /// ouvre une demande/commande (elle ne réapparaît que sur la home).
+  bool _bookingsBannerSeen = false;
 
   @override
   void initState() {
@@ -136,6 +139,7 @@ class _ShipperDashboardScreenState
   }
 
   void _openBooking(BuildContext context, String bookingId) {
+    _bookingsBannerSeen = true;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ShipperBookingDetailScreen(bookingId: bookingId),
@@ -314,6 +318,9 @@ class _ShipperDashboardScreenState
               SliverToBoxAdapter(
                 child: AdBannerCarousel(ads: activeAds),
               ),
+            SliverToBoxAdapter(
+              child: _buildNewBookingBanner(shipper.id),
+            ),
             SliverToBoxAdapter(
               child: _buildBookingsHeader(shipper.id),
             ),
@@ -1126,6 +1133,83 @@ class _ShipperDashboardScreenState
   // booking status changes.
   // --------------------------------------------------------------------------
 
+  Widget _buildNewBookingBanner(String shipperId) {
+    final pager = ref.watch(shipperBookingsPagerProvider(shipperId));
+    final pending = pager.items.where((b) => b.status == 'pending').length;
+    if (pending == 0 || _bookingsBannerSeen) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: Material(
+        color: AppTheme.primaryColor,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        elevation: 6,
+        shadowColor: AppTheme.primaryColor.withValues(alpha: 0.45),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          onTap: () {
+            _bookingsBannerSeen = true;
+            setState(() {});
+            final pendingItems =
+                pager.items.where((b) => b.status == 'pending').toList();
+            if (pendingItems.isNotEmpty) {
+              _openBooking(context, pendingItems.first.id);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spaceMd,
+              vertical: AppTheme.spaceSm,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '$pending',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spaceSm),
+                Expanded(
+                  child: Text(
+                    pending == 1
+                        ? 'Nouvelle demande de réservation reçue'
+                        : '$pending nouvelles demandes de réservation reçues',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.white,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBookingsHeader(String shipperId) {
     final pager = ref.watch(shipperBookingsPagerProvider(shipperId));
     final pending = pager.items.where((b) => b.status == 'pending').length;
@@ -1140,7 +1224,7 @@ class _ShipperDashboardScreenState
       child: Row(
         children: [
           const Expanded(
-            child: Text('Commandes reçues', style: AppTheme.h2),
+                child: Text('Demandes de réservation reçues', style: AppTheme.h2),
           ),
           if (pending > 0)
             Container(
@@ -2494,7 +2578,7 @@ class _ShipperShipmentDetailScreenState
           slivers: [
             CompactSliverHeader(
               title: '${shipment.originCountry} → ${shipment.destinationCity}',
-              subtitle: 'Commandes reçues pour cette offre',
+              subtitle: 'Demandes de réservation reçues pour cette offre',
               icon: Icons.flight_takeoff_rounded,
               expandedHeight: 140,
             ),
@@ -2509,7 +2593,7 @@ class _ShipperShipmentDetailScreenState
                   AppTheme.spaceMd,
                   AppTheme.spaceSm,
                 ),
-                child: Text('Commandes reçues', style: AppTheme.h2),
+            child: Text('Demandes de réservation reçues', style: AppTheme.h2),
               ),
             ),
             PagedSliverList<Booking>(

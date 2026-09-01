@@ -1417,7 +1417,12 @@ class _BookingCard extends ConsumerWidget {
                   _CardIconButton(
                     icon: Icons.qr_code_2_rounded,
                     tooltip: 'QR',
-                    onTap: () => showQrTicketDialog(context, booking),
+                    onTap: () => showQrTicketDialog(
+                      context,
+                      booking,
+                      onViewDetail: () => Navigator.of(context)
+                          .pushNamed('/tracking', arguments: booking.id),
+                    ),
                   ),
                 if (onChat != null)
                   _CardIconButton(

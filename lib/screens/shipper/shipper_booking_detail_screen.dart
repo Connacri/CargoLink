@@ -120,6 +120,12 @@ class _ShipperBookingDetailScreenState
                     child: _buildSection(
                         'Colis en attente de correction', _buildVerificationReturned()),
                   ),
+                if (data.verificationStatus == 'waiting_client_update')
+                  SliverToBoxAdapter(
+                    child: _buildSection(
+                        'Correction de poids demandée',
+                        _buildWaitingWeightUpdate()),
+                  ),
                 SliverToBoxAdapter(
                   child: _buildActionsSection(data),
                 ),
@@ -569,6 +575,28 @@ class _ShipperBookingDetailScreenState
     );
   }
 
+  Widget _buildWaitingWeightUpdate() {
+    return const Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.scale_rounded,
+          color: AppTheme.warningColor,
+          size: 20,
+        ),
+        SizedBox(width: AppTheme.spaceSm),
+        Expanded(
+          child: Text(
+            'Écart de poids signalé au client. Celui-ci peut corriger le '
+            'poids et renvoyer la demande — la vérification reprendra dès '
+            'réception.',
+            style: AppTheme.bodySecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
   List<Widget> _socials(User? client) {
     final result = <Widget>[];
     if (client == null) return result;
@@ -761,7 +789,7 @@ class _ShipperBookingDetailScreenState
           FilledButton.icon(
             onPressed: disabled ? null : () => _confirm(booking),
             icon: const Icon(Icons.check_rounded, size: 18),
-            label: const Text('Confirmer la commande'),
+            label: const Text('Accepter la réservation'),
           ),
         );
         actions.add(
@@ -797,9 +825,9 @@ class _ShipperBookingDetailScreenState
       case 'collected':
         actions.add(
           FilledButton.icon(
-            onPressed: disabled ? null : () => _startVerification(booking),
+            onPressed: disabled ? null : () => _verify(booking),
             icon: const Icon(Icons.fact_check_rounded, size: 18),
-            label: const Text('Vérifier le colis'),
+            label: const Text('Finaliser la vérification'),
           ),
         );
         break;
@@ -928,7 +956,7 @@ class _ShipperBookingDetailScreenState
   /// « collecté » (en attente de vérification).
   Future<void> _collect(Booking booking) async {
     final photo =
-        await pickProofPhoto(context, title: 'Photo du colis collecté');
+        await pickProofPhoto(context, title: 'Photo du colis collecté', cameraOnly: true);
     if (photo == null) return;
     await _run(() async {
       final url = await ref
@@ -954,10 +982,6 @@ class _ShipperBookingDetailScreenState
           );
     }, 'Colis collecté, vérification en attente');
   }
-
-  Future<void> _startVerification(Booking booking) => _run(
-      () => ref.read(bookingServiceProvider).startVerification(booking.id),
-      'Vérification en cours');
 
   /// Vérification : articles interdits + pesée réelle. Accepte ou renvoie le
   /// colis au client avec un motif.
@@ -994,26 +1018,49 @@ class _ShipperBookingDetailScreenState
       }, 'Colis vérifié et accepté');
     } else {
       await _run(() async {
-        await ref.read(bookingServiceProvider).returnBooking(
-              booking.id,
-              reason: result.reason,
-            );
-        await ref
-            .read(trackingServiceProvider)
-            .addTrackingUpdate(
-              bookingId: booking.id,
-              status: 'verification_returned',
-              notes: 'Colis renvoyé : ${result.reason}',
-              location: booking.shipment?.originCountry,
-            );
-        await ref
-            .read(notificationServiceProvider)
-            .notifyClientVerificationReturned(
-              clientId: booking.clientId,
-              bookingId: booking.id,
-              reason: result.reason,
-            );
-      }, 'Colis renvoyé au client');
+        if (result.weightOnly) {
+          // Simple écart de poids : on autorise le client à corriger le poids
+          // et à renvoyer sans changer sa référence / son QR.
+          await ref
+              .read(bookingServiceProvider)
+              .returnBookingForWeight(booking.id, reason: result.reason);
+          await ref.read(trackingServiceProvider).addTrackingUpdate(
+                bookingId: booking.id,
+                status: 'verification_returned',
+                notes: 'Écart de poids signalé : ${result.reason}',
+                location: booking.shipment?.originCountry,
+              );
+          await ref
+              .read(notificationServiceProvider)
+              .notifyClientWeightUpdateRequired(
+                clientId: booking.clientId,
+                bookingId: booking.id,
+                reason: result.reason,
+              );
+        } else {
+          await ref.read(bookingServiceProvider).returnBooking(
+                booking.id,
+                reason: result.reason,
+              );
+          await ref
+              .read(trackingServiceProvider)
+              .addTrackingUpdate(
+                bookingId: booking.id,
+                status: 'verification_returned',
+                notes: 'Colis renvoyé : ${result.reason}',
+                location: booking.shipment?.originCountry,
+              );
+          await ref
+              .read(notificationServiceProvider)
+              .notifyClientVerificationReturned(
+                clientId: booking.clientId,
+                bookingId: booking.id,
+                reason: result.reason,
+              );
+        }
+      }, result.weightOnly
+          ? 'Correction de poids demandée au client'
+          : 'Colis renvoyé au client');
     }
   }
 
@@ -1213,8 +1260,14 @@ LinearGradient _statusGradient(String status) {
 // ============================================================================
 
 /// Résultat de la feuille de vérification : colis accepté (poids réel) ou
-/// renvoyé (motif).
-typedef _VerifyResult = ({bool accepted, double weight, String reason});
+/// renvoyé (motif). `weightOnly` distingue un simple écart de poids (le client
+/// peut corriger/renvoyer) d'un vrai refus (article interdit / dégât).
+typedef _VerifyResult = ({
+  bool accepted,
+  double weight,
+  String reason,
+  bool weightOnly,
+});
 
 class _VerificationSheet extends ConsumerStatefulWidget {
   const _VerificationSheet();
@@ -1279,7 +1332,7 @@ class _VerificationSheetState extends ConsumerState<_VerificationSheet> {
         return;
       }
       Navigator.of(context).pop(
-        (accepted: true, weight: weight, reason: ''),
+        (accepted: true, weight: weight, reason: '', weightOnly: false),
       );
     } else {
       if (reason.isEmpty) {
@@ -1292,7 +1345,14 @@ class _VerificationSheetState extends ConsumerState<_VerificationSheet> {
         return;
       }
       Navigator.of(context).pop(
-        (accepted: false, weight: 0, reason: reason),
+        (
+          accepted: false,
+          weight: 0,
+          reason: reason,
+          // Pas d'article interdit coché → simple écart de poids : le client
+          // pourra corriger le poids et renvoyer sans changer réf/QR.
+          weightOnly: !_hasForbidden,
+        ),
       );
     }
   }
@@ -1311,7 +1371,10 @@ class _VerificationSheetState extends ConsumerState<_VerificationSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Vérification du colis', style: AppTheme.h2),
+            Text(
+              'Vérification du colis',
+              style: AppTheme.h2.copyWith(color: AppTheme.green),
+            ),
             const SizedBox(height: AppTheme.spaceXs),
             const Text(
               'Confirmez l\'absence d\'articles interdits, puis saisissez '

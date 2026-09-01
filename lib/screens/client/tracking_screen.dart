@@ -10,6 +10,7 @@ import '../../core/widgets/micro_badge.dart';
 import '../../components/tracking_timeline.dart';
 import '../chat/chat_screen.dart';
 import '../shipper/shipper_public_profile_screen.dart';
+import '../../core/constants/app_constants.dart';
 
 class TrackingScreen extends ConsumerWidget {
   final String bookingId;
@@ -161,6 +162,18 @@ class TrackingScreen extends ConsumerWidget {
                         0,
                       ),
                       child: _buildVerificationReturnedBanner(bookingData),
+                    ),
+                  ),
+                if (bookingData.verificationStatus == 'waiting_client_update')
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        AppTheme.spaceMd,
+                        0,
+                      ),
+                      child: _buildWeightUpdateBanner(context, ref, bookingData),
                     ),
                   ),
                 if (bookingData.deliveryMethod == 'courier')
@@ -552,6 +565,85 @@ class TrackingScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// Bannière rouge flottante : l'expéditeur a signalé un écart de poids.
+  /// Le client peut corriger le poids (recalcul auto) et renvoyer la demande
+  /// sans changer sa référence / son QR.
+  Widget _buildWeightUpdateBanner(
+    BuildContext context,
+    WidgetRef ref,
+    Booking booking,
+  ) {
+    return GlassCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: AppTheme.errorColor,
+            size: 20,
+          ),
+          const SizedBox(width: AppTheme.spaceSm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Écart de poids détecté',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.errorColor,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spaceXs),
+                Text(
+                  booking.refusalReason != null &&
+                          booking.refusalReason!.isNotEmpty
+                      ? booking.refusalReason!
+                      : 'L\'expéditeur a constaté un écart de poids sur votre '
+                          'colis. Corrigez le poids pour recalculer le montant.',
+                  style: AppTheme.bodySecondary,
+                ),
+                const SizedBox(height: AppTheme.spaceSm),
+                FilledButton.icon(
+                  onPressed: () => _openWeightCorrection(context, ref, booking),
+                  icon: const Icon(Icons.scale_rounded, size: 18),
+                  label: const Text('Corriger le poids'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Ouvre la feuille de correction de poids : saisie du nouveau poids,
+  /// calcul automatique du montant, renvoi sans modifier réf/QR.
+  Future<void> _openWeightCorrection(
+    BuildContext context,
+    WidgetRef ref,
+    Booking booking,
+  ) async {
+    final resubmitted = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.backgroundColor,
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: _WeightUpdateSheet(booking: booking),
+      ),
+    );
+    if (resubmitted == true && context.mounted) {
+      ref.invalidate(bookingByIdProvider(booking.id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Poids corrigé, demande renvoyée à l\'expéditeur'),
+          backgroundColor: AppTheme.accentColor,
+        ),
+      );
+    }
   }
 
   Widget _buildCourierInfo(Booking booking) {
@@ -1396,5 +1488,174 @@ class _TrackingTicketDialog extends ConsumerWidget {
       default:
         return Icons.local_shipping_rounded;
     }
+  }
+}
+
+// ============================================================================
+// CORRECTION DE POIDS (écart détecté par l'expéditeur)
+// ============================================================================
+
+/// Feuille de correction du poids : le client saisit le nouveau poids, le
+/// montant est recalculé automatiquement (même formule que le wizard), puis la
+/// demande est renvoyée à l'expéditeur **sans modifier réf / QR**.
+class _WeightUpdateSheet extends ConsumerStatefulWidget {
+  const _WeightUpdateSheet({required this.booking});
+
+  final Booking booking;
+
+  @override
+  ConsumerState<_WeightUpdateSheet> createState() => _WeightUpdateSheetState();
+}
+
+class _WeightUpdateSheetState extends ConsumerState<_WeightUpdateSheet> {
+  late final TextEditingController _weightController;
+  bool _busy = false;
+
+  Booking get booking => widget.booking;
+
+  @override
+  void initState() {
+    super.initState();
+    _weightController = TextEditingController(
+      text: booking.verifiedWeightKg != null && booking.verifiedWeightKg! > 0
+          ? booking.verifiedWeightKg!.toStringAsFixed(1)
+          : booking.requestedWeightKg.toStringAsFixed(1),
+    );
+  }
+
+  @override
+  void dispose() {
+    _weightController.dispose();
+    super.dispose();
+  }
+
+  /// Commission plateforme (repli 5 % comme partout ailleurs).
+  double get _commissionPercent =>
+      ref.watch(platformSettingsProvider).valueOrNull?.commissionPercent ??
+      AppConstants.platformCommissionPercent;
+
+  String get _currency =>
+      ref.watch(platformSettingsProvider).valueOrNull?.defaultCurrency ??
+      AppConstants.defaultCurrency;
+
+  double? get _weight => double.tryParse(_weightController.text.trim());
+
+  double? get _totalPrice {
+    final w = _weight;
+    final price = booking.shipment?.pricePerKg;
+    if (w == null || price == null || w <= 0) return null;
+    final commissionPerKg = price * _commissionPercent / 100;
+    return w * (price + commissionPerKg);
+  }
+
+  Future<void> _submit() async {
+    final total = _totalPrice;
+    final weight = _weight;
+    if (weight == null || weight <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Saisissez un poids valide')),
+      );
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await ref.read(bookingServiceProvider).clientResubmitBookingWeight(
+            booking.id,
+            requestedWeightKg: weight,
+            totalPrice: total!,
+          );
+      final shipperUserId = booking.shipment?.shipper?.userId;
+      if (shipperUserId != null) {
+        await ref.read(notificationServiceProvider).notifyShipperBookingWeightCorrected(
+              shipperUserId: shipperUserId,
+              bookingId: booking.id,
+              productName: booking.productName,
+              weightKg: weight,
+            );
+      }
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _busy = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final total = _totalPrice;
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppTheme.spaceMd,
+        right: AppTheme.spaceMd,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppTheme.spaceLg,
+        top: AppTheme.spaceMd,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('Corriger le poids', style: AppTheme.h2),
+            const SizedBox(height: AppTheme.spaceXs),
+            Text(
+              booking.refusalReason != null &&
+                      booking.refusalReason!.isNotEmpty
+                  ? booking.refusalReason!
+                  : 'L\'expéditeur a constaté un écart de poids sur votre colis. '
+                      'Corrigez le poids pour recalculer le montant.',
+              style: AppTheme.bodySecondary,
+            ),
+            const SizedBox(height: AppTheme.spaceMd),
+            TextField(
+              controller: _weightController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              onChanged: (_) => setState(() {}),
+              decoration: const InputDecoration(
+                labelText: 'Poids réel (kg)',
+                prefixIcon: Icon(Icons.scale_rounded),
+              ),
+            ),
+            if (booking.shipment?.pricePerKg != null && total != null) ...[
+              const SizedBox(height: AppTheme.spaceMd),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppTheme.spaceMd),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                  border: Border.all(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.15)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Poids corrigé : ${(_weight ?? 0).toStringAsFixed(1)} kg',
+                      style: AppTheme.bodySecondary,
+                    ),
+                    const SizedBox(height: AppTheme.spaceXs),
+                    Text(
+                      'Montant : ${total.toStringAsFixed(0)} $_currency',
+                      style: AppTheme.h3.copyWith(color: AppTheme.primaryColor),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: AppTheme.spaceLg),
+            FilledButton.icon(
+              onPressed: _busy ? null : _submit,
+              icon: const Icon(Icons.send_rounded, size: 18),
+              label: const Text('Renvoyer la demande'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

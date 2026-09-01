@@ -256,7 +256,16 @@ class _OrderTile extends ConsumerWidget {
                 ),
                 IconButton(
                   tooltip: 'Billet QR',
-                  onPressed: () => showQrTicketDialog(context, booking),
+                  onPressed: () => showQrTicketDialog(
+                    context,
+                    booking,
+                    onViewDetail: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            ShipperBookingDetailScreen(bookingId: booking.id),
+                      ),
+                    ),
+                  ),
                   icon: const Icon(
                     Icons.qr_code_2_rounded,
                     color: AppTheme.primaryColor,

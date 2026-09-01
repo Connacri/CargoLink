@@ -11,11 +11,19 @@ import '../utils/qr_booking.dart';
 import '../utils/web_download_stub.dart'
     if (dart.library.js_interop) '../utils/web_download.dart';
 import 'qr_booking_ticket.dart';
+import 'image_viewer.dart';
 
 /// Affiche le billet QR d'une commande existante et permet de le
 /// ré-enregistrer (même code de suivi que celui généré à la réservation —
 /// jamais régénéré).
-Future<void> showQrTicketDialog(BuildContext context, Booking booking) {
+///
+/// [onViewDetail] optionnel : appelé quand l'utilisateur appuie sur « Voir le
+/// détail » (pour ouvrir l'écran complet de la commande propre à chaque rôle).
+Future<void> showQrTicketDialog(
+  BuildContext context,
+  Booking booking, {
+  VoidCallback? onViewDetail,
+}) {
   final client = booking.client;
   final shipment = booking.shipment;
   final payload = QrBookingPayload(
@@ -39,7 +47,11 @@ Future<void> showQrTicketDialog(BuildContext context, Booking booking) {
 
   return showDialog<void>(
     context: context,
-    builder: (dialogContext) => _QrTicketDialog(payload: payload),
+    builder: (dialogContext) => _QrTicketDialog(
+      payload: payload,
+      booking: booking,
+      onViewDetail: onViewDetail,
+    ),
   );
 }
 
@@ -48,9 +60,15 @@ String _formatDate(DateTime d) =>
     '${d.month.toString().padLeft(2, '0')}/${d.year}';
 
 class _QrTicketDialog extends StatefulWidget {
-  const _QrTicketDialog({required this.payload});
+  const _QrTicketDialog({
+    required this.payload,
+    required this.booking,
+    this.onViewDetail,
+  });
 
   final QrBookingPayload payload;
+  final Booking booking;
+  final VoidCallback? onViewDetail;
 
   @override
   State<_QrTicketDialog> createState() => _QrTicketDialogState();
@@ -128,74 +146,20 @@ class _QrTicketDialogState extends State<_QrTicketDialog> {
                 ),
               ),
               const SizedBox(height: AppTheme.spaceXs),
-              // ─── INSTRUCTION ───
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(AppTheme.spaceMd),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accentColor.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                    border: Border.all(
-                        color: AppTheme.accentColor.withValues(alpha: 0.3)),
-                  ),
+              // ─── PHOTOS PRODUIT (agrandissables, multi) ───
+              if (widget.booking.productPhotosUrl != null &&
+                  widget.booking.productPhotosUrl!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spaceMd),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.print_outlined,
-                              size: 16, color: AppTheme.accentColor),
-                          const SizedBox(width: AppTheme.spaceSm),
-                          Expanded(
-                            child: Text(
-                              'IMPORTANT',
-                              style: AppTheme.caption.copyWith(
-                                color: AppTheme.accentColor,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'Imprimez ce billet et envoyez-le au fournisseur afin '
-                        'qu\'il imprime ce code et le colle sur le colis / la '
-                        'marchandise, pour ne pas le perdre parmi les colis et '
-                        'faciliter la livraison.',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          height: 1.35,
-                          color: AppTheme.textPrimaryColor,
-                        ),
-                      ),
-                      if (widget.payload.flightDate.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            const Icon(Icons.event_rounded,
-                                size: 14, color: AppTheme.accentColor),
-                            const SizedBox(width: AppTheme.spaceSm),
-                            Expanded(
-                              child: Text(
-                                'Date du vol : ${widget.payload.flightDate}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.accentColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                      _ProductPhotos(booking: widget.booking),
+                      const SizedBox(height: AppTheme.spaceMd),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: AppTheme.spaceMd),
               // ─── ACTIONS ───
               Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -230,9 +194,82 @@ class _QrTicketDialogState extends State<_QrTicketDialog> {
                   ],
                 ),
               ),
+              if (widget.onViewDetail != null) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTheme.spaceMd,
+                    0,
+                    AppTheme.spaceMd,
+                    AppTheme.spaceMd,
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        widget.onViewDetail!();
+                      },
+                      child: const Text('Voir le détail complet'),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Photos produit de la commande, cliquables pour ouverture plein écran.
+/// Plusieurs photos → bande horizontale défilable ; une seule → image seule.
+class _ProductPhotos extends StatelessWidget {
+  const _ProductPhotos({required this.booking});
+
+  final Booking booking;
+
+  @override
+  Widget build(BuildContext context) {
+    final photos = booking.productPhotosUrl!
+        .where((u) => u.isNotEmpty)
+        .toList(growable: false);
+    if (photos.isEmpty) return const SizedBox.shrink();
+
+    return SizedBox(
+      height: 140,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: photos.length,
+        separatorBuilder: (_, __) => const SizedBox(width: AppTheme.spaceSm),
+        itemBuilder: (context, i) {
+          return GestureDetector(
+            onTap: () => showFullScreenImage(
+              context,
+              imageUrl: photos[i],
+              title: booking.productName,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+              child: Image.network(
+                photos[i],
+                width: 120,
+                height: 140,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 120,
+                  height: 140,
+                  color: AppTheme.surfaceColor,
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.broken_image_outlined,
+                    color: AppTheme.textMutedColor,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

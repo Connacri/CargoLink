@@ -240,7 +240,12 @@ class _ParcelTile extends ConsumerWidget {
           trailing: booking.canSeeTracking
               ? IconButton(
                   tooltip: 'Billet QR',
-                  onPressed: () => showQrTicketDialog(context, booking),
+                  onPressed: () => showQrTicketDialog(
+                    context,
+                    booking,
+                    onViewDetail: () => Navigator.of(context)
+                        .pushNamed('/tracking', arguments: booking.id),
+                  ),
                   icon: const Icon(
                     Icons.qr_code_2_rounded,
                     color: AppTheme.primaryColor,

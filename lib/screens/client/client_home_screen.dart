@@ -460,6 +460,12 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             const SliverToBoxAdapter(
               child: _HomeTrackingCard(),
             ),
+            const SliverToBoxAdapter(
+              child: _AcceptedBookingBanner(),
+            ),
+            const SliverToBoxAdapter(
+              child: _WeightUpdateAttentionBanner(),
+            ),
             SliverToBoxAdapter(
               child: _buildQrScannerCard(context),
             ),
@@ -1459,6 +1465,163 @@ class _HomeTrackingCard extends ConsumerWidget {
         );
       },
       orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// Bannière de confirmation quand une commande est acceptée par l'expéditeur
+/// (statut `accepted`) : le colis est pris en charge, QR/suivi disponibles.
+/// Disparaît dès que le statut évolue au-delà de `accepted`.
+class _AcceptedBookingBanner extends ConsumerWidget {
+  const _AcceptedBookingBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookings = ref.watch(activeTrackingBookingsProvider);
+    final accepted = bookings.valueOrNull
+            ?.where((b) => b.status == 'accepted')
+            .toList() ??
+        const <Booking>[];
+    if (accepted.isEmpty) return const SizedBox.shrink();
+    final b = accepted.first;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: InkWell(
+        onTap: () => Navigator.of(context)
+            .pushNamed('/tracking', arguments: b.id),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppTheme.spaceMd),
+          decoration: BoxDecoration(
+            gradient: AppTheme.successGradient,
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.green.withValues(alpha: 0.25),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.verified_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
+              const SizedBox(width: AppTheme.spaceSm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Demande acceptée !',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${b.productName} : l\'expéditeur a pris en charge votre '
+                      'colis. Le QR est disponible.',
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Colors.white),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Bannière d'attention quand une commande est en `waiting_client_update` :
+/// l'expéditeur a signalé un écart de poids, le client doit corriger. Transparente
+/// à la fin de la correction (le provider est invalidé en temps réel).
+class _WeightUpdateAttentionBanner extends ConsumerWidget {
+  const _WeightUpdateAttentionBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookings = ref.watch(activeTrackingBookingsProvider);
+    final needingUpdate = bookings.valueOrNull
+            ?.where((b) => b.verificationStatus == 'waiting_client_update')
+            .toList() ??
+        const <Booking>[];
+    if (needingUpdate.isEmpty) return const SizedBox.shrink();
+    final b = needingUpdate.first;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: InkWell(
+        onTap: () => Navigator.of(context)
+            .pushNamed('/tracking', arguments: b.id),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppTheme.spaceMd),
+          decoration: BoxDecoration(
+            color: AppTheme.errorColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            border: Border.all(
+                color: AppTheme.errorColor.withValues(alpha: 0.35)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: AppTheme.errorColor,
+                size: 22,
+              ),
+              const SizedBox(width: AppTheme.spaceSm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${needingUpdate.length == 1 ? 'Un colis' : '${needingUpdate.length} colis'} '
+                      'à corriger',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.errorColor,
+                      ),
+                    ),
+                    const SizedBox(height: AppTheme.spaceXs),
+                    Text(
+                      '${b.productName} : l\'expéditeur a signalé un écart de '
+                      'poids. Corrigez le poids pour renvoyer la demande.',
+                      style: AppTheme.bodySecondary,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppTheme.errorColor,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -12,8 +12,24 @@ enum _ProofSource { gallery, camera }
 /// Opens a bottom sheet to choose between the selfie camera or the gallery,
 /// then lets the user frame/crop the photo before returning the final file.
 ///
+/// [cameraOnly] : lorsqu'à `true`, ouvre directement la caméra sans demander
+/// l'origine (utilisé pour « Collecter le colis »).
+///
 /// Returns null if the user cancels.
-Future<File?> pickProofPhoto(BuildContext context, {String title = 'Photo de preuve'}) async {
+Future<File?> pickProofPhoto(
+  BuildContext context, {
+  String title = 'Photo de preuve',
+  bool cameraOnly = false,
+}) async {
+  if (cameraOnly) {
+    final path = await LiveSelfieScreen.capture(
+      context,
+      lens: CameraLensDirection.back,
+    );
+    if (path == null) return null;
+    return _crop(File(path));
+  }
+
   final source = await showModalBottomSheet<_ProofSource>(
     context: context,
     backgroundColor: AppTheme.backgroundColor,
@@ -79,6 +95,12 @@ Future<File?> pickProofPhoto(BuildContext context, {String title = 'Photo de pre
       picked = File(path);
   }
 
+  return _crop(picked);
+}
+
+/// Ouvre l'éditeur de cadrage sur la photo [picked] et renvoie le fichier
+/// rogné (ou null si l'utilisateur annule).
+Future<File?> _crop(File picked) async {
   final cropped = await ImageCropper().cropImage(
     sourcePath: picked.path,
     compressFormat: ImageCompressFormat.jpg,

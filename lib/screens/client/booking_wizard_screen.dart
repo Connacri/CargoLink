@@ -1214,9 +1214,7 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
                             ),
                           )
                         : Text(
-                            _currentStep == 3
-                                ? 'Confirmer la réservation'
-                                : 'Suivant',
+                            _currentStep == 3 ? 'Réservé' : 'Suivant',
                           ),
                   ),
                 ),
