@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.41** |
-| Code de version (versionCode) | **266** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `6363343` |
-| Statut CI | À publier au prochain push → release `v1.1.41` sur GitHub |
+| Version (versionName) | **1.1.42** |
+| Code de version (versionCode) | **268** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `ca1c978` |
+| Statut CI | À publier au prochain push → release `v1.1.42` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,14 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.42
+
+- **Billet d'embarquement scrollable** : la carte « Boarding Pass » (aperçu de
+  billet d'embarquement) n'overflowait plus verticalement quand toutes les
+  informations CargoLink (expéditeur, prix/kg, disponibilité, note) étaient
+  présentes. Le contenu défile désormais à l'intérieur de la carte de hauteur
+  fixe — plus de `RenderFlex overflowed` sur petit écran ni sur Windows.
 
 ### Version 1.1.41
 
