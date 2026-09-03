@@ -131,8 +131,9 @@ class CargoLinkApp extends ConsumerWidget {
         '/my-ads': (context) => const ShipperAdsScreen(),
         '/delivery-requests': (context) => const DeliveryRequestScreen(),
         '/delivery-browse': (context) => const DeliveryBrowseScreen(),
-        '/flight-demo': (context) => const FlightDemo(),
-        '/Boarding-PassApp': (context) => const BoardingPassApp(),
+        '/flight-demo': (context) =>
+            FlightDetailPage(flight: FlightDetailModel.demo()),
+        '/Boarding-PassApp': (context) => const BoardingPassDemoPage(),
       },
       debugShowCheckedModeBanner: false,
     );

@@ -278,6 +278,7 @@ class BoardingPassJfkLhr extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 420,
+      height: 460,
       decoration: BoxDecoration(
         color: const Color(0xFFE8EDF2),
         borderRadius: BorderRadius.circular(16),
@@ -910,6 +911,7 @@ class BoardingPassAdbCdg extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 720,
+      height: 570,
       decoration: BoxDecoration(
         color: const Color(0xFFF5F0E8),
         borderRadius: BorderRadius.circular(20),
@@ -1456,7 +1458,7 @@ class BoardingPassAdbCdg extends StatelessWidget {
                       ),
                     ],
 
-                    const Spacer(),
+                    const SizedBox(height: 16),
 
                     // Barcode
                     Center(
@@ -1566,6 +1568,7 @@ class BoardingPassItaly extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 520,
+      height: 540,
       decoration: BoxDecoration(
         color: const Color(0xFFFDF6E3),
         borderRadius: BorderRadius.circular(24),
@@ -2217,6 +2220,7 @@ class BoardingPassLondonNy extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 720,
+      height: 480,
       decoration: BoxDecoration(
         color: const Color(0xFFE3F2FD),
         borderRadius: BorderRadius.circular(12),
@@ -2728,7 +2732,7 @@ class BoardingPassLondonNy extends StatelessWidget {
                             ),
                           ],
 
-                          const Spacer(),
+                          const SizedBox(height: 16),
 
                           Row(
                             children: [
@@ -3415,8 +3419,11 @@ class BoardingPassDemoPage extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Center(
-              child: BoardingPassJfkLhr(
-                data: BoardingPassData.jfkToLhr(),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: BoardingPassJfkLhr(
+                  data: BoardingPassData.jfkToLhr(),
+                ),
               ),
             ),
 
@@ -3454,8 +3461,11 @@ class BoardingPassDemoPage extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Center(
-              child: BoardingPassItaly(
-                data: BoardingPassData.italyFirstClass(),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: BoardingPassItaly(
+                  data: BoardingPassData.italyFirstClass(),
+                ),
               ),
             ),
 
