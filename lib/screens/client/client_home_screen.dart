@@ -460,6 +460,12 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             const SliverToBoxAdapter(
               child: _HomeTrackingCard(),
             ),
+            SliverToBoxAdapter(
+              child: _buildFlightDemoCard(context),
+            ),
+            SliverToBoxAdapter(
+              child: _buildBoardingPassCard(context),
+            ),
             const SliverToBoxAdapter(
               child: _AcceptedBookingBanner(),
             ),
@@ -701,6 +707,148 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                     Text(
                       'Publiez une demande : décrivez votre produit '
                       'et les expéditeurs vous proposeront un prix.',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceSm),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.white70,
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFlightDemoCard(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: InkWell(
+        onTap: () => Navigator.of(context).pushNamed('/flight-demo'),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: AppTheme.primaryGradient,
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+            boxShadow: AppTheme.shadowMd,
+          ),
+          padding: const EdgeInsets.all(AppTheme.spaceLg),
+          child: Row(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.flight_takeoff_rounded,
+                  color: Colors.white,
+                  size: 38,
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceMd),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'FlightDemo',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Découvrez la fiche vol d\'un colis en démo.',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceSm),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.white70,
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBoardingPassCard(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMd,
+        AppTheme.spaceSm,
+        AppTheme.spaceMd,
+        0,
+      ),
+      child: InkWell(
+        onTap: () => Navigator.of(context).pushNamed('/Boarding-PassApp'),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: AppTheme.darkGradient,
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+            boxShadow: AppTheme.shadowMd,
+          ),
+          padding: const EdgeInsets.all(AppTheme.spaceLg),
+          child: Row(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.confirmation_number_rounded,
+                  color: Colors.white,
+                  size: 38,
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceMd),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Boarding Pass',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Aperçu du billet d\'embarquement en démo.',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 13,
