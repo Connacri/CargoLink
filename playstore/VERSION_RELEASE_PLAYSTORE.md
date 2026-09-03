@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.40** |
-| Code de version (versionCode) | **264** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `234ebab` |
-| Statut CI | À publier au prochain push → release `v1.1.40` sur GitHub |
+| Version (versionName) | **1.1.41** |
+| Code de version (versionCode) | **266** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `6363343` |
+| Statut CI | À publier au prochain push → release `v1.1.41` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,22 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.41
+
+- **Correction écran noir au retour des démos (FlightDemo / BoardingPass)** :
+  les routes `/flight-demo` et `/Boarding-PassApp` affichaient un écran noir
+  au retour car chaque démo embarquait son propre `MaterialApp` imbriqué
+  (Navigator séparé). Les routes renvoient désormais directement les pages
+  internes (`FlightDetailPage` et `BoardingPassDemoPage`), avec leur `Scaffold`,
+  dans le Navigator principal — le bouton retour fonctionne correctement.
+- **Correction crash de mise en page des billets d'embarquement** :
+  les quatre cartes (JFK→LHR, ADB→CDG, ITALY, LONDON→NY) plantaient sous
+  Windows/écran étroit (« RenderFlex children have non-zero flex but incoming
+  height constraints are unbounded ») car le défilement vertical leur donnait
+  une hauteur illimitée. Chaque carte a désormais une hauteur bornée et les
+  extensions flexibles internes (`Spacer`) ont été remplacées par des espaces
+  fixes — le rendu est stable, scrollable horizontalement sur petits écrans.
 
 ### Version 1.1.40
 
