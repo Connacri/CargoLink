@@ -1089,6 +1089,14 @@ final myReferralBatchesProvider =
   return ref.watch(referralServiceProvider).getMyBatches(userId);
 });
 
+/// Historique des changements de palier du parrain connecté.
+final myReferralTierHistoryProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final userId = ref.watch(authServiceProvider).currentUserId;
+  if (userId == null) return [];
+  return ref.watch(referralServiceProvider).getTierHistory(userId);
+});
+
 /// Vue fondateur : tous les parrains + wallets détaillés.
 final allParrainsOverviewProvider =
     FutureProvider.autoDispose<List<ParrainOverview>>((ref) async {

@@ -302,10 +302,20 @@ class _ReferralAdminScreenState extends ConsumerState<ReferralAdminScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(p.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTheme.label),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(p.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.label),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(p.tier.icon,
+                            size: 16,
+                            color: _tierColor(p.tier)),
+                      ],
+                    ),
                     Text('${p.email} • ${p.user?.role ?? ''}',
                         style: AppTheme.caption),
                   ],
@@ -346,14 +356,25 @@ class _ReferralAdminScreenState extends ConsumerState<ReferralAdminScreen>
           const SizedBox(height: AppTheme.spaceSm),
           Row(
             children: [
+              Icon(p.tier.icon,
+                  size: 14, color: _tierColor(p.tier)),
+              const SizedBox(width: 4),
+              Text(
+                'Palier : ${p.tier.label}',
+                style: AppTheme.caption,
+              ),
+              const SizedBox(width: AppTheme.spaceMd),
               Icon(_batchIcon(p.lastBatchStatus),
                   size: 14,
                   color: _batchColor(p.lastBatchStatus)),
               const SizedBox(width: 4),
-              Text(
-                'Dernier lot : ${_batchLabel(p.lastBatchStatus)}'
-                '${p.pendingBatches > 0 ? ' • ${p.pendingBatches} en attente' : ''}',
-                style: AppTheme.caption,
+              Expanded(
+                child: Text(
+                  'Dernier lot : ${_batchLabel(p.lastBatchStatus)}'
+                  '${p.pendingBatches > 0 ? ' • ${p.pendingBatches} en attente' : ''}',
+                  style: AppTheme.caption,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -518,6 +539,13 @@ class _ReferralAdminScreenState extends ConsumerState<ReferralAdminScreen>
         'rejected' => Icons.cancel_rounded,
         'suspended' => Icons.block_rounded,
         _ => Icons.help_outline_rounded,
+      };
+
+  Color _tierColor(ReferralTier tier) => switch (tier) {
+        ReferralTier.bronze => Colors.orange.shade800,
+        ReferralTier.argent => Colors.blueGrey,
+        ReferralTier.or => Colors.amber,
+        ReferralTier.platine => Colors.indigo,
       };
 
   Color _batchColor(String? s) => switch (s) {

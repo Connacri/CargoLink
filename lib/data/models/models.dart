@@ -15,6 +15,7 @@ class User {
   final String? facebook;
   final String? instagram;
   final String? tiktok;
+  final String referralTier; // bronze, argent, or, platine
   final bool isActive;
   final DateTime? deactivatedAt;
   final DateTime? deletionRequestedAt;
@@ -34,6 +35,7 @@ class User {
     this.facebook,
     this.instagram,
     this.tiktok,
+    this.referralTier = 'bronze',
     this.isActive = true,
     this.deactivatedAt,
     this.deletionRequestedAt,
@@ -55,6 +57,7 @@ class User {
       facebook: json['facebook'] as String?,
       instagram: json['instagram'] as String?,
       tiktok: json['tiktok'] as String?,
+      referralTier: json['referral_tier'] as String? ?? 'bronze',
       isActive: json['is_active'] as bool? ?? true,
       deactivatedAt: json['deactivated_at'] != null
           ? DateTime.tryParse(json['deactivated_at'] as String)
@@ -81,6 +84,7 @@ class User {
       'facebook': facebook,
       'instagram': instagram,
       'tiktok': tiktok,
+      'referral_tier': referralTier,
       'is_active': isActive,
       'deactivated_at': deactivatedAt?.toIso8601String(),
       'deletion_requested_at': deletionRequestedAt?.toIso8601String(),
@@ -102,6 +106,7 @@ class User {
     String? facebook,
     String? instagram,
     String? tiktok,
+    String? referralTier,
     bool? isActive,
     DateTime? deactivatedAt,
     DateTime? deletionRequestedAt,
@@ -121,6 +126,7 @@ class User {
       facebook: facebook ?? this.facebook,
       instagram: instagram ?? this.instagram,
       tiktok: tiktok ?? this.tiktok,
+      referralTier: referralTier ?? this.referralTier,
       isActive: isActive ?? this.isActive,
       deactivatedAt: deactivatedAt ?? this.deactivatedAt,
       deletionRequestedAt: deletionRequestedAt ?? this.deletionRequestedAt,

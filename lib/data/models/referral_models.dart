@@ -1,4 +1,43 @@
+import 'package:flutter/material.dart';
+
 import 'models.dart';
+
+/// Palier du programme de parrainage.
+///
+/// Chaque palier augmente la récompense par filleul qualifié et se débloque
+/// automatiquement au fil des filleuls (colis livré + payé). Le parrain n'est
+/// JAMAIS bloqué : il peut toujours partager son code.
+enum ReferralTier {
+  bronze('bronze', 'Bronze', 50, 0, Icons.emoji_events_outlined),
+  argent('argent', 'Argent', 75, 3, Icons.emoji_events_rounded),
+  or('or', 'Or', 100, 10, Icons.military_tech_rounded),
+  platine('platine', 'Platine', 150, 25, Icons.workspace_premium_rounded);
+
+  final String value;
+  final String label;
+  final int rewardPerQualified; // DZD par filleul qualifié
+  final int minQualified; // nombre de filleuls qualifiés requis
+  final IconData icon;
+
+  const ReferralTier(
+    this.value,
+    this.label,
+    this.rewardPerQualified,
+    this.minQualified,
+    this.icon,
+  );
+
+  static ReferralTier fromValue(String? v) {
+    for (final t in ReferralTier.values) {
+      if (t.value == v) return t;
+    }
+    return ReferralTier.bronze;
+  }
+
+  /// Le palier suivant (null si on est au plus haut).
+  ReferralTier? get next =>
+      ReferralTier.values.asMap()[ReferralTier.values.indexOf(this) + 1];
+}
 
 /// Statistiques de parrainage d'un utilisateur.
 class ReferralStats {
@@ -7,19 +46,32 @@ class ReferralStats {
   final int qualifiedFilleuls; // avec ≥ 1 colis livré et payé
   final double totalPaid;
   final double totalPending;
-  final int nextBatchNumber;
-  final String? lastBatchStatus; // pending/approved/rejected/suspended/null
+  final ReferralTier tier;
+  final String? lastBatchStatus; // pour l'historique des lots vidéos
 
-  /// Le parrain peut soumettre un nouveau lot de vidéos :
-  /// programme actif, pas de lot en attente, et assez de filleuls qualifiés
-  /// (3 par lot) — sauf si le dernier lot a été suspendu/rejeté
-  /// (il recommence : nouvelle soumission autorisée).
-  bool get canSubmitBatch =>
-      (lastBatchStatus == null || lastBatchStatus == 'approved') &&
-      qualifiedFilleuls >= nextBatchNumber * 3;
+  /// Récompense actuelle par filleul qualifié (selon le palier).
+  int get rewardPerQualified => tier.rewardPerQualified;
 
-  /// Bouton « Demander le parrainage suivant » : 3 clients + colis payés.
-  bool get canRequestNextBatch => canSubmitBatch;
+  /// Nombre de filleuls qualifiés manquants pour passer au palier suivant.
+  int get nextTierProgress {
+    final n = tier.next;
+    if (n == null) return 0;
+    return n.minQualified - qualifiedFilleuls;
+  }
+
+  /// 0..1 — progression vers le palier suivant.
+  double get nextTierFraction {
+    final n = tier.next;
+    if (n == null) return 1.0;
+    final prevMin = tier.minQualified;
+    final span = n.minQualified - prevMin;
+    if (span <= 0) return 1.0;
+    return ((qualifiedFilleuls - prevMin).clamp(0, span)) / span;
+  }
+
+  /// True si le parrain a suffisamment de filleuls qualifiés pour atteindre
+  /// le niveau supérieur (le palier évolue automatiquement).
+  bool get hasNextTier => tier.next != null;
 
   const ReferralStats({
     required this.code,
@@ -27,7 +79,7 @@ class ReferralStats {
     required this.qualifiedFilleuls,
     required this.totalPaid,
     required this.totalPending,
-    required this.nextBatchNumber,
+    required this.tier,
     this.lastBatchStatus,
   });
 }
@@ -94,7 +146,7 @@ class ReferralEarning {
   }
 }
 
-/// Lot de vidéos témoignages soumises à validation admin.
+/// Lot de vidéos témoignages (bonus optionnel Platine).
 class ReferralBatch {
   final String id;
   final String parrainId;
@@ -163,4 +215,7 @@ class ParrainOverview {
 
   String get name => user?.fullName ?? '—';
   String get email => user?.email ?? '—';
+  ReferralTier get tier => user?.referralTier != null
+      ? ReferralTier.fromValue(user!.referralTier)
+      : ReferralTier.bronze;
 }

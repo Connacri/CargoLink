@@ -8,17 +8,19 @@ import '../../core/config/supabase_config.dart';
 import '../models/models.dart';
 import '../models/referral_models.dart';
 
-/// Service du programme de parrainage CargoLink.
+/// Service du programme de parrainage CargoLink — version paliers.
 ///
-/// Règles :
+/// Règles (v2) :
 /// - Tout utilisateur (client ou expéditeur) devient parrain en générant son
 ///   code depuis son profil (si le programme est actif).
 /// - Un filleul = un compte qui s'inscrit avec ce code (un seul parrain).
-/// - Gain automatique (trigger SQL) = 50% de la commission plateforme dès que
-///   le colis du filleul est livré ET payé.
-/// - Tous les 3 filleuls qualifiés : le parrain soumet 3 liens de vidéos
-///   témoignages ; l'admin valide pour débloquer la suite. Une vidéo retirée
-///   → lot suspendu, le parrain recommence.
+/// - Un filleul « qualifié » = il a au moins 1 colis livré ET payé.
+/// - Gain automatique (trigger SQL) = % de la commission plateforme reversé
+///   dès que le colis du filleul est livré et payé.
+/// - Le palier (Bronze/Argent/Or/Platine) évolue AUTOMATIQUEMENT selon le
+///   nombre de filleuls qualifiés. Il n'est JAMAIS bloquant : le parrain peut
+///   toujours parrainer et retirer ses gains.
+/// - Les vidéos témoignages deviennent un BONUS optionnel (sans gating).
 class ReferralService {
   SupabaseClient get _supabase => SupabaseConfig.client;
   final _logger = Logger();
@@ -108,6 +110,7 @@ class ReferralService {
       final trimmed = code.trim().toUpperCase();
       if (trimmed.isEmpty) return false;
 
+      // Le code DOIT exister. (RLS: code_sel)
       final owner = await _supabase
           .from('referral_codes')
           .select('user_id')
@@ -133,20 +136,20 @@ class ReferralService {
     }
   }
 
-  /// Statistiques complètes du parrain.
-  Future<ReferralStats> getMyStats(String parrainId) async {
-    final code = await getOrCreateMyCode(parrainId);
+  /// Statistiques complètes du parrain connecté.
+  Future<ReferralStats> getMyStats(String userId) async {
+    final code = await getOrCreateMyCode(userId);
 
     final filleuls = await _supabase
         .from('referrals')
         .select('id')
-        .eq('parrain_id', parrainId);
+        .eq('parrain_id', userId);
     final filleulsCount = (filleuls as List).length;
 
     final earnings = await _supabase
         .from('referral_earnings')
         .select('amount,status,bookings(client_id)')
-        .eq('parrain_id', parrainId);
+        .eq('parrain_id', userId);
     double paid = 0, pending = 0;
     final qualifiedClientIds = <String>{};
     for (final e in (earnings as List)) {
@@ -163,19 +166,13 @@ class ReferralService {
       }
     }
 
-    final batches = await _supabase
-        .from('referral_batches')
-        .select('batch_number,status')
-        .eq('parrain_id', parrainId)
-        .order('batch_number');
-    int nextBatch = 1;
-    String? lastStatus;
-    for (final b in (batches as List)) {
-      final n = (b['batch_number'] as num).toInt();
-      final s = b['status'] as String;
-      if (s == 'approved') nextBatch = max(nextBatch, n + 1);
-      lastStatus = s;
-    }
+    // Le palier est stocké sur users (mis à jour par trigger SQL).
+    final me = await _supabase
+        .from('users')
+        .select('referral_tier')
+        .eq('id', userId)
+        .maybeSingle();
+    final tierValue = me?['referral_tier'] as String?;
 
     return ReferralStats(
       code: code,
@@ -183,8 +180,8 @@ class ReferralService {
       qualifiedFilleuls: qualifiedClientIds.length,
       totalPaid: paid,
       totalPending: pending,
-      nextBatchNumber: nextBatch,
-      lastBatchStatus: lastStatus,
+      tier: ReferralTier.fromValue(tierValue),
+      lastBatchStatus: null,
     );
   }
 
@@ -232,7 +229,8 @@ class ReferralService {
     }
   }
 
-  /// Soumission d'un lot de 3 vidéos témoignages.
+  /// Soumission d'un lot de 3 vidéos témoignages — BONUS optionnel.
+  /// Ne bloque plus le parrainage : simplement soumet le lot pour bonus.
   Future<void> submitBatch({
     required String parrainId,
     required List<String> videoUrls,
@@ -240,15 +238,27 @@ class ReferralService {
     if (videoUrls.length < 3) {
       throw Exception('3 liens de vidéos sont requis');
     }
-    final stats = await getMyStats(parrainId);
-    if (!stats.canSubmitBatch) {
-      throw Exception(
-          'Conditions non remplies : ${stats.qualifiedFilleuls}/${stats.nextBatchNumber * 3} filleuls qualifiés'
-          '${stats.lastBatchStatus == 'pending' ? ' — lot précédent en attente de validation' : ''}');
+    final existingPending = await _supabase
+        .from('referral_batches')
+        .select('id')
+        .eq('parrain_id', parrainId)
+        .eq('status', 'pending')
+        .maybeSingle();
+    if (existingPending != null) {
+      throw Exception('Un lot est déjà en attente de validation.');
     }
+    final batches = await _supabase
+        .from('referral_batches')
+        .select('batch_number')
+        .eq('parrain_id', parrainId)
+        .order('batch_number', ascending: false)
+        .limit(1);
+    final nextNum =
+        (batches as List).isNotEmpty ? ((batches[0]['batch_number'] as num).toInt() + 1) : 1;
+
     await _supabase.from('referral_batches').insert({
       'parrain_id': parrainId,
-      'batch_number': stats.nextBatchNumber,
+      'batch_number': nextNum,
       'video_url_1': videoUrls[0],
       'video_url_2': videoUrls[1],
       'video_url_3': videoUrls[2],
@@ -330,7 +340,8 @@ class ReferralService {
 
         overviews.add(ParrainOverview(
           user: userOf(uid) != null ? User.fromJson(userOf(uid)!) : null,
-          code: codeRow['code'] as String,          filleulsCount: myReferrals.length,
+          code: codeRow['code'] as String,
+          filleulsCount: myReferrals.length,
           qualifiedFilleuls: myEarnings.length,
           totalPending: pend,
           totalPaid: paid,
@@ -357,7 +368,7 @@ class ReferralService {
     try {
       final rows = await _supabase
           .from('users')
-          .select('id,email,full_name,role,profile_picture_url')
+          .select('id,email,full_name,role,profile_picture_url,referral_tier')
           .inFilter('id', ids);
       for (final r in (rows as List)) {
         _userCache[r['id'] as String] = r as Map<String, dynamic>;
@@ -494,5 +505,32 @@ class ReferralService {
       _logger.e('Error requesting payout: $e');
       rethrow;
     }
+  }
+
+  // ==========================================================================
+  // PALIERS — lecture
+  // ==========================================================================
+
+  /// Historique des changements de palier d'un parrain.
+  Future<List<Map<String, dynamic>>> getTierHistory(String userId) async {
+    try {
+      final rows = await _supabase
+          .from('referral_tier_history')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(50);
+      return (rows as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      _logger.e('Error getTierHistory: $e');
+      return [];
+    }
+  }
+
+  /// Synchronise manuellement le palier d'un parrain (utile après import).
+  Future<void> syncTier(String parrainId) async {
+    await _supabase.rpc('sync_user_referral_tier', params: {
+      'target_user_id': parrainId,
+    });
   }
 }

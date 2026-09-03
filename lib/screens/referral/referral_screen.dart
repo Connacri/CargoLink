@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -395,7 +393,9 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                         if (s.totalPending > 0)
                           _buildPayoutButton(s.totalPending),
                         const SizedBox(height: AppTheme.spaceMd),
-                        _buildNextBatchSection(s),
+                        _buildTierCard(s),
+                        const SizedBox(height: AppTheme.spaceMd),
+                        _buildBonusVideos(s),
                       ],
                     ),
                   ),
@@ -431,8 +431,15 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       (
         Icons.savings_rounded,
         'Vous gagnez $commissionPct% de commission',
-        'Dès que le colis est livré et payé, $commissionPct% de la commission '
-            'plateforme est automatiquement versé sur votre wallet parrain.',
+        'Dès que le colis est livré et payé, la commission plateforme est '
+            'automatiquement versée sur votre wallet parrain.',
+      ),
+      (
+        Icons.military_tech_rounded,
+        'Montez de palier',
+        'Plus vos filleuls commandent, plus votre palier (Bronze → Platine) '
+            'et votre récompense par filleul augmentent. Sans blocage, à tout '
+            'moment.',
       ),
       (
         Icons.payments_rounded,
@@ -653,16 +660,9 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     );
   }
 
-  Widget _buildNextBatchSection(ReferralStats s) {
-    final statusText = switch (s.lastBatchStatus) {
-      'pending' => 'Lot ${max(1, s.nextBatchNumber)} en attente de validation',
-      'rejected' => 'Lot précédent rejeté — corrigez et resoumettez',
-      'suspended' =>
-        'Parrainage interrompu (vidéos retirées) — recommencez depuis le début',
-      _ => null,
-    };
-    final progress = s.qualifiedFilleuls - ((s.nextBatchNumber - 1) * 3);
-
+  /// Carte « Ma progression » : palier actuel + barre vers le palier suivant.
+  Widget _buildTierCard(ReferralStats s) {
+    final next = s.tier.next;
     return GlassCard(
       padding: const EdgeInsets.all(AppTheme.spaceMd),
       child: Column(
@@ -670,41 +670,101 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.movie_creation_rounded,
-                  color: AppTheme.accentColor, size: 22),
+              Icon(s.tier.icon, color: _tierColor(s.tier), size: 26),
               const SizedBox(width: AppTheme.spaceSm),
               Expanded(
-                child: Text(
-                  'Demande du parrainage suivant (lot ${s.nextBatchNumber})',
-                  style: AppTheme.label,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Mon palier · ${s.tier.label}',
+                        style: AppTheme.label),
+                    Text(
+                      '${s.rewardPerQualified} DZD par filleul qualifié',
+                      style: AppTheme.caption,
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          if (statusText != null) ...[
-            const SizedBox(height: AppTheme.spaceXs),
-            Text(statusText,
-                style: AppTheme.caption.copyWith(color: AppTheme.accentColor)),
-          ],
-          const SizedBox(height: AppTheme.spaceSm),
-          LinearProgressIndicator(
-            value: (progress.clamp(0, 3)) / 3,
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(4),
-            backgroundColor: AppTheme.surfaceMuted,
-            valueColor: const AlwaysStoppedAnimation(AppTheme.accentColor),
+          const SizedBox(height: AppTheme.spaceMd),
+          // Barre des paliers
+          Row(
+            children: ReferralTier.values
+                .map((t) => Expanded(
+                      child: _TierDot(
+                        tier: t,
+                        active: s.tier.index >= t.index,
+                        current: s.tier == t,
+                      ),
+                    ))
+                .toList(),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppTheme.spaceMd),
+          if (next != null) ...[
+            LinearProgressIndicator(
+              value: s.nextTierFraction,
+              minHeight: 8,
+              borderRadius: BorderRadius.circular(4),
+              backgroundColor: AppTheme.surfaceMuted,
+              valueColor: AlwaysStoppedAnimation(_tierColor(next)),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Plus que ${s.nextTierProgress} filleul(s) qualifié(s) pour '
+              'atteindre ${next.label} (${next.rewardPerQualified} DZD/filleul)',
+              style: AppTheme.caption,
+            ),
+          ] else
+            const Text(
+              'Vous avez atteint le palier maximum — félicitations !',
+              style: AppTheme.caption,
+            ),
+          const SizedBox(height: AppTheme.spaceSm),
           Text(
-            '${progress.clamp(0, 3)}/3 filleuls qualifiés pour ce lot',
+            '${s.qualifiedFilleuls} filleul(s) qualifié(s) · '
+            '${s.filleulsCount} filleul(s) au total',
             style: AppTheme.caption,
           ),
-          const SizedBox(height: AppTheme.spaceSm),
+          if (s.tier.index < ReferralTier.values.length - 1) ...[
+            const SizedBox(height: AppTheme.spaceMd),
+            const Text(
+              'Palier évolue automatiquement. Aucun blocage — continuez à '
+              'partager votre code !',
+              style: AppTheme.caption,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Bonus optionnel : vidéos témoignages (n'empêche jamais le parrainage).
+  Widget _buildBonusVideos(ReferralStats s) {
+    return GlassCard(
+      padding: const EdgeInsets.all(AppTheme.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.movie_creation_rounded,
+                color: AppTheme.accentColor,
+                size: 22,
+              ),
+              SizedBox(width: AppTheme.spaceSm),
+              Expanded(
+                child: Text('Bonus : vidéos témoignages',
+                    style: AppTheme.label),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceXs),
           const Text(
-            'Publiez 3 vidéos témoignages sur Telegram ou WhatsApp : mentionnez '
-            '@CargoLink, taguez 5 amis avec le lien de téléchargement et '
-            'affichez le logo CargoLink. Le fondateur peut vérifier aléatoirement '
-            'que les vidéos restent partagées — sinon le parrainage est interrompu.',
+            'Soumettez 3 vidéos témoignages partagées pour débloquer des bonus '
+            'de fidélité. Ceci est optionnel et ne bloque jamais votre '
+            'parrainage.',
             style: AppTheme.caption,
           ),
           const SizedBox(height: AppTheme.spaceMd),
@@ -717,8 +777,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed:
-                  (_submitting || !s.canSubmitBatch) ? null : _submitBatch,
+              onPressed: _submitting ? null : _submitBatch,
               icon: _submitting
                   ? const SizedBox(
                       width: 16,
@@ -726,18 +785,9 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.send_rounded, size: 18),
-              label: Text(
-                  _submitting ? 'Envoi…' : 'Demander le parrainage suivant'),
+              label: Text(_submitting ? 'Envoi…' : 'Soumettre le bonus'),
             ),
           ),
-          if (!s.canSubmitBatch && s.lastBatchStatus != 'pending') ...[
-            const SizedBox(height: AppTheme.spaceXs),
-            Text(
-              'Débloqué après ${s.nextBatchNumber * 3} filleuls avec colis '
-              'livré et payé (${s.qualifiedFilleuls} actuellement).',
-              style: AppTheme.caption,
-            ),
-          ],
         ],
       ),
     );
@@ -853,6 +903,13 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     );
   }
 
+  Color _tierColor(ReferralTier tier) => switch (tier) {
+        ReferralTier.bronze => Colors.orange.shade800,
+        ReferralTier.argent => Colors.blueGrey,
+        ReferralTier.or => Colors.amber,
+        ReferralTier.platine => Colors.indigo,
+      };
+
   Widget _batchChip(String status) {
     final (color, label) = switch (status) {
       'approved' => (Colors.green, 'Validé'),
@@ -927,6 +984,59 @@ class _UrlField extends StatelessWidget {
         border: const OutlineInputBorder(),
         isDense: true,
       ),
+    );
+  }
+}
+
+/// Point de palier dans la barre de progression des paliers.
+class _TierDot extends StatelessWidget {
+  final ReferralTier tier;
+  final bool active;
+  final bool current;
+
+  const _TierDot({
+    required this.tier,
+    required this.active,
+    required this.current,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (tier) {
+      ReferralTier.bronze => Colors.orange.shade800,
+      ReferralTier.argent => Colors.blueGrey,
+      ReferralTier.or => Colors.amber,
+      ReferralTier.platine => Colors.indigo,
+    };
+    return Column(
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: active ? color : AppTheme.surfaceMuted.withValues(alpha: 0.6),
+            border: current
+                ? Border.all(color: color, width: 2.5)
+                : Border.all(color: Colors.transparent),
+          ),
+          child: Icon(
+            tier.icon,
+            size: 18,
+            color: active ? Colors.white : AppTheme.textMutedColor,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          tier.label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: current ? FontWeight.w700 : FontWeight.w500,
+            color: active ? color : AppTheme.textMutedColor,
+          ),
+        ),
+      ],
     );
   }
 }
