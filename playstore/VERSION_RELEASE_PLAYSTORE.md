@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.35** |
-| Code de version (versionCode) | **257** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `68214ff` |
-| Statut CI | À publier au prochain push → release `v1.1.35` sur GitHub |
+| Version (versionName) | **1.1.38** |
+| Code de version (versionCode) | **260** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `a7234ca` |
+| Statut CI | À publier au prochain push → release `v1.1.38` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,21 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.38
+
+- **Parrainage repensé — système de paliers, plus aucun blocage** : le
+  programme évolue désormais en paliers Bronze → Argent → Or → Platine au
+  fil des filleuls qualifiés (colis livré et payé). La récompense par filleul
+  augmente à chaque palier, et le parrain n'est plus jamais bloqué : il peut
+  toujours partager son code et retirer ses gains.
+- **Progression visible** : nouvelle carte « Mon palier » avec barre de
+  progression vers le niveau suivant et nombre de filleuls restants.
+- **Vidéos témoignages en bonus optionnel** : la validation de lots de vidéos
+  ne bloque plus le parrainage ; elle devient un bonus de fidélité optionnel.
+- **Correction des codes de parrainage** : un code valide pouvait être refusé
+  (« déjà rattaché ») à cause d'une restriction d'accès à la base — désormais
+  un code reçu par lien ou saisi manuellement s'applique correctement.
 
 ### Version 1.1.35
 
