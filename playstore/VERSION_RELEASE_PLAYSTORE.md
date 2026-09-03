@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.38** |
-| Code de version (versionCode) | **260** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `a7234ca` |
-| Statut CI | À publier au prochain push → release `v1.1.38` sur GitHub |
+| Version (versionName) | **1.1.39** |
+| Code de version (versionCode) | **262** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `dcc5590` |
+| Statut CI | À publier au prochain push → release `v1.1.39` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,13 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.39
+
+- **Police Oswald appliquée à toute l'application** : Oswald est désormais la
+  police par défaut pour l'ensemble de l'interface (textes, titres, boutons,
+  champs). Correction du nom de famille dans le thème et le widget
+  feedback pour garantir le rendu partout.
 
 ### Version 1.1.38
 
