@@ -43,6 +43,7 @@ class AppTheme {
   // ---------------------------------------------------------------------------
   // Gradients
   // ---------------------------------------------------------------------------
+
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFF4F46E5)],
     begin: Alignment.topLeft,
@@ -129,6 +130,7 @@ class AppTheme {
   // Text styles
   // ---------------------------------------------------------------------------
   static const TextStyle h1 = TextStyle(
+    fontFamily: 'Oswald',
     fontSize: 28,
     fontWeight: FontWeight.w800,
     letterSpacing: -0.5,
@@ -136,6 +138,7 @@ class AppTheme {
   );
 
   static const TextStyle h2 = TextStyle(
+    fontFamily: 'Oswald',
     fontSize: 22,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.3,
@@ -143,31 +146,40 @@ class AppTheme {
   );
 
   static const TextStyle h3 = TextStyle(
+    fontFamily: 'Oswald',
     fontSize: 18,
     fontWeight: FontWeight.w600,
     color: textPrimaryColor,
   );
 
   static const TextStyle body = TextStyle(
+    fontFamily: 'Oswald',
     fontSize: 14,
     color: textPrimaryColor,
   );
 
   static const TextStyle bodySecondary = TextStyle(
+    fontFamily: 'Oswald',
     fontSize: 14,
     color: textSecondaryColor,
   );
 
   static const TextStyle caption = TextStyle(
+    fontFamily: 'Oswald',
     fontSize: 12,
     color: textSecondaryColor,
   );
 
   static const TextStyle label = TextStyle(
+    fontFamily: 'Oswald',
     fontSize: 12,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.3,
     color: textSecondaryColor,
+  );
+
+  static const TextStyle oswald = TextStyle(
+    fontFamily: 'Oswald',
   );
 
   // ---------------------------------------------------------------------------
@@ -189,6 +201,7 @@ class AppTheme {
   // ---------------------------------------------------------------------------
   static ThemeData get lightTheme {
     final base = ThemeData(
+      fontFamily: 'Oswald',
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(

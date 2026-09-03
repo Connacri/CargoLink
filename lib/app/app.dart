@@ -152,37 +152,37 @@ class _DeepLinkListenerState extends ConsumerState<_DeepLinkListener> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(deepLinkServiceProvider).init(
-        onOffer: (shipmentId) {
-          final nav = appNavigatorKey.currentState;
-          if (nav == null) return;
-          final signedIn =
-              ref.read(authServiceProvider).currentUserId != null;
-          if (signedIn) {
-            nav.pushNamed('/booking-wizard', arguments: shipmentId);
-          } else {
-            ref.read(deepLinkServiceProvider).savePendingOffer(shipmentId);
-          }
-        },
-        onReferral: (code) {
-          final nav = appNavigatorKey.currentState;
-          if (nav == null) return;
-          final signedIn =
-              ref.read(authServiceProvider).currentUserId != null;
-          if (signedIn) {
-            // Déjà connecté : ouvrir la page parrainage avec le code
-            // pré-rempli pour être parrainé en un clic.
-            nav.push(MaterialPageRoute(
-              builder: (_) => ReferralScreen(initialCode: code),
-            ));
-          } else {
-            // Sauvegarder le code et le consommer après inscription
-            ref.read(deepLinkServiceProvider).savePendingReferralCode(code);
-            nav.pushNamedAndRemoveUntil('/signup', (route) => false,
-                arguments: code);
-          }
-        },
-        onTracking: (bookingId) => _openBooking(bookingId),
-      );
+            onOffer: (shipmentId) {
+              final nav = appNavigatorKey.currentState;
+              if (nav == null) return;
+              final signedIn =
+                  ref.read(authServiceProvider).currentUserId != null;
+              if (signedIn) {
+                nav.pushNamed('/booking-wizard', arguments: shipmentId);
+              } else {
+                ref.read(deepLinkServiceProvider).savePendingOffer(shipmentId);
+              }
+            },
+            onReferral: (code) {
+              final nav = appNavigatorKey.currentState;
+              if (nav == null) return;
+              final signedIn =
+                  ref.read(authServiceProvider).currentUserId != null;
+              if (signedIn) {
+                // Déjà connecté : ouvrir la page parrainage avec le code
+                // pré-rempli pour être parrainé en un clic.
+                nav.push(MaterialPageRoute(
+                  builder: (_) => ReferralScreen(initialCode: code),
+                ));
+              } else {
+                // Sauvegarder le code et le consommer après inscription
+                ref.read(deepLinkServiceProvider).savePendingReferralCode(code);
+                nav.pushNamedAndRemoveUntil('/signup', (route) => false,
+                    arguments: code);
+              }
+            },
+            onTracking: (bookingId) => _openBooking(bookingId),
+          );
       _subNotifications = FcmService.instance.openedMessages.listen(
         (message) {
           final bookingId = message.data['bookingId'];

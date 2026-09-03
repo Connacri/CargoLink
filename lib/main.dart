@@ -24,8 +24,7 @@ Future<void> main() async {
 
   // Wire Firebase Cloud Messaging (with timeout to never block the splash)
   try {
-    await FcmService.instance.init()
-        .timeout(const Duration(seconds: 8));
+    await FcmService.instance.init().timeout(const Duration(seconds: 8));
   } catch (_) {}
 
   runApp(
@@ -38,13 +37,11 @@ Future<void> main() async {
           background: const Color(0xFF303030),
           feedbackSheetColor: const Color(0xFF1E1E2E),
           bottomSheetDescriptionStyle: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w500,
-          ),
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Oswald'),
           bottomSheetTextInputStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-          ),
+              color: Colors.white, fontSize: 16, fontFamily: 'Oswald'),
           brightness: Brightness.dark,
           dragHandleColor: Colors.white38,
         ),

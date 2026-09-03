@@ -113,11 +113,30 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
 
+  fonts:
+    - family: Oswald
+      fonts:
+        - asset: assets/fonts/Oswald-Bold.ttf
+        - asset: assets/fonts/Oswald-ExtraLight.ttf
+        - asset: assets/fonts/Oswald-SemiBold.ttf
+        - asset: assets/fonts/Oswald-Regular.ttf
+        - asset: assets/fonts/Oswald-Light.ttf
+        - asset: assets/fonts/Oswald-Medium.ttf
+    - family: ArbFONTS
+      fonts:
+        - asset: assets/fonts/ArbFONTS-khalaad-al-arabeh.ttf
+        - asset: assets/fonts/ArbFONTS-Al-Jazeera-Arabic-Bold.ttf
+        - asset: assets/fonts/ArbFONTS-Al-Jazeera-Arabic-Bold-1.ttf
+        - asset: assets/fonts/ArbFONTS-Al-Jazeera-Arabic-Light.ttf
+        - asset: assets/fonts/ArbFONTS-Al-Jazeera-Arabic-Regular.ttf
+        - asset: assets/fonts/NizarBBCKurdish-Bold.ttf
   assets:
     - assets/images/
     - assets/icons/
     - assets/animations/
+    - assets/fonts/
 
 # App icon configuration. Place your high-res logo at assets/icons/icon2.png
 # then run: dart run flutter_launcher_icons
@@ -147,3 +166,4 @@ flutter_native_splash:
 
 dependency_overrides:
   sign_in_with_apple: ^8.1.0
+
