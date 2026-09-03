@@ -302,7 +302,8 @@ class BoardingPassJfkLhr extends StatelessWidget {
               ),
             ),
 
-            Column(
+            SingleChildScrollView(
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // â”€â”€ HEADER BLEU avec OFFRE â”€â”€
@@ -801,6 +802,7 @@ class BoardingPassJfkLhr extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
             ),
 
             // Perforations droites
