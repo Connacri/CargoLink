@@ -47,15 +47,6 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="cargolink" android:host="referral"/>
             </intent-filter>
-            <!-- Supabase Auth deep link (PKCE) : com.cargolink.dz.cargolink://login-callback -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <data
-                    android:scheme="com.cargolink.dz.cargolink"
-                    android:host="login-callback"/>
-            </intent-filter>
         </activity>
         <!-- Required by the image_cropper plugin (uCrop on Android). -->
         <activity

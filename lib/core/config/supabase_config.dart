@@ -1,14 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'
-    show Supabase, SupabaseClient;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'firebase_options.dart';
 
 // ============================================================================
-// SUPABASE CONFIGURATION (Auth natif Supabase)
+// SUPABASE CONFIGURATION
 // ============================================================================
 
 class SupabaseConfig {
@@ -32,25 +31,119 @@ class SupabaseConfig {
     defaultValue: '',
   );
 
-  /// Client global BACKED BY SupabaseAuth natif : le SDK restaure la session
-  /// persistée au démarrage et attache automatiquement le jeton d'accès à
-  /// chaque requête (RLS sur `auth.uid()`). Doit être initialisé via
-  /// `Supabase.initialize(...)` dans `main()` avant toute requête.
-  static SupabaseClient get client => Supabase.instance.client;
+  // Single client, created once. The current (Firebase-issued) JWT is provided
+  // through the `accessToken` callback (the documented way to bridge a
+  // third-party auth system with Supabase): every request carries it as the
+  // `Authorization` header while it is non-null, and falls back to the anon key
+  // when signed out. Le callback rafraîchit AU VOL le jeton Supabase quand il
+  // approche son expiration (durée de vie ~1 h) — sinon, après une heure de
+  // session, chaque requête REST échouait en PGRST303 « JWT expired ».
+  static final SupabaseClient _client = SupabaseClient(
+    supabaseUrl,
+    supabaseAnonKey,
+    accessToken: _resolveAccessToken,
+  );
 
-  /// URL de retour des liens d'email (confirmation d'inscription,
-  /// réinitialisation de mot de passe) :
-  ///  - mobile : deep link custom scheme qui ré-ouvre l'app et complète le
-  ///    flux PKCE (SupabaseAuth l'écoute automatiquement via app_links) ;
-  ///  - web    : l'application hébergée, qui termine le flux PKCE dans
-  ///    l'onglet (detectSessionInUri).
-  static String get authRedirectUrl => kIsWeb
-      ? 'https://connacri.github.io/CargoLink/'
-      : 'com.cargolink.dz.cargolink://login-callback';
+  static String? _supabaseJwt;
+
+  /// Re-exchange hook (registered by AuthService) : Firebase ID token frais ->
+  /// Edge Function -> nouveau jeton Supabase.
+  static Future<String> Function()? _tokenRefresher;
+
+  /// Refresh déjà en cours — partagé pour que 20 requêtes simultanées ne
+  /// déclenchent qu'un seul échange.
+  static Future<String>? _refreshInFlight;
+
+  static SupabaseClient get client => _client;
+
+  /// Enregistre la fonction de re-exchange (appelée au démarrage par
+  /// [AuthService]). Best-effort : sans elle, on retombe sur l'ancien
+  /// comportement (jeton figé).
+  static void setTokenRefresher(Future<String> Function() refresher) {
+    _tokenRefresher = refresher;
+  }
+
+  /// Résout le jeton à attacher à la requête : renvoie le jeton courant sauf
+  /// s'il est expiré ou sur le point de l'être (< 2 min), auquel cas un
+  /// re-exchange est tenté une seule fois et partagé entre appelants.
+  static Future<String?> _resolveAccessToken() async {
+    final jwt = _supabaseJwt;
+    if (jwt == null) return null;
+    if (!_isExpiredOrExpiring(jwt)) return jwt;
+
+    final refresher = _tokenRefresher;
+    if (refresher != null) {
+      _refreshInFlight ??= () async {
+        try {
+          return await refresher();
+        } finally {
+          _refreshInFlight = null;
+        }
+      }();
+      try {
+        return await _refreshInFlight;
+      } catch (_) {
+        // Réseau indisponible ou utilisateur déconnecté entre-temps : on
+        // renvoie l'ancien jeton plutôt que de repasser anonyme (des listes
+        // vides silencieuses seraient pires qu'une erreur explicite).
+      }
+    }
+    return jwt;
+  }
+
+  /// Décode le claim `exp` du JWT (sans vérifier la signature — inutile ici,
+  /// le jeton vient de notre propre Edge Function) et indique s'il est expiré
+  /// ou expire dans moins de 2 minutes.
+  static bool _isExpiredOrExpiring(String jwt) {
+    try {
+      final part = jwt.split('.')[1];
+      final normalized =
+          base64Url.normalize(part.padRight((part.length + 3) & ~3, '='));
+      final payload =
+          jsonDecode(utf8.decode(base64Url.decode(normalized)))
+              as Map<String, dynamic>;
+      final exp = (payload['exp'] as num?)?.toInt();
+      if (exp == null) return false;
+      return DateTime.fromMillisecondsSinceEpoch(exp * 1000)
+          .isBefore(DateTime.now().add(const Duration(minutes: 2)));
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Whether a Firebase-minted access token is currently active. When false,
+  /// every request falls back to the anon key and RLS (`auth.uid() = id`)
+  /// silently hides ALL rows — callers that must distinguish "no profile" from
+  /// "no session yet" (e.g. the account gate) must check this first, otherwise
+  /// an existing user looks like a brand-new one and lands on the role picker.
+  static bool get hasAccessToken => _supabaseJwt != null;
+
+  /// Point the app's Supabase client at the (Firebase-minted) token, so every
+  /// CRUD is authorized as the authenticated (RLS: auth.uid()) user.
+  ///
+  /// Also forwards the new JWT to the realtime socket. Without this, an
+  /// existing channel keeps its now-stale token and the server closes the
+  /// socket (close code 1002) once the previous token expires — which is the
+  /// source of the "RealtimeSubscribeException(channelError)" surfaced in the
+  /// notifications bottom sheet. Best-effort: never blocks the auth flow.
+  static void setAccessToken(String jwt) {
+    _supabaseJwt = jwt;
+    try {
+      _client.realtime.setAuth(jwt);
+    } catch (e) {
+      // ignore: best-effort realtime re-auth
+    }
+  }
+
+  /// Reset to the public (anon) client — used on sign-out so that no
+  /// authenticated CRUD can be performed afterwards.
+  static void reset() {
+    _supabaseJwt = null;
+  }
 }
 
 // ============================================================================
-// FIREBASE CONFIGURATION (conservé pour les notifications FCM uniquement)
+// FIREBASE CONFIGURATION
 // ============================================================================
 
 Future<void> initializeFirebase() async {

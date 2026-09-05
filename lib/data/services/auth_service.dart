@@ -1,31 +1,50 @@
-﻿import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:logger/logger.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide User;
+﻿import 'dart:convert';
 
-import '../../core/config/supabase_config.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fbauth;
+import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
+import 'package:uuid/uuid.dart';
+
 import '../models/models.dart';
+import '../../core/config/supabase_config.dart';
 import './fcm_service.dart';
+
+// ============================================================================
+// FIREBASE -> SUPABASE ID MAPPING
+// ============================================================================
+
+// Supabase stores every user row keyed by `users.id` (a UUID) and protects it
+// with RLS on `auth.uid()`. A Firebase UID is not a valid UUID, so we map it
+// deterministically to a UUID (UUID v5). The same derivation is implemented by
+// the `auth-exchange-firebase` Edge Function, so the JWT it mints (whose `sub`
+// == this UUID) always matches `users.id` / `shippers.user_id` / etc.
+const _uidNamespace = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+const _uidNamePrefix = 'cargolink:';
+
+// NOTE: in the `uuid` package v4+ the signature is `v5(namespace, name)`
+// (namespace FIRST). Passing them reversed throws
+// `FormatException: The provided UUID is invalid.`
+String supabaseUserIdFromFirebase(String firebaseUid) =>
+    const Uuid().v5(_uidNamespace, '$_uidNamePrefix$firebaseUid');
 
 // ============================================================================
 // APP AUTH STATE
 // ============================================================================
 
 class AppAuthState {
-  final String? userId; // Supabase user id (uuid)
-  final String? email;
+  final String? firebaseUid;
+  final String? userId; // deterministic Supabase user id
   final bool emailVerified;
 
-  const AppAuthState({
-    this.userId,
-    this.email,
-    this.emailVerified = false,
-  });
+  const AppAuthState(
+      {this.firebaseUid, this.userId, this.emailVerified = false});
 
-  bool get isSignedIn => userId != null;
+  bool get isSignedIn => firebaseUid != null;
 }
 
-/// Result of a Google sign-in. `isNewUser` is true when the Google account has
+/// Result of a Google sign-in. `isNewUser` is true when the Firebase user has
 /// no CargoLink profile yet (first sign-in), in which case the UI must ask the
 /// user to pick a role before entering the app.
 class GoogleSignInResult {
@@ -45,85 +64,173 @@ class GoogleSignInResult {
 }
 
 // ============================================================================
-// AUTH SERVICE (Supabase Auth natif)
+// AUTH SERVICE (FirebaseAuth + Supabase session)
 // ============================================================================
 
-/// Authentification basée sur Supabase Auth natif.
-///
-/// Contrairement à l'ancien pont Firebase -> Supabase :
-///  - la session est gérée par `supabase_flutter` (persistée, PKCE, deep link
-///    `com.cargolink.dz.cargolink://login-callback` reconnu automatiquement) ;
-///  - le jeton d'accès est attaché à chaque requête par le SDK, donc la RLS
-///    sur `auth.uid()` fonctionne sans callback `accessToken` ;
-///  - `users.id` == `auth.uid()` : le profil est protégé par la RLS.
 class AuthService {
-  AuthService() : _logger = Logger();
+  AuthService({fbauth.FirebaseAuth? firebaseAuth})
+      : _auth = firebaseAuth ?? fbauth.FirebaseAuth.instance,
+        _logger = Logger() {
+    // Le jeton Supabase échangé vit ~1 h : on branche le mécanisme
+    // d'auto-refresh de SupabaseConfig sur notre Edge Function d'échange pour
+    // qu'aucune requête ne parte avec un « JWT expired » (PGRST303) après une
+    // heure de session ouverte.
+    SupabaseConfig.setTokenRefresher(_refreshSupabaseToken);
+  }
 
+  final fbauth.FirebaseAuth _auth;
   final Logger _logger;
 
-  // ==========================================================================
-  // SESSION
-  // ==========================================================================
+  fbauth.FirebaseAuth get firebaseAuth => _auth;
 
-  Session? get currentSession => Supabase.instance.client.auth.currentSession;
+  /// Re-exchange un ID token Firebase frais contre un nouveau jeton Supabase.
+  /// Appelé par [SupabaseConfig._resolveAccessToken] quand le jeton courant
+  /// approche son expiration. Lève si l'utilisateur s'est déconnecté.
+  Future<String> _refreshSupabaseToken() async {
+    final user = _auth.currentUser;
+    if (user == null) throw StateError('Utilisateur déconnecté');
+    final token = await _exchangeForSupabaseToken(user);
+    SupabaseConfig.setAccessToken(token);
+    return token;
+  }
 
-  /// Id Supabase (uuid) de l'utilisateur actuellement connecté.
-  String? get currentUserId => Supabase.instance.client.auth.currentUser?.id;
-
-  bool get isAuthenticated => currentUserId != null;
-
-  /// Email vérifié (confirmation d'inscription). Sans session authentifiée,
-  /// renvoie `false`.
-  bool get emailVerified =>
-      Supabase.instance.client.auth.currentUser?.emailConfirmedAt != null;
-
-  /// Id du dernier utilisateur pour lequel un token FCM a été enregistré, pour
-  /// ne pas re-registrer à chaque rafraîchissement de session.
-  String? _fcmRegisteredUserId;
-
-  /// Stream de l'état d'authentification. Émet immédiatement l'état initial
-  /// (session restaurée par `Supabase.initialize`), puis suit les événements
-  /// Supabase (`initialSession`, `signedIn`, `signedOut`, `tokenRefreshed`,
-  /// `userUpdated`…).
+  /// Stream of authentication state. Yields the initial state immediately, then
+  /// follows FirebaseAuth's `authStateChanges`. Every emitted signed-in user
+  /// triggers an exchange of the Firebase ID token for a Supabase access token
+  /// (minted by the `auth-exchange-firebase` Edge Function) BEFORE the signed-in
+  /// state is emitted, so no downstream call can race ahead of the token swap.
   Stream<AppAuthState> get authStateChanges async* {
-    yield _buildState(currentSession);
-
-    await for (final authState
-        in Supabase.instance.client.auth.onAuthStateChange) {
-      final session = authState.session;
-      final userId = session?.user.id;
-      if (userId != null && userId != _fcmRegisteredUserId) {
-        try {
-          await FcmService.instance.registerToken(userId);
-          _fcmRegisteredUserId = userId;
-        } catch (e) {
-          _logger.w('FCM token registration failed (ignored): $e');
-        }
+    final current = _auth.currentUser;
+    if (current != null) {
+      try {
+        // 20 s total budget for the token exchange (includes 1 retry).
+        await _onAuthenticated(current).timeout(
+          const Duration(seconds: 20),
+          onTimeout: () {
+            _logger.e('Token exchange timed out at startup');
+          },
+        );
+      } catch (e) {
+        _logger.e('Failed to restore Supabase session: $e');
       }
-      yield _buildState(session);
+      // If the exchange failed / timed-out, SupabaseConfig.hasAccessToken is
+      // still false. Sign the user out so they land on the login screen
+      // instead of being stuck in an infinite gate-retry loop.
+      if (!SupabaseConfig.hasAccessToken) {
+        try {
+          await _auth.signOut();
+        } catch (_) {}
+        yield const AppAuthState();
+        return;
+      }
+    }
+    yield _buildState();
+
+    // Listen to idTokenChanges rather than authStateChanges so that a
+    // `reload()` (e.g. after clicking the email verification link) re-emits the
+    // state with the fresh `emailVerified` flag.
+    await for (final user in _auth.idTokenChanges()) {
+      if (user != null) {
+        try {
+          await _onAuthenticated(user);
+        } catch (e) {
+          // _logger.e('Failed to exchange Firebase token for Supabase: $e');
+        }
+      } else {
+        SupabaseConfig.reset();
+      }
+      yield _buildState();
     }
   }
 
-  AppAuthState _buildState(Session? session) {
-    final user = session?.user;
+  AppAuthState _buildState() {
+    final user = _auth.currentUser;
     if (user == null) return const AppAuthState();
+    final userId = supabaseUserIdFromFirebase(user.uid);
     return AppAuthState(
-      userId: user.id,
-      email: user.email,
-      emailVerified: user.emailConfirmedAt != null,
+      firebaseUid: user.uid,
+      userId: userId,
+      emailVerified: user.emailVerified,
     );
+  }
+
+  /// Exchange the current Firebase user's ID token for a Supabase access token
+  /// (minted by the Edge Function) and point every Supabase call at it.
+  ///
+  /// Serialized: `authStateChanges` restores the session at startup AND
+  /// `idTokenChanges` re-emits the same user immediately, and sign-up/sign-in
+  /// also call this — so two exchanges can otherwise run concurrently. For a
+  /// brand-new user, two concurrent exchanges both pass the "does the mirror
+  /// exist?" check and then both `createUser` with the SAME deterministic id:
+  /// the loser gets the GoTrue "Database error creating new user" 500. The edge
+  /// function is now race-tolerant too, but never firing the duplicate request
+  /// is cleaner. If an exchange is already in-flight, join it.
+  Future<void>? _authInFlight;
+
+  Future<void> _onAuthenticated(fbauth.User user) async {
+    final inFlight = _authInFlight;
+    if (inFlight != null) {
+      // _logger.i('_onAuthenticated: joining in-flight exchange');
+      await inFlight;
+      return;
+    }
+    final future = _doAuthenticated(user);
+    _authInFlight = future;
+    try {
+      await future;
+    } finally {
+      _authInFlight = null;
+    }
+  }
+
+  Future<void> _doAuthenticated(fbauth.User user) async {
+    // _logger.i('_onAuthenticated: exchanging Firebase token for Supabase JWT');
+    final token = await _exchangeForSupabaseToken(user);
+    // _logger.i('_onAuthenticated: received Supabase access token');
+    SupabaseConfig.setAccessToken(token);
+    final userId = supabaseUserIdFromFirebase(user.uid);
+    // _logger.i('_onAuthenticated: supabase userId=$userId');
+    await FcmService.instance.registerToken(userId);
+    // _logger.i('_onAuthenticated: FCM token registered');
+  }
+
+  Future<String> _exchangeForSupabaseToken(fbauth.User user) async {
+    // _logger.i('_exchange: fetching fresh Firebase idToken');
+    final idToken = await user.getIdToken(true);
+    // _logger.i(
+    //   '_exchange: posting to auth-exchange-firebase '
+    //   '(idToken.length=${idToken?.length ?? 0})',
+    // );
+    final response = await http.post(
+      Uri.parse(
+        '${SupabaseConfig.supabaseUrl}/functions/v1/auth-exchange-firebase',
+      ),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'idToken': idToken}),
+    ).timeout(const Duration(seconds: 20));
+    // _logger.i('_exchange: HTTP ${response.statusCode}');
+
+    if (response.statusCode != 200) {
+      _logger.e('_exchange: failed response body=${response.body}');
+      throw Exception(
+        'Échec de l\'échange de session (${response.statusCode}): '
+        '${response.body}',
+      );
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final accessToken = data['accessToken'] as String?;
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('Session Supabase indisponible');
+    }
+    return accessToken;
   }
 
   // ==========================================================================
   // AUTHENTICATION METHODS
   // ==========================================================================
 
-  /// Sign up with email and password (Supabase Auth).
-  ///
-  /// La confirmation d'email est activée côté serveur : `signUp` ne renvoie
-  /// pas de session. Le rôle, le nom complet et le téléphone sont stockés dans
-  /// les `user_metadata` ; le profil `users` est créé à la première session
-  /// authentifiée via [_ensureProfileIfAbsent].
+  /// Sign up with email and password (Firebase), then link the profile.
   Future<void> signUpWithEmail({
     required String email,
     required String password,
@@ -133,122 +240,179 @@ class AuthService {
   }) async {
     try {
       _logger.i('=== Email sign-up === email=$email role=$role');
-      final response = await Supabase.instance.client.auth.signUp(
+      final credential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
-        emailRedirectTo: SupabaseConfig.authRedirectUrl,
-        data: {'full_name': fullName, 'phone': phone, 'role': role},
       );
-      // Seulement si la confirmation d'email est désactivée (session donnée
-      // immédiatement), le profil est créé tout de suite.
-      if (response.session != null) {
-        await _ensureProfileIfAbsent();
+      final user = credential.user;
+      if (user == null) {
+        throw Exception('Création du compte impossible');
       }
-      _logger.i('signUp: SUCCESS');
-    } on AuthException catch (e) {
+      _logger.i('signUp: Firebase user created uid=${user.uid}');
+
+      await user.updateDisplayName(fullName);
+      _logger.i('signUp: displayName set to $fullName');
+
+      // Ask Firebase to send the verification email. When the app restarts and
+      // the user signs in, authState will carry emailVerified and the router
+      // will keep showing the verification page until the user clicks the link.
+      if (!user.emailVerified) {
+        _logger.i('signUp: email not verified, sending verification email');
+        await _sendVerificationEmail(user);
+        _logger.i('signUp: verification email sent');
+      }
+
+      await _onAuthenticated(user);
+
+      await _createUserProfile(
+        userId: supabaseUserIdFromFirebase(user.uid),
+        email: email,
+        fullName: fullName,
+        phone: phone,
+        role: role,
+      );
+
+      _logger.i('signUp: SUCCESS uid=${user.uid}');
+    } on fbauth.FirebaseAuthException catch (e) {
       _logger.e('Sign up error: ${e.message} (code ${e.code})');
-      throw AuthServiceException(_authErrorMessage(e));
+      throw AuthServiceException(e.message ?? 'Erreur d\'inscription');
     } catch (e) {
       _logger.e('Unexpected error during sign up: $e');
       rethrow;
     }
   }
 
-  /// Sign in with email and password (Supabase Auth).
+  /// Sign in with email and password (Firebase).
   Future<void> signInWithEmail({
     required String email,
     required String password,
   }) async {
     try {
-      _logger.i('=== Email sign-in === email=$email');
-      await Supabase.instance.client.auth
-          .signInWithPassword(email: email, password: password);
-      _logger.i('signInWithEmail: Supabase auth OK');
-      await _ensureProfileIfAbsent();
+      _logger.i('=== Email sign-in ===');
+      _logger.i('signInWithEmail: email=$email');
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('Connexion impossible');
+      _logger.i('signInWithEmail: Firebase auth OK uid=${user.uid}');
+
+      await _onAuthenticated(user);
+      await _ensureProfileIfAbsent(user, email: email);
+
       _logger.i('signInWithEmail: SUCCESS');
-    } on AuthException catch (e) {
+    } on fbauth.FirebaseAuthException catch (e) {
       _logger.e('Email sign-in error: ${e.message} (code ${e.code})');
-      throw AuthServiceException(_authErrorMessage(e));
+      throw AuthServiceException(e.message ?? 'Erreur de connexion');
     } catch (e) {
       _logger.e('Unexpected error during email sign in: $e');
       rethrow;
     }
   }
 
-  /// Sign in with Google.
+  /// Sign in with Google (Firebase).
   ///
-  /// Disponible uniquement sur mobile (Android / iOS / macOS) : on utilise
-  /// `google_sign_in` pour obtenir un `idToken`, échangé contre une session
-  /// Supabase via `signInWithIdToken` (ce qui crée/mappe automatiquement
-  /// l'utilisateur GoTrue). Sur web et desktop, un message clair est affiché
-  /// (pas de client Google Identity Services configuré dans `web/index.html`).
+  /// Platform-aware:
+  ///  - Web: uses the Firebase `signInWithPopup(GoogleAuthProvider)` flow (the
+  ///    `google_sign_in` plugin is discouraged on the web and cannot reliably
+  ///    provide an `idToken`, which caused "null check operator used on a null
+  ///    value").
+  ///  - Android / iOS / macOS: uses `google_sign_in` v6 `signIn()` (the pattern
+  ///    proven to work on devices) and exchanges accessToken + idToken.
+  ///  - Windows / Linux: `google_sign_in` has no implementation and
+  ///    `signInWithPopup` is web-only, so a clear error is raised instead.
   ///
-  /// Renvoie [GoogleSignInResult]. Quand `isNewUser` est vrai, aucune ligne
-  /// `users` n'existe : l'écran role picker doit être affiché.
+  /// Returns [GoogleSignInResult]. When `isNewUser` is true, no profile row
+  /// exists yet: the caller must let the user choose a role and create the
+  /// profile (via [createProfileWithRole]) before entering the app.
   Future<GoogleSignInResult> signInWithGoogle() async {
     try {
       _logger.i('=== Google sign-in ===');
-      _logger.i('Platform: ${kIsWeb ? 'web' : defaultTargetPlatform.name}');
+      _logger.i(
+        'Platform: ${kIsWeb ? 'web' : defaultTargetPlatform.name}',
+      );
 
-      if (kIsWeb ||
-          defaultTargetPlatform == TargetPlatform.windows ||
+      if (kIsWeb) {
+        _logger.i(
+            'Web: starting FirebaseAuth.signInWithPopup(GoogleAuthProvider)');
+        // Force the account chooser on every sign-in. Without
+        // `prompt: select_account`, Google Identity Services silently reuses
+        // the last authenticated account, so after a sign-out a user trying to
+        // re-auth with a different Google account ends up back on the previous
+        // one.
+        final provider = fbauth.GoogleAuthProvider()
+          ..setCustomParameters({'prompt': 'select_account'});
+        final userCredential = await _auth.signInWithPopup(provider);
+        _logger.i(
+          'Web: popup returned uid=${userCredential.user?.uid} '
+          'email=${userCredential.user?.email}',
+        );
+      } else if (defaultTargetPlatform == TargetPlatform.windows ||
           defaultTargetPlatform == TargetPlatform.linux) {
         _logger.e(
-          'Google sign-in unsupported on '
-          '${kIsWeb ? 'web' : defaultTargetPlatform.name}',
+          'Google sign-in unsupported on ${defaultTargetPlatform.name}',
         );
         throw AuthServiceException(
-          'Google Sign-In n\'est pas encore disponible sur cette plateforme. '
-          'Utilisez email/mot de passe ou l\'application mobile.',
+          'Google Sign-In n\'est pas encore disponible sur '
+          '${defaultTargetPlatform.name}. Utilisez email/mot de passe ou '
+          'l\'application mobile.',
         );
+      } else {
+        _logger.i('Mobile: starting GoogleSignIn().signIn()');
+        final googleUser = await GoogleSignIn().signIn();
+        if (googleUser == null) {
+          _logger.w('Mobile: user cancelled the Google dialog');
+          throw AuthServiceException('Connexion Google annulée');
+        }
+        _logger.i('Mobile: Google account email=${googleUser.email}');
+        final googleAuth = await googleUser.authentication;
+        _logger.i(
+          'Mobile: got idToken=${googleAuth.idToken != null} '
+          'accessToken=${googleAuth.accessToken != null}',
+        );
+        final credential = fbauth.GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        _logger.i('Mobile: calling FirebaseAuth.signInWithCredential');
+        await _auth.signInWithCredential(credential);
+        _logger.i('Mobile: FirebaseAuth.signInWithCredential OK');
       }
 
-      final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) {
-        _logger.w('Google sign-in: user cancelled the dialog');
-        throw AuthServiceException('Connexion Google annulée');
+      final user = _auth.currentUser;
+      if (user == null) {
+        _logger.e('Google sign-in: currentUser is null after auth');
+        throw Exception('Connexion Google impossible');
       }
-      _logger.i('Google sign-in: account email=${googleUser.email}');
-      final googleAuth = await googleUser.authentication;
       _logger.i(
-        'Google sign-in: idToken=${googleAuth.idToken != null} '
-        'accessToken=${googleAuth.accessToken != null}',
-      );
-      if (googleAuth.idToken == null) {
-        throw AuthServiceException('Connexion Google impossible');
-      }
-
-      await Supabase.instance.client.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: googleAuth.idToken!,
-        accessToken: googleAuth.accessToken,
+        'Google sign-in: Firebase user uid=${user.uid} email=${user.email}',
       );
 
-      final user = Supabase.instance.client.auth.currentUser;
-      _logger.i('Google sign-in: Supabase user id=${user?.id}');
+      await _onAuthenticated(user);
+      _logger.i('Google sign-in: Supabase session + FCM token ready');
 
       // First-time detection: no profile row means the user must pick a role.
       final existing = await getCurrentUserProfile();
       final isNewUser = existing == null;
       if (isNewUser) {
         _logger.i('Google sign-in: NEW user, role must be chosen');
-        final meta = _googleMetadata(user?.userMetadata, user?.identities);
         return GoogleSignInResult(
           isNewUser: true,
-          email: user?.email,
-          fullName: meta['full_name'] as String?,
-          photoUrl: meta['avatar_url'] as String?,
+          email: user.email,
+          fullName: user.displayName,
+          photoUrl: user.photoURL,
+          phone: user.phoneNumber,
         );
       }
-      _logger.i('Google sign-in: returning user (role=${existing.role})');
+      _logger.i(
+        'Google sign-in: returning user (role=${existing.role}), SUCCESS',
+      );
 
-      // Existing user: attach the Google profile picture and display name when
-      // missing locally, so the avatar/name stay in sync with Google.
-      final meta = _googleMetadata(user?.userMetadata, user?.identities);
-      final googlePhoto = meta['avatar_url'] as String?;
-      final googleName = meta['full_name'] as String?;
+      // Existing user: attach the Google profile picture and phone number to
+      // the CargoLink profile when the account has them (and they are missing
+      // locally), so the avatar/phone stay in sync with the Google account.
+      final googlePhoto = user.photoURL;
+      final googlePhone = user.phoneNumber;
       if ((googlePhoto != null && googlePhoto.isNotEmpty) ||
-          (googleName != null && googleName.isNotEmpty)) {
+          (googlePhone != null && googlePhone.isNotEmpty)) {
         try {
           final updateData = <String, dynamic>{
             'updated_at': DateTime.now().toIso8601String(),
@@ -257,12 +421,12 @@ class AuthService {
                   existing.profilePictureUrl!.isEmpty) &&
               googlePhoto != null &&
               googlePhoto.isNotEmpty;
-          final needsName = existing.fullName.isEmpty &&
-              googleName != null &&
-              googleName.isNotEmpty;
+          final needsPhone = existing.phone.isEmpty &&
+              googlePhone != null &&
+              googlePhone.isNotEmpty;
           if (needsPhoto) updateData['profile_picture_url'] = googlePhoto;
-          if (needsName) updateData['full_name'] = googleName;
-          if (needsPhoto || needsName) {
+          if (needsPhone) updateData['phone'] = googlePhone;
+          if (needsPhoto || needsPhone) {
             await SupabaseConfig.client
                 .from('users')
                 .update(updateData)
@@ -270,7 +434,7 @@ class AuthService {
             _logger.i(
               'Google sign-in: profile synced '
               '(photo=${needsPhoto ? 'yes' : 'no'}, '
-              'name=${needsName ? 'yes' : 'no'})',
+              'phone=${needsPhone ? 'yes' : 'no'})',
             );
           }
         } catch (e) {
@@ -285,37 +449,12 @@ class AuthService {
     }
   }
 
-  /// Extraits (nom, avatar) du profil Google depuis les métadonnées du user
-  /// Supabase (avec repli sur les données d'identité OAuth).
-  Map<String, dynamic> _googleMetadata(
-    Map<String, dynamic>? userMetadata,
-    List<UserIdentity>? identities,
-  ) {
-    final meta = userMetadata ?? const <String, dynamic>{};
-    UserIdentity? googleIdentity;
-    for (final identity in identities ?? const <UserIdentity>[]) {
-      if (identity.provider == 'google') {
-        googleIdentity = identity;
-        break;
-      }
-    }
-    final idData = googleIdentity?.identityData ?? const <String, dynamic>{};
-    String firstString(List<Object?> keys) {
-      for (final key in keys) {
-        final value = meta[key] ?? idData[key];
-        if (value is String && value.isNotEmpty) return value;
-      }
-      return '';
-    }
-
-    return {
-      'full_name': firstString(['full_name', 'name']),
-      'avatar_url': firstString(['avatar_url', 'picture']),
-    };
-  }
-
-  /// Sign out (Supabase Auth local). Le token FCM est nettoyé et le flux
-  /// Google est déconnecté (mobile uniquement, ne bloque jamais le sign-out).
+  /// Sign out the current user (Firebase + reset Supabase to anon).
+  ///
+  /// `GoogleSignIn().signOut()` is only available on mobile (Android / iOS /
+  /// macOS). On web and desktop it has no implementation and throws
+  /// `MissingPluginException`, so it is guarded by platform and never allowed
+  /// to block the sign-out.
   Future<void> signOut() async {
     try {
       _logger.i('=== Sign out ===');
@@ -325,7 +464,6 @@ class AuthService {
       } catch (e) {
         _logger.w('signOut: FCM token clear failed (ignored): $e');
       }
-      _fcmRegisteredUserId = null;
       if (!kIsWeb &&
           (defaultTargetPlatform == TargetPlatform.android ||
               defaultTargetPlatform == TargetPlatform.iOS ||
@@ -337,43 +475,45 @@ class AuthService {
           _logger.w('signOut: GoogleSignIn signOut failed (ignored): $e');
         }
       }
-      await Supabase.instance.client.auth.signOut();
-      _logger.i('signOut: Supabase session closed, SUCCESS');
+      try {
+        await _auth.signOut();
+        _logger.i('signOut: FirebaseAuth signed out');
+      } catch (e) {
+        _logger.w('signOut: FirebaseAuth signOut failed (ignored): $e');
+      }
+      SupabaseConfig.reset();
+      _logger.i('signOut: Supabase session reset, SUCCESS');
     } catch (e) {
       _logger.e('Sign out error: $e');
       rethrow;
     }
   }
 
-  /// Request a password reset email (lien PKCE renvoyé vers [authRedirectUrl]).
+  /// Request a password reset email.
   Future<void> resetPassword(String email) async {
     try {
       _logger.i('=== Password reset === email=$email');
-      await Supabase.instance.client.auth.resetPasswordForEmail(
-        email,
-        redirectTo: SupabaseConfig.authRedirectUrl,
-      );
+      await _auth.sendPasswordResetEmail(email: email);
       _logger.i('Password reset email sent');
-    } on AuthException catch (e) {
+    } on fbauth.FirebaseAuthException catch (e) {
       _logger.e('Reset password error: ${e.message} (code ${e.code})');
-      throw AuthServiceException(_authErrorMessage(e));
+      throw AuthServiceException(e.message ?? 'Erreur de réinitialisation');
     } catch (e) {
       _logger.e('Unexpected error during password reset: $e');
       rethrow;
     }
   }
 
-  /// Change the password of the signed-in user.
+  /// Change the Firebase password of the signed-in user.
   ///
-  /// Le mot de passe actuel est d'abord vérifié (connexion locale), puis le
-  /// changement est appliqué. Une session volée ne peut pas changer le mot de
-  /// passe silencieusement.
+  /// Re-authenticates with the current password before applying the change, so
+  /// that a lingering or stolen session cannot silently swap the password.
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
   }) async {
     try {
-      final user = Supabase.instance.client.auth.currentUser;
+      final user = _auth.currentUser;
       if (user == null) {
         throw AuthServiceException('Session expirée, reconnectez-vous');
       }
@@ -383,15 +523,16 @@ class AuthService {
             'Impossible de changer le mot de passe : aucun email associé');
       }
 
-      await Supabase.instance.client.auth
-          .signInWithPassword(email: email, password: currentPassword);
-      _logger.i('changePassword: current password verified');
-
-      await Supabase.instance.client.auth.updateUser(
-        UserAttributes(password: newPassword),
+      final credential = fbauth.EmailAuthProvider.credential(
+        email: email,
+        password: currentPassword,
       );
+      await user.reauthenticateWithCredential(credential);
+      _logger.i('changePassword: reauthenticated');
+
+      await user.updatePassword(newPassword);
       _logger.i('changePassword: password updated');
-    } on AuthException catch (e) {
+    } on fbauth.FirebaseAuthException catch (e) {
       _logger.e('Change password error: ${e.code} ${e.message}');
       throw AuthServiceException(_passwordErrorToMessage(e.code, e.message));
     } catch (e) {
@@ -402,16 +543,14 @@ class AuthService {
 
   String _passwordErrorToMessage(String? code, String? message) {
     switch (code) {
-      case 'weak_password':
+      case 'weak-password':
         return 'Le mot de passe est trop faible (6 caractères minimum).';
-      case 'invalid_credentials':
-      case 'invalid_grant':
+      case 'wrong-password':
         return 'Le mot de passe actuel est incorrect.';
-      case 'same_password':
-        return 'Le nouveau mot de passe doit être différent de l\'actuel.';
-      case 'over_request_rate_limit':
-        return 'Trop de tentatives. Réessayez dans quelques minutes.';
-      case 'reauthentication_needed':
+      case 'invalid-credential':
+      case 'invalid-login-credentials':
+        return 'Le mot de passe actuel est incorrect.';
+      case 'requires-recent-login':
         return 'Veuillez vous reconnecter avant de changer votre mot de passe.';
       default:
         return message ?? 'Erreur lors du changement de mot de passe';
@@ -509,15 +648,31 @@ class AuthService {
   }
 
   /// Permanently delete the account now (after the 30-day grace period has
-  /// elapsed). Calls the `delete_my_account` RPC (SECURITY DEFINER) which
-  /// purges every row (public tables, storage objects) and the Supabase auth
-  /// user, server-side.
+  /// elapsed). Calls the `delete-account` Edge Function which purges every row
+  /// (public tables, storage objects), the Supabase auth user and finally the
+  /// Firebase account, server-side.
   Future<void> deleteAccountPermanently() async {
     try {
       _logger.i('=== Permanent account deletion ===');
-      await Supabase.instance.client.rpc('delete_my_account');
-      _logger.i('delete_my_account: OK');
-      await signOut();
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('Aucun utilisateur connecté');
+      final idToken = await user.getIdToken(true);
+      final response = await http.post(
+        Uri.parse(
+          '${SupabaseConfig.supabaseUrl}/functions/v1/delete-account',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'idToken': idToken}),
+      );
+      _logger.i('delete-account: HTTP ${response.statusCode}');
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Échec de la suppression (${response.statusCode}): ${response.body}',
+        );
+      }
+      // Account is gone — fully sign out.
+      SupabaseConfig.reset();
+      await _auth.signOut();
       _logger.i('Account permanently deleted');
     } catch (e) {
       _logger.e('Error deleting account permanently: $e');
@@ -529,8 +684,85 @@ class AuthService {
   // USER PROFILE METHODS
   // ==========================================================================
 
+  /// Get current user ID as the deterministic Supabase UUID.
+  String? get currentUserId {
+    final user = _auth.currentUser;
+    return user == null ? null : supabaseUserIdFromFirebase(user.uid);
+  }
+
+  bool get isAuthenticated => _auth.currentUser != null;
+
+  /// Build the action-code settings used for the email verification / password
+  /// reset links. `handleCodeInApp: false` lets Firebase's hosted action
+  /// handler (https://<project>.firebaseapp.com/__/auth/action) verify the
+  /// email server-side and then continue to the deployed web app. The GitHub
+  /// Pages domain must be listed in the Firebase console under
+  /// Authentication -> Settings -> Authorized domains, otherwise Firebase
+  /// rejects the send with INVALID_CONTINUE_URI.
+  static final fbauth.ActionCodeSettings _verificationCodeSettings =
+      fbauth.ActionCodeSettings(
+    url: 'https://connacri.github.io/CargoLink/',
+    handleCodeInApp: false,
+    androidPackageName: 'com.cargolink.dz.cargolink',
+    androidInstallApp: true,
+    androidMinimumVersion: '1',
+    iOSBundleId: 'com.cargolink.dz.cargolink',
+  );
+
+  /// Ask Firebase to send the email-verification link for the given user.
+  ///
+  /// Tries the app-specific action link first (returns the user to the web app
+  /// after verifying). If the continue URL domain is not yet in the Firebase
+  /// "Authorized domains" list, Firebase rejects the send with
+  /// INVALID_CONTINUE_URI, so we retry with the default action handler — this
+  /// guarantees the email always gets dispatched.
+  Future<void> _sendVerificationEmail(fbauth.User user) async {
+    try {
+      await user.sendEmailVerification(_verificationCodeSettings);
+      _logger.i('Verification email sent (app action link)');
+    } catch (e) {
+      _logger.w(
+        'Verification email with action settings failed ($e); '
+        'retrying with default handler',
+      );
+      await user.sendEmailVerification();
+    }
+  }
+
+  /// Re-send the email verification link for the currently signed-in user.
+  Future<void> resendVerificationEmail() async {
+    try {
+      _logger.i('=== Resend verification email ===');
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('Aucun utilisateur connecté');
+      await _sendVerificationEmail(user);
+      _logger.i('Verification email re-sent');
+    } on fbauth.FirebaseAuthException catch (e) {
+      _logger
+          .e('Resend verification email error: ${e.message} (code ${e.code})');
+      throw AuthServiceException(e.message ?? 'Erreur d\'envoi');
+    } catch (e) {
+      _logger.e('Unexpected error while resending verification email: $e');
+      rethrow;
+    }
+  }
+
+  /// Reload the Firebase user and return whether the email is verified now.
+  Future<bool> refreshEmailVerified() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return false;
+      await user.reload();
+      return user.emailVerified;
+    } catch (e) {
+      _logger.e('Error refreshing email verification: $e');
+      return _auth.currentUser?.emailVerified ?? false;
+    }
+  }
+
   /// Create (idempotent) the user profile in the database. RLS allows the
-  /// insert only when `auth.uid() = id`, which holds with the native session.
+  /// insert only when `auth.uid() = id`, which holds because the Supabase token
+  /// minted for this Firebase user has `sub == id`.
   Future<void> _createUserProfile({
     required String userId,
     required String email,
@@ -558,14 +790,11 @@ class AuthService {
     }
   }
 
-  /// If a profile row does not exist yet, create it from the `user_metadata`
-  /// (role, full_name, phone) set at sign-up. Skipped for Google-only accounts
-  /// (identity `google`) : ces utilisateurs passent par le role picker
-  /// ([createProfileWithRole]) pour choisir leur rôle.
-  Future<void> _ensureProfileIfAbsent() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
-
+  /// If a profile row does not exist yet (e.g. Google sign-in), create a
+  /// minimal one so the user can be routed by role. For existing users this is
+  /// a safety net; new Google users go through [createProfileWithRole] instead
+  /// (so they get to pick their role).
+  Future<void> _ensureProfileIfAbsent(fbauth.User user, {String? email}) async {
     _logger.i('_ensureProfileIfAbsent: checking users row');
     final existing = await getCurrentUserProfile();
     if (existing != null) {
@@ -574,76 +803,50 @@ class AuthService {
       return;
     }
 
-    var isGoogleOnly = false;
-    for (final identity in user.identities ?? const <UserIdentity>[]) {
-      if (identity.provider == 'google') {
-        isGoogleOnly = true;
-        break;
-      }
-    }
-    if (isGoogleOnly) {
-      _logger
-          .i('_ensureProfileIfAbsent: Google account, role must be chosen');
-      return;
-    }
-
-    final meta = user.userMetadata ?? const <String, dynamic>{};
-    final role = _stringValue(meta, 'role') ?? 'client';
-    final fullName = _stringValue(meta, 'full_name') ??
-        ((user.email ?? '').isNotEmpty
-            ? user.email!.split('@').first
-            : 'Utilisateur');
-    final phone = _stringValue(meta, 'phone') ?? '';
     try {
       await _createUserProfile(
-        userId: user.id,
-        email: user.email ?? 'user@cargolink.app',
-        fullName: fullName,
-        phone: phone,
-        role: role,
-        profilePictureUrl: _stringValue(meta, 'avatar_url') ??
-            _stringValue(meta, 'picture'),
+        userId: supabaseUserIdFromFirebase(user.uid),
+        email: email ?? user.email ?? 'user@cargolink.app',
+        fullName: user.displayName ??
+            ((user.email ?? '').isNotEmpty
+                ? user.email!.split('@').first
+                : 'Utilisateur'),
+        phone: '',
+        role: 'client',
+        profilePictureUrl: user.photoURL,
       );
-      _logger.i('_ensureProfileIfAbsent: profile auto-created (role=$role)');
+      _logger.i('_ensureProfileIfAbsent: profile auto-created');
     } catch (e) {
       _logger.w('Could not auto-create profile: $e');
     }
   }
 
-  String? _stringValue(Map<String, dynamic> map, String key) {
-    final value = map[key];
-    return value is String && value.isNotEmpty ? value : null;
-  }
-
   /// Create the CargoLink profile for a brand-new user (e.g. first Google
   /// sign-in) with the role they picked. Used by the role-selection flow.
-  /// Les données Google (avatar, nom) sont reprises des métadonnées.
+  ///
+  /// When the Firebase account carries a Google profile picture or phone
+  /// number, they are attached to the profile so a Google sign-in always
+  /// restores the avatar and phone number.
   Future<void> createProfileWithRole({
     required String role,
     String? fullName,
     String? phone,
   }) async {
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = _auth.currentUser;
     if (user == null) {
       throw Exception('Aucun utilisateur connecté');
     }
-    final meta = user.userMetadata ?? const <String, dynamic>{};
-    final metaFullName = _stringValue(meta, 'full_name') ??
-        _stringValue(meta, 'name');
-    final metaPhone = _stringValue(meta, 'phone');
-    final metaAvatar =
-        _stringValue(meta, 'avatar_url') ?? _stringValue(meta, 'picture');
     await _createUserProfile(
-      userId: user.id,
+      userId: supabaseUserIdFromFirebase(user.uid),
       email: user.email ?? 'user@cargolink.app',
       fullName: fullName ??
-          metaFullName ??
+          user.displayName ??
           ((user.email ?? '').isNotEmpty
               ? user.email!.split('@').first
               : 'Utilisateur'),
-      phone: phone ?? metaPhone ?? '',
+      phone: phone ?? user.phoneNumber ?? '',
       role: role,
-      profilePictureUrl: metaAvatar,
+      profilePictureUrl: user.photoURL,
     );
     _logger.i('createProfileWithRole: profile created (role=$role)');
   }
@@ -680,7 +883,7 @@ class AuthService {
     }
   }
 
-  /// Whether a profile row exists for the current Supabase user.
+  /// Whether a profile row exists for the current Firebase user.
   ///
   /// Tri-state: `true` = a row exists, `false` = the row definitively does not
   /// exist, `null` = the lookup failed (transient/network) and the caller must
@@ -690,6 +893,13 @@ class AuthService {
     try {
       final userId = currentUserId;
       if (userId == null) return null;
+      // Without an active access token the anon key is used and RLS filters
+      // every row out — the query "succeeds" but is empty, which would look
+      // like a definitive "no profile". Treat that as indeterminate so the
+      // account gate keeps retrying instead of showing the role picker to a
+      // returning user (web: session restore / popup can momentarily run with
+      // no token).
+      if (!SupabaseConfig.hasAccessToken) return null;
       final response = await SupabaseConfig.client
           .from('users')
           .select('id')
@@ -738,9 +948,7 @@ class AuthService {
       if (instagram != null) {
         updateData['instagram'] = instagram.isEmpty ? null : instagram;
       }
-      if (tiktok != null) {
-        updateData['tiktok'] = tiktok.isEmpty ? null : tiktok;
-      }
+      if (tiktok != null) updateData['tiktok'] = tiktok.isEmpty ? null : tiktok;
 
       final response = await SupabaseConfig.client
           .from('users')
@@ -849,42 +1057,6 @@ class AuthService {
       _logger.e('Error getting user: $e');
       return null;
     }
-  }
-
-  // ==========================================================================
-  // EMAIL VERIFICATION
-  // ==========================================================================
-
-  /// Re-send the email verification link for the given email address (or the
-  /// signed-in user's email). Fonctionne sans session (écran de vérification).
-  Future<void> resendVerificationEmail({String? email}) async {
-    try {
-      _logger.i('=== Resend verification email ===');
-      final emailAddress = email ??
-          Supabase.instance.client.auth.currentUser?.email;
-      if (emailAddress == null || emailAddress.isEmpty) {
-        throw Exception('Aucun email associé');
-      }
-      await Supabase.instance.client.auth.resend(
-        email: emailAddress,
-        type: OtpType.signup,
-        emailRedirectTo: SupabaseConfig.authRedirectUrl,
-      );
-      _logger.i('Verification email re-sent');
-    } on AuthException catch (e) {
-      _logger
-          .e('Resend verification email error: ${e.message} (code ${e.code})');
-      throw AuthServiceException(e.message);
-    } catch (e) {
-      _logger.e('Unexpected error while resending verification email: $e');
-      rethrow;
-    }
-  }
-
-  /// Whether the email is verified now (lecture locale de `emailConfirmedAt`,
-  /// mise à jour après la confirmation du lien dans le flux PKCE).
-  Future<bool> refreshEmailVerified() async {
-    return Supabase.instance.client.auth.currentUser?.emailConfirmedAt != null;
   }
 
   // ==========================================================================
@@ -1013,15 +1185,30 @@ class AuthService {
     }
   }
 
-  /// Permanently delete any user (super_admin only). Calls the
-  /// `admin_delete_user` RPC (SECURITY DEFINER).
+  /// Permanently delete any user (super_admin only). Calls the delete-account
+  /// edge function in admin mode.
   Future<void> deleteUserAsAdmin(String targetUserUuid) async {
     try {
       _logger.i('=== Super admin deletes user $targetUserUuid ===');
-      await Supabase.instance.client.rpc(
-        'admin_delete_user',
-        params: {'p_target_user_id': targetUserUuid},
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('Aucun utilisateur connecté');
+      final adminToken = await user.getIdToken(true);
+      final response = await http.post(
+        Uri.parse(
+          '${SupabaseConfig.supabaseUrl}/functions/v1/delete-account',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'adminToken': adminToken,
+          'targetUserUuid': targetUserUuid,
+        }),
       );
+      _logger.i('admin delete-account: HTTP ${response.statusCode}');
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Échec de la suppression (${response.statusCode}): ${response.body}',
+        );
+      }
       _logger.i('User deleted by admin');
     } catch (e) {
       _logger.e('Error deleting user as admin: $e');
@@ -1029,25 +1216,35 @@ class AuthService {
     }
   }
 
-  /// Factory reset (super_admin only). Calls the `admin_reset_platform` RPC
-  /// (SECURITY DEFINER).
+  /// Factory reset (super_admin only). Calls the `admin-reset` edge function.
   ///
   /// [mode] is one of:
   ///   - 'tables'   : wipes all public tables + uploaded files (accounts kept)
-  ///   - 'accounts' : deletes every auth account (Supabase Auth)
+  ///   - 'accounts' : deletes every auth account (Firebase + Supabase Auth)
   ///   - 'full'     : accounts first, then tables
   Future<Map<String, dynamic>> resetPlatformData(String mode) async {
     try {
       _logger.i('=== Super admin factory reset (mode=$mode) ===');
-      final result = await Supabase.instance.client.rpc(
-        'admin_reset_platform',
-        params: {'p_mode': mode},
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('Aucun utilisateur connecté');
+      final adminToken = await user.getIdToken(true);
+      final response = await http.post(
+        Uri.parse('${SupabaseConfig.supabaseUrl}/functions/v1/admin-reset'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'adminToken': adminToken, 'mode': mode}),
       );
-      _logger.i('Factory reset completed: $result');
-      if (result is Map) {
-        return Map<String, dynamic>.from(result);
+      _logger.i('admin-reset: HTTP ${response.statusCode}');
+      final body = response.body.isNotEmpty
+          ? (jsonDecode(response.body) as Map<String, dynamic>)
+          : <String, dynamic>{};
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Échec de la réinitialisation (${response.statusCode}): '
+          '${body['error'] ?? response.body}',
+        );
       }
-      return <String, dynamic>{'mode': mode};
+      _logger.i('Factory reset completed: $body');
+      return body;
     } catch (e) {
       _logger.e('Error resetting platform data: $e');
       rethrow;
@@ -1151,55 +1348,44 @@ class AuthService {
   }
 
   /// Approve a pending account deletion request (super_admin only). Calls the
-  /// `admin_approve_deletion_request` RPC (SECURITY DEFINER) : archive dans
-  /// `deleted_accounts`, purge complète (public, storage, auth), notification
-  /// push à l'utilisateur et passage du statut à 'approved'.
+  /// `delete-account` edge function in approval mode: archives the account
+  /// into `deleted_accounts` (creation date + history), performs the full
+  /// purge (public rows, storage, Supabase Auth + Firebase Auth), emails the
+  /// user (Resend) and marks the request 'approved'.
   Future<Map<String, dynamic>> approveDeletionRequest(
     String requestId,
   ) async {
     try {
       _logger.i('=== Super admin approves deletion request $requestId ===');
-      final result = await Supabase.instance.client.rpc(
-        'admin_approve_deletion_request',
-        params: {'p_request_id': requestId},
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('Aucun utilisateur connecté');
+      final adminToken = await user.getIdToken(true);
+      final response = await http.post(
+        Uri.parse(
+          '${SupabaseConfig.supabaseUrl}/functions/v1/delete-account',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'adminToken': adminToken,
+          'requestId': requestId,
+        }),
       );
-      _logger.i('Deletion request approved: $result');
-      if (result is Map) {
-        return Map<String, dynamic>.from(result);
+      _logger.i('approve delete-account: HTTP ${response.statusCode}');
+      final body = response.body.isNotEmpty
+          ? (jsonDecode(response.body) as Map<String, dynamic>)
+          : <String, dynamic>{};
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Échec de la suppression (${response.statusCode}): '
+          '${body['error'] ?? response.body}',
+        );
       }
-      return <String, dynamic>{'request_id': requestId};
+      _logger.i('Deletion request approved: $body');
+      return body;
     } catch (e) {
       _logger.e('Error approving deletion request: $e');
       rethrow;
     }
-  }
-
-  // ==========================================================================
-  // MISC
-  // ==========================================================================
-
-  String _authErrorMessage(Object error) {
-    if (error is AuthException) {
-      switch (error.code) {
-        case 'invalid_credentials':
-          return 'Email ou mot de passe incorrect.';
-        case 'email_not_confirmed':
-          return 'Veuillez confirmer votre email avant de vous connecter.';
-        case 'user_already_exists':
-          return 'Un compte existe déjà avec cet email.';
-        case 'weak_password':
-          return 'Le mot de passe est trop faible (6 caractères minimum).';
-        case 'same_password':
-          return 'Le nouveau mot de passe doit être différent de l\'actuel.';
-        case 'over_request_rate_limit':
-          return 'Trop de tentatives. Réessayez dans quelques minutes.';
-        case 'over_email_send_rate_limit':
-          return 'L\'envoi d\'email est trop fréquent. Réessayez dans quelques minutes.';
-        default:
-          return error.message;
-      }
-    }
-    return error.toString();
   }
 }
 

@@ -5,7 +5,6 @@ import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
-import 'email_verification_screen.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -76,21 +75,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       if (!mounted) return;
 
       final authService = ref.read(authServiceProvider);
-      final emailVerified = authService.emailVerified;
+      final emailVerified =
+          authService.firebaseAuth.currentUser?.emailVerified ?? false;
 
       if (!emailVerified) {
-        // Email verification pending: push the standalone verification screen
-        // with the credentials so the user can sign in on the spot once the
-        // email is confirmed (Supabase sign-up does not open a session until
-        // the email is verified).
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          '/email-verification',
-          (route) => false,
-          arguments: EmailVerificationScreenArgs(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          ),
-        );
+        // Email verification pending: go back to the root, which will show the
+        // verification page (routing is driven by AppAuthState.emailVerified).
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
         return;
       }
 

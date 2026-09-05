@@ -89,11 +89,6 @@ class CargoLinkApp extends ConsumerWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignupScreen(),
-        '/email-verification': (context) {
-          final args = ModalRoute.of(context)?.settings.arguments
-              as EmailVerificationScreenArgs?;
-          return EmailVerificationScreen(args: args);
-        },
         '/forgot-password': (context) => const ForgotPasswordScreen(),
         '/home': (context) => const HomeTabsScreen(),
         '/booking': (context) {
