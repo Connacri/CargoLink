@@ -61,8 +61,7 @@ class _HomeTabsScreenState extends ConsumerState<HomeTabsScreen> {
           ),
         );
       } else {
-        Navigator.of(context)
-            .pushNamed('/tracking', arguments: bookingId);
+        Navigator.of(context).pushNamed('/tracking', arguments: bookingId);
       }
     } catch (_) {}
   }
@@ -107,6 +106,7 @@ class _HomeTabsScreenState extends ConsumerState<HomeTabsScreen> {
       error: (error, stack) => ErrorScreen(error: error.toString()),
     );
   }
+
   Widget _buildClientTabs(
     BuildContext context,
     WidgetRef ref,
@@ -216,10 +216,9 @@ class _ProfileTabIcon extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider).valueOrNull;
-    final shipper =
-        showVerificationBadge == true
-            ? ref.watch(currentShipperProvider).valueOrNull
-            : null;
+    final shipper = showVerificationBadge == true
+        ? ref.watch(currentShipperProvider).valueOrNull
+        : null;
 
     final Color tint =
         selected ? Theme.of(context).colorScheme.primary : Colors.grey;

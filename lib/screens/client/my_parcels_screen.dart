@@ -14,14 +14,14 @@ import '../client/tracking_screen.dart';
 /// Toutes les réservations du client (hors annulées), colis en cours d'abord
 /// puis livrés du plus récent au plus ancien. autoDispose → recalcul à chaque
 /// ouverture de l'écran.
-final myParcelsProvider = FutureProvider.autoDispose<List<Booking>>((ref) async {
+final myParcelsProvider =
+    FutureProvider.autoDispose<List<Booking>>((ref) async {
   final clientId = ref.watch(authServiceProvider).currentUserId;
   if (clientId == null) return const [];
   final bookings = await ref
       .read(bookingServiceProvider)
       .getClientBookings(clientId: clientId, limit: 100);
-  final visible =
-      bookings.where((b) => b.status != 'cancelled').toList();
+  final visible = bookings.where((b) => b.status != 'cancelled').toList();
   int rank(String status) => status == 'delivered' ? 1 : 0;
   visible.sort((a, b) {
     final r = rank(a.status).compareTo(rank(b.status));
@@ -221,8 +221,7 @@ class _ParcelTile extends ConsumerWidget {
                     ),
                   _infoChip(
                     icon: Icons.monitor_weight_outlined,
-                    label:
-                        '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
+                    label: '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
                     color: AppTheme.infoColor,
                   ),
                   _infoChip(
@@ -338,8 +337,7 @@ class _ParcelTile extends ConsumerWidget {
               ),
               data: (events) => events.isEmpty
                   ? const Padding(
-                      padding:
-                          EdgeInsets.symmetric(vertical: AppTheme.spaceMd),
+                      padding: EdgeInsets.symmetric(vertical: AppTheme.spaceMd),
                       child: Text(
                         'Le suivi sera disponible des la prise en charge '
                         'du colis.',

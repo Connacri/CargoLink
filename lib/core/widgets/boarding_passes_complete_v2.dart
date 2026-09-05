@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// MODÃˆLE DE DONNÃ‰ES COMPLET - Boarding Pass + DonnÃ©es CargoLink
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
 class BoardingPassData {
   // ===== DONNÃ‰ES BOARDING PASS STANDARD =====
   final String passengerName;
@@ -26,25 +22,25 @@ class BoardingPassData {
   final String airlineName;
 
   // ===== DONNÃ‰ES CARGOLINK COMPLÃ‰MENTAIRES =====
-  final String? senderName;              // ExpÃ©diteur
-  final String? senderPhone;             // TÃ©lÃ©phone
-  final String? flightCompany;           // Compagnie aÃ©rienne (AIR ALGÃ‰RIE)
-  final String? flightCompanyFlag;       // Drapeau ðŸ‡©ðŸ‡¿
-  final double? availableWeight;         // Poids disponible (10.0 KG)
-  final double? totalCapacity;           // CapacitÃ© totale (75 kg)
-  final double? remainingCapacity;       // CapacitÃ© restante (10.0 kg)
-  final double? pricePerKg;              // Prix par kg (525 DZD)
-  final String? currency;                // Devise (DZD)
-  final double? senderRating;            // Note expÃ©diteur (0.0/5)
-  final int? totalFlights;               // Nombre de vols (6)
-  final bool? isSenderVerified;          // VÃ©rifiÃ© âœ…
-  final String? senderInitial;           // Initiale (S)
-  final String? offerText;               // OFFRE ...
-  final String? originTime;              // Heure dÃ©part (19:43)
-  final String? date;                    // Date format court (30 sept.)
-  final String? departureDateShort;      // 30 SEPT.
-  final String? arrivalDateShort;        // 30 SEPT.
-  final String? appName;                 // CargoLink
+  final String? senderName; // ExpÃ©diteur
+  final String? senderPhone; // TÃ©lÃ©phone
+  final String? flightCompany; // Compagnie aÃ©rienne (AIR ALGÃ‰RIE)
+  final String? flightCompanyFlag; // Drapeau ðŸ‡©ðŸ‡¿
+  final double? availableWeight; // Poids disponible (10.0 KG)
+  final double? totalCapacity; // CapacitÃ© totale (75 kg)
+  final double? remainingCapacity; // CapacitÃ© restante (10.0 kg)
+  final double? pricePerKg; // Prix par kg (525 DZD)
+  final String? currency; // Devise (DZD)
+  final double? senderRating; // Note expÃ©diteur (0.0/5)
+  final int? totalFlights; // Nombre de vols (6)
+  final bool? isSenderVerified; // VÃ©rifiÃ© âœ…
+  final String? senderInitial; // Initiale (S)
+  final String? offerText; // OFFRE ...
+  final String? originTime; // Heure dÃ©part (19:43)
+  final String? date; // Date format court (30 sept.)
+  final String? departureDateShort; // 30 SEPT.
+  final String? arrivalDateShort; // 30 SEPT.
+  final String? appName; // CargoLink
 
   BoardingPassData({
     // Boarding pass standard
@@ -304,505 +300,522 @@ class BoardingPassJfkLhr extends StatelessWidget {
 
             SingleChildScrollView(
               child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // â”€â”€ HEADER BLEU avec OFFRE â”€â”€
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF00A8E8), Color(0xFF0077B6)],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(0),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.flight,
-                        color: Colors.white,
-                        size: 28,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // â”€â”€ HEADER BLEU avec OFFRE â”€â”€
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF00A8E8), Color(0xFF0077B6)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
                       ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'BOARDING PASS',
-                        style: TextStyle(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(0),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.flight,
                           color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.5,
+                          size: 28,
                         ),
-                      ),
-                      const Spacer(),
-                      // Badge OFFRE CargoLink
-                      if (data.offerText != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 6,
+                        const SizedBox(width: 10),
+                        const Text(
+                          'BOARDING PASS',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.5,
                           ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.25),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            data.offerText!,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1,
+                        ),
+                        const Spacer(),
+                        // Badge OFFRE CargoLink
+                        if (data.offerText != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              data.offerText!,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1,
+                              ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
 
-                // â”€â”€ CORPS â”€â”€
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Barcode vertical
-                      Column(
-                        children: [
-                          CustomPaint(
-                            size: const Size(30, 120),
-                            painter: VerticalBarcodePainter(),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 12),
-
-                      // Contenu principal
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  // â”€â”€ CORPS â”€â”€
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Barcode vertical
+                        Column(
                           children: [
-                            // FROM / TO avec avion
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'FROM:',
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 1,
-                                        ),
-                                      ),
-                                      Text(
-                                        data.fromCode,
-                                        style: const TextStyle(
-                                          color: Color(0xFF2C3E50),
-                                          fontSize: 42,
-                                          fontWeight: FontWeight.w900,
-                                          height: 1.0,
-                                        ),
-                                      ),
-                                      Text(
-                                        data.fromCity,
-                                        style: const TextStyle(
-                                          color: Color(0xFFE74C3C),
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      if (data.originTime != null)
+                            CustomPaint(
+                              size: const Size(30, 120),
+                              painter: VerticalBarcodePainter(),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 12),
+
+                        // Contenu principal
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // FROM / TO avec avion
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
                                         Text(
-                                          data.originTime!,
+                                          'FROM:',
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: 1,
+                                          ),
+                                        ),
+                                        Text(
+                                          data.fromCode,
                                           style: const TextStyle(
                                             color: Color(0xFF2C3E50),
-                                            fontSize: 16,
+                                            fontSize: 42,
+                                            fontWeight: FontWeight.w900,
+                                            height: 1.0,
+                                          ),
+                                        ),
+                                        Text(
+                                          data.fromCity,
+                                          style: const TextStyle(
+                                            color: Color(0xFFE74C3C),
+                                            fontSize: 14,
                                             fontWeight: FontWeight.w700,
                                           ),
                                         ),
-                                    ],
-                                  ),
-                                ),
-
-                                Expanded(
-                                  flex: 2,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                    child: Column(
-                                      children: [
-                                        if (data.date != null)
+                                        if (data.originTime != null)
                                           Text(
-                                            data.date!,
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
+                                            data.originTime!,
+                                            style: const TextStyle(
+                                              color: Color(0xFF2C3E50),
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
                                             ),
                                           ),
-                                        const SizedBox(height: 8),
-                                        CustomPaint(
-                                          size: const Size(100, 40),
-                                          painter: FlightPathWithPlanePainter(
-                                            planeColor: const Color(0xFF2C3E50),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8),
+                                      child: Column(
+                                        children: [
+                                          if (data.date != null)
+                                            Text(
+                                              data.date!,
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          const SizedBox(height: 8),
+                                          CustomPaint(
+                                            size: const Size(100, 40),
+                                            painter: FlightPathWithPlanePainter(
+                                              planeColor:
+                                                  const Color(0xFF2C3E50),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          'TO:',
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: 1,
+                                          ),
+                                        ),
+                                        Text(
+                                          data.toCode,
+                                          style: const TextStyle(
+                                            color: Color(0xFF2C3E50),
+                                            fontSize: 42,
+                                            fontWeight: FontWeight.w900,
+                                            height: 1.0,
+                                          ),
+                                        ),
+                                        Text(
+                                          data.toCity,
+                                          style: const TextStyle(
+                                            color: Color(0xFFE74C3C),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                ),
+                                ],
+                              ),
 
-                                Expanded(
+                              const SizedBox(height: 16),
+
+                              // Dates et heures
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          data.departureDate,
+                                          style: TextStyle(
+                                            color: Colors.grey[700],
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        Text(
+                                          data.departureTime,
+                                          style: const TextStyle(
+                                            color: Color(0xFF2C3E50),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          data.arrivalDate,
+                                          style: TextStyle(
+                                            color: Colors.grey[700],
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        Text(
+                                          data.arrivalTime,
+                                          style: const TextStyle(
+                                            color: Color(0xFF2C3E50),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 12),
+
+                              // Ligne de sÃ©paration
+                              Container(
+                                height: 1,
+                                color: Colors.grey[400],
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              // Infos en bas (5 colonnes)
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  _buildInfoColumn(
+                                      'Passenger', data.passengerName),
+                                  _buildInfoColumn('Flight', data.flightNumber),
+                                  _buildInfoColumn('Seat', data.seat),
+                                  _buildInfoColumn('Gate', data.gate),
+                                  _buildInfoColumn('Terminal', data.terminal),
+                                ],
+                              ),
+
+                              // â”€â”€ DONNÃ‰ES CARGOLINK â”€â”€
+                              if (data.senderName != null) ...[
+                                const SizedBox(height: 10),
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF7B61FF)
+                                        .withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      _buildCargoRow(
+                                        Icons.person,
+                                        'ExpÃ©diteur :',
+                                        data.senderName!,
+                                      ),
+                                      if (data.senderPhone != null)
+                                        _buildCargoRow(
+                                          Icons.phone,
+                                          'TÃ©lÃ©phone :',
+                                          data.senderPhone!,
+                                        ),
+                                      if (data.flightCompany != null)
+                                        _buildCargoRow(
+                                          Icons.flight,
+                                          'Vol :',
+                                          '${data.flightCompany!} ${data.flightCompanyFlag ?? ""} â€¢ ${data.flightNumber}',
+                                          isBold: true,
+                                        ),
+                                      if (data.departureDateShort != null &&
+                                          data.arrivalDateShort != null)
+                                        _buildCargoRow(
+                                          Icons.calendar_today,
+                                          'Dates :',
+                                          '${data.departureDateShort!} â†’ ${data.arrivalDateShort!}',
+                                          isBold: true,
+                                        ),
+                                      if (data.availableWeight != null)
+                                        _buildCargoRow(
+                                          Icons.inventory_2,
+                                          'Disponible :',
+                                          '${data.availableWeight!.toStringAsFixed(1)} KG',
+                                          isBold: true,
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+
+                              // Prix par kg
+                              if (data.pricePerKg != null &&
+                                  data.currency != null) ...[
+                                const SizedBox(height: 10),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE8F5E9),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        'TO:',
+                                        'Prix / kg',
                                         style: TextStyle(
                                           color: Colors.grey[600],
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 1,
-                                        ),
-                                      ),
-                                      Text(
-                                        data.toCode,
-                                        style: const TextStyle(
-                                          color: Color(0xFF2C3E50),
-                                          fontSize: 42,
-                                          fontWeight: FontWeight.w900,
-                                          height: 1.0,
-                                        ),
-                                      ),
-                                      Text(
-                                        data.toCity,
-                                        style: const TextStyle(
-                                          color: Color(0xFFE74C3C),
                                           fontSize: 14,
-                                          fontWeight: FontWeight.w700,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${data.pricePerKg!.toStringAsFixed(0)} ${data.currency!}',
+                                        style: const TextStyle(
+                                          color: Color(0xFF7B61FF),
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w800,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
                               ],
-                            ),
 
-                            const SizedBox(height: 16),
-
-                            // Dates et heures
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        data.departureDate,
-                                        style: TextStyle(
-                                          color: Colors.grey[700],
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text(
-                                        data.departureTime,
-                                        style: const TextStyle(
-                                          color: Color(0xFF2C3E50),
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        data.arrivalDate,
-                                        style: TextStyle(
-                                          color: Colors.grey[700],
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text(
-                                        data.arrivalTime,
-                                        style: const TextStyle(
-                                          color: Color(0xFF2C3E50),
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // Ligne de sÃ©paration
-                            Container(
-                              height: 1,
-                              color: Colors.grey[400],
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            // Infos en bas (5 colonnes)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                _buildInfoColumn('Passenger', data.passengerName),
-                                _buildInfoColumn('Flight', data.flightNumber),
-                                _buildInfoColumn('Seat', data.seat),
-                                _buildInfoColumn('Gate', data.gate),
-                                _buildInfoColumn('Terminal', data.terminal),
-                              ],
-                            ),
-
-                            // â”€â”€ DONNÃ‰ES CARGOLINK â”€â”€
-                            if (data.senderName != null) ...[
-                              const SizedBox(height: 10),
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF7B61FF).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Column(
+                              // Barre de disponibilitÃ©
+                              if (data.remainingCapacity != null &&
+                                  data.totalCapacity != null) ...[
+                                const SizedBox(height: 10),
+                                Row(
                                   children: [
-                                    _buildCargoRow(
-                                      Icons.person,
-                                      'ExpÃ©diteur :',
-                                      data.senderName!,
-                                    ),
-                                    if (data.senderPhone != null)
-                                      _buildCargoRow(
-                                        Icons.phone,
-                                        'TÃ©lÃ©phone :',
-                                        data.senderPhone!,
+                                    Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF4CAF50),
+                                        shape: BoxShape.circle,
                                       ),
-                                    if (data.flightCompany != null)
-                                      _buildCargoRow(
-                                        Icons.flight,
-                                        'Vol :',
-                                        '${data.flightCompany!} ${data.flightCompanyFlag ?? ""} â€¢ ${data.flightNumber}',
-                                        isBold: true,
-                                      ),
-                                    if (data.departureDateShort != null && data.arrivalDateShort != null)
-                                      _buildCargoRow(
-                                        Icons.calendar_today,
-                                        'Dates :',
-                                        '${data.departureDateShort!} â†’ ${data.arrivalDateShort!}',
-                                        isBold: true,
-                                      ),
-                                    if (data.availableWeight != null)
-                                      _buildCargoRow(
-                                        Icons.inventory_2,
-                                        'Disponible :',
-                                        '${data.availableWeight!.toStringAsFixed(1)} KG',
-                                        isBold: true,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-
-                            // Prix par kg
-                            if (data.pricePerKg != null && data.currency != null) ...[
-                              const SizedBox(height: 10),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE8F5E9),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Prix / kg',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
+                                      child: const Icon(
+                                        Icons.check,
+                                        color: Colors.white,
+                                        size: 14,
                                       ),
                                     ),
-                                    Text(
-                                      '${data.pricePerKg!.toStringAsFixed(0)} ${data.currency!}',
-                                      style: const TextStyle(
-                                        color: Color(0xFF7B61FF),
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-
-                            // Barre de disponibilitÃ©
-                            if (data.remainingCapacity != null && data.totalCapacity != null) ...[
-                              const SizedBox(height: 10),
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 20,
-                                    height: 20,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF4CAF50),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.check,
-                                      color: Colors.white,
-                                      size: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Places disponibles â€” ${data.remainingCapacity!.toStringAsFixed(1)} kg restants sur ${data.totalCapacity!.toStringAsFixed(0)} kg',
-                                      style: const TextStyle(
-                                        color: Colors.black87,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
-                                child: LinearProgressIndicator(
-                                  value: data.remainingCapacity! / data.totalCapacity!,
-                                  backgroundColor: Colors.grey[200],
-                                  valueColor: const AlwaysStoppedAnimation<Color>(
-                                    Color(0xFF7B61FF),
-                                  ),
-                                  minHeight: 8,
-                                ),
-                              ),
-                            ],
-
-                            // ExpÃ©diteur
-                            if (data.senderName != null && data.senderInitial != null) ...[
-                              const SizedBox(height: 10),
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF8D6E63),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Center(
+                                    const SizedBox(width: 8),
+                                    Expanded(
                                       child: Text(
-                                        data.senderInitial!,
+                                        'Places disponibles â€” ${data.remainingCapacity!.toStringAsFixed(1)} kg restants sur ${data.totalCapacity!.toStringAsFixed(0)} kg',
                                         style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
+                                          color: Colors.black87,
+                                          fontSize: 12,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: LinearProgressIndicator(
+                                    value: data.remainingCapacity! /
+                                        data.totalCapacity!,
+                                    backgroundColor: Colors.grey[200],
+                                    valueColor:
+                                        const AlwaysStoppedAnimation<Color>(
+                                      Color(0xFF7B61FF),
+                                    ),
+                                    minHeight: 8,
                                   ),
-                                  const SizedBox(width: 10),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Text(
-                                            data.senderName!,
-                                            style: const TextStyle(
-                                              color: Colors.black87,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          if (data.isSenderVerified == true)
-                                            const SizedBox(width: 6),
-                                          if (data.isSenderVerified == true)
-                                            Container(
-                                              width: 16,
-                                              height: 16,
-                                              decoration: const BoxDecoration(
-                                                color: Color(0xFF4CAF50),
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: const Icon(
-                                                Icons.check,
-                                                color: Colors.white,
-                                                size: 10,
-                                              ),
-                                            ),
-                                        ],
+                                ),
+                              ],
+
+                              // ExpÃ©diteur
+                              if (data.senderName != null &&
+                                  data.senderInitial != null) ...[
+                                const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF8D6E63),
+                                        shape: BoxShape.circle,
                                       ),
-                                      if (data.senderRating != null && data.totalFlights != null)
+                                      child: Center(
+                                        child: Text(
+                                          data.senderInitial!,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
                                         Row(
                                           children: [
-                                            const Icon(
-                                              Icons.star,
-                                              color: Color(0xFFFFC107),
-                                              size: 14,
-                                            ),
-                                            const SizedBox(width: 4),
                                             Text(
-                                              '${data.senderRating}/5 â€¢ ${data.totalFlights} vols',
-                                              style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
+                                              data.senderName!,
+                                              style: const TextStyle(
+                                                color: Colors.black87,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
                                               ),
                                             ),
+                                            if (data.isSenderVerified == true)
+                                              const SizedBox(width: 6),
+                                            if (data.isSenderVerified == true)
+                                              Container(
+                                                width: 16,
+                                                height: 16,
+                                                decoration: const BoxDecoration(
+                                                  color: Color(0xFF4CAF50),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: const Icon(
+                                                  Icons.check,
+                                                  color: Colors.white,
+                                                  size: 10,
+                                                ),
+                                              ),
                                           ],
                                         ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
+                                        if (data.senderRating != null &&
+                                            data.totalFlights != null)
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.star,
+                                                color: Color(0xFFFFC107),
+                                                size: 14,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                '${data.senderRating}/5 â€¢ ${data.totalFlights} vols',
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
 
-                            // Appel Ã  l'action
-                            if (data.appName != null) ...[
-                              const SizedBox(height: 8),
-                              Center(
-                                child: Text(
-                                  "RÃ©servez ce vol dans l'app ${data.appName!}",
-                                  style: TextStyle(
-                                    color: Colors.grey[500],
-                                    fontSize: 12,
-                                    fontStyle: FontStyle.italic,
+                              // Appel Ã  l'action
+                              if (data.appName != null) ...[
+                                const SizedBox(height: 8),
+                                Center(
+                                  child: Text(
+                                    "RÃ©servez ce vol dans l'app ${data.appName!}",
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                      fontSize: 12,
+                                      fontStyle: FontStyle.italic,
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
             ),
 
             // Perforations droites
@@ -870,7 +883,8 @@ class BoardingPassJfkLhr extends StatelessWidget {
     );
   }
 
-  Widget _buildCargoRow(IconData icon, String label, String value, {bool isBold = false}) {
+  Widget _buildCargoRow(IconData icon, String label, String value,
+      {bool isBold = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
@@ -1016,7 +1030,8 @@ class BoardingPassAdbCdg extends StatelessWidget {
                           Text(
                             'FRANCE',
                             style: TextStyle(
-                              color: const Color(0xFF8B4513).withValues(alpha: 0.7),
+                              color: const Color(0xFF8B4513)
+                                  .withValues(alpha: 0.7),
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 6,
@@ -1106,10 +1121,12 @@ class BoardingPassAdbCdg extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: _buildVintageInfo('DATE / TARIH', data.departureDate),
+                          child: _buildVintageInfo(
+                              'DATE / TARIH', data.departureDate),
                         ),
                         Expanded(
-                          child: _buildVintageInfo('TIME / SAAT', data.departureTime),
+                          child: _buildVintageInfo(
+                              'TIME / SAAT', data.departureTime),
                         ),
                       ],
                     ),
@@ -1117,7 +1134,8 @@ class BoardingPassAdbCdg extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: _buildVintageInfo('FLIGHT / UÃ‡UÅž', data.flightNumber),
+                          child: _buildVintageInfo(
+                              'FLIGHT / UÃ‡UÅž', data.flightNumber),
                         ),
                         Expanded(
                           child: _buildVintageInfo('SEAT / KOLTUK', data.seat),
@@ -1140,7 +1158,8 @@ class BoardingPassAdbCdg extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Icon(Icons.flight, color: Color(0xFF2C3E50), size: 14),
+                        const Icon(Icons.flight,
+                            color: Color(0xFF2C3E50), size: 14),
                       ],
                     ),
 
@@ -1150,10 +1169,12 @@ class BoardingPassAdbCdg extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF7B61FF).withValues(alpha: 0.08),
+                          color:
+                              const Color(0xFF7B61FF).withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color(0xFF7B61FF).withValues(alpha: 0.2),
+                            color:
+                                const Color(0xFF7B61FF).withValues(alpha: 0.2),
                           ),
                         ),
                         child: Column(
@@ -1171,7 +1192,8 @@ class BoardingPassAdbCdg extends StatelessWidget {
                             const SizedBox(height: 8),
                             _buildCargoInfoRow('ExpÃ©diteur', data.senderName!),
                             if (data.senderPhone != null)
-                              _buildCargoInfoRow('TÃ©lÃ©phone', data.senderPhone!),
+                              _buildCargoInfoRow(
+                                  'TÃ©lÃ©phone', data.senderPhone!),
                             if (data.flightCompany != null)
                               _buildCargoInfoRow(
                                 'Compagnie',
@@ -1182,7 +1204,8 @@ class BoardingPassAdbCdg extends StatelessWidget {
                                 'Disponible',
                                 '${data.availableWeight!.toStringAsFixed(1)} KG',
                               ),
-                            if (data.pricePerKg != null && data.currency != null)
+                            if (data.pricePerKg != null &&
+                                data.currency != null)
                               _buildCargoInfoRow(
                                 'Prix/kg',
                                 '${data.pricePerKg!.toStringAsFixed(0)} ${data.currency!}',
@@ -1194,7 +1217,8 @@ class BoardingPassAdbCdg extends StatelessWidget {
                     ],
 
                     // Barre de disponibilitÃ©
-                    if (data.remainingCapacity != null && data.totalCapacity != null) ...[
+                    if (data.remainingCapacity != null &&
+                        data.totalCapacity != null) ...[
                       const SizedBox(height: 10),
                       Row(
                         children: [
@@ -1205,7 +1229,8 @@ class BoardingPassAdbCdg extends StatelessWidget {
                               color: Color(0xFF4CAF50),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.check, color: Colors.white, size: 12),
+                            child: const Icon(Icons.check,
+                                color: Colors.white, size: 12),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -1226,14 +1251,16 @@ class BoardingPassAdbCdg extends StatelessWidget {
                         child: LinearProgressIndicator(
                           value: data.remainingCapacity! / data.totalCapacity!,
                           backgroundColor: Colors.grey[200],
-                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7B61FF)),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                              Color(0xFF7B61FF)),
                           minHeight: 6,
                         ),
                       ),
                     ],
 
                     // ExpÃ©diteur
-                    if (data.senderName != null && data.senderInitial != null) ...[
+                    if (data.senderName != null &&
+                        data.senderInitial != null) ...[
                       const SizedBox(height: 10),
                       Row(
                         children: [
@@ -1278,15 +1305,18 @@ class BoardingPassAdbCdg extends StatelessWidget {
                                         color: Color(0xFF4CAF50),
                                         shape: BoxShape.circle,
                                       ),
-                                      child: const Icon(Icons.check, color: Colors.white, size: 8),
+                                      child: const Icon(Icons.check,
+                                          color: Colors.white, size: 8),
                                     ),
                                   ],
                                 ],
                               ),
-                              if (data.senderRating != null && data.totalFlights != null)
+                              if (data.senderRating != null &&
+                                  data.totalFlights != null)
                                 Row(
                                   children: [
-                                    const Icon(Icons.star, color: Color(0xFFFFC107), size: 12),
+                                    const Icon(Icons.star,
+                                        color: Color(0xFFFFC107), size: 12),
                                     const SizedBox(width: 4),
                                     Text(
                                       '${data.senderRating}/5 â€¢ ${data.totalFlights} vols',
@@ -1324,7 +1354,8 @@ class BoardingPassAdbCdg extends StatelessWidget {
                   children: [
                     // Header
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: const Color(0xFF3D4F6F),
                         borderRadius: BorderRadius.circular(8),
@@ -1342,7 +1373,8 @@ class BoardingPassAdbCdg extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          const Icon(Icons.flight, color: Colors.white, size: 14),
+                          const Icon(Icons.flight,
+                              color: Colors.white, size: 14),
                         ],
                       ),
                     ),
@@ -1433,7 +1465,8 @@ class BoardingPassAdbCdg extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF7B61FF).withValues(alpha: 0.08),
+                          color:
+                              const Color(0xFF7B61FF).withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Column(
@@ -1449,8 +1482,10 @@ class BoardingPassAdbCdg extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            _buildDetachableInfo('ExpÃ©diteur', data.senderName!),
-                            if (data.pricePerKg != null && data.currency != null)
+                            _buildDetachableInfo(
+                                'ExpÃ©diteur', data.senderName!),
+                            if (data.pricePerKg != null &&
+                                data.currency != null)
                               _buildDetachableInfo(
                                 'Prix/kg',
                                 '${data.pricePerKg!.toStringAsFixed(0)} ${data.currency!}',
@@ -1529,7 +1564,8 @@ class BoardingPassAdbCdg extends StatelessWidget {
     );
   }
 
-  Widget _buildCargoInfoRow(String label, String value, {bool isHighlight = false}) {
+  Widget _buildCargoInfoRow(String label, String value,
+      {bool isHighlight = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -1667,7 +1703,8 @@ class BoardingPassItaly extends StatelessWidget {
                                         vertical: 3,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF7B61FF).withValues(alpha: 0.15),
+                                        color: const Color(0xFF7B61FF)
+                                            .withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
@@ -1881,10 +1918,12 @@ class BoardingPassItaly extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF7B61FF).withValues(alpha: 0.08),
+                                color: const Color(0xFF7B61FF)
+                                    .withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: const Color(0xFF7B61FF).withValues(alpha: 0.2),
+                                  color: const Color(0xFF7B61FF)
+                                      .withValues(alpha: 0.2),
                                 ),
                               ),
                               child: Column(
@@ -1900,9 +1939,11 @@ class BoardingPassItaly extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  _buildInfoRow('ExpÃ©diteur', data.senderName!),
+                                  _buildInfoRow(
+                                      'ExpÃ©diteur', data.senderName!),
                                   if (data.senderPhone != null)
-                                    _buildInfoRow('TÃ©lÃ©phone', data.senderPhone!),
+                                    _buildInfoRow(
+                                        'TÃ©lÃ©phone', data.senderPhone!),
                                   if (data.flightCompany != null)
                                     _buildInfoRow(
                                       'Compagnie',
@@ -1913,7 +1954,8 @@ class BoardingPassItaly extends StatelessWidget {
                                       'Disponible',
                                       '${data.availableWeight!.toStringAsFixed(1)} KG',
                                     ),
-                                  if (data.departureDateShort != null && data.arrivalDateShort != null)
+                                  if (data.departureDateShort != null &&
+                                      data.arrivalDateShort != null)
                                     _buildInfoRow(
                                       'Dates',
                                       '${data.departureDateShort!} â†’ ${data.arrivalDateShort!}',
@@ -1924,7 +1966,8 @@ class BoardingPassItaly extends StatelessWidget {
                           ],
 
                           // Prix par kg
-                          if (data.pricePerKg != null && data.currency != null) ...[
+                          if (data.pricePerKg != null &&
+                              data.currency != null) ...[
                             const SizedBox(height: 12),
                             Container(
                               width: double.infinity,
@@ -1937,7 +1980,8 @@ class BoardingPassItaly extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     'Prix / kg',
@@ -1961,7 +2005,8 @@ class BoardingPassItaly extends StatelessWidget {
                           ],
 
                           // Barre de disponibilitÃ©
-                          if (data.remainingCapacity != null && data.totalCapacity != null) ...[
+                          if (data.remainingCapacity != null &&
+                              data.totalCapacity != null) ...[
                             const SizedBox(height: 12),
                             Row(
                               children: [
@@ -1995,7 +2040,8 @@ class BoardingPassItaly extends StatelessWidget {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(4),
                               child: LinearProgressIndicator(
-                                value: data.remainingCapacity! / data.totalCapacity!,
+                                value: data.remainingCapacity! /
+                                    data.totalCapacity!,
                                 backgroundColor: Colors.grey[200],
                                 valueColor: const AlwaysStoppedAnimation<Color>(
                                   Color(0xFF7B61FF),
@@ -2006,7 +2052,8 @@ class BoardingPassItaly extends StatelessWidget {
                           ],
 
                           // ExpÃ©diteur
-                          if (data.senderName != null && data.senderInitial != null) ...[
+                          if (data.senderName != null &&
+                              data.senderInitial != null) ...[
                             const SizedBox(height: 12),
                             Row(
                               children: [
@@ -2060,7 +2107,8 @@ class BoardingPassItaly extends StatelessWidget {
                                         ],
                                       ],
                                     ),
-                                    if (data.senderRating != null && data.totalFlights != null)
+                                    if (data.senderRating != null &&
+                                        data.totalFlights != null)
                                       Row(
                                         children: [
                                           const Icon(
@@ -2281,7 +2329,8 @@ class BoardingPassLondonNy extends StatelessWidget {
                   ),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.25),
                       borderRadius: BorderRadius.circular(12),
@@ -2347,7 +2396,8 @@ class BoardingPassLondonNy extends StatelessWidget {
                                     child: Column(
                                       children: [
                                         Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             Column(
                                               children: [
@@ -2378,10 +2428,13 @@ class BoardingPassLondonNy extends StatelessWidget {
                                               ],
                                             ),
                                             Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 20),
                                               child: CustomPaint(
                                                 size: const Size(60, 40),
-                                                painter: FlightPathWithPlanePainter(
+                                                painter:
+                                                    FlightPathWithPlanePainter(
                                                   planeColor: Colors.black87,
                                                 ),
                                               ),
@@ -2439,14 +2492,17 @@ class BoardingPassLondonNy extends StatelessWidget {
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF7B61FF).withValues(alpha: 0.08),
+                                    color: const Color(0xFF7B61FF)
+                                        .withValues(alpha: 0.08),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: const Color(0xFF7B61FF).withValues(alpha: 0.2),
+                                      color: const Color(0xFF7B61FF)
+                                          .withValues(alpha: 0.2),
                                     ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'CARGOLINK INFO',
@@ -2458,9 +2514,11 @@ class BoardingPassLondonNy extends StatelessWidget {
                                         ),
                                       ),
                                       const SizedBox(height: 8),
-                                      _buildCargoRow(Icons.person, 'ExpÃ©diteur', data.senderName!),
+                                      _buildCargoRow(Icons.person,
+                                          'ExpÃ©diteur', data.senderName!),
                                       if (data.senderPhone != null)
-                                        _buildCargoRow(Icons.phone, 'TÃ©lÃ©phone', data.senderPhone!),
+                                        _buildCargoRow(Icons.phone,
+                                            'TÃ©lÃ©phone', data.senderPhone!),
                                       if (data.flightCompany != null)
                                         _buildCargoRow(
                                           Icons.flight,
@@ -2473,7 +2531,8 @@ class BoardingPassLondonNy extends StatelessWidget {
                                           'Disponible',
                                           '${data.availableWeight!.toStringAsFixed(1)} KG',
                                         ),
-                                      if (data.departureDateShort != null && data.arrivalDateShort != null)
+                                      if (data.departureDateShort != null &&
+                                          data.arrivalDateShort != null)
                                         _buildCargoRow(
                                           Icons.calendar_today,
                                           'Dates',
@@ -2485,7 +2544,8 @@ class BoardingPassLondonNy extends StatelessWidget {
                               ],
 
                               // Prix par kg
-                              if (data.pricePerKg != null && data.currency != null) ...[
+                              if (data.pricePerKg != null &&
+                                  data.currency != null) ...[
                                 const SizedBox(height: 10),
                                 Container(
                                   width: double.infinity,
@@ -2498,7 +2558,8 @@ class BoardingPassLondonNy extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         'Prix / kg',
@@ -2522,7 +2583,8 @@ class BoardingPassLondonNy extends StatelessWidget {
                               ],
 
                               // Barre de disponibilitÃ©
-                              if (data.remainingCapacity != null && data.totalCapacity != null) ...[
+                              if (data.remainingCapacity != null &&
+                                  data.totalCapacity != null) ...[
                                 const SizedBox(height: 10),
                                 Row(
                                   children: [
@@ -2556,9 +2618,11 @@ class BoardingPassLondonNy extends StatelessWidget {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(4),
                                   child: LinearProgressIndicator(
-                                    value: data.remainingCapacity! / data.totalCapacity!,
+                                    value: data.remainingCapacity! /
+                                        data.totalCapacity!,
                                     backgroundColor: Colors.grey[200],
-                                    valueColor: const AlwaysStoppedAnimation<Color>(
+                                    valueColor:
+                                        const AlwaysStoppedAnimation<Color>(
                                       Color(0xFF7B61FF),
                                     ),
                                     minHeight: 6,
@@ -2567,7 +2631,8 @@ class BoardingPassLondonNy extends StatelessWidget {
                               ],
 
                               // ExpÃ©diteur
-                              if (data.senderName != null && data.senderInitial != null) ...[
+                              if (data.senderName != null &&
+                                  data.senderInitial != null) ...[
                                 const SizedBox(height: 10),
                                 Row(
                                   children: [
@@ -2591,7 +2656,8 @@ class BoardingPassLondonNy extends StatelessWidget {
                                     ),
                                     const SizedBox(width: 10),
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
@@ -2603,7 +2669,8 @@ class BoardingPassLondonNy extends StatelessWidget {
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
-                                            if (data.isSenderVerified == true) ...[
+                                            if (data.isSenderVerified ==
+                                                true) ...[
                                               const SizedBox(width: 6),
                                               Container(
                                                 width: 14,
@@ -2621,7 +2688,8 @@ class BoardingPassLondonNy extends StatelessWidget {
                                             ],
                                           ],
                                         ),
-                                        if (data.senderRating != null && data.totalFlights != null)
+                                        if (data.senderRating != null &&
+                                            data.totalFlights != null)
                                           Row(
                                             children: [
                                               const Icon(
@@ -2667,9 +2735,11 @@ class BoardingPassLondonNy extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF64B5F6).withValues(alpha: 0.3),
+                              color: const Color(0xFF64B5F6)
+                                  .withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
@@ -2684,14 +2754,16 @@ class BoardingPassLondonNy extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 6),
-                                const Icon(Icons.flight, color: Color(0xFF64B5F6), size: 12),
+                                const Icon(Icons.flight,
+                                    color: Color(0xFF64B5F6), size: 12),
                               ],
                             ),
                           ),
 
                           const SizedBox(height: 10),
 
-                          _buildRightInfo('NAME OF PASSANGER', data.passengerName),
+                          _buildRightInfo(
+                              'NAME OF PASSANGER', data.passengerName),
                           const SizedBox(height: 6),
                           _buildRightInfo('FLIGHT', data.flightNumber),
                           const SizedBox(height: 6),
@@ -2707,7 +2779,8 @@ class BoardingPassLondonNy extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF7B61FF).withValues(alpha: 0.08),
+                                color: const Color(0xFF7B61FF)
+                                    .withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Column(
@@ -2723,8 +2796,10 @@ class BoardingPassLondonNy extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  _buildRightInfo('ExpÃ©diteur', data.senderName!),
-                                  if (data.pricePerKg != null && data.currency != null)
+                                  _buildRightInfo(
+                                      'ExpÃ©diteur', data.senderName!),
+                                  if (data.pricePerKg != null &&
+                                      data.currency != null)
                                     _buildRightInfo(
                                       'Prix/kg',
                                       '${data.pricePerKg!.toStringAsFixed(0)} ${data.currency!}',
@@ -2923,7 +2998,6 @@ class BoardingPassLondonNy extends StatelessWidget {
     );
   }
 }
-
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // CUSTOM PAINTERS
@@ -3295,27 +3369,27 @@ class QRCodePainter extends CustomPainter {
 
     // Pattern simple QR-like
     final pattern = [
-      [1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1],
-      [1,0,0,0,0,0,1,0,0,1,0,1,0,0,1,0,0,0,0,0,1],
-      [1,0,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,0,1],
-      [1,0,1,1,1,0,1,0,0,1,0,1,0,0,1,0,1,1,1,0,1],
-      [1,0,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,0,1],
-      [1,0,0,0,0,0,1,0,0,1,0,1,0,0,1,0,0,0,0,0,1],
-      [1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1],
-      [0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0],
-      [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],
-      [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
-      [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],
-      [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
-      [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],
-      [0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0],
-      [1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1],
-      [1,0,0,0,0,0,1,0,0,1,0,1,0,0,1,0,0,0,0,0,1],
-      [1,0,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,0,1],
-      [1,0,1,1,1,0,1,0,0,1,0,1,0,0,1,0,1,1,1,0,1],
-      [1,0,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,0,1],
-      [1,0,0,0,0,0,1,0,0,1,0,1,0,0,1,0,0,0,0,0,1],
-      [1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1],
+      [1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+      [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+      [1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1],
+      [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+      [1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+      [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+      [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+      [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+      [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+      [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+      [1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1],
+      [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+      [1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1],
     ];
 
     for (int row = 0; row < pattern.length; row++) {
@@ -3381,11 +3455,6 @@ class DiagonalStripesPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// PAGE DÃ‰MO - Les 4 Boarding Passes
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 class BoardingPassDemoPage extends StatelessWidget {
   const BoardingPassDemoPage({super.key});
@@ -3498,14 +3567,6 @@ class BoardingPassDemoPage extends StatelessWidget {
       ),
     );
   }
-}
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// MAIN
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-void main() {
-  runApp(const BoardingPassApp());
 }
 
 class BoardingPassApp extends StatelessWidget {

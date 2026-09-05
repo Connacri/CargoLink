@@ -47,7 +47,7 @@ Future<void> showQrTicketDialog(
 
   return showDialog<void>(
     context: context,
-    builder: (dialogContext) => _QrTicketDialog(
+    builder: (dialogContext) => QrTicketDialog(
       payload: payload,
       booking: booking,
       onViewDetail: onViewDetail,
@@ -55,12 +55,12 @@ Future<void> showQrTicketDialog(
   );
 }
 
-String _formatDate(DateTime d) =>
-    '${d.day.toString().padLeft(2, '0')}/'
+String _formatDate(DateTime d) => '${d.day.toString().padLeft(2, '0')}/'
     '${d.month.toString().padLeft(2, '0')}/${d.year}';
 
-class _QrTicketDialog extends StatefulWidget {
-  const _QrTicketDialog({
+class QrTicketDialog extends StatefulWidget {
+  const QrTicketDialog({
+    super.key,
     required this.payload,
     required this.booking,
     this.onViewDetail,
@@ -71,10 +71,10 @@ class _QrTicketDialog extends StatefulWidget {
   final VoidCallback? onViewDetail;
 
   @override
-  State<_QrTicketDialog> createState() => _QrTicketDialogState();
+  State<QrTicketDialog> createState() => QrTicketDialogState();
 }
 
-class _QrTicketDialogState extends State<_QrTicketDialog> {
+class QrTicketDialogState extends State<QrTicketDialog> {
   final GlobalKey _ticketKey = GlobalKey();
   bool _saving = false;
 
@@ -87,8 +87,7 @@ class _QrTicketDialogState extends State<_QrTicketDialog> {
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) throw Exception('Impossible de générer l\'image');
       final bytes = byteData.buffer.asUint8List();
-      final fileName =
-          'cargolink-reservation-${widget.payload.bookingId}';
+      final fileName = 'cargolink-reservation-${widget.payload.bookingId}';
       if (kIsWeb) {
         downloadBytesOnWeb(bytes, '$fileName.png');
       } else {
@@ -124,7 +123,8 @@ class _QrTicketDialogState extends State<_QrTicketDialog> {
         decoration: BoxDecoration(
           color: AppTheme.primaryLighter,
           borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-          border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.12)),
+          border:
+              Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.12)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.15),
@@ -150,8 +150,8 @@ class _QrTicketDialogState extends State<_QrTicketDialog> {
               if (widget.booking.productPhotosUrl != null &&
                   widget.booking.productPhotosUrl!.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.spaceMd),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -187,8 +187,8 @@ class _QrTicketDialogState extends State<_QrTicketDialog> {
                                 ),
                               )
                             : const Icon(Icons.download_rounded, size: 18),
-                        label: Text(
-                            _saving ? 'Enregistrement...' : 'Enregistrer'),
+                        label:
+                            Text(_saving ? 'Enregistrement...' : 'Enregistrer'),
                       ),
                     ),
                   ],

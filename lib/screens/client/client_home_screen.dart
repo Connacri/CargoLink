@@ -446,6 +446,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 ],
               ),
             ),
+            const SliverToBoxAdapter(
+              child: _AcceptedBookingBanner(),
+            ),
             // Carrousel des pubs actives : toutes les bannières défilent.
             if (activeAds.isNotEmpty)
               SliverToBoxAdapter(
@@ -460,15 +463,11 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             const SliverToBoxAdapter(
               child: _HomeTrackingCard(),
             ),
-            SliverToBoxAdapter(
-              child: _buildFlightDemoCard(context),
-            ),
+
             SliverToBoxAdapter(
               child: _buildBoardingPassCard(context),
             ),
-            const SliverToBoxAdapter(
-              child: _AcceptedBookingBanner(),
-            ),
+
             const SliverToBoxAdapter(
               child: _WeightUpdateAttentionBanner(),
             ),
@@ -729,77 +728,6 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     );
   }
 
-  Widget _buildFlightDemoCard(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.spaceMd,
-        AppTheme.spaceSm,
-        AppTheme.spaceMd,
-        0,
-      ),
-      child: InkWell(
-        onTap: () => Navigator.of(context).pushNamed('/flight-demo'),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: AppTheme.primaryGradient,
-            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-            boxShadow: AppTheme.shadowMd,
-          ),
-          padding: const EdgeInsets.all(AppTheme.spaceLg),
-          child: Row(
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(
-                  Icons.flight_takeoff_rounded,
-                  color: Colors.white,
-                  size: 38,
-                ),
-              ),
-              const SizedBox(width: AppTheme.spaceMd),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'FlightDemo',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Découvrez la fiche vol d\'un colis en démo.',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppTheme.spaceSm),
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: Colors.white70,
-                size: 18,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildBoardingPassCard(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -885,8 +813,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
           if (userId == null) return const SizedBox.shrink();
 
           final subAsync = ref.watch(
-            deliverySubscriptionProvider(
-                (userId: userId, role: 'client')),
+            deliverySubscriptionProvider((userId: userId, role: 'client')),
           );
 
           return subAsync.when(
@@ -895,19 +822,16 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 final daysLeft =
                     sub.expiresAt.difference(DateTime.now()).inDays;
                 return InkWell(
-                  onTap: () =>
-                      _showSubscriptionSheet(context, ref, userId),
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.radiusLg),
+                  onTap: () => _showSubscriptionSheet(context, ref, userId),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusLg),
-                      border: Border.all(
-                          color: Colors.green.shade200, width: 1),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                      border:
+                          Border.all(color: Colors.green.shade200, width: 1),
                     ),
                     child: Row(
                       children: [
@@ -916,8 +840,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
@@ -946,19 +869,16 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               // Abonnement en attente de validation par le fondateur
               if (sub != null && sub.status == 'pending') {
                 return InkWell(
-                  onTap: () =>
-                      _showSubscriptionSheet(context, ref, userId),
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.radiusLg),
+                  onTap: () => _showSubscriptionSheet(context, ref, userId),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
                       color: Colors.amber.shade50,
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusLg),
-                      border: Border.all(
-                          color: Colors.amber.shade200, width: 1),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                      border:
+                          Border.all(color: Colors.amber.shade200, width: 1),
                     ),
                     child: Row(
                       children: [
@@ -967,8 +887,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
@@ -997,10 +916,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               }
               // Pas d'abonnement → card CTA
               return InkWell(
-                onTap: () =>
-                    _showSubscriptionSheet(context, ref, userId),
-                borderRadius:
-                    BorderRadius.circular(AppTheme.radiusLg),
+                onTap: () => _showSubscriptionSheet(context, ref, userId),
+                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                 child: Ink(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -1009,20 +926,17 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                         Colors.orange.shade500,
                       ],
                     ),
-                    borderRadius:
-                        BorderRadius.circular(AppTheme.radiusLg),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                     boxShadow: AppTheme.shadowMd,
                   ),
-                  padding:
-                      const EdgeInsets.all(AppTheme.spaceLg),
+                  padding: const EdgeInsets.all(AppTheme.spaceLg),
                   child: Row(
                     children: [
                       Container(
                         width: 52,
                         height: 52,
                         decoration: BoxDecoration(
-                          color:
-                              Colors.white.withValues(alpha: 0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: const Icon(
@@ -1034,8 +948,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                       const SizedBox(width: AppTheme.spaceMd),
                       const Expanded(
                         child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Activer l\'abonnement',
@@ -1071,7 +984,10 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             loading: () => const SizedBox.shrink(),
             error: (_, __) => Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppTheme.spaceMd, AppTheme.spaceSm, AppTheme.spaceMd, 0,
+                AppTheme.spaceMd,
+                AppTheme.spaceSm,
+                AppTheme.spaceMd,
+                0,
               ),
               child: InkWell(
                 borderRadius: BorderRadius.circular(AppTheme.radiusLg),
@@ -1088,7 +1004,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                   child: Row(
                     children: [
                       Container(
-                        width: 52, height: 52,
+                        width: 52,
+                        height: 52,
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(14),
@@ -1102,11 +1019,14 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('Activer l\'abonnement',
-                                style: TextStyle(color: Colors.white,
-                                    fontSize: 16, fontWeight: FontWeight.w800)),
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800)),
                             SizedBox(height: 4),
                             Text('Choisissez un pack d\'abonnement',
-                                style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 12)),
                           ],
                         ),
                       ),
@@ -1492,9 +1412,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 ),
               )
           : null,
-      onShare: () => ref
-          .read(offerShareServiceProvider)
-          .shareOffer(context, shipment),
+      onShare: () =>
+          ref.read(offerShareServiceProvider).shareOffer(context, shipment),
     );
   }
 
@@ -1522,7 +1441,7 @@ class _ClientWalletCard extends ConsumerWidget {
 
     return WalletCard(
       title: 'Portefeuille',
-      mainLabel: 'Total dépensé',
+      mainLabel: 'Total',
       mainValue: '${data.paid.toStringAsFixed(0)} $currency',
       badgeLabel: data.due > 0
           ? 'À payer : ${data.due.toStringAsFixed(0)} $currency'
@@ -1631,10 +1550,9 @@ class _AcceptedBookingBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bookings = ref.watch(activeTrackingBookingsProvider);
-    final accepted = bookings.valueOrNull
-            ?.where((b) => b.status == 'accepted')
-            .toList() ??
-        const <Booking>[];
+    final accepted =
+        bookings.valueOrNull?.where((b) => b.status == 'accepted').toList() ??
+            const <Booking>[];
     if (accepted.isEmpty) return const SizedBox.shrink();
     final b = accepted.first;
 
@@ -1646,14 +1564,14 @@ class _AcceptedBookingBanner extends ConsumerWidget {
         0,
       ),
       child: InkWell(
-        onTap: () => Navigator.of(context)
-            .pushNamed('/tracking', arguments: b.id),
+        onTap: () =>
+            Navigator.of(context).pushNamed('/tracking', arguments: b.id),
         borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(AppTheme.spaceMd),
           decoration: BoxDecoration(
-            gradient: AppTheme.successGradient,
+            gradient: AppTheme.successGradientBanner,
             borderRadius: BorderRadius.circular(AppTheme.radiusMd),
             boxShadow: [
               BoxShadow(
@@ -1683,11 +1601,14 @@ class _AcceptedBookingBanner extends ConsumerWidget {
                         fontSize: 15,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${b.productName} : l\'expéditeur a pris en charge votre '
-                      'colis. Le QR est disponible.',
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        '${b.productName} : l\'expéditeur a pris en charge votre '
+                        'colis. Le QR est disponible.',
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
+                      ),
                     ),
                   ],
                 ),
@@ -1725,8 +1646,8 @@ class _WeightUpdateAttentionBanner extends ConsumerWidget {
         0,
       ),
       child: InkWell(
-        onTap: () => Navigator.of(context)
-            .pushNamed('/tracking', arguments: b.id),
+        onTap: () =>
+            Navigator.of(context).pushNamed('/tracking', arguments: b.id),
         borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         child: Container(
           width: double.infinity,
@@ -1734,8 +1655,8 @@ class _WeightUpdateAttentionBanner extends ConsumerWidget {
           decoration: BoxDecoration(
             color: AppTheme.errorColor.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-            border: Border.all(
-                color: AppTheme.errorColor.withValues(alpha: 0.35)),
+            border:
+                Border.all(color: AppTheme.errorColor.withValues(alpha: 0.35)),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1818,7 +1739,7 @@ class _ParcelProgressRow extends ConsumerWidget {
                 ),
                 if (latest != null)
                   Text(
-                    TrackingScreen.statusLabel(latest.status),
+                     TrackingScreen.statusLabel(latest.status),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,

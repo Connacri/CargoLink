@@ -7,7 +7,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../core/theme/app_theme.dart';
 import '../core/widgets/boarding_passes_complete_v2.dart';
-import '../core/widgets/flightwidgetmodel.dart';
 import '../providers/index.dart';
 import '../data/services/fcm_service.dart';
 import '../screens/auth/account_gate_screen.dart';
@@ -131,8 +130,6 @@ class CargoLinkApp extends ConsumerWidget {
         '/my-ads': (context) => const ShipperAdsScreen(),
         '/delivery-requests': (context) => const DeliveryRequestScreen(),
         '/delivery-browse': (context) => const DeliveryBrowseScreen(),
-        '/flight-demo': (context) =>
-            FlightDetailPage(flight: FlightDetailModel.demo()),
         '/Boarding-PassApp': (context) => const BoardingPassDemoPage(),
       },
       debugShowCheckedModeBanner: false,

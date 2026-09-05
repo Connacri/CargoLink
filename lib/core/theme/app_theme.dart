@@ -55,6 +55,11 @@ class AppTheme {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+  static const LinearGradient successGradientBanner = LinearGradient(
+    colors: [Color(0xFF06C67F), Color(0xFFAEE1D3)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
   static const LinearGradient warningGradient = LinearGradient(
     colors: [Color(0xFFF59E0B), Color(0xFFF97316)],
