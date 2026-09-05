@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.44** |
-| Code de version (versionCode) | **274** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `0e45c88` |
-| Statut CI | À publier au prochain push → release `v1.1.43` sur GitHub |
+| Version (versionName) | **1.1.45** |
+| Code de version (versionCode) | **277** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `5e1d438` |
+| Statut CI | À publier au prochain push → release `v1.1.45` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,22 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.45
+
+- **Push FCM réparés (HTTP v1, sans Edge Function)** : les notifications push du
+  chat et du suivi de colis passent désormais par la fonction Postgres
+  `notify_push()` (appelée via `pg_net`, extension activée). Google a supprimé
+  l'API FCM legacy (`/fcm/send`) en 2024 : les push de l'app échouaient
+  silencieusement depuis cette date. La nouvelle infrastructure stocke un token
+  OAuth2 (grant `refresh_token`, client Google « Desktop ») dans le Vault
+  Supabase, le regroupe dans un cache en base, et envoie chaque message sur
+  `fcm.googleapis.com/v1/projects/cargolink-23dd3/messages:send`. L'edge
+  `send-push` est laissée en place mais n'est plus appelée.
+- **Paramètres d'affichage (Fondateur)** : nouvel écran accessible depuis le
+  dashboard super admin permettant d'afficher ou de masquer par rôle les
+  bannières, cartes et boutons des écrans d'accueil et du profil (boutons
+  radio « Afficher / Masquer », 7 réglages stockés dans `platform_settings`).
 
 ### Version 1.1.44
 
