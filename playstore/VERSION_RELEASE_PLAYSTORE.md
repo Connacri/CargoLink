@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.47** |
-| Code de version (versionCode) | **282** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `6d666e5` |
-| Statut CI | À publier au prochain push → release `v1.1.47` sur GitHub |
+| Version (versionName) | **1.1.48** |
+| Code de version (versionCode) | **285** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `f1bda95` |
+| Statut CI | À publier au prochain push → release `v1.1.48` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,22 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.48
+
+- **Retour du sign-in Firebase pour Google et email** : la tentative de passer la
+  connexion Google par Supabase échouait car le provider Google est désactivé
+  côté Supabase (`/auth/v1/settings` → `google: false`). Le bouton Google
+  repasse donc par `google_sign_in` + Firebase Auth, et l'email/password par
+  Firebase Auth également — tous les identifiants se retrouvent dans le pont
+  Supabase via l'edge `auth-exchange-firebase` (toujours déployée), qui mappe le
+  UID Firebase vers des UUID v5 identiques aux id existants de `public.users`.
+  Supabase reste la couche de données (DB + Storage) avec la RLS `auth.uid()`.
+- **Compatibilité totale avec les comptes existants** : tous les utilisateurs de
+  la base ont des id dérivés du `firebase_uid` et des mots de passe déposés dans
+  Firebase — le pont les réactive sans aucune migration ni réinitialisation.
+- La migration « native » de la v1.1.47 est retirée (elle aurait verrouillé les
+  13 comptes existants : mots de passe GoTrue dérivés inconnus).
 
 ### Version 1.1.47
 
