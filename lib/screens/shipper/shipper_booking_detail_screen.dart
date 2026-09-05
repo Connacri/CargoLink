@@ -907,15 +907,6 @@ class _ShipperBookingDetailScreenState
 
   Future<void> _confirm(Booking booking) => _run(() async {
         await ref.read(bookingServiceProvider).confirmBooking(booking.id);
-        // Étape de suivi : la commande est validée, le colis attend d'être
-        // remis à l'expéditeur.
-        await ref.read(trackingServiceProvider).addTrackingUpdate(
-              bookingId: booking.id,
-              status: 'order_processed',
-              notes: 'Commande confirmée — en attente de collecte du colis '
-                  'ou marchandises',
-              location: booking.shipment?.originCountry,
-            );
         await ref.read(notificationServiceProvider).notifyClientBookingConfirmed(
               clientId: booking.clientId,
               bookingId: booking.id,
@@ -969,12 +960,6 @@ class _ShipperBookingDetailScreenState
       await ref
           .read(bookingServiceProvider)
           .collectBooking(booking.id, collectedPhotoUrl: url);
-      await ref.read(trackingServiceProvider).addTrackingUpdate(
-            bookingId: booking.id,
-            status: 'collected',
-            notes: 'Colis collecté dans le pays d\'origine',
-            location: booking.shipment?.originCountry,
-          );
       await ref.read(notificationServiceProvider).notifyClientCollected(
             clientId: booking.clientId,
             bookingId: booking.id,
@@ -1001,13 +986,6 @@ class _ShipperBookingDetailScreenState
               booking.id,
               verifiedWeightKg: result.weight,
             );
-        await ref.read(trackingServiceProvider).addTrackingUpdate(
-              bookingId: booking.id,
-              status: 'verified',
-              notes:
-                  'Colis vérifié : ${result.weight.toStringAsFixed(1)} kg, articles conformes',
-              location: booking.shipment?.originCountry,
-            );
         await ref
             .read(notificationServiceProvider)
             .notifyClientBookingAccepted(
@@ -1024,12 +1002,6 @@ class _ShipperBookingDetailScreenState
           await ref
               .read(bookingServiceProvider)
               .returnBookingForWeight(booking.id, reason: result.reason);
-          await ref.read(trackingServiceProvider).addTrackingUpdate(
-                bookingId: booking.id,
-                status: 'verification_returned',
-                notes: 'Écart de poids signalé : ${result.reason}',
-                location: booking.shipment?.originCountry,
-              );
           await ref
               .read(notificationServiceProvider)
               .notifyClientWeightUpdateRequired(
@@ -1041,14 +1013,6 @@ class _ShipperBookingDetailScreenState
           await ref.read(bookingServiceProvider).returnBooking(
                 booking.id,
                 reason: result.reason,
-              );
-          await ref
-              .read(trackingServiceProvider)
-              .addTrackingUpdate(
-                bookingId: booking.id,
-                status: 'verification_returned',
-                notes: 'Colis renvoyé : ${result.reason}',
-                location: booking.shipment?.originCountry,
               );
           await ref
               .read(notificationServiceProvider)
@@ -1112,13 +1076,6 @@ class _ShipperBookingDetailScreenState
             courierPhone: info.phone,
             courierTrackingCode: info.tracking,
           );
-      await ref.read(trackingServiceProvider).addTrackingUpdate(
-            bookingId: booking.id,
-            status: 'out_for_delivery',
-            notes:
-                'Colis déposé chez ${info.name} (suivi ${info.tracking})',
-            location: booking.shipment?.destinationCity,
-          );
       await ref.read(notificationServiceProvider).notifyClientCourierDeposited(
             clientId: booking.clientId,
             bookingId: booking.id,
@@ -1140,12 +1097,6 @@ class _ShipperBookingDetailScreenState
 
   Future<void> _markShipped(Booking booking) => _run(() async {
         await ref.read(bookingServiceProvider).markAsShipped(booking.id);
-        await ref.read(trackingServiceProvider).addTrackingUpdate(
-              bookingId: booking.id,
-              status: 'departed_origin',
-              notes: 'Colis expédié depuis ${booking.shipment?.originCountry}',
-              location: booking.shipment?.originCountry,
-            );
         await ref
             .read(notificationServiceProvider)
             .notifyClientShipmentDispatched(

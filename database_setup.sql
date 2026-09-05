@@ -86,7 +86,8 @@ CREATE TABLE IF NOT EXISTS bookings (
   requested_weight_kg DECIMAL(10, 2) NOT NULL CHECK (requested_weight_kg > 0),
   allocated_weight_kg DECIMAL(10, 2) NOT NULL CHECK (allocated_weight_kg > 0),
   total_price DECIMAL(12, 2) NOT NULL,
-  status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'shipped', 'delivered', 'cancelled')),
+  status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'collected', 'verifying', 'accepted', 'shipped', 'arrived', 'out_for_delivery', 'delivered', 'cancelled')),
+  verification_status VARCHAR(50) NOT NULL DEFAULT 'none' CHECK (verification_status IN ('none', 'awaiting_verification', 'verifying', 'accepted', 'returned', 'waiting_client_update')),
   payment_status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'refunded')),
   delivery_photo_url TEXT,
   receipt_photo_url TEXT,
@@ -110,7 +111,7 @@ CREATE TABLE IF NOT EXISTS shipment_tracking (
   booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
   latitude DECIMAL(10, 8),
   longitude DECIMAL(11, 8),
-  status VARCHAR(50) NOT NULL CHECK (status IN ('collected', 'in_transit', 'customs_cleared', 'delivered')),
+  status VARCHAR(50) NOT NULL CHECK (status IN ('order_processed', 'collected', 'verified', 'verification_returned', 'departed_origin', 'in_transit', 'arrived_destination', 'customs_cleared', 'out_for_delivery', 'delivered', 'cancelled')),
   timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
   notes TEXT,
   FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE

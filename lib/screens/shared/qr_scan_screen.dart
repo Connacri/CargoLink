@@ -211,12 +211,6 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
         );
     final bookingService = ref.read(bookingServiceProvider);
     await bookingService.collectBooking(booking.id, collectedPhotoUrl: url);
-    await ref.read(trackingServiceProvider).addTrackingUpdate(
-          bookingId: booking.id,
-          status: 'collected',
-          notes: 'Colis collecté dans le pays d\'origine',
-          location: booking.shipment?.originCountry,
-        );
     await ref.read(notificationServiceProvider).notifyClientCollected(
           clientId: booking.clientId,
           bookingId: booking.id,
@@ -229,12 +223,6 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
   Future<void> _confirmShipperPickup(Booking booking) async {
     final bookingService = ref.read(bookingServiceProvider);
     await bookingService.confirmInPersonPickup(booking.id);
-    await ref.read(trackingServiceProvider).addTrackingUpdate(
-          bookingId: booking.id,
-          status: 'delivered',
-          notes: 'Colis remis en main propre au client',
-          location: booking.shipment?.destinationCity,
-        );
     await ref.read(notificationServiceProvider).notifyClientShipmentDelivered(
           clientId: booking.clientId,
           bookingId: booking.id,

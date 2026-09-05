@@ -3138,15 +3138,6 @@ class _ManageBookingCard extends ConsumerWidget {
   Future<void> _confirmBooking(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(bookingServiceProvider).confirmBooking(booking.id);
-      // Étape de suivi : la commande est validée, le colis attend d'être
-      // remis à l'expéditeur.
-      await ref.read(trackingServiceProvider).addTrackingUpdate(
-            bookingId: booking.id,
-            status: 'order_processed',
-            notes: 'Commande confirmée — en attente de collecte du colis '
-                'ou marchandises',
-            location: booking.shipment?.originCountry,
-          );
       if (!context.mounted) return;
       _reload(context, ref);
       _notifyClient(context, ref);
@@ -3159,12 +3150,6 @@ class _ManageBookingCard extends ConsumerWidget {
   Future<void> _markShipped(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(bookingServiceProvider).markAsShipped(booking.id);
-      await ref.read(trackingServiceProvider).addTrackingUpdate(
-            bookingId: booking.id,
-            status: 'departed_origin',
-            notes: 'Colis expédié depuis ${booking.shipment?.originCountry}',
-            location: booking.shipment?.originCountry,
-          );
       await ref
           .read(notificationServiceProvider)
           .notifyClientShipmentDispatched(
@@ -3194,12 +3179,6 @@ class _ManageBookingCard extends ConsumerWidget {
       await ref
           .read(bookingServiceProvider)
           .markAsDelivered(booking.id, deliveryPhotoUrl: url);
-      await ref.read(trackingServiceProvider).addTrackingUpdate(
-            bookingId: booking.id,
-            status: 'delivered',
-            notes: 'Colis livré à ${booking.shipment?.destinationCity}',
-            location: booking.shipment?.destinationCity,
-          );
       await ref.read(notificationServiceProvider).notifyClientShipmentDelivered(
             clientId: booking.clientId,
             bookingId: booking.id,

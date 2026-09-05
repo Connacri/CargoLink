@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../core/widgets/qr_ticket_dialog.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/enums/app_enums.dart';
+import '../../core/enums/lifecycle_step.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/micro_badge.dart';
@@ -17,74 +19,10 @@ class TrackingScreen extends ConsumerWidget {
 
   const TrackingScreen({super.key, required this.bookingId});
 
-  /// Ordered list of possible tracking stages (DHL/UPS/FedEx style).
-  static const List<String> _order = [
-    'order_processed',
-    'collected',
-    'departed_origin',
-    'in_transit',
-    'arrived_destination',
-    'customs_cleared',
-    'out_for_delivery',
-    'delivered',
-  ];
+  static String statusLabel(String status) => LifecycleStep.labelFor(status);
 
-  static String statusLabel(String status) {
-    switch (status) {
-      case 'order_processed':
-        return 'Commande traitée';
-      case 'collected':
-        return 'Colis récupéré';
-      case 'verified':
-        return 'Colis vérifié';
-      case 'verification_returned':
-        return 'Vérification : action requise';
-      case 'departed_origin':
-        return 'Départ du pays d\'origine';
-      case 'in_transit':
-        return 'En transit';
-      case 'arrived_destination':
-        return 'Arrivé à destination';
-      case 'customs_cleared':
-        return 'Douane passée';
-      case 'out_for_delivery':
-        return 'En cours de livraison';
-      case 'delivered':
-        return 'Livré';
-      default:
-        return status;
-    }
-  }
-
-  /// Icon per stage: package / truck / flight / plane / delivery.
-  static IconData statusIcon(String status) {
-    switch (status) {
-      case 'order_processed':
-        return Icons.inventory_2_outlined;
-      case 'collected':
-        return Icons.move_to_inbox_outlined;
-      case 'departed_origin':
-        return Icons.flight_takeoff;
-      case 'in_transit':
-        return Icons.flight;
-      case 'arrived_destination':
-        return Icons.flight_land;
-      case 'customs_cleared':
-        return Icons.verified_outlined;
-      case 'out_for_delivery':
-        return Icons.flight_takeoff_outlined;
-      case 'delivered':
-        return Icons.check_circle_outline;
-      default:
-        return Icons.circle_outlined;
-    }
-  }
-
-  /// 0-based stage index for the progress bar.
-  static int stageIndex(String status) {
-    final i = _order.indexOf(status);
-    return i < 0 ? 0 : i;
-  }
+  /// 0..[LifecycleStep.stageCount]-1 rang de progression du statut de suivi.
+  static int stageIndex(String status) => LifecycleStep.stageIndex(status);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -303,11 +241,12 @@ class TrackingScreen extends ConsumerWidget {
   }
 
   Widget _buildProgressBar(int latestIndex) {
+    const steps = LifecycleStep.mainline;
     return GlassCard(
       child: Row(
-        children: List.generate(_order.length, (i) {
+        children: List.generate(steps.length, (i) {
           final reached = i <= latestIndex;
-          final isLast = i == _order.length - 1;
+          final isLast = i == steps.length - 1;
           return Expanded(
             child: Row(
               children: [
@@ -329,8 +268,8 @@ class TrackingScreen extends ConsumerWidget {
                             width: 1.5,
                           ),
                         ),
-                        child: Icon(
-                          statusIcon(_order[i]),
+                        child: FaIcon(
+                          steps[i].icon,
                           size: 15,
                           color: reached
                               ? Colors.white
@@ -339,7 +278,7 @@ class TrackingScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: AppTheme.spaceXs),
                       Text(
-                        stageLabel(_order[i]),
+                        steps[i].shortLabel,
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         style: TextStyle(
@@ -368,29 +307,6 @@ class TrackingScreen extends ConsumerWidget {
         }),
       ),
     );
-  }
-
-  String stageLabel(String status) {
-    switch (status) {
-      case 'order_processed':
-        return 'Traitée';
-      case 'collected':
-        return 'Récupéré';
-      case 'departed_origin':
-        return 'Départ';
-      case 'in_transit':
-        return 'Transit';
-      case 'arrived_destination':
-        return 'Arrivée';
-      case 'customs_cleared':
-        return 'Douane';
-      case 'out_for_delivery':
-        return 'Livraison';
-      case 'delivered':
-        return 'Livré';
-      default:
-        return status;
-    }
   }
 
   void _openShipperChat(BuildContext context, Booking booking) {

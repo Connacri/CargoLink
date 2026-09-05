@@ -576,7 +576,7 @@ class ShipmentTracking {
   final double? latitude;
   final double? longitude;
   final String
-      status; // order_processed, collected, verified, verification_returned, departed_origin, in_transit, arrived_destination, customs_cleared, out_for_delivery, delivered
+      status; // order_processed, collected, verified, verification_returned, departed_origin, in_transit, arrived_destination, customs_cleared, out_for_delivery, delivered, cancelled
   final DateTime timestamp;
   final String? notes;
   final String? location;

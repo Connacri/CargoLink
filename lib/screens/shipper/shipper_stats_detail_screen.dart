@@ -854,13 +854,6 @@ class _BookingTile extends ConsumerWidget {
         ref,
         () async {
           await ref.read(bookingServiceProvider).markAsShipped(booking.id);
-          await ref.read(trackingServiceProvider).addTrackingUpdate(
-                bookingId: booking.id,
-                status: 'departed_origin',
-                notes:
-                    'Colis expédié depuis ${booking.shipment?.originCountry}',
-                location: booking.shipment?.originCountry,
-              );
           await ref
               .read(notificationServiceProvider)
               .notifyClientShipmentDispatched(
@@ -889,12 +882,6 @@ class _BookingTile extends ConsumerWidget {
         await ref
             .read(bookingServiceProvider)
             .markAsDelivered(booking.id, deliveryPhotoUrl: url);
-        await ref.read(trackingServiceProvider).addTrackingUpdate(
-              bookingId: booking.id,
-              status: 'delivered',
-              notes: 'Colis livré à ${booking.shipment?.destinationCity}',
-              location: booking.shipment?.destinationCity,
-            );
         await ref
             .read(notificationServiceProvider)
             .notifyClientShipmentDelivered(

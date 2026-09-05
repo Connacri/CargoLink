@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/enums/lifecycle_step.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/booking_acceptance_chip.dart';
@@ -19,7 +20,6 @@ import '../shipper/shipper_public_profile_screen.dart';
 import '../chat/chat_screen.dart';
 import '../shared/qr_scan_screen.dart';
 import 'delivery_request_screen.dart';
-import 'tracking_screen.dart';
 
 /// Smart sort applied to the (server-side filtered) search feed.
 enum ClientSort { none, price, fastest, topRated }
@@ -1707,16 +1707,14 @@ class _ParcelProgressRow extends ConsumerWidget {
 
   const _ParcelProgressRow({required this.booking});
 
-  static const int _stageCount = 8;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final events = ref.watch(trackingHistoryProvider(booking.id)).valueOrNull ??
         const <ShipmentTracking>[];
     final latest = events.isEmpty ? null : events.last;
     final progress =
-        (TrackingScreen.stageIndex(latest?.status ?? 'order_processed') + 1) /
-            _stageCount;
+        (LifecycleStep.stageIndex(latest?.status ?? 'order_processed') + 1) /
+            LifecycleStep.stageCount;
 
     return InkWell(
       onTap: () =>
@@ -1739,7 +1737,7 @@ class _ParcelProgressRow extends ConsumerWidget {
                 ),
                 if (latest != null)
                   Text(
-                     TrackingScreen.statusLabel(latest.status),
+                    LifecycleStep.labelFor(latest.status),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,

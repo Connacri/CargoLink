@@ -1,36 +1,13 @@
 import 'package:flutter/material.dart';
+import '../core/enums/lifecycle_step.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/ui_kit.dart';
 import '../data/models/models.dart';
 
 /// Libellés FR des statuts bruts de `shipment_tracking` (partagés par tous les
 /// écrans qui affichent une frise : suivi détaillé, cartes d'accueil, listes).
-String shipmentStatusLabel(String status) {
-  switch (status) {
-    case 'order_processed':
-      return 'Commande traitée';
-    case 'collected':
-      return 'Colis récupéré';
-    case 'verified':
-      return 'Colis vérifié';
-    case 'verification_returned':
-      return 'Vérification : action requise';
-    case 'departed_origin':
-      return 'Départ du pays d\'origine';
-    case 'in_transit':
-      return 'En transit';
-    case 'arrived_destination':
-      return 'Arrivé à destination';
-    case 'customs_cleared':
-      return 'Douane passée';
-    case 'out_for_delivery':
-      return 'En cours de livraison';
-    case 'delivered':
-      return 'Livré';
-    default:
-      return status;
-  }
-}
+/// Délégué au modèle unifié [LifecycleStep].
+String shipmentStatusLabel(String status) => LifecycleStep.labelFor(status);
 
 /// Convertit les lignes brutes (chronologiques) de `shipment_tracking` en
 /// [TrackingEvent] prêts pour la frise : dernière entrée = en cours (ou

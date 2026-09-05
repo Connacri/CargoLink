@@ -14,6 +14,40 @@ class BookingService {
   final _logger = Logger();
   final ShipmentService _shipmentService = ShipmentService();
   final PaymentService _paymentService = PaymentService();
+  final TrackingService _trackingService = TrackingService();
+
+  /// Écrit un événement de suivi pour une commande (modèle unifié LifecycleStep).
+  ///
+  /// Tous les événements de la frise sont désormais écrits ICI, dans le
+  /// service (et plus dans les écrans), pour garantir une trace cohérente et
+  /// dédupliquée quel que soit le parcours (dashboard expéditeur, détail de
+  /// commande, stats, scan QR, confirmation client).
+  ///
+  /// [skipIfLatest] saute l'écriture quand le dernier événement a déjà le même
+  /// statut (protection contre les doublons de `delivered` / `cancelled` quand
+  /// deux parcours confirment successivement la même fin de cycle).
+  Future<void> _writeTrackingEvent({
+    required String bookingId,
+    required String status,
+    double? latitude,
+    double? longitude,
+    String? notes,
+    String? location,
+    bool skipIfLatest = false,
+  }) async {
+    if (skipIfLatest) {
+      final latest = await _trackingService.getLatestTracking(bookingId);
+      if (latest?.status == status) return;
+    }
+    await _trackingService.addTrackingUpdate(
+      bookingId: bookingId,
+      status: status,
+      latitude: latitude,
+      longitude: longitude,
+      notes: notes,
+      location: location,
+    );
+  }
 
   // ============================================================================
   // BOOKING CREATION & MANAGEMENT
@@ -333,10 +367,22 @@ class BookingService {
     }
   }
 
-  /// Confirm booking (shipper accepts)
+  /// Confirm booking (shipper accepts). Writes the `order_processed` tracking
+  /// event so every timeline shows "Commande traitée" regardless of entry
+  /// point (dashboard, detail, stats).
   Future<Booking?> confirmBooking(String bookingId) async {
     try {
-      return await updateBookingStatus(bookingId, 'confirmed');
+      final updated = await updateBookingStatus(bookingId, 'confirmed');
+      if (updated != null) {
+        await _writeTrackingEvent(
+          bookingId: bookingId,
+          status: 'order_processed',
+          notes: 'Commande confirmée — en attente de collecte du colis '
+              'ou marchandises',
+          location: updated.shipment?.originCountry,
+        );
+      }
+      return updated;
     } catch (e) {
       _logger.e('Error confirming booking: $e');
       rethrow;
@@ -361,6 +407,19 @@ class BookingService {
       // Update booking status
       final updatedBooking =
           await updateBookingStatus(bookingId, 'cancelled');
+
+      // Événement de suivi « Annulé » — visible sur l'écran de suivi du
+      // client. Dédupliqué : si un autre parcours a déjà clôturé la commande
+      // en cancelled, on n'écrit pas deux fois.
+      await _writeTrackingEvent(
+        bookingId: bookingId,
+        status: 'cancelled',
+        notes: reason != null && reason.trim().isNotEmpty
+            ? 'Commande annulée : ${reason.trim()}'
+            : 'Commande annulée',
+        location: booking.shipment?.originCountry,
+        skipIfLatest: true,
+      );
 
       // Persist the refusal / cancellation reason (shipper or client).
       if (reason != null && reason.trim().isNotEmpty) {
@@ -392,10 +451,27 @@ class BookingService {
     }
   }
 
-  /// Mark booking as shipped
+  /// Mark booking as shipped. Writes the `departed_origin` tracking event then
+  /// the automatic `in_transit` event (the parcel is now flying/handling).
   Future<Booking?> markAsShipped(String bookingId) async {
     try {
-      return await updateBookingStatus(bookingId, 'shipped');
+      final updated = await updateBookingStatus(bookingId, 'shipped');
+      if (updated != null) {
+        await _writeTrackingEvent(
+          bookingId: bookingId,
+          status: 'departed_origin',
+          notes: 'Colis expédié depuis ${updated.shipment?.originCountry}',
+          location: updated.shipment?.originCountry,
+        );
+        // Événement automatique : dès que le colis a quitté le pays
+        // d'origine, il est « en transit » international.
+        await _writeTrackingEvent(
+          bookingId: bookingId,
+          status: 'in_transit',
+          notes: 'Colis en transit international',
+        );
+      }
+      return updated;
     } catch (e) {
       _logger.e('Error marking booking as shipped: $e');
       rethrow;
@@ -419,7 +495,14 @@ class BookingService {
           .select(
               '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
           .single();
-      return Booking.fromJson(response);
+      final booking = Booking.fromJson(response);
+      await _writeTrackingEvent(
+        bookingId: bookingId,
+        status: 'collected',
+        notes: 'Colis collecté dans le pays d\'origine',
+        location: booking.shipment?.originCountry,
+      );
+      return booking;
     } catch (e) {
       _logger.e('Error collecting booking: $e');
       rethrow;
@@ -453,7 +536,15 @@ class BookingService {
           .select(
               '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
           .single();
-      return Booking.fromJson(response);
+      final booking = Booking.fromJson(response);
+      await _writeTrackingEvent(
+        bookingId: bookingId,
+        status: 'verified',
+        notes: 'Colis vérifié : ${verifiedWeightKg.toStringAsFixed(1)} kg, '
+            'articles conformes',
+        location: booking.shipment?.originCountry,
+      );
+      return booking;
     } catch (e) {
       _logger.e('Error accepting booking: $e');
       rethrow;
@@ -476,7 +567,15 @@ class BookingService {
           .select(
               '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
           .single();
-      return Booking.fromJson(response);
+      final booking = Booking.fromJson(response);
+      await _writeTrackingEvent(
+        bookingId: bookingId,
+        status: 'verification_returned',
+        notes: 'Colis renvoyé : ${reason?.trim() ?? 'vérification non '
+            'conforme'}',
+        location: booking.shipment?.originCountry,
+      );
+      return booking;
     } catch (e) {
       _logger.e('Error returning booking: $e');
       rethrow;
@@ -502,7 +601,14 @@ class BookingService {
           .select(
               '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
           .single();
-      return Booking.fromJson(response);
+      final booking = Booking.fromJson(response);
+      await _writeTrackingEvent(
+        bookingId: bookingId,
+        status: 'verification_returned',
+        notes: 'Écart de poids signalé : ${reason?.trim() ?? 'poids à corriger'}',
+        location: booking.shipment?.originCountry,
+      );
+      return booking;
     } catch (e) {
       _logger.e('Error returning booking for weight: $e');
       rethrow;
@@ -545,7 +651,7 @@ class BookingService {
       {double? latitude, double? longitude, String? location}) async {
     try {
       final updated = await updateBookingStatus(bookingId, 'arrived');
-      await TrackingService().addTrackingUpdate(
+      await _writeTrackingEvent(
         bookingId: bookingId,
         status: 'arrived_destination',
         latitude: latitude,
@@ -555,6 +661,14 @@ class BookingService {
             ? 'Colis arrivé à destination ($location)'
             : 'Colis arrivé à destination',
       );
+      // Événement automatique : l'arrivée déclenche le passage en douane.
+      if (updated != null) {
+        await _writeTrackingEvent(
+          bookingId: bookingId,
+          status: 'customs_cleared',
+          notes: 'Colis passé la douane sans incident',
+        );
+      }
       return updated;
     } catch (e) {
       _logger.e('Error marking booking as arrived: $e');
@@ -587,7 +701,14 @@ class BookingService {
           .select(
               '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
           .single();
-      return Booking.fromJson(response);
+      final booking = Booking.fromJson(response);
+      await _writeTrackingEvent(
+        bookingId: bookingId,
+        status: 'out_for_delivery',
+        notes: 'Colis déposé chez $courierName (suivi $courierTrackingCode)',
+        location: booking.shipment?.destinationCity,
+      );
+      return booking;
     } catch (e) {
       _logger.e('Error depositing booking at courier: $e');
       rethrow;
@@ -614,7 +735,15 @@ class BookingService {
           .select(
               '*, shipments(*, shippers(*, users!shippers_user_id_fkey(*))), users!bookings_client_id_fkey(*)')
           .single();
-      return Booking.fromJson(response);
+      final booking = Booking.fromJson(response);
+      await _writeTrackingEvent(
+        bookingId: bookingId,
+        status: 'delivered',
+        notes: 'Colis remis en main propre au client',
+        location: booking.shipment?.destinationCity,
+        skipIfLatest: true,
+      );
+      return booking;
     } catch (e) {
       _logger.e('Error confirming in-person pickup: $e');
       rethrow;
@@ -625,11 +754,21 @@ class BookingService {
   Future<Booking?> markAsDelivered(String bookingId,
       {String? deliveryPhotoUrl}) async {
     try {
-      return await updateBookingStatus(
+      final updated = await updateBookingStatus(
         bookingId,
         'delivered',
         deliveryPhotoUrl: deliveryPhotoUrl,
       );
+      if (updated != null) {
+        await _writeTrackingEvent(
+          bookingId: bookingId,
+          status: 'delivered',
+          notes: 'Colis livré à ${updated.shipment?.destinationCity}',
+          location: updated.shipment?.destinationCity,
+          skipIfLatest: true,
+        );
+      }
+      return updated;
     } catch (e) {
       _logger.e('Error marking booking as delivered: $e');
       rethrow;
@@ -647,11 +786,13 @@ class BookingService {
       );
       // Événement de suivi « Livré avec succès » — visible sur toutes les
       // timelines (confirmation par QR / code de suivi ou depuis l'écran de
-      // suivi). Le badge vert de validation en découle côté client.
-      await TrackingService().addTrackingUpdate(
+      // suivi). Le badge vert de validation en découle côté client. Dédupliqué
+      // si l'expéditeur a déjà clôturé la livraison.
+      await _writeTrackingEvent(
         bookingId: bookingId,
         status: 'delivered',
         notes: 'Livré avec succès — réception confirmée par le client',
+        skipIfLatest: true,
       );
       return updated;
     } catch (e) {

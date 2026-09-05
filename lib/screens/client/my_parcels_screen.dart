@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../components/tracking_timeline.dart';
+import '../../core/enums/lifecycle_step.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/qr_booking.dart';
 import '../../core/widgets/booking_acceptance_chip.dart';
@@ -9,7 +10,6 @@ import '../../core/widgets/qr_ticket_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../data/models/models.dart';
 import '../../providers/index.dart';
-import '../client/tracking_screen.dart';
 
 /// Toutes les réservations du client (hors annulées), colis en cours d'abord
 /// puis livrés du plus récent au plus ancien. autoDispose → recalcul à chaque
@@ -143,7 +143,7 @@ class _ParcelTile extends ConsumerWidget {
 
     final statusColor = _statusColor(booking.status);
     final statusLabel = latest != null
-        ? TrackingScreen.statusLabel(latest.status)
+        ? LifecycleStep.labelFor(latest.status)
         : _statusFallbackLabel(booking.status);
 
     final originCountry = booking.shipment?.originCountry ?? '\u2014';
