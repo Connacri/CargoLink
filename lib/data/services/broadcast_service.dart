@@ -9,8 +9,9 @@ import 'package:logger/logger.dart';
 class BroadcastService {
   final _logger = Logger();
 
-  /// Send an announcement to every user. The authenticated caller must be an
-  /// `admin` or `super_admin` (the Edge Function enforces this server-side).
+  /// Send an announcement to the targeted audience. The authenticated caller
+  /// must be an `admin` or `super_admin` (enforced server-side by the
+  /// [broadcast_announce] Postgres function).
   ///
   /// [audience] targets roles ("all", "client", "shipper,admin", ...).
   /// [targetUserIds], when set, narrows the recipients to those exact users
@@ -22,16 +23,17 @@ class BroadcastService {
     List<String>? targetUserIds,
   }) async {
     try {
-      final response = await SupabaseConfig.client.functions
-          .invoke('broadcast', body: {
-        'title': title,
-        'message': message,
-        'audience': audience,
-        'target_user_ids': targetUserIds,
-      });
+      final response = await SupabaseConfig.client
+          .rpc('broadcast_announce', params: {
+            'p_title': title,
+            'p_message': message,
+            'p_audience': audience,
+            'p_target_user_ids': targetUserIds,
+          })
+          .timeout(const Duration(seconds: 60));
 
-      final data = response.data as Map<String, dynamic>? ?? const {};
-      _logger.i('Broadcast sent: ${data['ok']}');
+      final data = response as Map<String, dynamic>? ?? const {};
+      _logger.i('Broadcast sent: ${data['ok']} (${data['notified']} notified)');
       return data['id'] as String?;
     } catch (e) {
       _logger.e('Error sending broadcast: $e');
