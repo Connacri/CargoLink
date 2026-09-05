@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.42** |
-| Code de version (versionCode) | **268** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `ca1c978` |
-| Statut CI | À publier au prochain push → release `v1.1.42` sur GitHub |
+| Version (versionName) | **1.1.43** |
+| Code de version (versionCode) | **271** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `a96a534` |
+| Statut CI | À publier au prochain push → release `v1.1.43` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,15 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.43
+
+- **Correction de compilation** : un commit direct sur GitHub (« Update main.dart »)
+  avait commenté partiellement l'appel `SystemChrome.setSystemUIOverlayStyle`,
+  laissant des lignes « orphelines » qui cassaient la syntaxe de `lib/main.dart`
+  (échec du build Web/APK/AAB de la CI). Le bloc est désormais commenté
+  proprement et l'import `flutter/services.dart` devenu inutile a été retiré.
+  Analyse (`flutter analyze`) : 0 issue — tests : 24/24.
 
 ### Version 1.1.42
 
