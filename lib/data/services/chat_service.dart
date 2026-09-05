@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:uuid/uuid.dart';
 import '../models/models.dart';
@@ -373,8 +371,9 @@ class ChatService {
     }
   }
 
-  /// Fire an FCM push to all devices of [userId] via the `send-push` Edge
-  /// Function. Best-effort: a failure never blocks the chat flow.
+  /// Fire an FCM push (HTTP v1) to all devices of [userId] via the
+  /// `notify_push` Postgres function (pg_net). Best-effort: a failure never
+  /// blocks the chat flow.
   Future<void> _sendPush({
     required String userId,
     required String title,
@@ -382,18 +381,15 @@ class ChatService {
     Map<String, String> data = const {},
   }) async {
     try {
-      await http
-          .post(
-            Uri.parse(
-              '${SupabaseConfig.supabaseUrl}/functions/v1/send-push',
-            ),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'userId': userId,
-              'title': title,
-              'message': message,
-              'data': data,
-            }),
+      await _supabase
+          .rpc(
+            'notify_push',
+            params: {
+              'p_user_id': userId,
+              'p_title': title,
+              'p_message': message,
+              'p_data': data,
+            },
           )
           .timeout(const Duration(seconds: 10));
     } catch (e) {
