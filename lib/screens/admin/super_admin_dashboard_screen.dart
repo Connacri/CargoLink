@@ -11,6 +11,7 @@ import '../../core/widgets/chat_widgets.dart';
 import 'entity_list_screen.dart';
 import 'user_details_screen.dart';
 import 'platform_settings_screen.dart';
+import 'display_settings_screen.dart';
 import 'verification_center_screen.dart';
 import 'commission_screen.dart';
 import 'inventory_screen.dart';
@@ -252,6 +253,10 @@ class _SuperAdminDashboardScreenState
                     child: _SectionTitle(title: 'Paramètres plateforme'),
                   ),
                   SliverToBoxAdapter(child: _PlatformSettingsShortcut()),
+                  SliverToBoxAdapter(
+                    child: _SectionTitle(title: 'Paramètres d\'affichage'),
+                  ),
+                  SliverToBoxAdapter(child: _DisplaySettingsShortcut()),
                   SliverToBoxAdapter(
                     child: _SectionTitle(title: 'Zone de danger'),
                   ),
@@ -3462,6 +3467,42 @@ class _PlatformSettingsShortcut extends StatelessWidget {
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => const PlatformSettingsScreen(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// DISPLAY SETTINGS SHORTCUT
+// ============================================================================
+
+class _DisplaySettingsShortcut extends StatelessWidget {
+  const _DisplaySettingsShortcut();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+      child: GlassCard(
+        padding: EdgeInsets.zero,
+        child: ListTile(
+          leading: const AnimatedIconDot(
+            icon: Icons.visibility_rounded,
+            color: AppTheme.accentColor,
+          ),
+          title: const Text('Afficher / masquer les éléments'),
+          subtitle: const Text(
+            'Bannières, cartes et boutons selon le rôle (boutons radio)',
+            style: AppTheme.caption,
+          ),
+          trailing: const Icon(Icons.chevron_right,
+              color: AppTheme.textSecondaryColor),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const DisplaySettingsScreen(),
             ),
           ),
         ),

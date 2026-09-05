@@ -33,6 +33,17 @@ class PlatformSettings {
   /// section parrainage est masquée dans l'app (même si un code existe).
   final bool referralProgramActive;
 
+  /// Visibilité par rôle des bannières / cartes / boutons des écrans d'accueil
+  /// et du profil — pilotée par le Fondateur depuis « Paramètres d'affichage »
+  /// (boutons radio). Défaut : masqué.
+  final bool showClientHomeDeliveryRequest;
+  final bool showClientHomeSubscription;
+  final bool showShipperHomeSubscription;
+  final bool showShipperHomePublishAd;
+  final bool showShipperHomeDeliveryRequests;
+  final bool showProfileSubscription;
+  final bool showProfileReferral;
+
   const PlatformSettings({
     this.commissionPercent = 5.0,
     this.minPricePerKg = 500.0,
@@ -44,6 +55,13 @@ class PlatformSettings {
     this.adCustomVariablePrice = 0.0,
     this.referralCommissionPercent = 50.0,
     this.referralProgramActive = false,
+    this.showClientHomeDeliveryRequest = false,
+    this.showClientHomeSubscription = false,
+    this.showShipperHomeSubscription = false,
+    this.showShipperHomePublishAd = false,
+    this.showShipperHomeDeliveryRequests = false,
+    this.showProfileSubscription = false,
+    this.showProfileReferral = false,
   });
 
   static const List<String> _keys = [
@@ -57,6 +75,13 @@ class PlatformSettings {
     'ad_custom_variable_price',
     'referral_commission_percent',
     'referral_program_active',
+    'show_client_home_delivery_request',
+    'show_client_home_subscription',
+    'show_shipper_home_subscription',
+    'show_shipper_home_publish_ad',
+    'show_shipper_home_delivery_requests',
+    'show_profile_subscription',
+    'show_profile_referral',
   ];
 
   factory PlatformSettings.fromRows(List<Map<String, dynamic>> rows) {
@@ -91,6 +116,15 @@ class PlatformSettings {
       adCustomVariablePrice: d('ad_custom_variable_price', 0.0),
       referralCommissionPercent: d('referral_commission_percent', 50.0),
       referralProgramActive: b('referral_program_active', false),
+      showClientHomeDeliveryRequest:
+          b('show_client_home_delivery_request', false),
+      showClientHomeSubscription: b('show_client_home_subscription', false),
+      showShipperHomeSubscription: b('show_shipper_home_subscription', false),
+      showShipperHomePublishAd: b('show_shipper_home_publish_ad', false),
+      showShipperHomeDeliveryRequests:
+          b('show_shipper_home_delivery_requests', false),
+      showProfileSubscription: b('show_profile_subscription', false),
+      showProfileReferral: b('show_profile_referral', false),
     );
   }
 
@@ -107,6 +141,15 @@ class PlatformSettings {
       'ad_custom_variable_price': adCustomVariablePrice.toString(),
       'referral_commission_percent': referralCommissionPercent.toString(),
       'referral_program_active': referralProgramActive.toString(),
+      'show_client_home_delivery_request':
+          showClientHomeDeliveryRequest.toString(),
+      'show_client_home_subscription': showClientHomeSubscription.toString(),
+      'show_shipper_home_subscription': showShipperHomeSubscription.toString(),
+      'show_shipper_home_publish_ad': showShipperHomePublishAd.toString(),
+      'show_shipper_home_delivery_requests':
+          showShipperHomeDeliveryRequests.toString(),
+      'show_profile_subscription': showProfileSubscription.toString(),
+      'show_profile_referral': showProfileReferral.toString(),
     };
   }
 
