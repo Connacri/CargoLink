@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.45** |
-| Code de version (versionCode) | **277** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `5e1d438` |
-| Statut CI | À publier au prochain push → release `v1.1.45` sur GitHub |
+| Version (versionName) | **1.1.46** |
+| Code de version (versionCode) | **279** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `b0fd326` |
+| Statut CI | À publier au prochain push → release `v1.1.46` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,16 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.46
+
+- **Broadcast réparé (FCM HTTP v1, sans Edge Function)** : les annonces
+  (fondateur / admin) passent désormais par la fonction Postgres
+  `broadcast_announce()` — résolution chiffrée de l'audience (rôles + cibles
+  individuelles), insertion du flux in-app, notifications en base et push FCM
+  pour chaque utilisateur ciblé via `pg_net` (fire-and-forget, mode dégradé
+  propre si les credentials ne sont pas configurés). L'edge `broadcast`
+  (legacy, API FCM supprimée par Google en 2024) n'est plus appelée.
 
 ### Version 1.1.45
 
