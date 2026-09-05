@@ -10,9 +10,9 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.43** |
-| Code de version (versionCode) | **271** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `a96a534` |
+| Version (versionName) | **1.1.44** |
+| Code de version (versionCode) | **274** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `0e45c88` |
 | Statut CI | À publier au prochain push → release `v1.1.43` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
@@ -47,6 +47,22 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.44
+
+- **Cycle de vie unifié** : nouveau modèle `LifecycleStep` (enum centralisé) qui
+  regroupe icônes Font Awesome, libellés et ordre de progression du colis — utilisé
+  par le client (suivi, timeline, accueil, mes colis) et l'expéditeur (dashboard,
+  statistiques, fiche réservation, scan QR). Suppression des doublons de libellés/icônes
+  répartis dans les écrans.
+- **Écriture atomique des événements de suivi** : tous les changements de statut
+  (réservation, annulation, collecte, vérification, expédition, arrivée, dépôt
+  livreur, livraison, confirmations) passent désormais par le service unique
+  `BookingService`, avec événement `cancelled` à l'annulation, `order_processed`
+  cohérent partout, et étapes réelles `in_transit` (auto après expédition) et
+  `customs_cleared` (auto après arrivée). Plus de doublons d'écritures entre écrans.
+- **Base Supabase alignée** : la contrainte `shipment_tracking.status` accepte
+  désormais `cancelled` (migration appliquée) ; `database_setup.sql` synchronisé.
 
 ### Version 1.1.43
 
