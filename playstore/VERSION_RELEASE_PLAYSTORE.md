@@ -69,6 +69,13 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
   Supabase, le regroupe dans un cache en base, et envoie chaque message sur
   `fcm.googleapis.com/v1/projects/cargolink-23dd3/messages:send`. L'edge
   `send-push` est laissée en place mais n'est plus appelée.
+- **Renouvellement automatique du token FCM** : le token d'accès expire au bout
+  d'une heure et l'endpoint OAuth exige un corps `application/x-www-form-urlencoded`
+  que `pg_net` ne sait pas produire (JSON uniquement). Un micro-edge `fcm_refresh`
+  (≈ 720 invocations/mois, négligeable sur le quota) déclenché chaque heure par
+  `pg_cron` (job `cargolink-fcm-refresh`) effectue le grant `refresh_token` en
+  corps form et rejoue le résultat dans `fcm_token_cache` ; les envois restent
+  **100 % côté Postgres** (`pg_net`).
 - **Paramètres d'affichage (Fondateur)** : nouvel écran accessible depuis le
   dashboard super admin permettant d'afficher ou de masquer par rôle les
   bannières, cartes et boutons des écrans d'accueil et du profil (boutons
