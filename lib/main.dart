@@ -12,7 +12,7 @@ Future<void> main() async {
 
   // Edge-to-edge is enabled in MainActivity.kt via WindowCompat.
   // Here we only ensure the system UI style matches our dark theme.
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+ // SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     systemNavigationBarColor: Colors.transparent,
     statusBarBrightness: Brightness.dark,
