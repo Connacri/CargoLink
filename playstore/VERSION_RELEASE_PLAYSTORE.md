@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.46** |
-| Code de version (versionCode) | **279** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `b0fd326` |
-| Statut CI | À publier au prochain push → release `v1.1.46` sur GitHub |
+| Version (versionName) | **1.1.47** |
+| Code de version (versionCode) | **282** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `6d666e5` |
+| Statut CI | À publier au prochain push → release `v1.1.47` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -47,6 +47,22 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ---
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
+
+### Version 1.1.47
+
+- **Authentification basculée de Firebase vers Supabase Auth (natif)** : création
+  de compte par email + connexion Google (mobile), vérification d'email intégrée
+  (écran dédié « J'ai confirmé »), réinitialisation et changement de mot de passe,
+  deep link de retour `com.cargolink.dz.cargolink://login-callback`. Firebase Auth
+  est retiré de l'application.
+- **Suppression de compte et outils administrateur migrés en RPC PostgreSQL
+  sécurisées** : `purge_user_data` (SECURITY DEFINER, privée, purge complète en une
+  transaction : storage, données applicatives et compte auth dans le bon ordre),
+  `delete_my_account`, `admin_delete_user`, `admin_reset_platform` et
+  `admin_approve_deletion_request`. Les Edge Functions legacy de suppression ne
+  sont plus utilisées.
+- **Identifiant utilisateur unifié** : l'app repose désormais sur `auth.users.id`
+  (clé cohérente avec la RLS existante) au lieu de l'UID Firebase.
 
 ### Version 1.1.46
 
