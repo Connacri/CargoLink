@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/index.dart';
 import '../../data/services/auth_service.dart';
-import '../../core/config/supabase_config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../app/home_tabs_screen.dart';
@@ -99,16 +98,6 @@ class _GateRoleDeciderState extends ConsumerState<_GateRoleDecider> {
     }
     // Indeterminate: stay on the gate and retry instead of guessing.
     if (hasProfile == null) {
-      if (!SupabaseConfig.hasAccessToken) {
-        if (_retries >= 15) {
-          // ~6 s without Supabase token → show retry UI
-          setState(() => _error = true);
-          return;
-        }
-        _retries++;
-        Future.delayed(const Duration(milliseconds: 400), _verify);
-        return;
-      }
       if (_retries < 3) {
         _retries++;
         Future.delayed(const Duration(milliseconds: 500), _verify);

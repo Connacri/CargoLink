@@ -1,6 +1,7 @@
 import 'package:feedback/feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
 import 'core/config/supabase_config.dart';
@@ -20,6 +21,13 @@ Future<void> main() async {
 
   // Initialize Firebase (for notifications)
   await initializeFirebase();
+
+  // Initialize Supabase Auth (native session, PKCE). Must complete before any
+  // database request: SupabaseAuth restores the persisted session on startup.
+  await Supabase.initialize(
+    url: SupabaseConfig.supabaseUrl,
+    publishableKey: SupabaseConfig.supabaseAnonKey,
+  );
 
   // Wire Firebase Cloud Messaging (with timeout to never block the splash)
   try {

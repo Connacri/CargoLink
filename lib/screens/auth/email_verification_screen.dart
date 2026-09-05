@@ -13,17 +13,30 @@ import '../../core/widgets/ui_kit.dart';
 /// confirmation email, lets them re-send it, and only lets them into the app
 /// once the email is verified.
 ///
+/// Two modes:
+///  - right after sign-up: NO session exists yet (Supabase keeps the account
+///    pending until the email is confirmed). [EmailVerificationScreenArgs]
+///    carries the email/password so the "J'ai confirmé" button signs the user
+///    in on the spot.
+///  - signed-in but unverified (router home): the manual button / poll simply
+///    re-checks the session, and the router swaps this screen once verified.
+///
 /// The screen watches for the verification as soon as it happens:
-///  - a periodic poll calls `refreshEmailVerified()` (which reloads the
-///    Firebase user and triggers a fresh `idTokenChanges` emission);
+///  - a periodic poll calls `refreshEmailVerified()` (a local read of
+///    `emailConfirmedAt`, up to date after the PKCE deep-link callback );
 ///  - the app lifecycle is observed so that coming back from the mail app
 ///    (mobile) triggers an immediate re-check.
-///
-/// As soon as the email is verified, `authStateProvider` re-emits with
-/// `emailVerified: true`, so [CargoLinkApp] automatically swaps this screen
-/// for the app entry point — no manual button press needed.
+class EmailVerificationScreenArgs {
+  final String? email;
+  final String? password;
+
+  const EmailVerificationScreenArgs({this.email, this.password});
+}
+
 class EmailVerificationScreen extends ConsumerStatefulWidget {
-  const EmailVerificationScreen({super.key});
+  const EmailVerificationScreen({super.key, this.args});
+
+  final EmailVerificationScreenArgs? args;
 
   @override
   ConsumerState<EmailVerificationScreen> createState() =>
@@ -60,8 +73,8 @@ class _EmailVerificationScreenState
     }
   }
 
-  /// Reload the Firebase user and, if the email is now verified, refresh the
-  /// auth state so the app entry point replaces this screen automatically.
+  /// Read `emailConfirmedAt` on the current session; if the email is verified,
+  /// refresh the auth state so the app entry point replaces this screen.
   Future<bool> _autoCheckVerified() async {
     if (_checking) return false;
     if (mounted) setState(() => _checking = true);
@@ -83,10 +96,12 @@ class _EmailVerificationScreenState
   void _onVerified() {
     if (_welcomed) return;
     _welcomed = true;
-    // Force both providers to re-emit with the freshly verified state; the
-    // router in CargoLinkApp then swaps this screen for the app entry point.
+    // Force the providers to re-emit with the freshly verified state, then go
+    // back to the root (the router hands over to the app entry point).
     ref.invalidate(authStateProvider);
     ref.invalidate(currentUserProvider);
+    ref.invalidate(currentShipperProvider);
+    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Email confirmé. Bienvenue sur CargoLink !'),
@@ -98,7 +113,9 @@ class _EmailVerificationScreenState
   Future<void> _resend() async {
     setState(() => _sending = true);
     try {
-      await ref.read(authServiceProvider).resendVerificationEmail();
+      await ref
+          .read(authServiceProvider)
+          .resendVerificationEmail(email: widget.args?.email);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -117,8 +134,21 @@ class _EmailVerificationScreenState
     }
   }
 
+  /// Vérifie la confirmation. Si aucune session n'est encore établie (écran
+  /// ouvert juste après l'inscription), on signe d'abord l'utilisateur avec
+  /// l'email/mot de passe passés en argument — Supabase renvoie une erreur
+  /// `email_not_confirmed` tant que le lien n'a pas été cliqué.
   Future<void> _checkVerified() async {
     try {
+      final authService = ref.read(authServiceProvider);
+      if (!authService.isAuthenticated) {
+        final email = widget.args?.email;
+        final password = widget.args?.password;
+        if (email == null || email.isEmpty || password == null) {
+          throw Exception('Session expirée, reconnectez-vous');
+        }
+        await authService.signInWithEmail(email: email, password: password);
+      }
       final verified = await _autoCheckVerified();
       if (mounted && !verified) {
         ScaffoldMessenger.of(context).showSnackBar(
