@@ -5,6 +5,7 @@ import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/utils/status_badge.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../core/widgets/user_avatar.dart';
 import '../../core/widgets/chat_widgets.dart';
@@ -94,7 +95,7 @@ class _SuperAdminDashboardScreenState
       'platform_fees', // commissions à confirmer
       'account_deletion_requests', // suppressions demandées
       'shipments', // publications à valider
-      'subscriptions', // abonnements à traiter
+      'delivery_subscriptions', // abonnements à traiter
       'payments', // revenus
       'referrals', // parrainage
     ];
@@ -3240,6 +3241,14 @@ class _UserManagementCardState extends ConsumerState<_UserManagementCard> {
 
   @override
   Widget build(BuildContext context) {
+    final shipper = widget.user.role == 'shipper'
+        ? ref.watch(shipperByUserIdProvider(widget.user.id)).valueOrNull
+        : null;
+    final status = userStatusBadge(
+      isActive: widget.user.isActive,
+      role: widget.user.role,
+      shipper: shipper,
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.spaceSm + 4),
       child: GlassCard(
@@ -3295,20 +3304,16 @@ class _UserManagementCardState extends ConsumerState<_UserManagementCard> {
                   icon: widget.user.isActive
                       ? Icons.check_circle_rounded
                       : Icons.pause_circle_rounded,
-                  color: widget.user.isActive
-                      ? AppTheme.accentColor
-                      : AppTheme.errorColor,
+                  color: status.color,
                   size: 14,
                 ),
                 const SizedBox(width: AppTheme.spaceSm),
                 Text(
-                  widget.user.isActive ? 'Actif' : 'Désactivé',
+                  status.label,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: widget.user.isActive
-                        ? AppTheme.accentColor
-                        : AppTheme.errorColor,
+                    color: status.color,
                   ),
                 ),
                 const Spacer(),

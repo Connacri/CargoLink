@@ -370,6 +370,20 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         });
       },
     );
+    ref.listen(
+      tableChangesProvider(('platform_settings', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(platformSettingsProvider);
+        });
+      },
+    );
+
+    // Params d'affichage pilotés par le Fondateur (Paramètres d'affichage) :
+    // cartes « Demande de livraison », « Activer l'abonnement » et
+    // « Boarding Pass » masquées par défaut.
+    final display = ref.watch(platformSettingsProvider).valueOrNull;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -464,9 +478,10 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               child: _HomeTrackingCard(),
             ),
 
-            SliverToBoxAdapter(
-              child: _buildBoardingPassCard(context),
-            ),
+            if (display?.showClientHomeBoardingPass ?? false)
+              SliverToBoxAdapter(
+                child: _buildBoardingPassCard(context),
+              ),
 
             const SliverToBoxAdapter(
               child: _WeightUpdateAttentionBanner(),
@@ -474,12 +489,14 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             SliverToBoxAdapter(
               child: _buildQrScannerCard(context),
             ),
-            SliverToBoxAdapter(
-              child: _buildDeliveryCard(context),
-            ),
-            SliverToBoxAdapter(
-              child: _buildSubscriptionCard(context),
-            ),
+            if (display?.showClientHomeDeliveryRequest ?? false)
+              SliverToBoxAdapter(
+                child: _buildDeliveryCard(context),
+              ),
+            if (display?.showClientHomeSubscription ?? false)
+              SliverToBoxAdapter(
+                child: _buildSubscriptionCard(context),
+              ),
             SliverToBoxAdapter(
               child: _buildHowItWorks(),
             ),

@@ -284,12 +284,28 @@ class _ShipperDashboardScreenState
       },
     );
 
+    ref.listen(
+      tableChangesProvider(('platform_settings', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(platformSettingsProvider);
+        });
+      },
+    );
+
     final filtered = _statusFilter == null
         ? null
         : pager.items.where((s) => s.status == _statusFilter).toList();
 
     // Carrousel des pubs actives ciblées « Expéditeurs », sous la barre fine.
     final activeAds = ref.watch(shipperActiveAdsProvider).valueOrNull ?? [];
+
+    // Bannière d'abonnement pilotée par le Fondateur (Params d'affichage).
+    final showShipperSubscription =
+        ref.watch(platformSettingsProvider).valueOrNull
+                ?.showShipperHomeSubscription ??
+            false;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -331,9 +347,10 @@ class _ShipperDashboardScreenState
             SliverToBoxAdapter(
               child: _buildPublishAndScan(shipper),
             ),
-            SliverToBoxAdapter(
-              child: _buildSubscriptionBanner(shipper),
-            ),
+            if (showShipperSubscription)
+              SliverToBoxAdapter(
+                child: _buildSubscriptionBanner(shipper),
+              ),
             SliverToBoxAdapter(
               child: _buildActiveOrdersCard(shipper.id),
             ),

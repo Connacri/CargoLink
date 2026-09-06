@@ -76,19 +76,22 @@ class MyParcelsScreen extends ConsumerWidget {
                 if (parcels.isEmpty) {
                   return const SliverFillRemaining(
                     hasScrollBody: false,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.inventory_2_outlined,
-                            size: 64, color: AppTheme.textMutedColor),
-                        SizedBox(height: AppTheme.spaceMd),
-                        Text('Aucun colis pour le moment', style: AppTheme.h3),
-                        SizedBox(height: AppTheme.spaceSm),
-                        Text(
-                          'Réservez une offre pour suivre vos colis ici.',
-                          style: AppTheme.bodySecondary,
-                        ),
-                      ],
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.inventory_2_outlined,
+                              size: 64, color: AppTheme.textMutedColor),
+                          SizedBox(height: AppTheme.spaceMd),
+                          Text('Aucun colis pour le moment',
+                              style: AppTheme.h3),
+                          SizedBox(height: AppTheme.spaceSm),
+                          Text(
+                            'Réservez une offre pour suivre vos colis ici.',
+                            style: AppTheme.bodySecondary,
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }

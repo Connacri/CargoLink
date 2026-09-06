@@ -38,6 +38,7 @@ class PlatformSettings {
   /// (boutons radio). Défaut : masqué.
   final bool showClientHomeDeliveryRequest;
   final bool showClientHomeSubscription;
+  final bool showClientHomeBoardingPass;
   final bool showShipperHomeSubscription;
   final bool showShipperHomePublishAd;
   final bool showShipperHomeDeliveryRequests;
@@ -57,6 +58,7 @@ class PlatformSettings {
     this.referralProgramActive = false,
     this.showClientHomeDeliveryRequest = false,
     this.showClientHomeSubscription = false,
+    this.showClientHomeBoardingPass = false,
     this.showShipperHomeSubscription = false,
     this.showShipperHomePublishAd = false,
     this.showShipperHomeDeliveryRequests = false,
@@ -77,6 +79,7 @@ class PlatformSettings {
     'referral_program_active',
     'show_client_home_delivery_request',
     'show_client_home_subscription',
+    'show_client_home_boarding_pass',
     'show_shipper_home_subscription',
     'show_shipper_home_publish_ad',
     'show_shipper_home_delivery_requests',
@@ -119,6 +122,8 @@ class PlatformSettings {
       showClientHomeDeliveryRequest:
           b('show_client_home_delivery_request', false),
       showClientHomeSubscription: b('show_client_home_subscription', false),
+      showClientHomeBoardingPass:
+          b('show_client_home_boarding_pass', false),
       showShipperHomeSubscription: b('show_shipper_home_subscription', false),
       showShipperHomePublishAd: b('show_shipper_home_publish_ad', false),
       showShipperHomeDeliveryRequests:
@@ -144,6 +149,7 @@ class PlatformSettings {
       'show_client_home_delivery_request':
           showClientHomeDeliveryRequest.toString(),
       'show_client_home_subscription': showClientHomeSubscription.toString(),
+      'show_client_home_boarding_pass': showClientHomeBoardingPass.toString(),
       'show_shipper_home_subscription': showShipperHomeSubscription.toString(),
       'show_shipper_home_publish_ad': showShipperHomePublishAd.toString(),
       'show_shipper_home_delivery_requests':

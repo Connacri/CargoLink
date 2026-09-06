@@ -27,6 +27,7 @@ class _DisplaySettingsScreenState extends ConsumerState<DisplaySettingsScreen> {
   // État local des toggles (boutons radio « Afficher / Masquer »).
   bool _showClientHomeDeliveryRequest = false;
   bool _showClientHomeSubscription = false;
+  bool _showClientHomeBoardingPass = false;
   bool _showShipperHomeSubscription = false;
   bool _showShipperHomePublishAd = false;
   bool _showShipperHomeDeliveryRequests = false;
@@ -48,6 +49,8 @@ class _DisplaySettingsScreenState extends ConsumerState<DisplaySettingsScreen> {
             _showClientHomeDeliveryRequest.toString(),
         'show_client_home_subscription':
             _showClientHomeSubscription.toString(),
+        'show_client_home_boarding_pass':
+            _showClientHomeBoardingPass.toString(),
         'show_shipper_home_subscription':
             _showShipperHomeSubscription.toString(),
         'show_shipper_home_publish_ad': _showShipperHomePublishAd.toString(),
@@ -93,6 +96,7 @@ class _DisplaySettingsScreenState extends ConsumerState<DisplaySettingsScreen> {
           _initialized = true;
           _showClientHomeDeliveryRequest = s.showClientHomeDeliveryRequest;
           _showClientHomeSubscription = s.showClientHomeSubscription;
+          _showClientHomeBoardingPass = s.showClientHomeBoardingPass;
           _showShipperHomeSubscription = s.showShipperHomeSubscription;
           _showShipperHomePublishAd = s.showShipperHomePublishAd;
           _showShipperHomeDeliveryRequests =
@@ -161,6 +165,17 @@ class _DisplaySettingsScreenState extends ConsumerState<DisplaySettingsScreen> {
                           value: _showClientHomeSubscription,
                           onChanged: (v) =>
                               setState(() => _showClientHomeSubscription = v),
+                        ),
+                        const SizedBox(height: AppTheme.spaceMd),
+                        _toggleCard(
+                          icon: Icons.confirmation_number_rounded,
+                          title: 'Carte « Boarding Pass »',
+                          subtitle:
+                              'Aperçu du billet d\'embarquement en démo sur '
+                              'l\'accueil du client.',
+                          value: _showClientHomeBoardingPass,
+                          onChanged: (v) =>
+                              setState(() => _showClientHomeBoardingPass = v),
                         ),
                         const SizedBox(height: AppTheme.spaceLg),
                         _sectionHeader(

@@ -4,6 +4,7 @@ import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/profile_navigation.dart';
+import '../../core/utils/status_badge.dart';
 import '../../core/widgets/micro_badge.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../../data/services/offer_share_service.dart';
@@ -375,6 +376,14 @@ class _UserGridCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final shipper = user.role == 'shipper'
+        ? ref.watch(shipperByUserIdProvider(user.id)).valueOrNull
+        : null;
+    final status = userStatusBadge(
+      isActive: user.isActive,
+      role: user.role,
+      shipper: shipper,
+    );
     return GlassCard(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => UserDetailsScreen(user: user)),
@@ -404,23 +413,16 @@ class _UserGridCard extends ConsumerWidget {
             overflow: TextOverflow.ellipsis,
             style: AppTheme.caption,
           ),
-          if (user.role == 'shipper')
-            ref.watch(shipperByUserIdProvider(user.id)).maybeWhen(
-                  data: (s) => s == null
-                      ? const SizedBox.shrink()
-                      : Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: ShipperTypeBadge(
-                              isMicroImportateur: s.isMicroImportateur),
-                        ),
-                  orElse: () => const SizedBox.shrink(),
-                ),
+          if (shipper != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: ShipperTypeBadge(
+                  isMicroImportateur: shipper.isMicroImportateur),
+            ),
           const SizedBox(height: AppTheme.spaceSm),
           GradientBadge(
-            label: user.isActive ? 'Actif' : 'Désactivé',
-            gradient: user.isActive
-                ? AppTheme.successGradient
-                : AppTheme.errorGradient,
+            label: status.label,
+            gradient: status.gradient,
             compact: true,
           ),
         ],

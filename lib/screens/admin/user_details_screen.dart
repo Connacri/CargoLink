@@ -4,6 +4,7 @@ import '../../data/models/models.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/utils/status_badge.dart';
 import '../../core/widgets/micro_badge.dart';
 import '../../core/widgets/ui_kit.dart';
 import '../chat/chat_screen.dart';
@@ -302,6 +303,11 @@ class _ProfileTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final shipper = ref.watch(shipperByUserIdProvider(user.id));
     final isShipper = user.role == 'shipper';
+    final status = userStatusBadge(
+      isActive: user.isActive,
+      role: user.role,
+      shipper: shipper.valueOrNull,
+    );
 
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -349,10 +355,8 @@ class _ProfileTab extends ConsumerWidget {
                                   compact: true,
                                 ),
                                 GradientBadge(
-                                  label: user.isActive ? 'Actif' : 'Désactivé',
-                                  gradient: user.isActive
-                                      ? AppTheme.successGradient
-                                      : AppTheme.errorGradient,
+                                  label: status.label,
+                                  gradient: status.gradient,
                                   compact: true,
                                 ),
                                 if (isShipper)

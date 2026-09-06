@@ -49,10 +49,12 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen>
           if (_tabController.index == 0) {
             final uid = ref.read(authServiceProvider).currentUserId;
             if (uid == null) return;
-            ref.read(clientBookingsPagerProvider((
-              clientId: uid,
-              status: null,
-            )).notifier).loadInitial();
+            ref
+                .read(clientBookingsPagerProvider((
+                  clientId: uid,
+                  status: null,
+                )).notifier)
+                .loadInitial();
           }
         });
       }
@@ -150,9 +152,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen>
           ],
         ),
       ),
-      floatingActionButton: isDemandsTab
-          ? null
-          : null,
+      floatingActionButton: isDemandsTab ? null : null,
     );
   }
 }
@@ -334,8 +334,7 @@ class _BookingsTabState extends ConsumerState<_BookingsTab>
 
     if (userId == null) {
       return const Center(
-        child: Text('Utilisateur non identifie',
-            style: AppTheme.bodySecondary),
+        child: Text('Utilisateur non identifie', style: AppTheme.bodySecondary),
       );
     }
 
@@ -459,6 +458,63 @@ class _DemandsTabState extends ConsumerState<_DemandsTab>
     super.build(context);
     final requests = ref.watch(myDeliveryRequestsProvider);
 
+    // Fonctionnalité « Demandes de livraison » pilotée par le Fondateur :
+    // masquée (bientôt disponible) tant que showClientHomeDeliveryRequest est
+    // désactivé dans les Paramètres d'affichage.
+    final showDemands = ref
+            .watch(platformSettingsProvider)
+            .valueOrNull
+            ?.showClientHomeDeliveryRequest ??
+        false;
+
+    ref.listen(
+      tableChangesProvider(('platform_settings', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(platformSettingsProvider);
+        });
+      },
+    );
+
+    if (!showDemands) {
+      return Scaffold(
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spaceXl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.construction_rounded,
+                    size: 64, color: AppTheme.textMutedColor),
+                SizedBox(height: AppTheme.spaceMd),
+                Text('Bientôt disponible', style: AppTheme.h3),
+                SizedBox(height: AppTheme.spaceSm),
+                Text(
+                  'La fonctionnalité « Demandes de livraison » arrive '
+                  'bientôt : publiez vos colis et recevez les propositions '
+                  'des expéditeurs.',
+                  style: AppTheme.bodySecondary,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: FloatingActionButton.extended(
+            heroTag: 'demandes_fab',
+            onPressed: () => _showComingSoonDialog(context),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Nouvelle demande'),
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: requests.when(
         data: (list) {
@@ -502,14 +558,13 @@ class _DemandsTabState extends ConsumerState<_DemandsTab>
             ),
           );
         },
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text('Erreur: $e', style: AppTheme.bodySecondary),
         ),
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 76),
+        padding: const EdgeInsets.only(bottom: 10),
         child: FloatingActionButton.extended(
           heroTag: 'demandes_fab',
           onPressed: () => _showCreateSheet(context),
@@ -518,6 +573,27 @@ class _DemandsTabState extends ConsumerState<_DemandsTab>
           backgroundColor: AppTheme.primaryColor,
           foregroundColor: Colors.white,
         ),
+      ),
+    );
+  }
+
+  void _showComingSoonDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.construction_rounded,
+            color: AppTheme.warningColor, size: 36),
+        title: const Text('Bientôt disponible'),
+        content: const Text(
+          'La publication de demandes de livraison n\'est pas encore '
+          'disponible. Cette fonctionnalité arrive bientôt.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }
@@ -609,8 +685,8 @@ class DeliveryRequestCard extends StatelessWidget {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _showResponsesSheet(context, request.id),
-                      icon: const Icon(Icons.question_answer_outlined,
-                          size: 18),
+                      icon:
+                          const Icon(Icons.question_answer_outlined, size: 18),
                       label: const Text('Voir les propositions'),
                     ),
                   ),
@@ -652,8 +728,7 @@ class DeliveryRequestCard extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.errorColor),
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.errorColor),
             child: const Text('Oui, annuler'),
           ),
         ],
@@ -661,9 +736,7 @@ class DeliveryRequestCard extends StatelessWidget {
     );
     if (confirm == true && context.mounted) {
       final container = ProviderScope.containerOf(context);
-      await container
-          .read(deliveryServiceProvider)
-          .cancelRequest(requestId);
+      await container.read(deliveryServiceProvider).cancelRequest(requestId);
       container.invalidate(myDeliveryRequestsProvider);
     }
   }
@@ -733,10 +806,8 @@ class _DeliveryResponsesSheet extends ConsumerWidget {
                       .read(deliveryServiceProvider)
                       .getResponsesForRequest(requestId),
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return const Center(
-                          child: CircularProgressIndicator());
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError) {
                       return Center(
@@ -752,8 +823,7 @@ class _DeliveryResponsesSheet extends ConsumerWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.question_answer_outlined,
-                                  size: 48,
-                                  color: AppTheme.textMutedColor),
+                                  size: 48, color: AppTheme.textMutedColor),
                               SizedBox(height: AppTheme.spaceMd),
                               Text(
                                 'Aucune proposition pour le moment',
@@ -791,20 +861,16 @@ class _DeliveryResponsesSheet extends ConsumerWidget {
                               ref.invalidate(myDeliveryRequestsProvider);
                               if (context.mounted) {
                                 Navigator.pop(context);
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(
+                                ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
-                                        'Proposition acceptee !'),
-                                    backgroundColor:
-                                        AppTheme.accentColor,
+                                    content: Text('Proposition acceptee !'),
+                                    backgroundColor: AppTheme.accentColor,
                                   ),
                                 );
                               }
                             } catch (e) {
                               if (context.mounted) {
-                                await showAppErrorDialog(
-                                    context,
+                                await showAppErrorDialog(context,
                                     message: 'Erreur: $e');
                               }
                             }
@@ -877,16 +943,14 @@ class _DeliveryResponseCard extends StatelessWidget {
                 const SizedBox(width: AppTheme.spaceXs),
                 Text(
                   '${response.proposedPrice.toStringAsFixed(0)} DZD',
-                  style: AppTheme.h3.copyWith(
-                      color: AppTheme.primaryColor),
+                  style: AppTheme.h3.copyWith(color: AppTheme.primaryColor),
                 ),
                 const Spacer(),
                 const Icon(Icons.calendar_today_outlined,
                     size: 14, color: AppTheme.textMutedColor),
                 const SizedBox(width: AppTheme.spaceXs),
                 Text(
-                  DateFormat('dd/MM/yyyy')
-                      .format(response.proposedDate),
+                  DateFormat('dd/MM/yyyy').format(response.proposedDate),
                   style: AppTheme.caption,
                 ),
               ],
@@ -906,8 +970,8 @@ class _DeliveryResponseCard extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton.icon(
                   onPressed: onAccept,
-                  icon: const Icon(Icons.check_circle_outline_rounded,
-                      size: 18),
+                  icon:
+                      const Icon(Icons.check_circle_outline_rounded, size: 18),
                   label: const Text('Accepter cette proposition'),
                 ),
               ),
@@ -1067,9 +1131,8 @@ class _CreateDeliveryRequestSheetState
                       labelText: 'Nom du produit *',
                       hintText: 'Ex: iPhone 15 Pro Max',
                     ),
-                    validator: (v) => v == null || v.trim().isEmpty
-                        ? 'Requis'
-                        : null,
+                    validator: (v) =>
+                        v == null || v.trim().isEmpty ? 'Requis' : null,
                   ),
                   const SizedBox(height: AppTheme.spaceMd),
                   TextFormField(
@@ -1100,8 +1163,8 @@ class _CreateDeliveryRequestSheetState
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.calendar_today_outlined),
                       title: const Text('Date limite'),
-                      subtitle: Text(
-                          DateFormat('dd/MM/yyyy').format(_deadline)),
+                      subtitle:
+                          Text(DateFormat('dd/MM/yyyy').format(_deadline)),
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: _pickDeadline,
                     ),
@@ -1119,8 +1182,7 @@ class _CreateDeliveryRequestSheetState
                             ),
                           )
                         : const Icon(Icons.send_rounded, size: 18),
-                    label: Text(
-                        _saving ? 'Envoi...' : 'Publier la demande'),
+                    label: Text(_saving ? 'Envoi...' : 'Publier la demande'),
                   ),
                   const SizedBox(height: AppTheme.spaceMd),
                 ],
@@ -1337,8 +1399,7 @@ class _BookingCard extends ConsumerWidget {
                   child: _InfoTile(
                     icon: Icons.monitor_weight_outlined,
                     label: 'Poids',
-                    value:
-                        '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
+                    value: '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
                   ),
                 ),
                 Expanded(

@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../providers/index.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
+import '../../core/utils/status_badge.dart';
 import '../../core/widgets/ui_kit.dart';
 
 class AccountManagementScreen extends ConsumerStatefulWidget {
@@ -297,6 +298,14 @@ class _AccountManagementScreenState
           if (userData == null) {
             return const Center(child: Text('Utilisateur non identifié'));
           }
+          final shipper = userData.role == 'shipper'
+              ? ref.watch(currentShipperProvider).valueOrNull
+              : null;
+          final status = userStatusBadge(
+            isActive: userData.isActive,
+            role: userData.role,
+            shipper: shipper,
+          );
           return ListView(
             padding: const EdgeInsets.all(AppTheme.spaceMd),
             children: [
@@ -312,7 +321,7 @@ class _AccountManagementScreenState
                         isPhone: true),
                   _infoTile(
                     'Statut du compte',
-                    userData.isActive ? 'Actif' : 'Désactivé',
+                    status.label,
                   ),
                   _infoTile(
                     'Date de création',

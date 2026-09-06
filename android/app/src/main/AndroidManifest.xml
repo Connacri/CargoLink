@@ -1,5 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Required by FCM to display push notifications on Android 13+ (API 33+):
+         without POST_NOTIFICATIONS, requestPermission() is denied and no
+         notification can be shown (foreground, background or app closed). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Used by notifications for haptic feedback (flutter_local_notifications). -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Required by gal to save the booking confirmation photo to the gallery
          on Android 9 and below (MediaStore is permission-free on 10+). -->
     <uses-permission

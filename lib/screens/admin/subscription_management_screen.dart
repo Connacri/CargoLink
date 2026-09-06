@@ -95,7 +95,7 @@ class _SubscriptionManagementScreenState
     // Temps réel : une demande d'abonnement soumise/approuvée/rejetée ailleurs
     // met à jour les compteurs et listes en direct.
     ref.listen(
-      tableChangesProvider(('subscriptions', null, null)),
+      tableChangesProvider(('delivery_subscriptions', null, null)),
       (previous, next) {
         if (!next.hasValue) return;
         WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());

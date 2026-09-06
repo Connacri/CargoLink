@@ -430,6 +430,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) => _reloadHistory());
       },
     );
+    ref.listen(
+      tableChangesProvider(('platform_settings', null, null)),
+      (previous, next) {
+        if (!next.hasValue) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(platformSettingsProvider);
+        });
+      },
+    );
 
     return user.when(
       data: (userData) {
@@ -538,6 +547,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             .valueOrNull;
     final isPremium = sub != null && sub.status == 'active' && sub.isActive;
 
+    // Bannière d'abonnement pilotée par le Fondateur (Params d'affichage).
+    final showProfileSub =
+        ref.watch(platformSettingsProvider).valueOrNull?.showProfileSubscription ??
+            false;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.spaceMd,
@@ -629,7 +643,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ],
           // Bandeau abonnement sous les badges (clients & expéditeurs)
-          if (userData.role == 'client' || userData.role == 'shipper') ...[
+          if ((userData.role == 'client' || userData.role == 'shipper') &&
+              showProfileSub) ...[
             const SizedBox(height: AppTheme.spaceSm),
             SubscriptionBanner(userId: userData.id, role: userData.role),
           ],
@@ -800,8 +815,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   /// que le programme est actif côté fondateur.
   Widget _buildReferralSection() {
     final programActive = ref.watch(referralProgramActiveProvider);
+    final showReferral =
+        ref.watch(platformSettingsProvider).valueOrNull?.showProfileReferral ??
+            false;
     return programActive.maybeWhen(
-      data: (active) => !active
+      data: (active) => !active || !showReferral
           ? const SizedBox.shrink()
           : Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -1188,8 +1206,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           case 'verified':
             // Mention du type d'expéditeur sur son propre profil.
             text = shipperData.isMicroImportateur
-                ? 'Expéditeur vérifié · Micro-Importateur'
-                : 'Expéditeur vérifié · Voyageur ordinaire';
+                ? 'Expéditeur Actif · Micro-Importateur'
+                : 'Expéditeur Actif · Voyageur ordinaire';
             color = AppTheme.accentColor;
             break;
           case 'rejected':
