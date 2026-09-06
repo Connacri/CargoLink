@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.48** |
-| Code de version (versionCode) | **285** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `f1bda95` |
-| Statut CI | À publier au prochain push → release `v1.1.48` sur GitHub |
+| Version (versionName) | **1.1.68** |
+| Code de version (versionCode) | **288** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `248ad2a` |
+| Statut CI | À publier au prochain push → release `v1.1.68` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -48,86 +48,70 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 
 ## Contenu de cette version (nouveautés Play Store / fonctionnalités)
 
+> Les notes ci-dessous sont rédigées pour les utilisateurs de l'application
+> (et non pour les développeurs) : elles décrivent les nouveautés en langage
+> simple, sans détail technique.
+
+### Version 1.1.68
+
+- **Le fondateur contrôle ce qui s'affiche** : il peut choisir précisément les
+  cartes et boutons visibles par les clients et les expéditeurs (demande de
+  livraison, abonnement, billet d'embarquement, parrainage…). Les modifications
+  s'appliquent immédiatement, sans mettre à jour l'application.
+- **« Bientôt disponible » au lieu de l'attente** : quand une fonction est
+  désactivée (ex. la demande de livraison), l'onglet et le bouton correspondants
+  affichent clairement un message « Bientôt disponible ».
+- **Statut des expéditeurs plus clair** : un expéditeur n'apparaît « Actif » que
+  lorsque son dossier d'inscription a été validé par le fondateur. Tant que le
+  dossier est en cours (ou non soumis), le statut affiché est « En attente » ;
+  en cas de refus, il est « Rejeté ». Cette règle s'applique partout (profil,
+  gestion du compte, administration).
+- **Notifications sur Android 13+** : la permission de notification est
+  désormais correctement demandée — les alertes de suivi de colis et de
+  messages s'affichent à nouveau sur les téléphones récents, même lorsque
+  l'application est fermée.
+- **Version affichée dans le profil** alignée sur la version réellement publiée.
+
 ### Version 1.1.48
 
-- **Retour du sign-in Firebase pour Google et email** : la tentative de passer la
-  connexion Google par Supabase échouait car le provider Google est désactivé
-  côté Supabase (`/auth/v1/settings` → `google: false`). Le bouton Google
-  repasse donc par `google_sign_in` + Firebase Auth, et l'email/password par
-  Firebase Auth également — tous les identifiants se retrouvent dans le pont
-  Supabase via l'edge `auth-exchange-firebase` (toujours déployée), qui mappe le
-  UID Firebase vers des UUID v5 identiques aux id existants de `public.users`.
-  Supabase reste la couche de données (DB + Storage) avec la RLS `auth.uid()`.
-- **Compatibilité totale avec les comptes existants** : tous les utilisateurs de
-  la base ont des id dérivés du `firebase_uid` et des mots de passe déposés dans
-  Firebase — le pont les réactive sans aucune migration ni réinitialisation.
-- La migration « native » de la v1.1.47 est retirée (elle aurait verrouillé les
-  13 comptes existants : mots de passe GoTrue dérivés inconnus).
+- **Connexion fiabilisée** : se connecter avec votre compte Google ou avec votre
+  adresse e-mail fonctionne de nouveau parfaitement.
+- **Comptes existants préservés** : tous les comptes créés avant cette version
+  restent accessibles sans aucune démarche — mot de passe et données conservés.
 
 ### Version 1.1.47
 
-- **Authentification basculée de Firebase vers Supabase Auth (natif)** : création
-  de compte par email + connexion Google (mobile), vérification d'email intégrée
-  (écran dédié « J'ai confirmé »), réinitialisation et changement de mot de passe,
-  deep link de retour `com.cargolink.dz.cargolink://login-callback`. Firebase Auth
-  est retiré de l'application.
-- **Suppression de compte et outils administrateur migrés en RPC PostgreSQL
-  sécurisées** : `purge_user_data` (SECURITY DEFINER, privée, purge complète en une
-  transaction : storage, données applicatives et compte auth dans le bon ordre),
-  `delete_my_account`, `admin_delete_user`, `admin_reset_platform` et
-  `admin_approve_deletion_request`. Les Edge Functions legacy de suppression ne
-  sont plus utilisées.
-- **Identifiant utilisateur unifié** : l'app repose désormais sur `auth.users.id`
-  (clé cohérente avec la RLS existante) au lieu de l'UID Firebase.
+- **Création de compte et mot de passe simplifiées** : confirmation de votre
+  adresse e-mail directement dans l'application (bouton « J'ai confirmé »),
+  réinitialisation et changement de mot de passe sans quitter l'application,
+  retour automatique après confirmation.
+- **Suppression de compte plus simple** : demander la suppression de son compte
+  (prise en compte par l'équipe) et la gestion administrative côté support sont
+  désormais plus directes et mieux protégées.
 
 ### Version 1.1.46
 
-- **Broadcast réparé (FCM HTTP v1, sans Edge Function)** : les annonces
-  (fondateur / admin) passent désormais par la fonction Postgres
-  `broadcast_announce()` — résolution chiffrée de l'audience (rôles + cibles
-  individuelles), insertion du flux in-app, notifications en base et push FCM
-  pour chaque utilisateur ciblé via `pg_net` (fire-and-forget, mode dégradé
-  propre si les credentials ne sont pas configurés). L'edge `broadcast`
-  (legacy, API FCM supprimée par Google en 2024) n'est plus appelée.
+- **Annonces officielles fiabilisées** : les messages publiés par l'équipe
+  (fondateur, administration) arrivent correctement à tous les destinataires
+  concernés, avec une notification sur le téléphone. Plus de messages perdus.
 
 ### Version 1.1.45
 
-- **Push FCM réparés (HTTP v1, sans Edge Function)** : les notifications push du
-  chat et du suivi de colis passent désormais par la fonction Postgres
-  `notify_push()` (appelée via `pg_net`, extension activée). Google a supprimé
-  l'API FCM legacy (`/fcm/send`) en 2024 : les push de l'app échouaient
-  silencieusement depuis cette date. La nouvelle infrastructure stocke un token
-  OAuth2 (grant `refresh_token`, client Google « Desktop ») dans le Vault
-  Supabase, le regroupe dans un cache en base, et envoie chaque message sur
-  `fcm.googleapis.com/v1/projects/cargolink-23dd3/messages:send`. L'edge
-  `send-push` est laissée en place mais n'est plus appelée.
-- **Renouvellement automatique du token FCM** : le token d'accès expire au bout
-  d'une heure et l'endpoint OAuth exige un corps `application/x-www-form-urlencoded`
-  que `pg_net` ne sait pas produire (JSON uniquement). Un micro-edge `fcm_refresh`
-  (≈ 720 invocations/mois, négligeable sur le quota) déclenché chaque heure par
-  `pg_cron` (job `cargolink-fcm-refresh`) effectue le grant `refresh_token` en
-  corps form et rejoue le résultat dans `fcm_token_cache` ; les envois restent
-  **100 % côté Postgres** (`pg_net`).
-- **Paramètres d'affichage (Fondateur)** : nouvel écran accessible depuis le
-  dashboard super admin permettant d'afficher ou de masquer par rôle les
-  bannières, cartes et boutons des écrans d'accueil et du profil (boutons
-  radio « Afficher / Masquer », 7 réglages stockés dans `platform_settings`).
+- **Notifications sur téléphone fiabilisées** : les alertes de suivi de colis,
+  les messages du chat et les notifications de l'application sont à nouveau
+  envoyés correctement sur votre téléphone.
+- **Fonctionnement continu** : le système d'envoi se met automatiquement à jour
+  chaque heure pour que les notifications restent actives sans coupure.
+- **Nouvel écran pour le fondateur** : il peut afficher ou masquer certaines
+  cartes, bannières et boutons de l'accueil et du profil des clients et des
+  expéditeurs.
 
 ### Version 1.1.44
 
-- **Cycle de vie unifié** : nouveau modèle `LifecycleStep` (enum centralisé) qui
-  regroupe icônes Font Awesome, libellés et ordre de progression du colis — utilisé
-  par le client (suivi, timeline, accueil, mes colis) et l'expéditeur (dashboard,
-  statistiques, fiche réservation, scan QR). Suppression des doublons de libellés/icônes
-  répartis dans les écrans.
-- **Écriture atomique des événements de suivi** : tous les changements de statut
-  (réservation, annulation, collecte, vérification, expédition, arrivée, dépôt
-  livreur, livraison, confirmations) passent désormais par le service unique
-  `BookingService`, avec événement `cancelled` à l'annulation, `order_processed`
-  cohérent partout, et étapes réelles `in_transit` (auto après expédition) et
-  `customs_cleared` (auto après arrivée). Plus de doublons d'écritures entre écrans.
-- **Base Supabase alignée** : la contrainte `shipment_tracking.status` accepte
-  désormais `cancelled` (migration appliquée) ; `database_setup.sql` synchronisé.
+- **Suivi de colis unifié** : chaque étape (réservation, annulation, collecte,
+  expédition, arrivée, livraison) est désormais affichée de façon cohérente et
+  identique partout dans l'application. Moins de risques d'erreur lors des
+  changements de statut.
 
 ### Version 1.1.43
 
