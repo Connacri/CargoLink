@@ -103,21 +103,20 @@ class OfferTicketCard extends StatelessWidget {
                 const Icon(Icons.flight_takeoff_rounded,
                     color: Colors.white, size: 22),
                 const SizedBox(width: 8),
-                const Flexible(
+                const Expanded(
                   child: Text(
                     'CargoLink',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: Colors.white,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w500,
                       fontSize: 17,
                       letterSpacing: 0.5,
                     ),
                   ),
                 ),
-                const Spacer(),
-                Flexible(
+                Expanded(
                   child: Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -132,7 +131,7 @@ class OfferTicketCard extends StatelessWidget {
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 13,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w500,
                         letterSpacing: 1.2,
                       ),
                     ),
@@ -146,6 +145,7 @@ class OfferTicketCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: _RoutePoint(
@@ -155,30 +155,33 @@ class OfferTicketCard extends StatelessWidget {
                     alignEnd: false,
                   ),
                 ),
-                Column(
-                  children: [
-                    Text(dep,
-                        style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.grey.shade600)),
-                    SizedBox(
-                      width: 56,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              height: 2,
-                              color:
-                                  AppTheme.primaryColor.withValues(alpha: 0.35),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    children: [
+                      Text(dep,
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.grey.shade600)),
+                      SizedBox(
+                        width: 56,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 2,
+                                color: AppTheme.primaryColor
+                                    .withValues(alpha: 0.35),
+                              ),
                             ),
-                          ),
-                          const FaIcon(FontAwesomeIcons.plane,
-                              size: 15, color: AppTheme.primaryColor),
-                        ],
+                            const FaIcon(FontAwesomeIcons.plane,
+                                size: 15, color: AppTheme.primaryColor),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 Expanded(
                   child: _RoutePoint(
@@ -316,35 +319,53 @@ class _RoutePoint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment:
-          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      children: [
-        Text(code,
-            style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1,
-                color: Color(0xFF111827))),
-        Text(city,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
-        if (subtitle != null && subtitle!.isNotEmpty)
-          Text(subtitle!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.primaryColor)),
-        if (time != null)
-          Text(time!,
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey.shade800)),
-      ],
+    return Container(
+      //color: Colors.amber,
+      child: Column(
+        crossAxisAlignment:
+            alignEnd ? CrossAxisAlignment.center : CrossAxisAlignment.center,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(code,
+                style: const TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1,
+                    color: Color(0xFF111827))),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.accentColor.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(city,
+                    //maxLines: 1,
+                    //overflow: TextOverflow.ellipsis,
+                    style:
+                        TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+              ),
+            ),
+          ),
+          if (subtitle != null && subtitle!.isNotEmpty)
+            Text(subtitle!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.primaryColor)),
+          if (time != null)
+            Text(time!,
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.grey.shade800)),
+        ],
+      ),
     );
   }
 }

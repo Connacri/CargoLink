@@ -471,9 +471,13 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             SliverToBoxAdapter(
               child: _buildGreeting(currentUser),
             ),
+            SliverToBoxAdapter(
+              child: _buildQrScannerCard(context),
+            ),
             const SliverToBoxAdapter(
               child: _ClientWalletCard(),
             ),
+
             const SliverToBoxAdapter(
               child: _HomeTrackingCard(),
             ),
@@ -486,9 +490,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             const SliverToBoxAdapter(
               child: _WeightUpdateAttentionBanner(),
             ),
-            SliverToBoxAdapter(
-              child: _buildQrScannerCard(context),
-            ),
+
             if (display?.showClientHomeDeliveryRequest ?? false)
               SliverToBoxAdapter(
                 child: _buildDeliveryCard(context),
