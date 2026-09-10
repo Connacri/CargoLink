@@ -76,6 +76,7 @@ class _ShipperDashboardScreenState
   final _scrollController = ScrollController();
   String? _statusFilter;
   String _lastShipperId = '';
+
   /// Bannière « X demandes de réservation » : cachée dès que l'expéditeur
   /// ouvre une demande/commande (elle ne réapparaît que sur la home).
   bool _bookingsBannerSeen = false;
@@ -302,10 +303,11 @@ class _ShipperDashboardScreenState
     final activeAds = ref.watch(shipperActiveAdsProvider).valueOrNull ?? [];
 
     // Bannière d'abonnement pilotée par le Fondateur (Params d'affichage).
-    final showShipperSubscription =
-        ref.watch(platformSettingsProvider).valueOrNull
-                ?.showShipperHomeSubscription ??
-            false;
+    final showShipperSubscription = ref
+            .watch(platformSettingsProvider)
+            .valueOrNull
+            ?.showShipperHomeSubscription ??
+        false;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -1241,7 +1243,7 @@ class _ShipperDashboardScreenState
       child: Row(
         children: [
           const Expanded(
-                child: Text('Demandes de réservation reçues', style: AppTheme.h2),
+            child: Text('Demandes de réservation reçues', style: AppTheme.h2),
           ),
           if (pending > 0)
             Container(
@@ -2339,13 +2341,13 @@ class _ShipmentMiniCard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                IconButton(
-                  tooltip: 'Partager cette offre',
-                  icon: const Icon(Icons.ios_share_rounded, size: 20),
-                  color: AppTheme.primaryColor,
+                TextButton.icon(
                   onPressed: () => ref
                       .read(offerShareServiceProvider)
                       .shareOffer(context, shipment),
+                  label: const Text('Partager cette offre'),
+                  icon: const Icon(Icons.share, size: 20),
+                  // style: ButtonStyle(color: AppTheme.primaryColor,),
                 ),
               ],
             ),
@@ -2610,7 +2612,8 @@ class _ShipperShipmentDetailScreenState
                   AppTheme.spaceMd,
                   AppTheme.spaceSm,
                 ),
-            child: Text('Demandes de réservation reçues', style: AppTheme.h2),
+                child:
+                    Text('Demandes de réservation reçues', style: AppTheme.h2),
               ),
             ),
             PagedSliverList<Booking>(

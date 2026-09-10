@@ -99,8 +99,9 @@ class _ShipperCardState extends State<ShipperCard> {
 
   int get _availabilityPercent => (_availability * 100).round();
 
-  int get _daysUntilArrival =>
-      (widget.arrivalDate ?? widget.departureDate).difference(DateTime.now()).inDays;
+  int get _daysUntilArrival => (widget.arrivalDate ?? widget.departureDate)
+      .difference(DateTime.now())
+      .inDays;
 
   Color get _availabilityColor {
     if (_availabilityPercent >= 75) return AppTheme.accentColor;
@@ -243,8 +244,6 @@ class _ShipperCardState extends State<ShipperCard> {
     );
   }
 
-
-
   Widget _buildAvailability() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,25 +285,25 @@ class _ShipperCardState extends State<ShipperCard> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Prix', style: AppTheme.caption),
-              Text(
-                '${(widget.clientPricePerKg ?? widget.pricePerKg).toStringAsFixed(0)} '
-                '${widget.currency}/kg',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: widget.isAvailable
-                      ? AppTheme.primaryColor
-                      : AppTheme.textMutedColor,
-                ),
-              ),
-            ],
-          ),
-        ),
+        // Expanded(
+        //   child: Column(
+        //     crossAxisAlignment: CrossAxisAlignment.start,
+        //     children: [
+        //      const Text('Prix', style: AppTheme.caption),
+        //       Text(
+        //         '${(widget.clientPricePerKg ?? widget.pricePerKg).toStringAsFixed(0)} '
+        //         '${widget.currency}/kg',
+        //         style: TextStyle(
+        //           fontSize: 14,
+        //           fontWeight: FontWeight.w700,
+        //           color: widget.isAvailable
+        //               ? AppTheme.primaryColor
+        //               : AppTheme.textMutedColor,
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,7 +325,7 @@ class _ShipperCardState extends State<ShipperCard> {
             child: IconButton(
               onPressed: widget.onShare,
               tooltip: 'Partager cette offre',
-              icon: const Icon(Icons.ios_share_rounded, size: 20),
+              icon: const Icon(Icons.share, size: 20),
               color: AppTheme.primaryColor,
               padding: EdgeInsets.zero,
             ),
