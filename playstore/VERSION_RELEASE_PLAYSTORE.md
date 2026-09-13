@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.82** |
-| Code de version (versionCode) | **302** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `bd29e4c` |
-| Statut CI | Release `v1.1.82` en cours de publication par la CI |
+| Version (versionName) | **1.1.83** |
+| Code de version (versionCode) | **305** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `cdea7bd` |
+| Statut CI | Release `v1.1.83` en cours de publication par la CI |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -51,6 +51,21 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 > Les notes ci-dessous sont rédigées pour les utilisateurs de l'application
 > (et non pour les développeurs) : elles décrivent les nouveautés en langage
 > simple, sans détail technique.
+
+### Version 1.1.83
+
+- **Badge Vérifié / Non vérifié partout** : le badge de vérification
+  s'affiche désormais dans les paiements et partout où un expéditeur
+  apparaît — plus de simple « Oui / Non ».
+- **Changement de type à tout moment** : les expéditeurs peuvent basculer
+  entre « Voyageur ordinaire » et « Micro-importateur » à tout moment,
+  même après vérification — le compte repasse en « Non vérifié » en
+  attente de validation du fondateur.
+- **Dashboard expéditeur allégé** : les demandes de réservation reçues
+  affichent désormais uniquement les informations essentielles (produit,
+  statut, client, poids, itinéraire).
+- **CargoLink → CabaLink** : le nom de l'application a été renommé
+  dans toutes les interfaces utilisateur.
 
 ### Version 1.1.82
 
