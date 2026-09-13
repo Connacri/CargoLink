@@ -49,6 +49,44 @@ class ShipperService {
     }
   }
 
+  /// Create a shipper profile WITHOUT identity documents (passport/selfie).
+  ///
+  /// The user picks their shipper type (voyageur ordinaire / micro
+  /// importateur) and can verify later from the dashboard, profile or this
+  /// screen. Status starts at `unverified` — no docs means no admin queue.
+  Future<Shipper?> registerShipperBasic({
+    required String userId,
+    String shipperType = 'voyageur_ordinaire',
+    String? microCardPhotoUrl,
+  }) async {
+    try {
+      _logger.i('Registering basic shipper: $userId');
+
+      final response = await _supabase
+          .from('shippers')
+          .insert({
+            'user_id': userId,
+            'passport_number': null,
+            'passport_photo_url': null,
+            'live_photo_url': null,
+            'verification_status': 'unverified',
+            'shipper_type': shipperType,
+            'micro_card_photo_url': microCardPhotoUrl,
+            'rating': 0.0,
+            'total_shipments': 0,
+            'created_at': DateTime.now().toIso8601String(),
+          })
+          .select()
+          .single();
+
+      _logger.i('Basic shipper registered successfully');
+      return Shipper.fromJson(response);
+    } catch (e) {
+      _logger.e('Error registering basic shipper: $e');
+      rethrow;
+    }
+  }
+
   /// Re-submit shipper documents after a rejection
   Future<Shipper?> updateShipperDocuments({
     required String shipperId,

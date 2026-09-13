@@ -374,14 +374,8 @@ class TrackingScreen extends ConsumerWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (isVerified) ...[
-                          const SizedBox(width: AppTheme.spaceXs),
-                          const Icon(
-                            Icons.verified_rounded,
-                            size: 16,
-                            color: AppTheme.infoColor,
-                          ),
-                        ],
+                        const SizedBox(width: AppTheme.spaceXs),
+                        VerificationBadge(isVerified: isVerified),
                       ],
                     ),
                     const SizedBox(height: 2),

@@ -1212,33 +1212,50 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             break;
           case 'rejected':
             text =
-                'Dossier rejeté: ${shipperData.rejectionReason ?? 'Veuillez réessayer'}';
+                'Dossier rejeté: ${shipperData.rejectionReason ?? 'Veuillez réessayer'} · Toucher pour corriger';
             color = AppTheme.errorColor;
             break;
+          case 'unverified':
+            text =
+                'Compte non vérifié · Les clients voient un badge « Non vérifié » · Toucher pour vérifier';
+            color = AppTheme.infoColor;
+            break;
           default:
-            text = 'Dossier en attente de vérification';
+            text = 'Dossier en attente de vérification · Toucher pour suivre';
             color = AppTheme.warningColor;
         }
+        final canVerify = !shipperData.isVerified;
         return Padding(
           padding: const EdgeInsets.fromLTRB(
               AppTheme.spaceMd, AppTheme.spaceMd, AppTheme.spaceMd, 0),
-          child: Container(
-            padding: const EdgeInsets.all(AppTheme.spaceSm + 4),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-              border: Border.all(color: color.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              children: [
-                AnimatedIconDot(
-                  icon: Icons.verified_user_rounded,
-                  color: color,
-                  size: 18,
-                ),
-                const SizedBox(width: AppTheme.spaceSm + 4),
-                Expanded(child: Text(text, style: TextStyle(color: color))),
-              ],
+          child: GestureDetector(
+            onTap: canVerify
+                ? () => Navigator.of(context)
+                    .pushNamed('/shipper-registration')
+                : null,
+            child: Container(
+              padding: const EdgeInsets.all(AppTheme.spaceSm + 4),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                border: Border.all(color: color.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  AnimatedIconDot(
+                    icon: canVerify
+                        ? Icons.verified_user_rounded
+                        : Icons.verified_rounded,
+                    color: color,
+                    size: 18,
+                  ),
+                  const SizedBox(width: AppTheme.spaceSm + 4),
+                  Expanded(child: Text(text, style: TextStyle(color: color))),
+                  if (canVerify)
+                    const Icon(Icons.chevron_right_rounded,
+                        size: 18, color: AppTheme.textMutedColor),
+                ],
+              ),
             ),
           ),
         );

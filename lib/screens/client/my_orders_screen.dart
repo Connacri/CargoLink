@@ -1367,14 +1367,8 @@ class _BookingCard extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (shipper!.isVerified) ...[
-                        const SizedBox(width: AppTheme.spaceXs),
-                        const Icon(
-                          Icons.verified_rounded,
-                          size: 16,
-                          color: AppTheme.infoColor,
-                        ),
-                      ],
+                      const SizedBox(width: AppTheme.spaceXs),
+                      VerificationBadge(isVerified: shipper!.isVerified),
                       const Icon(
                         Icons.chevron_right_rounded,
                         size: 18,

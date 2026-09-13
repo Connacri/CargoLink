@@ -262,6 +262,9 @@ class _ProfileTabIcon extends ConsumerWidget {
       case 'pending':
         badgeIcon = Icons.schedule_rounded;
         badgeColor = const Color(0xFFF59E0B);
+      case 'unverified':
+        badgeIcon = Icons.info_rounded;
+        badgeColor = const Color(0xFF3B82F6);
       default:
         badgeIcon = null;
         badgeColor = Colors.transparent;

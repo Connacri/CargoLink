@@ -189,9 +189,6 @@ class _ShipperDashboardScreenState
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        if (!shipperData.isVerified) {
-          return _buildNotVerified(shipperData);
-        }
         return _buildDashboard(shipperData);
       },
       loading: () =>
@@ -200,67 +197,63 @@ class _ShipperDashboardScreenState
     );
   }
 
-  Widget _buildNotVerified(Shipper? shipper) {
-    final isRejected = shipper?.isRejected ?? false;
-    final title = isRejected ? 'Dossier rejeté' : 'Vérification en attente';
-    final message = isRejected
-        ? shipper?.rejectionReason ??
-            'Veuillez soumettre à nouveau vos documents.'
-        : 'Un administrateur doit valider votre identité avant '
-            'de pouvoir publier des offres de transport.';
+  Widget _buildVerificationBanner(Shipper shipper) {
+    final color = shipper.isRejected
+        ? AppTheme.errorColor
+        : shipper.isUnverified
+            ? AppTheme.infoColor
+            : AppTheme.warningColor;
+    final icon = shipper.isRejected
+        ? Icons.error_outline_rounded
+        : shipper.isUnverified
+            ? Icons.info_outline_rounded
+            : Icons.schedule_rounded;
+    final title = shipper.isRejected
+        ? 'Dossier rejeté'
+        : shipper.isUnverified
+            ? 'Votre compte n\'est pas vérifié'
+            : 'Vérification en attente';
+    final detail = shipper.isRejected
+        ? (shipper.rejectionReason?.isNotEmpty == true
+            ? shipper.rejectionReason!
+            : 'Soumettez à nouveau vos documents.')
+        : shipper.isUnverified
+            ? 'Les clients verront un badge « Non vérifié ». '
+                'La vérification augmente la confiance et les chances '
+                'd\'être réservé.'
+            : 'Un administrateur doit valider votre dossier.';
 
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.primaryGradient),
-        child: SafeArea(
-          top: false,
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppTheme.spaceLg),
-              child: GlassCard(
-                padding: const EdgeInsets.all(AppTheme.spaceLg),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedIconDot(
-                      icon: isRejected
-                          ? Icons.error_outline_rounded
-                          : Icons.verified_user_outlined,
-                      color: isRejected
-                          ? AppTheme.errorColor
-                          : AppTheme.warningColor,
-                      size: 32,
-                    ),
-                    const SizedBox(height: AppTheme.spaceMd),
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: AppTheme.h3,
-                    ),
-                    const SizedBox(height: AppTheme.spaceSm),
-                    Text(
-                      message,
-                      textAlign: TextAlign.center,
-                      style: AppTheme.bodySecondary,
-                    ),
-                    const SizedBox(height: AppTheme.spaceLg),
-                    FilledButton.icon(
-                      onPressed: () => Navigator.of(context)
-                          .pushNamed('/shipper-registration'),
-                      icon: Icon(
-                        isRejected
-                            ? Icons.replay_rounded
-                            : Icons.assignment_rounded,
-                      ),
-                      label: Text(
-                        isRejected ? 'Soumettre à nouveau' : 'Voir mon dossier',
-                      ),
-                    ),
-                  ],
-                ),
+    return GestureDetector(
+      onTap: () => Navigator.of(context).pushNamed('/shipper-registration'),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+        padding: const EdgeInsets.all(AppTheme.spaceSm),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          border: Border.all(color: color.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: AppTheme.spaceXs),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: color)),
+                  const SizedBox(height: 2),
+                  Text(detail, style: AppTheme.caption),
+                ],
               ),
             ),
-          ),
+            Icon(Icons.chevron_right_rounded, size: 18, color: color),
+          ],
         ),
       ),
     );
@@ -345,6 +338,14 @@ class _ShipperDashboardScreenState
                 canAdvertise: shipper.isMicroImportateur,
               ),
             ),
+            if (!shipper.isVerified)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.only(bottom: AppTheme.spaceSm),
+                  child: _buildVerificationBanner(shipper),
+                ),
+              ),
             if (activeAds.isNotEmpty)
               SliverToBoxAdapter(
                 child: AdBannerCarousel(ads: activeAds),
@@ -2470,20 +2471,6 @@ class _ActiveShipmentsScreenState extends ConsumerState<ActiveShipmentsScreen> {
         if (shipperData == null) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (!shipperData.isVerified) {
-          return const Scaffold(
-            body: Center(
-              child: Padding(
-                padding: EdgeInsets.all(AppTheme.spaceLg),
-                child: Text(
-                  'Complétez votre dossier de vérification pour voir vos offres',
-                  textAlign: TextAlign.center,
-                  style: AppTheme.bodySecondary,
-                ),
-              ),
-            ),
           );
         }
         return _buildList(shipperData);

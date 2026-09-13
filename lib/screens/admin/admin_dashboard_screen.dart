@@ -356,8 +356,10 @@ class _ShipperVerificationCard extends ConsumerWidget {
                             AppTheme.body.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        'Passport: ${shipper.passportNumber}',
+Text(
+                        shipper.passportNumber != null
+                            ? 'Passport: ${shipper.passportNumber}'
+                            : 'Type: ${shipper.isMicroImportateur ? 'Micro-Importateur' : 'Voyageur ordinaire'}',
                         style: AppTheme.caption,
                       ),
                     ],
@@ -366,18 +368,18 @@ class _ShipperVerificationCard extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: AppTheme.spaceSm + 4),
-            if (shipper.passportPhotoUrl.isNotEmpty ||
-                shipper.livePhotoUrl.isNotEmpty ||
+            if ((shipper.passportPhotoUrl?.isNotEmpty ?? false) ||
+                (shipper.livePhotoUrl?.isNotEmpty ?? false) ||
                 (shipper.microCardPhotoUrl?.isNotEmpty ?? false)) ...[
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (shipper.passportPhotoUrl.isNotEmpty)
-                    _preview(context, 'Passeport', shipper.passportPhotoUrl),
-                  if (shipper.livePhotoUrl.isNotEmpty) ...[
-                    if (shipper.passportPhotoUrl.isNotEmpty)
+                  if ((shipper.passportPhotoUrl?.isNotEmpty ?? false))
+                    _preview(context, 'Passeport', shipper.passportPhotoUrl!),
+                  if ((shipper.livePhotoUrl?.isNotEmpty ?? false)) ...[
+                    if ((shipper.passportPhotoUrl?.isNotEmpty ?? false))
                       const SizedBox(width: AppTheme.spaceSm),
-                    _preview(context, 'Selfie', shipper.livePhotoUrl),
+                    _preview(context, 'Selfie', shipper.livePhotoUrl!),
                   ],
                   if (shipper.microCardPhotoUrl?.isNotEmpty ?? false) ...[
                     const SizedBox(width: AppTheme.spaceSm),

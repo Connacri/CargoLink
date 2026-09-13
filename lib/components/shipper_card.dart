@@ -183,14 +183,8 @@ class _ShipperCardState extends State<ShipperCard> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (widget.isVerified) ...[
-                    const SizedBox(width: 6),
-                    const Icon(
-                      Icons.verified_rounded,
-                      size: 16,
-                      color: AppTheme.primaryColor,
-                    ),
-                  ],
+                  const SizedBox(width: 6),
+                  VerificationBadge(isVerified: widget.isVerified),
                   if (!widget.isAvailable) ...[
                     const SizedBox(width: 6),
                     const Icon(

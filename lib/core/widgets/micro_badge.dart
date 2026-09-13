@@ -1,6 +1,46 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
+/// Badge public d'état de vérification de l'expéditeur : « Vérifié » (verts)
+/// pour les profils validés, sinon « Non vérifié » (orange) pour tous les
+/// autres statuts (unverified, pending, rejected). Donne aux clients un
+/// repère de confiance sans dévoiler le statut interne exact.
+class VerificationBadge extends StatelessWidget {
+  const VerificationBadge({super.key, required this.isVerified});
+
+  final bool isVerified;
+
+  @override
+  Widget build(BuildContext context) {
+    final color =
+        isVerified ? AppTheme.accentColor : AppTheme.warningColor;
+    final icon = isVerified ? Icons.verified_rounded : Icons.gpp_bad_outlined;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            isVerified ? 'Vérifié' : 'Non vérifié',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Badge "Micro-Importateur" affiché sur les cartes d'offre, profils publics,
 /// le tableau de bord fondateur et les détails de commande, pour distinguer
 /// les expéditeurs disposant d'une carte de micro-importateur.

@@ -406,7 +406,7 @@ class _ProfileTab extends ConsumerWidget {
                                 : 'Voyageur ordinaire'),
                         _row(
                             'Statut', _verificationLabel(s.verificationStatus)),
-                        _row('Passeport', s.passportNumber),
+                        _row('Passeport', s.passportNumber ?? '—'),
                         _row('Note', s.ratingDisplay),
                         _row('Expéditions', '${s.totalShipments}'),
                         _row('Rejeté', s.rejectionReason ?? '—'),

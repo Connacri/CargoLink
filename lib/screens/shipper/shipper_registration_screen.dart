@@ -386,14 +386,14 @@ class _ShipperRegistrationScreenState
 
   Widget _buildForm(Shipper? existing) {
     if (existing != null) {
-      _passportNumberController.text = existing.passportNumber;
+      _passportNumberController.text = existing.passportNumber ?? '';
     }
 
     return CustomScrollView(
       slivers: [
         const CompactSliverHeader(
           title: 'Inscription Expéditeur',
-          subtitle: 'Vérification de l\'identité pour publier des offres',
+          subtitle: 'Vérification de l\'identité pour être « Vérifié »',
           icon: Icons.verified_user_rounded,
         ),
         SliverToBoxAdapter(
@@ -405,6 +405,38 @@ class _ShipperRegistrationScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (existing == null || existing.isUnverified) ...[
+                      Container(
+                        padding: const EdgeInsets.all(AppTheme.spaceSm),
+                        decoration: BoxDecoration(
+                          color: AppTheme.infoColor.withValues(alpha: 0.08),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMd),
+                          border: Border.all(
+                            color: AppTheme.infoColor.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: const Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.info_outline_rounded,
+                                size: 18, color: AppTheme.infoColor),
+                            SizedBox(width: AppTheme.spaceXs),
+                            Expanded(
+                              child: Text(
+                                'Vous pouvez publier des offres et recevoir '
+                                'des commandes sans vérification : un badge '
+                                '« Non vérifié » sera affiché aux clients. '
+                                'La vérification augmente la confiance et '
+                                'les chances d\'être réservé.',
+                                style: AppTheme.caption,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppTheme.spaceMd),
+                    ],
                     if (existing != null && existing.isRejected) ...[
                       Container(
                         padding: const EdgeInsets.all(AppTheme.spaceSm),
@@ -558,6 +590,23 @@ class _ShipperRegistrationScreenState
                         ),
                       ),
                     ),
+                    if (existing == null || existing.isUnverified) ...[
+                      const SizedBox(height: AppTheme.spaceSm),
+                      Center(
+                        child: TextButton(
+                          onPressed: _isSubmitting ? null : _skipVerification,
+                          child: Text(
+                            existing == null
+                                ? 'Publier sans vérification'
+                                : 'Accéder à mon compte',
+                            style: AppTheme.body.copyWith(
+                              color: AppTheme.textSecondaryColor,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -566,6 +615,45 @@ class _ShipperRegistrationScreenState
         ),
       ],
     );
+  }
+
+  Future<void> _skipVerification() async {
+    setState(() => _isSubmitting = true);
+    try {
+      final userId = ref.read(authServiceProvider).currentUserId;
+      if (userId == null) throw Exception('Utilisateur non identifié');
+
+      final existing = ref.read(currentShipperProvider).valueOrNull;
+      if (existing == null) {
+        await ref.read(shipperServiceProvider).registerShipperBasic(
+              userId: userId,
+              shipperType: _shipperType,
+            );
+      }
+
+      ref.invalidate(currentShipperProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Profil créé. Vous pouvez soumettre vos documents '
+              'de vérification à tout moment depuis le tableau de bord '
+              'ou votre profil.',
+            ),
+            backgroundColor: AppTheme.infoColor,
+          ),
+        );
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil('/home', (route) => false);
+      }
+    } catch (e) {
+      if (mounted) {
+        await showAppErrorDialog(context, message: 'Erreur: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   Widget _buildTypeSelector() {

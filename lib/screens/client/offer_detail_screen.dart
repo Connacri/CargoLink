@@ -167,12 +167,9 @@ class OfferDetailScreen extends ConsumerWidget {
                                               style: AppTheme.label,
                                             ),
                                           ),
-                                          if (shipper.isVerified) ...[
-                                            const SizedBox(width: 6),
-                                            const Icon(Icons.verified_rounded,
-                                                size: 16,
-                                                color: AppTheme.accentColor),
-                                          ],
+                                          const SizedBox(width: 6),
+                                          VerificationBadge(
+                                              isVerified: shipper.isVerified),
                                         ],
                                       ),
                                       const SizedBox(height: 2),

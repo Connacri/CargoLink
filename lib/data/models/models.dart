@@ -143,10 +143,10 @@ class User {
 class Shipper {
   final String id;
   final String userId;
-  final String passportNumber;
-  final String passportPhotoUrl;
-  final String livePhotoUrl;
-  final String verificationStatus; // pending, verified, rejected
+  final String? passportNumber;
+  final String? passportPhotoUrl;
+  final String? livePhotoUrl;
+  final String verificationStatus; // unverified, pending, verified, rejected
   final String shipperType; // voyageur_ordinaire, micro_importateur
   final String? microCardPhotoUrl;
   final String? rejectionReason;
@@ -161,9 +161,9 @@ class Shipper {
   Shipper({
     required this.id,
     required this.userId,
-    required this.passportNumber,
-    required this.passportPhotoUrl,
-    required this.livePhotoUrl,
+    this.passportNumber,
+    this.passportPhotoUrl,
+    this.livePhotoUrl,
     required this.verificationStatus,
     this.shipperType = 'voyageur_ordinaire',
     this.microCardPhotoUrl,
@@ -181,9 +181,9 @@ class Shipper {
     return Shipper(
       id: json['id'] as String,
       userId: json['user_id'] as String,
-      passportNumber: json['passport_number'] as String,
-      passportPhotoUrl: json['passport_photo_url'] as String,
-      livePhotoUrl: json['live_photo_url'] as String,
+      passportNumber: json['passport_number'] as String?,
+      passportPhotoUrl: json['passport_photo_url'] as String?,
+      livePhotoUrl: json['live_photo_url'] as String?,
       verificationStatus: json['verification_status'] as String,
       shipperType: json['shipper_type'] as String? ?? 'voyageur_ordinaire',
       microCardPhotoUrl: json['micro_card_photo_url'] as String?,
@@ -224,6 +224,7 @@ class Shipper {
   }
 
   bool get isVerified => verificationStatus == 'verified';
+  bool get isUnverified => verificationStatus == 'unverified';
   bool get isPending => verificationStatus == 'pending';
   bool get isRejected => verificationStatus == 'rejected';
   bool get isMicroImportateur => shipperType == 'micro_importateur';

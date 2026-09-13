@@ -92,11 +92,12 @@ class _ShipperProfileBody extends ConsumerWidget {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                    if (shipper.isVerified) ...[
-                                      const SizedBox(width: 6),
-                                      const VerifiedBadge(),
-                                    ],
-                                    // Type d'expéditeur toujours visible.
+                                    const SizedBox(
+                                        width: 6,
+                                      ),
+                                      VerificationBadge(
+                                          isVerified: shipper.isVerified),
+                                      // Type d'expéditeur toujours visible.
                                     const SizedBox(width: 6),
                                     ShipperTypeBadge(
                                       isMicroImportateur:
@@ -263,37 +264,6 @@ class _ShipperProfileBody extends ConsumerWidget {
     add('Instagram', user.instagram, Icons.camera_alt_outlined);
     add('TikTok', user.tiktok, Icons.music_note_rounded);
     return tiles;
-  }
-}
-
-class VerifiedBadge extends StatelessWidget {
-  const VerifiedBadge({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.4)),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.verified_rounded, size: 13, color: AppTheme.primaryColor),
-          SizedBox(width: 3),
-          Text(
-            'Vérifié',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.primaryColor,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 

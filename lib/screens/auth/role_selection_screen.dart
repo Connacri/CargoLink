@@ -127,10 +127,11 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
         ),
       );
 
-      // New shippers (or shippers without a verified dossier) must complete
-      // their identity registration.
+      // New shippers (no profile row yet) must register their shipper type.
+      // Verified and unverified shippers both get access — the unverified
+      // ones can submit their documents later from the dashboard or profile.
       final shipper = ref.read(currentShipperProvider).valueOrNull;
-      if (role == 'shipper' && (shipper == null || !shipper.isVerified)) {
+      if (role == 'shipper' && shipper == null) {
         Navigator.of(context)
             .pushNamedAndRemoveUntil('/shipper-registration', (r) => false);
         return;
