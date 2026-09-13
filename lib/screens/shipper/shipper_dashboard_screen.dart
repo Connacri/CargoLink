@@ -2051,9 +2051,22 @@ class _FinanceSummaryStrip extends ConsumerWidget {
     // Profit net comptable : CA total (encaissé + à recevoir) − commissions
     // des commandes déjà payées par les clients. Les commissions des
     // commandes impayées (paiement à la livraison en attente) sont différées.
-    final profit = (summary.valueOrNull?['profit'] as num?)?.toDouble() ?? 0;
-    final feesDue = ((summary.valueOrNull?['fees_awaiting'] as num?) ?? 0) +
-        ((summary.valueOrNull?['fees_pending'] as num?) ?? 0);
+    // Les montants affichés ne sont jamais négatifs (clampés à 0).
+    final profit =
+        ((summary.valueOrNull?['profit'] as num?)?.toDouble() ?? 0).clamp(0, double.infinity);
+    final feesDue =
+        (((summary.valueOrNull?['fees_awaiting'] as num?) ?? 0) +
+                ((summary.valueOrNull?['fees_pending'] as num?) ?? 0))
+            .clamp(0, double.infinity);
+    final grossRevenue =
+        ((summary.valueOrNull?['gross_revenue'] as num?)?.toDouble() ?? 0)
+            .clamp(0, double.infinity);
+    final feesPaid =
+        ((summary.valueOrNull?['fees_paid'] as num?)?.toDouble() ?? 0)
+            .clamp(0, double.infinity);
+    final deliveredRevenue =
+        ((summary.valueOrNull?['delivered_revenue'] as num?)?.toDouble() ?? 0)
+            .clamp(0, double.infinity);
 
     return WalletCard(
       title: 'Portefeuille',
@@ -2063,6 +2076,13 @@ class _FinanceSummaryStrip extends ConsumerWidget {
           ? 'Dus : ${feesDue.toStringAsFixed(0)} $currency'
           : 'Aucun dû',
       badgePositive: feesDue <= 0,
+      rows: [
+        (label: 'Total', value: '${grossRevenue.toStringAsFixed(0)} $currency'),
+        (label: 'Déjà payés',
+            value: '${feesPaid.toStringAsFixed(0)} $currency'),
+        (label: 'Livré',
+            value: '${deliveredRevenue.toStringAsFixed(0)} $currency'),
+      ],
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => const ShipperFinanceScreen(),

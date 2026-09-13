@@ -1177,6 +1177,7 @@ class PaymentService {
 
       var revenue = 0.0;
       var receivable = 0.0;
+      var deliveredRevenue = 0.0;
       final cancelledBookingIds = <String>{};
       // Livraison par commande : une commission n'est déduite du bénéfice
       // net que si l'expéditeur a effectivement livré le colis (booking
@@ -1202,6 +1203,7 @@ class PaymentService {
         if (bookingId != null) {
           deliveredByBookingId[bookingId] = status == 'delivered';
         }
+        if (status == 'delivered') deliveredRevenue += gain;
         if (payment == 'paid') {
           revenue += gain;
           final created =
@@ -1282,6 +1284,7 @@ class PaymentService {
         'revenue': revenue,
         'receivable': receivable,
         'gross_revenue': grossRevenue,
+        'delivered_revenue': deliveredRevenue,
         'fees_paid': feesPaid,
         'fees_awaiting': feesAwaiting,
         'fees_pending': feesPending,

@@ -80,7 +80,9 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
         settings.valueOrNull?.defaultCurrency ?? AppConstants.defaultCurrency;
 
     final revenue = (summary.valueOrNull?['revenue'] as num?)?.toDouble() ?? 0;
-    final profit = (summary.valueOrNull?['profit'] as num?)?.toDouble() ?? 0;
+    final profit = ((summary.valueOrNull?['profit'] as num?)?.toDouble() ?? 0)
+        .clamp(0, double.infinity)
+        .toDouble();
 
     ref.listen(
       tableChangesProvider(('bookings', null, null)),
@@ -155,6 +157,7 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
                 .valueOrNull?['fees_on_undelivered_bookings']) as num?)
             ?.toDouble() ??
         0;
+    final deferredFeePos = deferredFee.clamp(0, double.infinity).toDouble();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -184,10 +187,10 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
               'colis déjà livrés.',
               style: AppTheme.bodySecondary,
             ),
-            if (deferredFee > 0) ...[
+            if (deferredFeePos > 0) ...[
               const SizedBox(height: AppTheme.spaceXs),
               Text(
-                '+ ${deferredFee.toStringAsFixed(0)} $currency de commission '
+                '+ ${deferredFeePos.toStringAsFixed(0)} $currency de commission '
                 'seront déduits à la livraison.',
                 style: AppTheme.caption,
               ),
@@ -200,17 +203,14 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
 
   Widget _buildStatGrid(String shipperId, String currency) {
     final summary = ref.watch(shipperFinanceSummaryProvider(shipperId));
-    final revenue = (summary.valueOrNull?['revenue'] as num?)?.toDouble() ?? 0;
-    final receivable =
-        (summary.valueOrNull?['receivable'] as num?)?.toDouble() ?? 0;
-    final feesPaid =
-        (summary.valueOrNull?['fees_paid'] as num?)?.toDouble() ?? 0;
-    final feesAwaiting =
-        (summary.valueOrNull?['fees_awaiting'] as num?)?.toDouble() ?? 0;
-    final feesPending =
-        (summary.valueOrNull?['fees_pending'] as num?)?.toDouble() ?? 0;
-    final feesRefunded =
-        (summary.valueOrNull?['fees_refunded'] as num?)?.toDouble() ?? 0;
+    // Les montants affichés ne sont jamais négatifs (clampés à 0).
+    final revenue =
+        ((summary.valueOrNull?['revenue'] as num?)?.toDouble() ?? 0).clamp(0, double.infinity).toDouble();
+    final receivable = ((summary.valueOrNull?['receivable'] as num?)?.toDouble() ?? 0).clamp(0, double.infinity).toDouble();
+    final feesPaid = ((summary.valueOrNull?['fees_paid'] as num?)?.toDouble() ?? 0).clamp(0, double.infinity).toDouble();
+    final feesAwaiting = ((summary.valueOrNull?['fees_awaiting'] as num?)?.toDouble() ?? 0).clamp(0, double.infinity).toDouble();
+    final feesPending = ((summary.valueOrNull?['fees_pending'] as num?)?.toDouble() ?? 0).clamp(0, double.infinity).toDouble();
+    final feesRefunded = ((summary.valueOrNull?['fees_refunded'] as num?)?.toDouble() ?? 0).clamp(0, double.infinity).toDouble();
     final feesDue = feesAwaiting + feesPending;
 
     return Column(

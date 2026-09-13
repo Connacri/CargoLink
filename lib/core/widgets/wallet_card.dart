@@ -6,13 +6,15 @@ import 'glass_card.dart';
 
 /// Carte « Portefeuille » commune aux écrans d'accueil : gros montant
 /// principal (profit net ou solde), pastille secondaire (dus / en attente),
-/// et un appui n'importe où sur la carte pour ouvrir les détails.
+/// lignes de statistiques optionnelles, et un appui n'importe où sur la carte
+/// pour ouvrir les détails.
 class WalletCard extends StatelessWidget {
   final String title;
   final String mainLabel;
   final String mainValue;
   final String? badgeLabel;
   final bool badgePositive;
+  final List<({String label, String value})>? rows;
   final VoidCallback? onTap;
 
   const WalletCard({
@@ -22,6 +24,7 @@ class WalletCard extends StatelessWidget {
     required this.mainValue,
     this.badgeLabel,
     this.badgePositive = false,
+    this.rows,
     this.onTap,
   });
 
@@ -109,6 +112,25 @@ class WalletCard extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+              ),
+            ],
+            if (rows != null && rows!.isNotEmpty) ...[
+              const SizedBox(height: AppTheme.spaceSm),
+              ...rows!.map(
+                (row) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(row.label, style: AppTheme.caption),
+                      Text(
+                        row.value,
+                        style: AppTheme.caption
+                            .copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
