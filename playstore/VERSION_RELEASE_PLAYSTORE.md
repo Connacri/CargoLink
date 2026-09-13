@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.73** |
-| Code de version (versionCode) | **293** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `25e730e` |
-| Statut CI | À publier au prochain push → release `v1.1.73` sur GitHub |
+| Version (versionName) | **1.1.75** |
+| Code de version (versionCode) | **295** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `615310e` |
+| Statut CI | À publier au prochain push → release `v1.1.75` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -52,7 +52,15 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 > (et non pour les développeurs) : elles décrivent les nouveautés en langage
 > simple, sans détail technique.
 
-### Version 1.1.73
+### Version 1.1.75
+
+- **Cartes de l'accueil expéditeur pilotées par le fondateur** : les cartes
+  « Demandes de livraison » et « Publier une publicité » ne s'affichent
+  désormais que si le fondateur les a activées (Réglages → Paramètres
+  d'affichage → Accueil Expéditeur). En attendant, l'expéditeur ne voit que
+  les fonctionnalités actives.
+
+### Version 1.1.74
 
 - **Prix toujours affiché avec la marge** : le prix au kilo affiché par les
   expéditeurs sur leur tableau de bord (mini-carte d'une offre publiée)
