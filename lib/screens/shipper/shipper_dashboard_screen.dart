@@ -309,6 +309,19 @@ class _ShipperDashboardScreenState
             ?.showShipperHomeSubscription ??
         false;
 
+    // Cartes « Demandes de livraison » et « Publier une publicité » pilotées
+    // par le Fondateur : masquées tant qu'elles ne sont pas activées.
+    final showShipperDeliveryRequests = ref
+            .watch(platformSettingsProvider)
+            .valueOrNull
+            ?.showShipperHomeDeliveryRequests ??
+        false;
+    final showShipperPublishAd = ref
+            .watch(platformSettingsProvider)
+            .valueOrNull
+            ?.showShipperHomePublishAd ??
+        false;
+
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
@@ -347,7 +360,11 @@ class _ShipperDashboardScreenState
               child: _buildStats(shipper),
             ),
             SliverToBoxAdapter(
-              child: _buildPublishAndScan(shipper),
+              child: _buildPublishAndScan(
+                shipper,
+                showDeliveryRequests: showShipperDeliveryRequests,
+                showPublishAd: showShipperPublishAd,
+              ),
             ),
             if (showShipperSubscription)
               SliverToBoxAdapter(
@@ -551,7 +568,11 @@ class _ShipperDashboardScreenState
   // card below it, both taking the place of the two app-bar icons.
   // --------------------------------------------------------------------------
 
-  Widget _buildPublishAndScan(Shipper shipper) {
+  Widget _buildPublishAndScan(
+    Shipper shipper, {
+    required bool showDeliveryRequests,
+    required bool showPublishAd,
+  }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.spaceMd,
@@ -666,71 +687,73 @@ class _ShipperDashboardScreenState
               ),
             ),
           ),
-          const SizedBox(height: AppTheme.spaceMd),
-          InkWell(
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const DeliveryBrowseScreen()),
-            ),
-            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-            child: Ink(
-              decoration: BoxDecoration(
-                gradient: AppTheme.infoGradient,
-                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                boxShadow: AppTheme.shadowMd,
+          if (showDeliveryRequests) ...[
+            const SizedBox(height: AppTheme.spaceMd),
+            InkWell(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const DeliveryBrowseScreen()),
               ),
-              padding: const EdgeInsets.all(AppTheme.spaceLg),
-              child: Row(
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+              child: Ink(
+                decoration: BoxDecoration(
+                  gradient: AppTheme.infoGradient,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                  boxShadow: AppTheme.shadowMd,
+                ),
+                padding: const EdgeInsets.all(AppTheme.spaceLg),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: const Icon(
+                        Icons.delivery_dining_outlined,
+                        color: Colors.white,
+                        size: 38,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.delivery_dining_outlined,
-                      color: Colors.white,
-                      size: 38,
-                    ),
-                  ),
-                  const SizedBox(width: AppTheme.spaceMd),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Demandes de livraison',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
+                    const SizedBox(width: AppTheme.spaceMd),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Demandes de livraison',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Consultez les demandes des clients et proposez '
-                          'votre prix pour les livrer.',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            height: 1.35,
+                          SizedBox(height: 4),
+                          Text(
+                            'Consultez les demandes des clients et proposez '
+                            'votre prix pour les livrer.',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                              height: 1.35,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: AppTheme.spaceSm),
-                  const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: Colors.white70,
-                    size: 18,
-                  ),
-                ],
+                    const SizedBox(width: AppTheme.spaceSm),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: Colors.white70,
+                      size: 18,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          if (shipper.isMicroImportateur) ...[
+          ],
+          if (showPublishAd && shipper.isMicroImportateur) ...[
             const SizedBox(height: AppTheme.spaceMd),
             // Big "Publier une publicité" card — réservée aux micro-
             // importateurs : la soumission passe par la validation d'un
