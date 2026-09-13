@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.70** |
-| Code de version (versionCode) | **290** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `310ac8c` |
-| Statut CI | À publier au prochain push → release `v1.1.70` sur GitHub |
+| Version (versionName) | **1.1.73** |
+| Code de version (versionCode) | **293** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `25e730e` |
+| Statut CI | À publier au prochain push → release `v1.1.73` sur GitHub |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -51,6 +51,17 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 > Les notes ci-dessous sont rédigées pour les utilisateurs de l'application
 > (et non pour les développeurs) : elles décrivent les nouveautés en langage
 > simple, sans détail technique.
+
+### Version 1.1.73
+
+- **Prix toujours affiché avec la marge** : le prix au kilo affiché par les
+  expéditeurs sur leur tableau de bord (mini-carte d'une offre publiée)
+  correspond désormais au prix réellement payé par les clients, marge
+  CargoLink incluse.
+- **Partage d'offre cohérent** : l'image « billet d'avion » et le texte
+  partagés (WhatsApp, Telegram…) montrent eux aussi le prix final pour le
+  client, marge comprise — plus d'écart entre ce qui est affiché à
+  l'expéditeur et ce que le client voit.
 
 ### Version 1.1.70
 
