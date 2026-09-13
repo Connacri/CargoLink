@@ -2135,11 +2135,9 @@ class _ShipmentMiniCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final commissionPercent = ref
-            .watch(platformSettingsProvider)
-            .valueOrNull
-            ?.commissionPercent ??
-        AppConstants.platformCommissionPercent;
+    final commissionPercent =
+        ref.watch(platformSettingsProvider).valueOrNull?.commissionPercent ??
+            AppConstants.platformCommissionPercent;
     final clientPrice = shipment.pricePerKg * (1 + commissionPercent / 100);
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
@@ -2925,8 +2923,8 @@ class _DashboardBookingCard extends ConsumerWidget {
                   ),
                 ],
               ),
-            ],
-            const SizedBox(height: AppTheme.spaceSm),
+            ], //**
+            const SizedBox(height: AppTheme.spaceSm), //**
             Row(
               children: [
                 Expanded(
@@ -2946,7 +2944,7 @@ class _DashboardBookingCard extends ConsumerWidget {
                   ),
                 ),
               ],
-            ),
+            ), //**
           ],
         ),
       ),

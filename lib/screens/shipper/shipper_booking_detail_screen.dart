@@ -614,6 +614,19 @@ class _ShipperBookingDetailScreenState
     return result;
   }
 
+  double _clientPricePerKg(Booking booking) {
+    final commissionPercent =
+        ref.watch(platformSettingsProvider).valueOrNull?.commissionPercent ??
+            AppConstants.platformCommissionPercent;
+    final shipment = booking.shipment;
+    if (shipment == null) {
+      return booking.allocatedWeightKg > 0
+          ? booking.totalPrice / booking.allocatedWeightKg
+          : 0;
+    }
+    return shipment.pricePerKg * (1 + commissionPercent / 100);
+  }
+
   Widget _buildSummary(Booking booking) {
     return Column(
       children: [
@@ -634,6 +647,14 @@ class _ShipperBookingDetailScreenState
             valueColor: AppTheme.accentColor,
           ),
         ],
+        const SizedBox(height: AppTheme.spaceSm),
+        _SummaryRow(
+          label: 'Prix / kg',
+          value: booking.shipment != null
+              ? '${_clientPricePerKg(booking).toStringAsFixed(0)} ${AppConstants.defaultCurrency}'
+              : '—',
+          valueColor: AppTheme.primaryColor,
+        ),
         const SizedBox(height: AppTheme.spaceSm),
         _SummaryRow(
           label: 'Prix total',
