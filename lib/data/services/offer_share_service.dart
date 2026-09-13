@@ -55,12 +55,20 @@ class OfferShareService {
   /// Lien web fallback (accessible aux non-inscrits, ouvre la page de partage).
   static String webLinkFor(String shipmentId) => '$_webBaseUrl?id=$shipmentId';
 
-  Future<void> shareOffer(BuildContext context, Shipment shipment) async {
-    final bytes = await _captureTicket(context, ticketFor(shipment));
+  Future<void> shareOffer(
+    BuildContext context,
+    Shipment shipment, {
+    double? pricePerKg,
+  }) async {
+    final effectivePrice = pricePerKg ?? shipment.pricePerKg;
+    final bytes = await _captureTicket(
+      context,
+      ticketFor(shipment, pricePerKg: effectivePrice),
+    );
 
     final webUrl = webLinkFor(shipment.id);
     final text = '✈️ ${shipment.originCountry} → ${shipment.destinationCity} '
-        'à partir de ${shipment.pricePerKg.toStringAsFixed(0)} '
+        'à partir de ${effectivePrice.toStringAsFixed(0)} '
         '${AppConstants.defaultCurrency}/kg avec CargoLink !\n'
         'Voir l\'offre : $webUrl\n'
         'Télécharger l\'app : $_playStoreUrl';

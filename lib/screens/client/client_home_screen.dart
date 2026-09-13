@@ -1431,8 +1431,11 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 ),
               )
           : null,
-      onShare: () =>
-          ref.read(offerShareServiceProvider).shareOffer(context, shipment),
+      onShare: () => ref.read(offerShareServiceProvider).shareOffer(
+            context,
+            shipment,
+            pricePerKg: shipment.pricePerKg + commission,
+          ),
     );
   }
 

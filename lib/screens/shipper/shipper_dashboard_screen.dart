@@ -2112,6 +2112,12 @@ class _ShipmentMiniCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final commissionPercent = ref
+            .watch(platformSettingsProvider)
+            .valueOrNull
+            ?.commissionPercent ??
+        AppConstants.platformCommissionPercent;
+    final clientPrice = shipment.pricePerKg * (1 + commissionPercent / 100);
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.spaceMd),
       child: GlassCard(
@@ -2132,6 +2138,7 @@ class _ShipmentMiniCard extends ConsumerWidget {
                     child: OfferShareService.ticketFor(
                       shipment,
                       width: ticketWidth,
+                      pricePerKg: clientPrice,
                     ),
                   );
                 },
@@ -2297,7 +2304,7 @@ class _ShipmentMiniCard extends ConsumerWidget {
                     icon: Icons.payments_outlined,
                     label: 'Prix / kg',
                     value:
-                        '${shipment.pricePerKg.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
+                        '${clientPrice.toStringAsFixed(0)} ${AppConstants.defaultCurrency}',
                     valueColor: AppTheme.primaryColor,
                   ),
                 ),
@@ -2344,7 +2351,7 @@ class _ShipmentMiniCard extends ConsumerWidget {
                 TextButton.icon(
                   onPressed: () => ref
                       .read(offerShareServiceProvider)
-                      .shareOffer(context, shipment),
+                      .shareOffer(context, shipment, pricePerKg: clientPrice),
                   label: const Text('Partager cette offre'),
                   icon: const Icon(Icons.share, size: 20),
                   // style: ButtonStyle(color: AppTheme.primaryColor,),
