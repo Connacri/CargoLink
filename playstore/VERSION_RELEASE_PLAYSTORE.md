@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.77** |
-| Code de version (versionCode) | **297** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `4c5a01d` |
-| Statut CI | Release `v1.1.77` en cours de publication par la CI |
+| Version (versionName) | **1.1.81** |
+| Code de version (versionCode) | **301** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `2b8d6a8` |
+| Statut CI | Release `v1.1.81` en cours de publication par la CI |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -51,6 +51,23 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 > Les notes ci-dessous sont rédigées pour les utilisateurs de l'application
 > (et non pour les développeurs) : elles décrivent les nouveautés en langage
 > simple, sans détail technique.
+
+### Version 1.1.81
+
+- **Inscription expéditeur flexible, sans blocage** : choisissez votre profil
+  (Voyageur ordinaire ou Micro-Importateur) et **publiez des offres
+  immédiatement**, sans attendre la validation des documents. La vérification
+  d'identité reste disponible à tout moment depuis le tableau de bord ou votre
+  profil.
+- **Badge « Non vérifié » transparent pour les clients** : tant que vos
+  documents ne sont pas validés, une étiquette « Non vérifié » apparaît à côté
+  de vos offres, dans le suivi et sur votre profil public — les clients
+  savent exactement à qui ils confient leurs colis. Une fois le dossier
+  validé, l'étiquette devient « Vérifié ».
+- **Votre compte n'est plus jamais bloqué** : que votre dossier soit en
+  attente, rejeté ou pas encore soumis, vous accédez toujours à votre tableau
+  de bord et à vos offres. Une bannière vous rappelle simplement de compléter
+  votre vérification pour renforcer la confiance.
 
 ### Version 1.1.77
 
