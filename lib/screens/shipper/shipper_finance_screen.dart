@@ -150,7 +150,8 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
   }
 
   Widget _buildProfitHeader(String currency, double profit, String shipperId) {
-    final deferredFee = ((ref.watch(shipperFinanceSummaryProvider(shipperId))
+    final deferredFee = ((ref
+                .watch(shipperFinanceSummaryProvider(shipperId))
                 .valueOrNull?['fees_on_undelivered_bookings']) as num?)
             ?.toDouble() ??
         0;
@@ -341,8 +342,7 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
             const SizedBox(height: AppTheme.spaceXs),
             const Text(
               'Commission due à la plateforme sur vos offres. Le paiement '
-              'lance un délai de 7 jours pour régulariser ; passé ce délai, '
-              'le dossier peut être transmis à la justice.',
+              'lance un délai de 7 jours pour régulariser ; ne pas dépassé ce délai.',
               style: AppTheme.caption,
             ),
             const SizedBox(height: AppTheme.spaceMd),
@@ -429,10 +429,10 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
       for (var m = 1; m <= 12; m++)
         RevenueBar(
             label: months[m - 1],
-            value: (monthly['${now.year}-${m.toString().padLeft(2, '0')}']
-                    as num?)
-                ?.toDouble() ??
-                0),
+            value:
+                (monthly['${now.year}-${m.toString().padLeft(2, '0')}'] as num?)
+                        ?.toDouble() ??
+                    0),
     ];
 
     return Padding(
@@ -468,7 +468,8 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
 
   Widget _buildReferralEarningsSection(String currency) {
     final stats = ref.watch(myReferralStatsProvider);
-    final isParrain = ref.watch(isCurrentUserParrainProvider).valueOrNull ?? false;
+    final isParrain =
+        ref.watch(isCurrentUserParrainProvider).valueOrNull ?? false;
 
     if (!isParrain) return const SizedBox.shrink();
 
@@ -486,7 +487,8 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
       data: (s) {
-        if (s.totalPaid == 0 && s.totalPending == 0) return const SizedBox.shrink();
+        if (s.totalPaid == 0 && s.totalPending == 0)
+          return const SizedBox.shrink();
         return Padding(
           padding: const EdgeInsets.fromLTRB(
             AppTheme.spaceMd,
@@ -525,8 +527,7 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
                       child: _FinanceStatCard(
                         icon: Icons.check_circle_rounded,
                         label: 'Payés',
-                        value:
-                            '${s.totalPaid.toStringAsFixed(0)} $currency',
+                        value: '${s.totalPaid.toStringAsFixed(0)} $currency',
                         color: AppTheme.accentColor,
                       ),
                     ),
@@ -535,8 +536,7 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
                       child: _FinanceStatCard(
                         icon: Icons.hourglass_top_rounded,
                         label: 'En attente',
-                        value:
-                            '${s.totalPending.toStringAsFixed(0)} $currency',
+                        value: '${s.totalPending.toStringAsFixed(0)} $currency',
                         color: AppTheme.warningColor,
                       ),
                     ),
@@ -867,7 +867,7 @@ class _PlatformFeeTile extends StatelessWidget {
                         ? 'Réglée le ${_formatFinanceDate(fee.dueAt!)}'
                         : overdue
                             ? 'Échéance dépassée (${_formatFinanceDate(fee.dueAt!)})'
-                            : 'À régler avant le ${_formatFinanceDate(fee.dueAt!)}',
+                            : 'À régler aprés livraison et avant le ${_formatFinanceDate(fee.dueAt!)}',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -881,7 +881,7 @@ class _PlatformFeeTile extends StatelessWidget {
           ),
           if (fee.escalationStatus == 'justice_filed')
             const Tooltip(
-              message: 'Dossier transmis à la justice',
+              message: 'Dossier transmis pour litige',
               child: Icon(Icons.gavel_rounded,
                   color: AppTheme.errorColor, size: 20),
             ),
