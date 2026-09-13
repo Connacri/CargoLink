@@ -8,7 +8,7 @@ import 'tappable_phone.dart';
 /// Returns `true` when the [date] carries a meaningful time (non-midnight).
 bool _hasTime(DateTime date) => date.hour != 0 || date.minute != 0;
 
-/// Billet d'avion stylisé représentant une offre CargoLink — rendu hors écran
+/// Billet d'avion stylisé représentant une offre CabaLink — rendu hors écran
 /// puis capturé en PNG pour le partage social (WhatsApp, Telegram…).
 class OfferTicketCard extends StatelessWidget {
   const OfferTicketCard({
@@ -105,7 +105,7 @@ class OfferTicketCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
-                    'CargoLink',
+                    'CabaLink',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -284,7 +284,7 @@ class OfferTicketCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Réservez ce vol dans l\'app CargoLink',
+                  'Réservez ce vol dans l\'app CabaLink',
                   style: TextStyle(
                       fontSize: 10,
                       fontStyle: FontStyle.italic,

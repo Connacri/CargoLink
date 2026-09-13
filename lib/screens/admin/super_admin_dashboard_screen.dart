@@ -142,7 +142,7 @@ class _SuperAdminDashboardScreenState
                 slivers: [
                   CompactSliverHeader(
                     title: 'Tableau de bord',
-                    subtitle: 'Pilotez votre plateforme CargoLink',
+                    subtitle: 'Pilotez votre plateforme CabaLink',
                     icon: Icons.dashboard_outlined,
                     trailing: LogoutIconButton(),
                   ),

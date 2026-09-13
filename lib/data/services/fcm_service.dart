@@ -90,7 +90,7 @@ class FcmService {
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    final title = message.notification?.title ?? 'CargoLink';
+    final title = message.notification?.title ?? 'CabaLink';
     final body = message.notification?.body ?? '';
     if (title.isEmpty && body.isEmpty) return;
     try {
@@ -101,7 +101,7 @@ class FcmService {
         const NotificationDetails(
           android: AndroidNotificationDetails(
             'cargolink',
-            'CargoLink',
+            'CabaLink',
             importance: Importance.high,
             priority: Priority.high,
           ),

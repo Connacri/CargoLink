@@ -89,7 +89,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: CustomScrollView(
           slivers: [
             const CompactSliverHeader(
-              title: 'CargoLink',
+              title: 'CabaLink',
               subtitle: 'Connexion à votre compte',
               icon: Icons.flight_takeoff,
             ),

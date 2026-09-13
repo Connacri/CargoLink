@@ -106,7 +106,7 @@ class _AccountManagementScreenState
         mimeType: 'application/json',
       );
       await Share.shareXFiles([file],
-          text: 'Mes données CargoLink (RGPD)');
+          text: 'Mes données CabaLink (RGPD)');
     } catch (e) {
       if (mounted) {
         await showAppErrorDialog(context, message: 'Erreur: $e');

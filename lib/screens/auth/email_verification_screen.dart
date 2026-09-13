@@ -20,7 +20,7 @@ import '../../core/widgets/ui_kit.dart';
 ///    (mobile) triggers an immediate re-check.
 ///
 /// As soon as the email is verified, `authStateProvider` re-emits with
-/// `emailVerified: true`, so [CargoLinkApp] automatically swaps this screen
+/// `emailVerified: true`, so [CabaLinkApp] automatically swaps this screen
 /// for the app entry point — no manual button press needed.
 class EmailVerificationScreen extends ConsumerStatefulWidget {
   const EmailVerificationScreen({super.key});
@@ -84,12 +84,12 @@ class _EmailVerificationScreenState
     if (_welcomed) return;
     _welcomed = true;
     // Force both providers to re-emit with the freshly verified state; the
-    // router in CargoLinkApp then swaps this screen for the app entry point.
+    // router in CabaLinkApp then swaps this screen for the app entry point.
     ref.invalidate(authStateProvider);
     ref.invalidate(currentUserProvider);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Email confirmé. Bienvenue sur CargoLink !'),
+        content: Text('Email confirmé. Bienvenue sur CabaLink !'),
         backgroundColor: AppTheme.accentColor,
       ),
     );

@@ -277,7 +277,7 @@ class _ShipperAdsScreenState extends ConsumerState<ShipperAdsScreen> {
               const CompactSliverHeader(
                 title: 'Mes publicités',
                 subtitle:
-                    'Sponsorisez votre activité sur CargoLink',
+                    'Sponsorisez votre activité sur CabaLink',
                 icon: Icons.campaign_outlined,
               ),
               const SliverToBoxAdapter(

@@ -449,7 +449,7 @@ class _BroadcastScreenState extends ConsumerState<BroadcastScreen> {
             controller: _titleController,
             decoration: const InputDecoration(
               labelText: 'Titre',
-              hintText: 'Ex: Nouveautés CargoLink',
+              hintText: 'Ex: Nouveautés CabaLink',
               prefixIcon: Icon(Icons.title),
             ),
           ),

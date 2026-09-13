@@ -40,7 +40,7 @@ class BoardingPassData {
   final String? date; // Date format court (30 sept.)
   final String? departureDateShort; // 30 SEPT.
   final String? arrivalDateShort; // 30 SEPT.
-  final String? appName; // CargoLink
+  final String? appName; // CabaLink
 
   BoardingPassData({
     // Boarding pass standard
@@ -62,7 +62,7 @@ class BoardingPassData {
     required this.classType,
     required this.barcodeNumber,
     required this.airlineName,
-    // CargoLink extras
+    // CabaLink extras
     this.senderName,
     this.senderPhone,
     this.flightCompany,
@@ -106,7 +106,7 @@ class BoardingPassData {
         classType: 'ECONOMY',
         barcodeNumber: '123456789012',
         airlineName: 'AIR',
-        // DonnÃ©es CargoLink
+        // DonnÃ©es CabaLink
         senderName: 'JOHN DOE',
         senderPhone: '0696528632',
         flightCompany: 'AIR ALGÃ‰RIE',
@@ -125,7 +125,7 @@ class BoardingPassData {
         date: '30 sept.',
         departureDateShort: '30 SEPT.',
         arrivalDateShort: '30 SEPT.',
-        appName: 'CargoLink',
+        appName: 'CabaLink',
       );
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -150,7 +150,7 @@ class BoardingPassData {
         classType: 'ECONOMY',
         barcodeNumber: 'TR102424052024',
         airlineName: 'TURKISH',
-        // DonnÃ©es CargoLink
+        // DonnÃ©es CabaLink
         senderName: 'SAM NUEVO',
         senderPhone: '0696528632',
         flightCompany: 'AIR ALGÃ‰RIE',
@@ -169,7 +169,7 @@ class BoardingPassData {
         date: '30 sept.',
         departureDateShort: '30 SEPT.',
         arrivalDateShort: '30 SEPT.',
-        appName: 'CargoLink',
+        appName: 'CabaLink',
       );
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -194,7 +194,7 @@ class BoardingPassData {
         classType: 'FIRST CLASS',
         barcodeNumber: '123456',
         airlineName: 'ITA',
-        // DonnÃ©es CargoLink
+        // DonnÃ©es CabaLink
         senderName: 'SAM NUEVO',
         senderPhone: '0696528632',
         flightCompany: 'AIR ALGÃ‰RIE',
@@ -213,7 +213,7 @@ class BoardingPassData {
         date: '30 sept.',
         departureDateShort: '30 SEPT.',
         arrivalDateShort: '30 SEPT.',
-        appName: 'CargoLink',
+        appName: 'CabaLink',
       );
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -238,7 +238,7 @@ class BoardingPassData {
         classType: 'ECONOMY',
         barcodeNumber: '#123FG456HJ789KLO',
         airlineName: 'AIR',
-        // DonnÃ©es CargoLink
+        // DonnÃ©es CabaLink
         senderName: 'SAM NUEVO',
         senderPhone: '0696528632',
         flightCompany: 'AIR ALGÃ‰RIE',
@@ -257,12 +257,12 @@ class BoardingPassData {
         date: '30 sept.',
         departureDateShort: '30 SEPT.',
         arrivalDateShort: '30 SEPT.',
-        appName: 'CargoLink',
+        appName: 'CabaLink',
       );
 }
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// WIDGET 1: BOARDING PASS JFK â†’ LHR (Style bleu avec donnÃ©es CargoLink)
+// WIDGET 1: BOARDING PASS JFK â†’ LHR (Style bleu avec donnÃ©es CabaLink)
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 class BoardingPassJfkLhr extends StatelessWidget {
@@ -335,7 +335,7 @@ class BoardingPassJfkLhr extends StatelessWidget {
                           ),
                         ),
                         const Spacer(),
-                        // Badge OFFRE CargoLink
+                        // Badge OFFRE CabaLink
                         if (data.offerText != null)
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -915,7 +915,7 @@ class BoardingPassJfkLhr extends StatelessWidget {
 }
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// WIDGET 2: BOARDING PASS ADB â†’ CDG (Style vintage Paris + donnÃ©es CargoLink)
+// WIDGET 2: BOARDING PASS ADB â†’ CDG (Style vintage Paris + donnÃ©es CabaLink)
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 class BoardingPassAdbCdg extends StatelessWidget {
@@ -1459,7 +1459,7 @@ class BoardingPassAdbCdg extends StatelessWidget {
                     const SizedBox(height: 8),
                     _buildDetachableInfo('SEAT / KOLTUK', data.seat),
 
-                    // DonnÃ©es CargoLink sur partie dÃ©tachable
+                    // DonnÃ©es CabaLink sur partie dÃ©tachable
                     if (data.senderName != null) ...[
                       const SizedBox(height: 12),
                       Container(
@@ -1594,7 +1594,7 @@ class BoardingPassAdbCdg extends StatelessWidget {
 }
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// WIDGET 3: BOARDING PASS ITALY (Style vert First Class + donnÃ©es CargoLink)
+// WIDGET 3: BOARDING PASS ITALY (Style vert First Class + donnÃ©es CabaLink)
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 class BoardingPassItaly extends StatelessWidget {
@@ -2258,7 +2258,7 @@ class BoardingPassItaly extends StatelessWidget {
 }
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// WIDGET 4: BOARDING PASS LONDON â†’ NEW YORK (Style classique bleu + CargoLink)
+// WIDGET 4: BOARDING PASS LONDON â†’ NEW YORK (Style classique bleu + CabaLink)
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 class BoardingPassLondonNy extends StatelessWidget {
@@ -2773,7 +2773,7 @@ class BoardingPassLondonNy extends StatelessWidget {
                           const SizedBox(height: 6),
                           _buildRightInfo('GATE', data.gate),
 
-                          // CargoLink sur partie dÃ©tachable
+                          // CabaLink sur partie dÃ©tachable
                           if (data.senderName != null) ...[
                             const SizedBox(height: 10),
                             Container(

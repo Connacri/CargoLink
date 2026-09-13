@@ -442,7 +442,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             //   )
             // else
             CompactSliverHeader(
-              title: 'CargoLink',
+              title: 'CabaLink',
               subtitle:
                   'Trouvez les meilleurs micro-importateurs pour vos commandes',
               icon: Icons.airplanemode_active,

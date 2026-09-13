@@ -341,8 +341,7 @@ class _ShipperDashboardScreenState
             if (!shipper.isVerified)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.only(bottom: AppTheme.spaceSm),
+                  padding: const EdgeInsets.only(bottom: AppTheme.spaceSm),
                   child: _buildVerificationBanner(shipper),
                 ),
               ),
@@ -350,6 +349,13 @@ class _ShipperDashboardScreenState
               SliverToBoxAdapter(
                 child: AdBannerCarousel(ads: activeAds),
               ),
+            SliverToBoxAdapter(
+              child: _buildPublishAndScan(
+                shipper,
+                showDeliveryRequests: showShipperDeliveryRequests,
+                showPublishAd: showShipperPublishAd,
+              ),
+            ),
             SliverToBoxAdapter(
               child: _buildNewBookingBanner(shipper.id),
             ),
@@ -359,13 +365,6 @@ class _ShipperDashboardScreenState
             ..._buildBookingsList(shipper.id),
             SliverToBoxAdapter(
               child: _buildStats(shipper),
-            ),
-            SliverToBoxAdapter(
-              child: _buildPublishAndScan(
-                shipper,
-                showDeliveryRequests: showShipperDeliveryRequests,
-                showPublishAd: showShipperPublishAd,
-              ),
             ),
             if (showShipperSubscription)
               SliverToBoxAdapter(
@@ -2052,12 +2051,11 @@ class _FinanceSummaryStrip extends ConsumerWidget {
     // des commandes déjà payées par les clients. Les commissions des
     // commandes impayées (paiement à la livraison en attente) sont différées.
     // Les montants affichés ne sont jamais négatifs (clampés à 0).
-    final profit =
-        ((summary.valueOrNull?['profit'] as num?)?.toDouble() ?? 0).clamp(0, double.infinity);
-    final feesDue =
-        (((summary.valueOrNull?['fees_awaiting'] as num?) ?? 0) +
-                ((summary.valueOrNull?['fees_pending'] as num?) ?? 0))
-            .clamp(0, double.infinity);
+    final profit = ((summary.valueOrNull?['profit'] as num?)?.toDouble() ?? 0)
+        .clamp(0, double.infinity);
+    final feesDue = (((summary.valueOrNull?['fees_awaiting'] as num?) ?? 0) +
+            ((summary.valueOrNull?['fees_pending'] as num?) ?? 0))
+        .clamp(0, double.infinity);
     final grossRevenue =
         ((summary.valueOrNull?['gross_revenue'] as num?)?.toDouble() ?? 0)
             .clamp(0, double.infinity);
@@ -2078,10 +2076,14 @@ class _FinanceSummaryStrip extends ConsumerWidget {
       badgePositive: feesDue <= 0,
       rows: [
         (label: 'Total', value: '${grossRevenue.toStringAsFixed(0)} $currency'),
-        (label: 'Déjà payés',
-            value: '${feesPaid.toStringAsFixed(0)} $currency'),
-        (label: 'Livré',
-            value: '${deliveredRevenue.toStringAsFixed(0)} $currency'),
+        (
+          label: 'Déjà payés',
+          value: '${feesPaid.toStringAsFixed(0)} $currency'
+        ),
+        (
+          label: 'Livré',
+          value: '${deliveredRevenue.toStringAsFixed(0)} $currency'
+        ),
       ],
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
@@ -2882,119 +2884,12 @@ class _DashboardBookingCard extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: AppTheme.spaceSm),
-            Row(
-              children: [
-                Expanded(
-                  child: _InfoTile(
-                    icon: Icons.monitor_weight_outlined,
-                    label: 'Poids',
-                    value: '${booking.requestedWeightKg.toStringAsFixed(1)} / '
-                        '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
-                  ),
-                ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppTheme.textSecondaryColor,
-                ),
-              ],
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppTheme.textSecondaryColor,
             ),
-            // Commande annulée : pas de chips « en attente » (paiement /
-            // confirmation) — le badge « Annulée » de l'en-tête suffit.
-            if (!booking.isCancelled) ...[
-              const SizedBox(height: AppTheme.spaceSm),
-              Wrap(
-                children: [
-                  _DashboardStatusChip(
-                    icon: booking.isPaid
-                        ? Icons.paid_rounded
-                        : Icons.schedule_rounded,
-                    label: booking.isPaid
-                        ? 'Paiement reçu'
-                        : 'Paiement en attente',
-                    color: booking.isPaid
-                        ? AppTheme.accentColor
-                        : AppTheme.warningColor,
-                  ),
-                  const SizedBox(width: AppTheme.spaceSm),
-                  _DashboardStatusChip(
-                    icon: booking.status == 'confirmed'
-                        ? Icons.task_alt_rounded
-                        : Icons.pending_actions_rounded,
-                    label: booking.status == 'confirmed'
-                        ? 'Commande confirmée'
-                        : 'En attente de confirmation',
-                    color: booking.status == 'confirmed'
-                        ? AppTheme.infoColor
-                        : AppTheme.warningColor,
-                  ),
-                ],
-              ),
-            ], //**
-            const SizedBox(height: AppTheme.spaceSm), //**
-            Row(
-              children: [
-                Expanded(
-                  child: _InfoTile(
-                    icon: Icons.event_rounded,
-                    label: 'Commande',
-                    value: _formatShipmentDate(booking.createdAt),
-                  ),
-                ),
-                Expanded(
-                  child: _InfoTile(
-                    icon: Icons.flight_takeoff_rounded,
-                    label: 'Départ',
-                    value: booking.shipment != null
-                        ? _formatShipmentDate(booking.shipment!.departureDate)
-                        : '—',
-                  ),
-                ),
-              ],
-            ), //**
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _DashboardStatusChip extends StatelessWidget {
-  const _DashboardStatusChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spaceSm,
-        vertical: 4,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-        ],
       ),
     );
   }

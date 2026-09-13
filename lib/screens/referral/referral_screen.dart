@@ -9,7 +9,7 @@ import '../../data/models/referral_models.dart';
 import '../../data/services/deep_link_service.dart';
 import '../../providers/index.dart';
 
-/// Programme de parrainage CargoLink — accessible depuis le profil de TOUS
+/// Programme de parrainage CabaLink — accessible depuis le profil de TOUS
 /// les rôles.
 ///
 /// - Le parrain gagne un % configurable de la commission plateforme sur chaque
@@ -67,14 +67,14 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
 
   String _shareText(String code) {
     final link = DeepLinkService.referralLink(code);
-    return 'Rejoins CargoLink avec mon code parrain $code ! '
+    return 'Rejoins CabaLink avec mon code parrain $code ! '
         'Ouvre ce lien pour t\'inscrire directement :\n$link\n'
         'Télécharge l\'app si tu ne l\'as pas : $_playStoreUrl\n'
         '🌍✈️ Envoie des colis partout dans le monde !';
   }
 
   Future<void> _share(String code) async {
-    await Share.share(_shareText(code), subject: 'Rejoins CargoLink !');
+    await Share.share(_shareText(code), subject: 'Rejoins CabaLink !');
   }
 
   Future<void> _requestPayout(double amount) async {
@@ -425,7 +425,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       (
         Icons.shopping_bag_rounded,
         'Votre filleul commande',
-        'Il passe sa première commande de colis sur CargoLink et choisit un '
+        'Il passe sa première commande de colis sur CabaLink et choisit un '
             'expéditeur vérifié. Vous n\'avez rien d\'autre à faire.',
       ),
       (

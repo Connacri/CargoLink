@@ -6,6 +6,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/error_dialog.dart';
 import '../../core/widgets/ui_kit.dart';
+import '../../core/widgets/micro_badge.dart';
 
 class PaymentScreen extends ConsumerStatefulWidget {
   final String bookingId;
@@ -265,9 +266,15 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             'Poids',
             '${booking.allocatedWeightKg.toStringAsFixed(1)} kg',
           ),
-          _detailRow(
-            'Transporteur vérifié',
-            booking.shipment?.shipper?.isVerified == true ? 'Oui' : 'Non',
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Transporteur', style: AppTheme.bodySecondary),
+              VerificationBadge(
+                isVerified:
+                    booking.shipment?.shipper?.isVerified == true,
+              ),
+            ],
           ),
         ],
       ),

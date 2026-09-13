@@ -50,7 +50,7 @@ class CargoLinkApp extends ConsumerWidget {
     final authState = ref.watch(authStateProvider);
 
     return MaterialApp(
-      title: 'CargoLink',
+      title: 'CabaLink',
       theme: AppTheme.darkTheme,
       navigatorKey: appNavigatorKey,
       locale: const Locale('fr'),

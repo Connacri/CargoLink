@@ -1738,8 +1738,8 @@ class _AppVersionFooter extends StatelessWidget {
         final info = snapshot.data;
         // Version alignée sur les tags CI (ex : v1.0.18, build 150).
         final label = info == null || info.version.isEmpty
-            ? 'CargoLink'
-            : 'CargoLink v${info.version} (${info.buildNumber})';
+            ? 'CabaLink'
+            : 'CabaLink v${info.version} (${info.buildNumber})';
         return Padding(
           padding: const EdgeInsets.fromLTRB(
             AppTheme.spaceMd,

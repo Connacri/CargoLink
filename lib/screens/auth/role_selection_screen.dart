@@ -171,7 +171,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
         title: const Text('Supprimer mon compte ?'),
         content: const Text(
           'Votre compte et toutes vos données (profil, colis, notifications, '
-          'photos) seront définitivement supprimés de CargoLink, ainsi que de '
+          'photos) seront définitivement supprimés de CabaLink, ainsi que de '
           'Supabase et Firebase. Cette action est irréversible.',
         ),
         actions: [
@@ -211,11 +211,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
     final shipper = widget.currentRole == 'shipper'
         ? shipperAsync.valueOrNull
         : null;
-    // Le changement de type est offert aux expéditeurs vérifiés ET à ceux
-    // dont le dossier a été rejeté : toute modification renvoie le dossier
-    // en attente de validation par un admin / super admin.
-    final showTypeSection = shipper != null &&
-        (shipper.isVerified || shipper.isRejected);
+    final showTypeSection = shipper != null;
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
@@ -226,7 +222,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
               title: widget.firstTime
                   ? 'Choisissez votre rôle'
                   : 'Changer de rôle',
-              subtitle: 'Que souhaitez-vous faire sur CargoLink ?',
+              subtitle: 'Que souhaitez-vous faire sur CabaLink ?',
               icon: Icons.verified_user,
             ),
             const SliverPadding(

@@ -34,7 +34,7 @@ class _AccountStatusScreenState extends ConsumerState<AccountStatusScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Compte réactivé. Bienvenue sur CargoLink !'),
+            content: Text('Compte réactivé. Bienvenue sur CabaLink !'),
             backgroundColor: AppTheme.accentColor,
           ),
         );

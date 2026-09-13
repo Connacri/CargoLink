@@ -99,7 +99,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Compte créé. Bienvenue sur CargoLink !'),
+            content: Text('Compte créé. Bienvenue sur CabaLink !'),
             backgroundColor: AppTheme.accentColor,
           ),
         );
@@ -123,7 +123,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           slivers: [
             const CompactSliverHeader(
               title: 'Créer un compte',
-              subtitle: 'Rejoignez CargoLink',
+              subtitle: 'Rejoignez CabaLink',
               icon: Icons.person_add_alt_1,
             ),
             SliverPadding(

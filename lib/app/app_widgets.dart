@@ -45,7 +45,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
             ),
             const SizedBox(height: 24),
             const Text(
-              'CargoLink',
+              'CabaLink',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -213,7 +213,7 @@ class _WebAndroidDownloadBannerState extends State<WebAndroidDownloadBanner> {
       context: navigatorContext,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Téléchargez l\'application CargoLink'),
+        title: const Text('Téléchargez l\'application CabaLink'),
         content: const Text(
           'Vous utilisez un téléphone Android. Téléchargez l\'application '
           'pour une meilleure expérience (notifications, caméra, vitesse).',
@@ -266,7 +266,7 @@ class _WebAndroidDownloadBannerState extends State<WebAndroidDownloadBanner> {
               const SizedBox(width: AppTheme.spaceSm),
               const Expanded(
                 child: Text(
-                  'CargoLink disponible en application Android',
+                  'CabaLink disponible en application Android',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 12,
