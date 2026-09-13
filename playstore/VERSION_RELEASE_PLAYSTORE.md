@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.81** |
-| Code de version (versionCode) | **301** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `2b8d6a8` |
-| Statut CI | Release `v1.1.81` en cours de publication par la CI |
+| Version (versionName) | **1.1.82** |
+| Code de version (versionCode) | **302** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `bd29e4c` |
+| Statut CI | Release `v1.1.82` en cours de publication par la CI |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -51,6 +51,13 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 > Les notes ci-dessous sont rédigées pour les utilisateurs de l'application
 > (et non pour les développeurs) : elles décrivent les nouveautés en langage
 > simple, sans détail technique.
+
+### Version 1.1.82
+
+- **Portefeuille expéditeur éclairci** : la carte « Portefeuille » affiche
+  désormais le **Profit net**, le **Total** (chiffre d'affaires encaissé et à
+  recevoir), les **Déjà payés** (commissions réglées) et le **Livré** (gain des
+  commandes livrées) — plus aucun montant négatif n'est affiché.
 
 ### Version 1.1.81
 
