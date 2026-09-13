@@ -1,10 +1,10 @@
-# Politique de confidentialité — CargoLink
+# Politique de confidentialité — CabaLink
 
 **Dernière mise à jour : août 2026**
 
 ## 1. Introduction
 
-CargoLink (« l'Application », « nous ») fournit une plateforme de logistique et de suivi de colis destinée principalement aux utilisateurs en Algérie. La présente politique de confidentialité décrit les données que nous collectons, la manière dont nous les utilisons, et les droits dont vous disposez. En utilisant l'Application, vous acceptez les pratiques décrites ci-dessous.
+CabaLink (« l'Application », « nous ») fournit une plateforme de logistique et de suivi de colis destinée principalement aux utilisateurs en Algérie. La présente politique de confidentialité décrit les données que nous collectons, la manière dont nous les utilisons, et les droits dont vous disposez. En utilisant l'Application, vous acceptez les pratiques décrites ci-dessous.
 
 ## 2. Données que nous collectons
 
@@ -73,7 +73,7 @@ L'Application n'est pas destinée aux personnes de moins de 18 ans et nous ne co
 
 Pour toute question relative à cette politique ou à vos données personnelles :
 - **E-mail** : contact@cargolink.app
-- **Adresse** : CargoLink, Alger, Algérie
+- **Adresse** : CabaLink, Alger, Algérie
 
 ## 10. Modifications
 
@@ -81,4 +81,4 @@ Nous pouvons mettre à jour cette politique. La version en vigueur est toujours 
 
 ---
 
-> **Note d'hébergement Play Store** : cette politique doit être publiée à une URL accessible publiquement (ex. une page web du site CargoLink). Vous pouvez l'héberger sur le site web CargoLink existant (build web du dépôt) ou sur une page statique GitHub Pages.
+> **Note d'hébergement Play Store** : cette politique doit être publiée à une URL accessible publiquement (ex. une page web du site CabaLink). Vous pouvez l'héberger sur le site web CabaLink existant (build web du dépôt) ou sur une page statique GitHub Pages.

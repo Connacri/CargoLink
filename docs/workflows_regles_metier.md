@@ -1,4 +1,4 @@
-# 📋 CargoLink — Workflows & Règles Métier par Rôle
+# 📋 CabaLink — Workflows & Règles Métier par Rôle
 
 > Document de référence (basé sur le code) détaillant, pour **chaque rôle**, les workflows pas-à-pas, les règles métier applicables, les transitions de statut et les accès RLS. Complémentaire de `les_MD/WORKFLOW.md` (vue globale) : ici chaque rôle est traité individuellement et exhaustivement.
 

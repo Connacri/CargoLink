@@ -1,14 +1,14 @@
-# 📱 CargoLink — Fiche Play Store (description FR)
+# 📱 CabaLink — Fiche Play Store (description FR)
 
 > Description prête à copier-coller dans la Play Console. Elle respecte les règles Google Play (max 4000 caractères, FR, sans promesses irréalistes).
 
 ## Description courte (80 caractères max)
 
-**"CargoLink : suivez et expédiez vos colis entre l'Algérie et le monde en toute simplicité."** (80 car.)
+**"CabaLink : suivez et expédiez vos colis entre l'Algérie et le monde en toute simplicité."** (80 car.)
 
 ## Description longue
 
-CargoLink met en relation les **expéditeurs** et les **clients** pour l'expédition et le suivi de colis, principalement depuis l'Algérie. Commandez, suivez en temps réel et gérez vos livraisons depuis une seule application.
+CabaLink met en relation les **expéditeurs** et les **clients** pour l'expédition et le suivi de colis, principalement depuis l'Algérie. Commandez, suivez en temps réel et gérez vos livraisons depuis une seule application.
 
 **Suivi de colis en temps réel**
 - Suivez vos colis à chaque étape : en attente, en transit, arrivé.
@@ -34,7 +34,7 @@ CargoLink met en relation les **expéditeurs** et les **clients** pour l'expédi
 - Interface entièrement en français.
 - Conçue pour les particuliers comme pour les professionnels du transport.
 
-CargoLink est la solution simple et fiable pour tous vos envois de colis. Téléchargez-la dès maintenant.
+CabaLink est la solution simple et fiable pour tous vos envois de colis. Téléchargez-la dès maintenant.
 
 ## Fonctionnalités clés (bullet points, optionnel)
 

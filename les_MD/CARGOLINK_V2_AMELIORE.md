@@ -1,10 +1,10 @@
-# 📦 CargoLink V2
+# 📦 CabaLink V2
 
 ## Réseau logistique collaboratif — Multi-Shipper, Chain of Custody, Tracking, Douane, Litiges & Règlement financier
 
 > **Document de référence fonctionnel et UX**
 >
-> CargoLink permet à un client d'expédier une marchandise en utilisant la capacité disponible dans les bagages de voyageurs / micro-importateurs.
+> CabaLink permet à un client d'expédier une marchandise en utilisant la capacité disponible dans les bagages de voyageurs / micro-importateurs.
 >
 > Une expédition peut être transportée par **un ou plusieurs Shippers**, et un Shipper peut transmettre **la totalité ou seulement une partie** de la marchandise à un autre Shipper.
 >
@@ -14,7 +14,7 @@
 
 # 1. Principe fondamental
 
-CargoLink ne fonctionne pas comme un service linéaire :
+CabaLink ne fonctionne pas comme un service linéaire :
 
 ```text
 Client
@@ -66,7 +66,7 @@ REROUTED             A → B → C → Destination
 
 ### Ce que l'original ne couvrait pas
 
-L'original décrivait ces topologies mais ne posait aucune limite. Un réseau ouvert peut générer des chaînes de garde arbitrairement longues (10, 20 sauts), ce qui devient un vecteur de fraude (dilution de responsabilité) et un problème de performance (requêtes récursives). **CargoLink V2 impose une profondeur maximale de chaîne configurable** (par défaut : 5 sauts), au-delà de laquelle toute nouvelle demande de transfert nécessite une validation Admin explicite. Ce plafond s'inspire directement des limites de hop count utilisées en routage réseau (BGP, OSPF) pour éviter les boucles et la divergence — appliqué ici à une chaîne de responsabilité plutôt qu'à des paquets.
+L'original décrivait ces topologies mais ne posait aucune limite. Un réseau ouvert peut générer des chaînes de garde arbitrairement longues (10, 20 sauts), ce qui devient un vecteur de fraude (dilution de responsabilité) et un problème de performance (requêtes récursives). **CabaLink V2 impose une profondeur maximale de chaîne configurable** (par défaut : 5 sauts), au-delà de laquelle toute nouvelle demande de transfert nécessite une validation Admin explicite. Ce plafond s'inspire directement des limites de hop count utilisées en routage réseau (BGP, OSPF) pour éviter les boucles et la divergence — appliqué ici à une chaîne de responsabilité plutôt qu'à des paquets.
 
 ---
 
@@ -435,7 +435,7 @@ DELIVERY_FAILED
 
 # 21. Pourquoi les exceptions sont indispensables
 
-Un colis `IN_TRANSIT` pendant 24h sans nouvel événement n'est pas nécessairement bloqué. CargoLink doit distinguer l'absence d'information de l'incident confirmé — c'est la même logique que celle exposée par les grands réseaux, où l'absence d'événement ne signifie pas l'arrêt de la progression, alors qu'un événement d'exception signale explicitement une perturbation réelle.
+Un colis `IN_TRANSIT` pendant 24h sans nouvel événement n'est pas nécessairement bloqué. CabaLink doit distinguer l'absence d'information de l'incident confirmé — c'est la même logique que celle exposée par les grands réseaux, où l'absence d'événement ne signifie pas l'arrêt de la progression, alors qu'un événement d'exception signale explicitement une perturbation réelle.
 
 ```text
 🟢 En transit — Dernière mise à jour : il y a 4 h
@@ -513,7 +513,7 @@ Le score affiché n'est plus une simple moyenne d'étoiles (voir §24bis).
 
 ## 24bis. Score de confiance pondéré par enjeu — nouveau
 
-L'original ne proposait qu'une note `⭐ 4.9` classique, qui pose un problème connu des marketplaces P2P à forte valeur : une note moyenne ne distingue pas un shipper qui a fait 200 livraisons de sacs de vêtements d'un shipper qui a fait 5 livraisons d'électronique de valeur. Sur le modèle des systèmes de confiance à enjeu utilisés par les plateformes P2P matures (location de véhicules, biens de valeur), CargoLink calcule un **Trust Score** distinct de la note :
+L'original ne proposait qu'une note `⭐ 4.9` classique, qui pose un problème connu des marketplaces P2P à forte valeur : une note moyenne ne distingue pas un shipper qui a fait 200 livraisons de sacs de vêtements d'un shipper qui a fait 5 livraisons d'électronique de valeur. Sur le modèle des systèmes de confiance à enjeu utilisés par les plateformes P2P matures (location de véhicules, biens de valeur), CabaLink calcule un **Trust Score** distinct de la note :
 
 ```text
 trust_score = f(
@@ -847,7 +847,7 @@ Proof of Delivery
 PHOTO_POD  ou  OTP_POD
 ```
 
-Par défaut CargoLink garde `QR + OTP`, plus adapté qu'une simple signature à un contexte P2P où le destinataire ne connaît pas physiquement le Shipper.
+Par défaut CabaLink garde `QR + OTP`, plus adapté qu'une simple signature à un contexte P2P où le destinataire ne connaît pas physiquement le Shipper.
 
 ---
 
@@ -863,7 +863,7 @@ CUSTOMS_CLEARED
 CUSTOMS_REJECTED
 ```
 
-Documents : facture, proforma, preuve d'achat, description, valeur, origine, documents réglementaires. Le rôle central de la facture commerciale et du document de transport dans le traitement douanier et le suivi est la norme dans le fret international — CargoLink applique le même principe à l'échelle du colis individuel plutôt que du conteneur.
+Documents : facture, proforma, preuve d'achat, description, valeur, origine, documents réglementaires. Le rôle central de la facture commerciale et du document de transport dans le traitement douanier et le suivi est la norme dans le fret international — CabaLink applique le même principe à l'échelle du colis individuel plutôt que du conteneur.
 
 ---
 
@@ -1016,7 +1016,7 @@ handover confirmé + leg terminé + absence de litige sur cette allocation
 
 L'original ne traite jamais ce cas, pourtant central en multi-shipper : *que se passe-t-il si Shipper B livre correctement sa portion, mais Shipper C perd la sienne ?* Sans règle explicite, deux comportements incorrects sont possibles : geler tout le paiement (pénalise B injustement) ou tout libérer (paie C pour un colis perdu).
 
-**Règle CargoLink V2 : le payout est toujours scindé au niveau de l'allocation, jamais au niveau du shipment.**
+**Règle CabaLink V2 : le payout est toujours scindé au niveau de l'allocation, jamais au niveau du shipment.**
 
 ```text
 Shipment CLX-2026-000184 — DISPUTED (partiel)
@@ -1029,7 +1029,7 @@ Chaque `payment_allocation` a son propre cycle de vie indépendant des autres al
 
 ---
 
-# 57. Commission CargoLink
+# 57. Commission CabaLink
 
 ```text
 Booking
@@ -1219,7 +1219,7 @@ Après départ → `REQUIRES_REVIEW`. Le système recalcule : nouvelle route, no
 
 ```text
 Shipper A annule pendant le voyage → A = CANCELLED
-CargoLink recherche B / C / D compatibles (position, destination, capacité, date)
+CabaLink recherche B / C / D compatibles (position, destination, capacité, date)
 ```
 
 ---
@@ -1787,7 +1787,7 @@ Chaque flèche porte : QR, OTP, GPS, timestamp serveur, actor, event, proof, **c
 
 ---
 
-# 114. Règle d'or CargoLink
+# 114. Règle d'or CabaLink
 
 Une expédition n'est jamais simplement `status = shipped`. C'est :
 
@@ -1882,7 +1882,7 @@ WHO + WHAT + WHERE + WHEN + UNDER WHOSE CUSTODY + PROOF
 
 # 117. Définition du produit final
 
-CargoLink n'est plus :
+CabaLink n'est plus :
 
 > "Je réserve 5 kg chez un voyageur."
 
@@ -1890,4 +1890,4 @@ C'est :
 
 > **Un réseau logistique collaboratif permettant à une marchandise d'être transportée par un ou plusieurs voyageurs, avec transfert total ou partiel de garde cryptographiquement vérifiable, suivi événementiel proactif, géolocalisation respectueuse de la vie privée, preuves opérationnelles combinées, gestion douanière explicite, exceptions détectées avant réclamation, litiges granulaires par colis, et règlement financier scindé par allocation.**
 
-C'est cette architecture — combinant les standards de traçabilité du fret international (DHL, FedEx, UPS) et les mécanismes de confiance et d'intégrité des réseaux P2P décentralisés — qui fait passer CargoLink d'un simple marketplace de capacité bagage à un véritable réseau logistique multi-hop de confiance.
+C'est cette architecture — combinant les standards de traçabilité du fret international (DHL, FedEx, UPS) et les mécanismes de confiance et d'intégrité des réseaux P2P décentralisés — qui fait passer CabaLink d'un simple marketplace de capacité bagage à un véritable réseau logistique multi-hop de confiance.

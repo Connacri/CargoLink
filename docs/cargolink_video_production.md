@@ -1,7 +1,7 @@
-# 🎬 CargoLink — Production Vidéo Complète
+# 🎬 CabaLink — Production Vidéo Complète
 ## Script + Storyboard + 3 Formats
 
-> **Document de production professionnel** pour créer une vidéo premium qui **combine hook publicitaire + tutoriel** sur CargoLink. Tous les scripts, timing, shots, animations, musique, et SFX.
+> **Document de production professionnel** pour créer une vidéo premium qui **combine hook publicitaire + tutoriel** sur CabaLink. Tous les scripts, timing, shots, animations, musique, et SFX.
 
 ---
 
@@ -43,7 +43,7 @@ C'est inefficace. C'est cher. C'est frustrant. »
 - Animation d'un **panier d'achat** qui se gonfle (scale in, staggered)
 - Écran de facture FedEx qui **tremble** (shake animation)
 - Nuage rouge avec prix qui augmente (counter animation)
-- Fond dégradé rouge → orange (warningGradient de CargoLink)
+- Fond dégradé rouge → orange (warningGradient de CabaLink)
 
 **Audio** : Musique dramatique (minor key, 80 BPM)
 
@@ -70,17 +70,17 @@ et paient une fortune. Ça doit changer. »
 
 ### **ACTE 2 — LA SOLUTION (1:30–6:00)**
 
-#### **[SCENE 3] Introduction CargoLink**
+#### **[SCENE 3] Introduction CabaLink**
 ```
 NARRATEUR :
-« Rencontrez CargoLink. La première plateforme algérienne
+« Rencontrez CabaLink. La première plateforme algérienne
 qui connecte les voyageurs, les importateurs, et les clients.
 Sécurisée. Transparente. Et 50 à 70 % moins chère que la concurrence. »
 ```
 
 **Durée** : 15 sec  
 **Visuel** : 
-- Logo CargoLink avec **GradientBadge** (primaryGradient)
+- Logo CabaLink avec **GradientBadge** (primaryGradient)
 - Animation de **connexion** : 3 icônes (client, shipper, admin) qui se connectent par des lignes animées
 - Chiffres : « –50 % » en grand (h1), « vs DHL/FedEx » (body secondaire)
 - Transition : slide de gauche, apparition en cascade
@@ -295,7 +295,7 @@ Gérer les litiges, les remboursements, les stocks. »
 
 ```
 NARRATEUR :
-« CargoLink, c'est plus que des chiffres.
+« CabaLink, c'est plus que des chiffres.
 C'est une plateforme qui fait tomber les barrières.
 Un jeune peut lancer son business d'import en 10 minutes.
 Un client paie 50 % moins.
@@ -328,7 +328,7 @@ Et tout est traçable, sécurisé, en temps réel. »
 NARRATEUR (tone plus direct) :
 « Vous êtes client ? Trouvez le meilleur prix.
 Vous êtes importateur ? Lancez votre business.
-CargoLink est sur iOS et Android.
+CabaLink est sur iOS et Android.
 
 Téléchargez maintenant. »
 ```
@@ -338,7 +338,7 @@ Téléchargez maintenant. »
 - Split screen : iPhone (left) + Android (right) avec l'app ouverte
 - App store & Play Store badges brillants (glow effect)
 - QR code animé (pulse)
-- Logo CargoLink final avec tagline
+- Logo CabaLink final avec tagline
 
 **Animation détail** :
 - Téléphones slide from sides
@@ -354,7 +354,7 @@ Téléchargez maintenant. »
 
 ```
 NARRATEUR (voix chaleureuse) :
-« CargoLink. Connecter. Importer. Transformer.
+« CabaLink. Connecter. Importer. Transformer.
 
 Construisons ensemble le commerce algérien du futur. »
 ```
@@ -376,7 +376,7 @@ Construisons ensemble le commerce algérien du futur. »
 |-------|--------|------|-----------|-----------|-------|-------|
 | 1 — Hook | 0:00–0:30 | Macro : panier, facture, prix | Fade in | Panier scale up, facture shake, prix counter | Musique dramatique | Établir l'urgence |
 | 2 — Interviews | 0:30–0:50 | 3× clips courts (portraits) | Slide up + fade | FadeInOnScroll sur chaque | Clips audio dub | Personas variés |
-| 3 — Logo intro | 0:50–1:05 | Logo CargoLink + 3 icônes | Fade in dégradé | Icons connectées par lignes animées | Bell ding | Présentation solution |
+| 3 — Logo intro | 0:50–1:05 | Logo CabaLink + 3 icônes | Fade in dégradé | Icons connectées par lignes animées | Bell ding | Présentation solution |
 | 4 — Client home | 1:05–1:30 | Mockup phone (client home) | Slide from left | ShimmerCard → StaggeredEntrance des cartes | Slide sound + musique légère | Démonstration fluide |
 | 5 — Booking form | 1:30–1:50 | Mockup phone (booking) | Swipe transition | Fields cascade (StaggeredEntrance) | Tap sounds, musique continue |  |
 | 6 — Paiement | 1:50–2:05 | Mockup phone (payment methods) | Zoom in | Buttons pulse (AnimatedIconDot), Lottie success | Ding validation | Satisfying feedback |
@@ -398,7 +398,7 @@ Construisons ensemble le commerce algérien du futur. »
 ### Strategy
 - **Full narrative** : problem → solution → workflow complet → CTA
 - **Platform** : algo favorise watch time → sections bien structurées
-- **Title** : "Comment importer 50% moins cher en Algérie ? CargoLink expliqué"
+- **Title** : "Comment importer 50% moins cher en Algérie ? CabaLink expliqué"
 - **Description** : Lien d'accroche + timestamps + CTA
 
 ### Script YouTube (8 min)
@@ -412,7 +412,7 @@ NARRATEUR :
 de frais d'importation hallucinante ?
 Ça change aujourd'hui."
 
-[TITRE : CargoLink]
+[TITRE : CabaLink]
 
 ---
 
@@ -431,10 +431,10 @@ C'est cher. C'est inefficace. C'est frustrant."
 ---
 
 ## SOLUTION (2:00–3:00)
-[Logo CargoLink]
+[Logo CabaLink]
 
 NARRATEUR :
-"CargoLink est la première plateforme algérienne
+"CabaLink est la première plateforme algérienne
 qui connecte clients et micro-importateurs.
 50 à 70% moins cher. Transparent. En temps réel."
 
@@ -495,7 +495,7 @@ Tout en un seul endroit."
 [Montage émotions : portraits, reviews, notifications]
 
 NARRATEUR (inspirant) :
-"CargoLink, c'est plus que des chiffres.
+"CabaLink, c'est plus que des chiffres.
 C'est une plateforme qui libère le commerce algérien.
 Un jeune peut lancer son business en 10 minutes.
 Un client paie 50% moins.
@@ -509,7 +509,7 @@ Tout est tracé. Tout est sûr."
 [Logo final]
 
 NARRATEUR :
-"CargoLink. Connecter. Importer. Transformer.
+"CabaLink. Connecter. Importer. Transformer.
 Téléchargez dès maintenant sur iOS et Android.
 
 Lien dans la description."
@@ -518,16 +518,16 @@ Lien dans la description."
 ```
 
 ### YouTube Metadata
-- **Title** : "CargoLink — Importer 50% Moins Cher en Algérie | Tutoriel Complet"
+- **Title** : "CabaLink — Importer 50% Moins Cher en Algérie | Tutoriel Complet"
 - **Description** :
   ```
-  🚀 Découvrez CargoLink, la première plateforme algérienne 
+  🚀 Découvrez CabaLink, la première plateforme algérienne 
   qui révolutionne l'import !
 
   ⏰ TIMESTAMPS :
   0:00 Hook — Le problème
   0:30 Interviews
-  2:00 Présentation CargoLink
+  2:00 Présentation CabaLink
   3:00 Workflow Client
   5:00 Workflow Expéditeur
   6:00 Dashboard Admin
@@ -542,7 +542,7 @@ Lien dans la description."
   📧 Support : support@cargolink.dz
   ```
 - **Tags** : cargolink, algérie, import, logistique, tutoriel, entreprise, commerce
-- **Thumbnail** : Logo CargoLink + « –50% » rouge + Drapeau Algérie
+- **Thumbnail** : Logo CabaLink + « –50% » rouge + Drapeau Algérie
 
 ---
 
@@ -579,9 +579,9 @@ SOUND : Tense stabs
 ---
 
 ## SOLUTION (0:10–0:15)
-[Logo CargoLink + gradient]
+[Logo CabaLink + gradient]
 
-TEXT (on screen) : "CargoLink"
+TEXT (on screen) : "CabaLink"
 VOICE : "–50 à –70% moins cher"
 
 SOUND : Inspiring synth rise
@@ -615,7 +615,7 @@ SOUND : Inspiring synth rise
 [Store badges slide in]
 
 TEXT (top) : "Télécharge maintenant"
-TEXT (bottom) : "CargoLink | iOS & Android"
+TEXT (bottom) : "CabaLink | iOS & Android"
 
 SOUND : Uplifting finale + call-to-action synth
 
@@ -625,7 +625,7 @@ SOUND : Uplifting finale + call-to-action synth
 ### TikTok Metadata
 - **Caption** :
   ```
-  CargoLink révolutionne l'import en Algérie 🚀
+  CabaLink révolutionne l'import en Algérie 🚀
   –50% vs DHL/FedEx
   
   Aucune commission cachée.
@@ -634,7 +634,7 @@ SOUND : Uplifting finale + call-to-action synth
   
   Lien en bio ⬇️ #Algérie #Commerce #Import #Startup
   ```
-- **Hashtags** : #CargoLink #Algérie #Commerce #Import #Supabase #Startup #Logistics #SmallBusiness
+- **Hashtags** : #CabaLink #Algérie #Commerce #Import #Supabase #Startup #Logistics #SmallBusiness
 - **Trend Audio** : Synth inspirant populaire sur TikTok (ex. "Oh No" remix, ou audio original)
 - **Cover** : Red + Logo + "–50%"
 
@@ -654,7 +654,7 @@ SOUND : Uplifting finale + call-to-action synth
 [Founder on camera, casual professional]
 
 FOUNDER (your voice) :
-"Mon nom est [Nom], et j'ai créé CargoLink parce que
+"Mon nom est [Nom], et j'ai créé CabaLink parce que
 j'en avais assez de voir les Algériens payer 2× le prix réel
 pour importer un produit simple."
 
@@ -676,7 +676,7 @@ Les clients attendent des jours sans traçabilité.
 [App screens, professional font]
 
 FOUNDER (VO) :
-"CargoLink connecte clients et micro-importateurs algériens.
+"CabaLink connecte clients et micro-importateurs algériens.
 –50 à –70% moins cher. Temps réel. Sécurisé.
 Construit avec Supabase, Stripe, et Flutter.
 
@@ -691,7 +691,7 @@ Aujourd'hui : 500+ utilisateurs et croissance 30% mois."
 
 Client (screenshot/video) :
 "J'ai économisé 25 000 DA sur ma commande de téléphones. 
-Merci CargoLink !"
+Merci CabaLink !"
 
 Shipper (screenshot/video) :
 "J'ai créé mon business d'import sans apport initial.
@@ -712,7 +712,7 @@ Lien en premier commentaire."
 
 ## OUTRO (1:50)
 [Logo + tagline]
-"CargoLink. Connecter. Importer. Transformer."
+"CabaLink. Connecter. Importer. Transformer."
 ```
 
 ### LinkedIn Metadata
@@ -720,7 +720,7 @@ Lien en premier commentaire."
   ```
   🚀 Lancer un business d'import sans apport initial.
 
-  CargoLink a commencé par une frustration simple :
+  CabaLink a commencé par une frustration simple :
   pourquoi les Algériens paient-ils 2× le prix 
   pour importer un produit simple ?
 
@@ -736,19 +736,19 @@ Lien en premier commentaire."
   👉 Envoyer des colis moins cher
   👉 Rejoindre une startup tech algérienne
   
-  Téléchargez CargoLink → Lien dans le premier commentaire
+  Téléchargez CabaLink → Lien dans le premier commentaire
 
   Un merci spécial à l'équipe pour ce travail incroyable
   sur les animations, la UX, et l'infrastructure.
 
   L'Algérie a des talents. L'Algérie a besoin d'outils modernes.
-  CargoLink en est un.
+  CabaLink en est un.
 
-  #CargoLink #Algérie #Startup #Commerce #Import 
+  #CabaLink #Algérie #Startup #Commerce #Import 
   #Flutter #Supabase #Entrepreneurship
   ```
-- **Tags** : #CargoLink #Startup #Algérie #Entrepreneurship #Commerce #Technology
-- **Image** : Founder photo + logo CargoLink (16:9, professional)
+- **Tags** : #CabaLink #Startup #Algérie #Entrepreneurship #Commerce #Technology
+- **Image** : Founder photo + logo CabaLink (16:9, professional)
 
 ---
 
@@ -788,7 +788,7 @@ Lien en premier commentaire."
 7. **Admin Dashboard** : 4 tab bar, each tab showing data
 8. **KYC Screen** : document upload, selfie, verification badge
 
-**Style** : Utiliser les tokens CargoLink :
+**Style** : Utiliser les tokens CabaLink :
 - `primaryGradient` (#6366F1 → #8B5CF6)
 - `accentColor` (#10B981)
 - `warningColor` (#F59E0B)
@@ -796,7 +796,7 @@ Lien en premier commentaire."
 - Animations : `StaggeredEntrance`, `ShimmerCard`, `GlassCard`, `AnimatedIconDot`
 
 #### Visuals (Graphics)
-- Logo CargoLink (avec tagline si nécessaire)
+- Logo CabaLink (avec tagline si nécessaire)
 - 3 icônes pour hero : client (person), shipper (delivery), admin (settings)
 - Drapeau Algérie (pour tagline « Made in Algeria »)
 - App store badges (iOS AppStore, Google PlayStore)
@@ -848,7 +848,7 @@ Lien en premier commentaire."
 - Partager sur :
   - LinkedIn
   - Reddit (r/Algeria, r/Entrepreneurship)
-  - Twitter/X (@CargoLink_DZ)
+  - Twitter/X (@CabaLink_DZ)
   - WhatsApp broadcast
 
 #### TikTok/Reels
@@ -883,7 +883,7 @@ Lien en premier commentaire."
 ---
 
 **Prochaines étapes** :
-1. Produire les screenshots/mockups avec CargoLink app
+1. Produire les screenshots/mockups avec CabaLink app
 2. Filmer les testimonials (ou utiliser des portraits de stock fiables)
 3. Choisir musique/SFX
 4. Assembler dans éditeur vidéo
@@ -895,4 +895,4 @@ Lien en premier commentaire."
 
 ---
 
-Generated for Connacri | CargoLink Productions | August 2026
+Generated for Connacri | CabaLink Productions | August 2026

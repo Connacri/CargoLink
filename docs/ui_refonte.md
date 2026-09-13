@@ -1,4 +1,4 @@
-# UI Refonte — Contract de refonte des écrans CargoLink
+# UI Refonte — Contract de refonte des écrans CabaLink
 
 Refonte UI/UX premium des écrans. Règles strictes ci-dessous.
 

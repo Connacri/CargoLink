@@ -1,4 +1,4 @@
-# 🎙️ CargoLink — Scripts Prêts-à-Copier & Checklist Production
+# 🎙️ CabaLink — Scripts Prêts-à-Copier & Checklist Production
 
 ## Scripts de Doublage (Voice-Over)
 
@@ -56,7 +56,7 @@ NOTES: Ton déterminé, confiance croissante. Pause avant "Ça doit changer."
 
 [00:50–01:05]
 NARRATEUR:
-"Rencontrez CargoLink. La première plateforme algérienne
+"Rencontrez CabaLink. La première plateforme algérienne
 qui connecte les voyageurs, les importateurs, et les clients.
 
 Sécurisée. Transparente. Et 50 à 70 % moins chère que la concurrence."
@@ -162,7 +162,7 @@ NOTES: Ton efficace, rapide. Énumérer les onglets distinctement.
 
 [04:00–04:30]
 NARRATEUR:
-"CargoLink, c'est plus que des chiffres.
+"CabaLink, c'est plus que des chiffres.
 C'est une plateforme qui fait tomber les barrières.
 
 Un jeune peut lancer son business d'import en 10 minutes.
@@ -195,7 +195,7 @@ NARRATEUR:
 "Vous êtes client ? Trouvez le meilleur prix.
 Vous êtes importateur ? Lancez votre business.
 
-CargoLink est sur iOS et Android.
+CabaLink est sur iOS et Android.
 Téléchargez maintenant."
 
 NOTES: Ton direct, injonctif (pas agressif). 
@@ -205,7 +205,7 @@ NOTES: Ton direct, injonctif (pas agressif).
 
 [05:20–05:30]
 NARRATEUR:
-"CargoLink. Connecter. Importer. Transformer.
+"CabaLink. Connecter. Importer. Transformer.
 
 Construisons ensemble le commerce algérien du futur."
 
@@ -238,9 +238,9 @@ NOTES: Rapid-fire delivery. Pas de pauses.
 
 [00:10–00:15]
 NARRATEUR (voix montant, positif):
-"CargoLink ? –50 à –70 % moins cher."
+"CabaLink ? –50 à –70 % moins cher."
 
-TEXT ON SCREEN: "CargoLink ✨"
+TEXT ON SCREEN: "CabaLink ✨"
 
 NOTES: Ton changement brutal = contraste positif/négatif.
 
@@ -260,7 +260,7 @@ NOTES: Chaque étape = 6-7 sec de clip app.
 
 [00:40–00:45]
 NARRATEUR (voix finale, call-to-action):
-"CargoLink. iOS et Android. Lien en bio."
+"CabaLink. iOS et Android. Lien en bio."
 
 NOTES: Direct, pas d'ambiguïté. 
 Dernier mot "bio" avec down-tone (comme "click now").
@@ -273,7 +273,7 @@ Dernier mot "bio" avec down-tone (comme "click now").
 ```
 [00:00–00:10]
 FOUNDER (vous, direct à caméra, casual):
-"Salut. Je m'appelle [Votre Nom], et j'ai créé CargoLink
+"Salut. Je m'appelle [Votre Nom], et j'ai créé CabaLink
 parce que j'en avais assez de voir les Algériens payer 2× le prix réel
 pour importer un produit simple."
 
@@ -296,7 +296,7 @@ NOTES: Ton problem-solver. Pas de plainte, focus sur solution.
 
 [00:40–01:00]
 FOUNDER (VO):
-"CargoLink connecte clients et micro-importateurs algériens.
+"CabaLink connecte clients et micro-importateurs algériens.
 
 –50 à –70 % moins cher.
 Temps réel. Sécurisé.
@@ -328,7 +328,7 @@ FOUNDER (direct à caméra, sincère):
 "Si vous êtes importateur ou entrepreneur en Algérie,
 rejoignez-nous.
 
-Le commerce algérien se digitalise, et CargoLink en est un pilier.
+Le commerce algérien se digitalise, et CabaLink en est un pilier.
 
 Téléchargez et rejoignez-nous."
 
@@ -342,7 +342,7 @@ Fin chaleureuse (pas "cliquez ici" agressif).
 
 | Mot / Phrase | Prononciation Phonétique |
 |---|---|
-| CargoLink | **CAR-go-LINK** (accent sur CAR) |
+| CabaLink | **CAR-go-LINK** (accent sur CAR) |
 | Dubaï | doo-BAH-ee |
 | Supabase | **SOO-puh-base** |
 | Chargily | shar-JEE-lee |
@@ -367,7 +367,7 @@ Fin chaleureuse (pas "cliquez ici" agressif).
   - [ ] Optionnel : founder (vous) direct à caméra
 - [ ] **Assets visuels collectés** :
   - [ ] Screenshots de l'app (10-12 mockups haute qualité)
-  - [ ] Logo CargoLink (HD)
+  - [ ] Logo CabaLink (HD)
   - [ ] Badges AppStore/PlayStore
   - [ ] QR code (vers store ou website)
   - [ ] Drapeau Algérie (PNG, transparent)
@@ -386,7 +386,7 @@ Fin chaleureuse (pas "cliquez ici" agressif).
 ### PHASE 2 : PRODUCTION (1-2 semaines)
 
 #### 2.1 Capture des Mockups
-- [ ] Extraire screenshots propres de l'app CargoLink
+- [ ] Extraire screenshots propres de l'app CabaLink
   - [ ] Home screen (Client)
   - [ ] Booking form
   - [ ] Payment methods
@@ -498,7 +498,7 @@ Fin chaleureuse (pas "cliquez ici" agressif).
 
 #### 3.4 Thumbnail/Cover
 - [ ] YouTube : design thumbnail 1280×720
-  - [ ] Logo CargoLink prominent
+  - [ ] Logo CabaLink prominent
   - [ ] « –50% » en rouge/bold
   - [ ] Face/emotion (si founder)
   - [ ] High contrast
@@ -516,18 +516,18 @@ Fin chaleureuse (pas "cliquez ici" agressif).
 #### 4.1 YouTube
 - [ ] Créer chaîne (si nouvelle) et profiler complètement
   - [ ] Banner (2560×1440) : logo + tagline
-  - [ ] Avatar : logo CargoLink
+  - [ ] Avatar : logo CabaLink
   - [ ] Description : links + CTA
   - [ ] Playlists : "Tutoriels", "Success Stories", etc.
 - [ ] Upload vidéo
-  - [ ] Title : "CargoLink — Importer 50% Moins Cher en Algérie | Tutoriel Complet"
+  - [ ] Title : "CabaLink — Importer 50% Moins Cher en Algérie | Tutoriel Complet"
   - [ ] Description : voir section YouTube Metadata ci-dessus
   - [ ] Tags : cargolink, algérie, import, logistics, tutorial, startup
   - [ ] Thumbnail : upload custom
   - [ ] Category : Education / How-to
   - [ ] Visibility : PUBLIC (15 min avant lancement official)
 - [ ] Timestamps : ajouter dans description (0:00 hook, 0:30 interviews, etc.)
-- [ ] Playlist : créer série "CargoLink Explained"
+- [ ] Playlist : créer série "CabaLink Explained"
 - [ ] Subtitles :
   - [ ] Auto-generate English (puis réviser)
   - [ ] Auto-generate French (YouTube français)
@@ -544,7 +544,7 @@ Fin chaleureuse (pas "cliquez ici" agressif).
   - [ ] Bio : "L'app qui révolutionne l'import en Algérie 🚀"
 - [ ] Upload vidéo TikTok format (vertical)
   - [ ] Caption : (voir section TikTok Metadata)
-  - [ ] Hashtags : #CargoLink #Algérie #Commerce #Import #Startup
+  - [ ] Hashtags : #CabaLink #Algérie #Commerce #Import #Startup
   - [ ] Trend audio : sélectionner son populaire du moment
   - [ ] Use music : ON
   - [ ] Stitch/Duet : enabled
@@ -558,7 +558,7 @@ Fin chaleureuse (pas "cliquez ici" agressif).
   - [ ] Website link
 - [ ] Upload vidéo (native LinkedIn)
   - [ ] Caption : (voir LinkedIn Metadata)
-  - [ ] Add hashtags : #CargoLink #Startup #Algérie
+  - [ ] Add hashtags : #CabaLink #Startup #Algérie
   - [ ] Tag employees (si founder approuve)
 - [ ] Encourage engagement :
   - [ ] Like/comment sous propre post
@@ -568,7 +568,7 @@ Fin chaleureuse (pas "cliquez ici" agressif).
 
 #### 4.4 Email & Community
 - [ ] Email blast aux users actuels
-  - Subject : "Découvrez CargoLink en 8 minutes (tutoriel complet)"
+  - Subject : "Découvrez CabaLink en 8 minutes (tutoriel complet)"
   - CTA : YouTube link + AppStore link
 - [ ] WhatsApp broadcast (si list existe)
   - Clip TikTok version (45 sec) + "Full video link in comments"
@@ -678,4 +678,4 @@ Après 2 semaines, audit interne:
 
 ---
 
-Generated for Connacri | CargoLink Production Studio | Aug 2026
+Generated for Connacri | CabaLink Production Studio | Aug 2026

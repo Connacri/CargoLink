@@ -1,6 +1,6 @@
-# 🎬 CargoLink — Tutoriel Animations (pour une autre IA / agent)
+# 🎬 CabaLink — Tutoriel Animations (pour une autre IA / agent)
 
-> Guide **exhaustif et autocontenu** pour qu'une autre IA (ou un développeur) puisse créer, modifier ou étendre les animations de CargoLink **sans re-explorer le code**. Il décrit l'inventaire actuel, le design system, les patterns exacts à respecter, puis des tutos pas-à-pas (avec code prêt à l'emploi) pour chaque type d'animation.
+> Guide **exhaustif et autocontenu** pour qu'une autre IA (ou un développeur) puisse créer, modifier ou étendre les animations de CabaLink **sans re-explorer le code**. Il décrit l'inventaire actuel, le design system, les patterns exacts à respecter, puis des tutos pas-à-pas (avec code prêt à l'emploi) pour chaque type d'animation.
 
 ---
 

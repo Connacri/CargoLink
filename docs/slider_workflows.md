@@ -1,4 +1,4 @@
-# 🎠 CargoLink — Slider des Workflows par Rôle
+# 🎠 CabaLink — Slider des Workflows par Rôle
 
 > **Vue d'ensemble en « diapositives »** : chaque rôle et son workflow tiennent sur une slide. Ce document sert de source pour un composant Flutter de carrousel (`WorkflowSlider`) ou pour une présentation. Chaque slide a un **titre**, des **étapes numérotées** et des **règles clés**.
 
@@ -6,7 +6,7 @@
 
 ## Slide 1 — Vue d'ensemble
 
-**CargoLink — Connecter voyageurs & clients (Algérie)**
+**CabaLink — Connecter voyageurs & clients (Algérie)**
 
 - 🎯 –50 à –70 % vs DHL/FedEx
 - 4 rôles : Client · Expéditeur · Admin · Super Admin

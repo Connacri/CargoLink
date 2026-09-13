@@ -1,4 +1,4 @@
-# 📦 CargoLink — Workflow & Fonctionnement de l'App
+# 📦 CabaLink — Workflow & Fonctionnement de l'App
 
 > Document du fonctionnement réel de l'application (basé sur le code) : rôles, parcours client, parcours expéditeur, parcours admin, statuts et données techniques.
 

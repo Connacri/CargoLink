@@ -1,6 +1,6 @@
-# 📝 Journal de développement — CargoLink
+# 📝 Journal de développement — CabaLink
 
-Document récapitulatif du travail réalisé par l'assistant IA sur le projet **CargoLink** (Flutter + Supabase).
+Document récapitulatif du travail réalisé par l'assistant IA sur le projet **CabaLink** (Flutter + Supabase).
 
 ---
 

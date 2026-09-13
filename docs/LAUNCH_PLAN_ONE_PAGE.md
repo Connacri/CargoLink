@@ -1,4 +1,4 @@
-# 🚀 CargoLink Video Launch — ONE PAGE ACTION PLAN
+# 🚀 CabaLink Video Launch — ONE PAGE ACTION PLAN
 
 ## WHAT YOU HAVE (3 Complete Docs)
 
@@ -112,7 +112,7 @@ WEEK 1:
 
 ❌ Rushing production → Cuts quality. Give 4-6 weeks.  
 ❌ Long pauses in VO → Use music to fill.  
-❌ Overloading with animations → Stick to CargoLink design tokens.  
+❌ Overloading with animations → Stick to CabaLink design tokens.  
 ❌ Forgetting CTA links → Add timestamps + pinned comments.  
 ❌ Posting same video everywhere → Use 3 DIFFERENT cuts per platform.  
 ❌ Never checking analytics → Review metrics weekly (first month critical).
@@ -156,5 +156,5 @@ WEEK 1:
 
 ---
 
-*Generated for Connacri | CargoLink Launch Team | August 2026*  
+*Generated for Connacri | CabaLink Launch Team | August 2026*  
 *3-Document Video Production Suite v1.0*

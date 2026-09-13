@@ -22,7 +22,7 @@
 
 **Télécharger le bundle** (remplacer `X.Y.Z` par la version ci-dessus) :
 ```
-https://github.com/Connacri/CargoLink/releases/download/vX.Y.Z/app-release.aab
+https://github.com/Connacri/CabaLink/releases/download/vX.Y.Z/app-release.aab
 ```
 
 **Canal de test conseillé** : Play Console → « Test interne » d'abord (sécurité),
@@ -35,13 +35,13 @@ puis « Test fermé » avec des bêta-testeurs, puis Production.
 ### Description courte (78 caractères — max 80)
 
 ```
-CargoLink : expediez et suivez vos colis en Algerie, avec livraison securisee.
+CabaLink : expediez et suivez vos colis en Algerie, avec livraison securisee.
 ```
 
 ### Description complète (4000 caractères exactement)
 
 ```
-CargoLink est la premiere application algerienne dediee a l'expedition et au suivi de colis entre particuliers et professionnels. Que vous soyez un particulier envoyant un colis a un proche ou un commercant gerant vos livraisons au quotidien, CargoLink simplifie chaque etape du processus d'expedition grace a une interface intuitive et des fonctionnalites completes pensees pour les utilisateurs en Algerie. Pour les expediteurs, CargoLink offre la possibilite de publier des offres d'expedition en quelques clics en renseignant le poids disponible, l'origine, la destination et les dates de depart et d'arrivee. Les transporteurs verifies proposent ensuite leurs tarifs et conditions, permettant a l'expediteur de comparer les offres et de reserver celle qui correspond le mieux a ses besoins et a son budget. Chaque transporteur est soumis a un processus de verification rigoureux incluant la validation de la piece d'identite et d'une photo, garantissant ainsi la securite et la confiance entre les parties. Le suivi en temps reel constitue l'un des piliers de CargoLink. Grace a un systeme de timeline detaille, chaque etape de la livraison est visible : reception du colis, mise en transit, arrivee au depot de destination, et livraison finale au destinataire. A chaque changement de statut, une notification push informe automatiquement le client de l'avancement de son colis. Un historique complet et detaille de toutes les expeditions est accessible a tout moment, offrant une transparence totale sur le parcours des marchandises. La messagerie integree permet aux expediteurs et transporteurs de communiquer directement dans l'application sans avoir a partager leurs coordonnees personnelles. Les echanges sont synchronises en temps reel avec des notifications push pour ne manquer aucune reponse, que ce soit pour organiser un point de retrait ou pour clarifier les details d'une livraison. CargoLink met a disposition un reseau de depots de collecte repartis sur tout le territoire algerien. Ces points relais facilitent la remise et le retrait des colis, offrant une flexibilite maximale aux utilisateurs. L'inventaire de chaque depot est maintenu a jour en temps reel pour eviter toute mauvaise surprise. Le paiement se fait selon plusieurs modalites adaptees aux habitudes locales : especes a la livraison, virement bancaire, CCP ou paiement en ligne securise via des prestataires agres. Cette diversite de choix permet a chaque utilisateur de selectionner la methode qui lui convient le mieux. Le programme de parrainage recompense la fidelite et le bouche-a-oreille : chaque parrain genere un code personnel unique qu'il partage avec ses contacts. Lorsqu'un filleul effectue sa premiere livraison, le parrain recoit une commission sur les gains realises. Un tableau de bord dedie permet de suivre en temps reel les filleuls parraines, les commissions accumulees et l'historique des paiements. Les utilisateurs peuvent signaler tout probleme ou suggerer des ameliorations via un formulaire de feedback integre, contribuant ainsi a l'amelioration continue de la plateforme. Chaque retour est analyse par l'equipe pour garantir une experience utilisateur toujours plus fluide. Un tableau de bord administrateur complet permet de gerer les utilisateurs, les annonces, les depots et les finances de la plateforme. Les fonctionnalites avancees incluent la verification des transporteurs, la gestion des litiges, le suivi des commissions et des paiements, ainsi que l'envoi de broadcasts aux utilisateurs. CargoLink s'engage sur la protection des donnees personnelles avec un chiffrement HTTPS obligatoire sur toutes les communications, aucune collecte de localisation GPS et une politique de confidentialite transparente accessible directement dans l'application. La suppression de compte est integree pour un controle total des donnees personnelles. Telechargez CargoLink aujourd'hui et decouvrez une nouvelle facon simple, securisee et en toute confiance d'expedier vos colis en Algerie.
+CabaLink est la premiere application algerienne dediee a l'expedition et au suivi de colis entre particuliers et professionnels. Que vous soyez un particulier envoyant un colis a un proche ou un commercant gerant vos livraisons au quotidien, CabaLink simplifie chaque etape du processus d'expedition grace a une interface intuitive et des fonctionnalites completes pensees pour les utilisateurs en Algerie. Pour les expediteurs, CabaLink offre la possibilite de publier des offres d'expedition en quelques clics en renseignant le poids disponible, l'origine, la destination et les dates de depart et d'arrivee. Les transporteurs verifies proposent ensuite leurs tarifs et conditions, permettant a l'expediteur de comparer les offres et de reserver celle qui correspond le mieux a ses besoins et a son budget. Chaque transporteur est soumis a un processus de verification rigoureux incluant la validation de la piece d'identite et d'une photo, garantissant ainsi la securite et la confiance entre les parties. Le suivi en temps reel constitue l'un des piliers de CabaLink. Grace a un systeme de timeline detaille, chaque etape de la livraison est visible : reception du colis, mise en transit, arrivee au depot de destination, et livraison finale au destinataire. A chaque changement de statut, une notification push informe automatiquement le client de l'avancement de son colis. Un historique complet et detaille de toutes les expeditions est accessible a tout moment, offrant une transparence totale sur le parcours des marchandises. La messagerie integree permet aux expediteurs et transporteurs de communiquer directement dans l'application sans avoir a partager leurs coordonnees personnelles. Les echanges sont synchronises en temps reel avec des notifications push pour ne manquer aucune reponse, que ce soit pour organiser un point de retrait ou pour clarifier les details d'une livraison. CabaLink met a disposition un reseau de depots de collecte repartis sur tout le territoire algerien. Ces points relais facilitent la remise et le retrait des colis, offrant une flexibilite maximale aux utilisateurs. L'inventaire de chaque depot est maintenu a jour en temps reel pour eviter toute mauvaise surprise. Le paiement se fait selon plusieurs modalites adaptees aux habitudes locales : especes a la livraison, virement bancaire, CCP ou paiement en ligne securise via des prestataires agres. Cette diversite de choix permet a chaque utilisateur de selectionner la methode qui lui convient le mieux. Le programme de parrainage recompense la fidelite et le bouche-a-oreille : chaque parrain genere un code personnel unique qu'il partage avec ses contacts. Lorsqu'un filleul effectue sa premiere livraison, le parrain recoit une commission sur les gains realises. Un tableau de bord dedie permet de suivre en temps reel les filleuls parraines, les commissions accumulees et l'historique des paiements. Les utilisateurs peuvent signaler tout probleme ou suggerer des ameliorations via un formulaire de feedback integre, contribuant ainsi a l'amelioration continue de la plateforme. Chaque retour est analyse par l'equipe pour garantir une experience utilisateur toujours plus fluide. Un tableau de bord administrateur complet permet de gerer les utilisateurs, les annonces, les depots et les finances de la plateforme. Les fonctionnalites avancees incluent la verification des transporteurs, la gestion des litiges, le suivi des commissions et des paiements, ainsi que l'envoi de broadcasts aux utilisateurs. CabaLink s'engage sur la protection des donnees personnelles avec un chiffrement HTTPS obligatoire sur toutes les communications, aucune collecte de localisation GPS et une politique de confidentialite transparente accessible directement dans l'application. La suppression de compte est integree pour un controle total des donnees personnelles. Telechargez CabaLink aujourd'hui et decouvrez une nouvelle facon simple, securisee et en toute confiance d'expedier vos colis en Algerie.
 ```
 
 ---
@@ -64,7 +64,7 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 - **Dashboard expéditeur allégé** : les demandes de réservation reçues
   affichent désormais uniquement les informations essentielles (produit,
   statut, client, poids, itinéraire).
-- **CargoLink → CabaLink** : le nom de l'application a été renommé
+- **CabaLink → CabaLink** : le nom de l'application a été renommé
   dans toutes les interfaces utilisateur.
 
 ### Version 1.1.82
@@ -104,7 +104,7 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 - **Prix toujours affiché avec la marge** : le prix au kilo affiché par les
   expéditeurs sur leur tableau de bord (mini-carte d'une offre publiée)
   correspond désormais au prix réellement payé par les clients, marge
-  CargoLink incluse.
+  CabaLink incluse.
 - **Partage d'offre cohérent** : l'image « billet d'avion » et le texte
   partagés (WhatsApp, Telegram…) montrent eux aussi le prix final pour le
   client, marge comprise — plus d'écart entre ce qui est affiché à
@@ -184,7 +184,7 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 
 - **Billet d'embarquement scrollable** : la carte « Boarding Pass » (aperçu de
   billet d'embarquement) n'overflowait plus verticalement quand toutes les
-  informations CargoLink (expéditeur, prix/kg, disponibilité, note) étaient
+  informations CabaLink (expéditeur, prix/kg, disponibilité, note) étaient
   présentes. Le contenu défile désormais à l'intérieur de la carte de hauteur
   fixe — plus de `RenderFlex overflowed` sur petit écran ni sur Windows.
 
@@ -297,7 +297,7 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
 ### Version 1.1.33
 
 - **Billet d'avion complet dans chaque offre publiée (tous les rôles)** : le
-  vrai billet CargoLink (aéroport de départ, aéroport d'arrivée **et ville
+  vrai billet CabaLink (aéroport de départ, aéroport d'arrivée **et ville
   d'arrivée clairement affichée** sous l'aéroport, compagnie, n° de vol,
   dates, poids disponible, prix/kg, téléphone expéditeur cliquable) s'affiche
   désormais dans **toutes** les offres publiées — feed client
@@ -810,7 +810,7 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
   un message au fondateur via Supabase.
 - **Partage social d'offre** : chaque offre peut être partagée via WhatsApp,
   Telegram ou n'importe quelle app. Le partage génère une **image billet
-  d'avion** (style billet de vol CargoLink avec route, dates, prix) et un
+  d'avion** (style billet de vol CabaLink avec route, dates, prix) et un
   **deep link** `cargolink://offer/<id>` pour ouverture directe dans l'app.
 - **Écran détail offre** : en appuyant sur une offre, le client accède à un
   écran dédié avec le billet visuel, la disponibilité, la description de
@@ -857,7 +857,7 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
   l'espace d'affichage gagné profite au contenu utile sur tous les écrans.
 - **Bannière publicitaire compacte** : sur les accueils client et expéditeur,
   la pub sponsorisée devient un bandeau fixe de 140 px juste sous la barre
-  « CargoLink » (épinglé avec elle) au lieu du header plein écran — le
+  « CabaLink » (épinglé avec elle) au lieu du header plein écran — le
   contenu démarre immédiatement, la pub reste cliquable.
 - **Rappel — cloisonnement des pubs expéditeur** : chaque micro-importateur
   ne voit dans « Mes publicités » que ses propres pubs (en attente, en ligne
@@ -896,7 +896,7 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
   : images Android (classique + Android 12+, mode sombre inclus), iOS et web
   mises à jour.
 - **Version de l'app alignée sur les tags CI** : le pied de page du profil
-  affiche désormais « CargoLink v1.0.19 (152) » — versionName + versionCode
+  affiche désormais « CabaLink v1.0.19 (152) » — versionName + versionCode
   identiques aux tags GitHub Releases. `pubspec.yaml` suit le dernier tag
   publié (les builds signés CI écrasent toujours avec la valeur du tag via
   `--build-name/--build-number`) ; le build web reçoit aussi ces flags et son
@@ -1007,11 +1007,11 @@ CargoLink est la premiere application algerienne dediee a l'expedition et au sui
   configuration d'origine est rétablie (même icône, même splash plein écran
   qu'en v1.0.10, générés par flutter_native_splash + flutter_launcher_icons).
 - **Favicon et icônes PWA web aux couleurs de la marque** : favicon et icônes
-  web remplacés par le logo CargoLink, manifest web aux couleurs indigo.
+  web remplacés par le logo CabaLink, manifest web aux couleurs indigo.
 - **Preview caméra selfie corrigée** : l'aperçu de la caméra dans
   l'enregistrement vidéo n'est plus déformé (étiré en largeur) en mode
   portrait — le ratio capteur est inversé automatiquement.
-- **Pied de page profil** : la version exacte de l'app (ex. « CargoLink
+- **Pied de page profil** : la version exacte de l'app (ex. « CabaLink
   v1.0.11 ») et la mention « Développé par FORSLOG ltd » s'affichent en bas
   du profil, pour tous les rôles.
 - **Durcissement sécurité côté base** : politiques RLS restreintes aux
@@ -1242,7 +1242,7 @@ Fichier de référence complet et prêt à copier-coller : `playstore/PLAY_STORE
 
 ### Brève description (80 caractères max — 74 utilisés)
 ```
-CargoLink : expédiez et suivez vos colis en Algérie, avec livraison sécurisée.
+CabaLink : expédiez et suivez vos colis en Algérie, avec livraison sécurisée.
 ```
 
 ### Description complète
@@ -1310,8 +1310,8 @@ Hébergées sur **GitHub Pages** (déployées automatiquement par le workflow `d
 
 | Champ Play Console | URL |
 |---|---|
-| Politique de confidentialité | https://connacri.github.io/CargoLink/privacy_policy.html |
-| Lien de suppression de compte | https://connacri.github.io/CargoLink/account_deletion.html |
+| Politique de confidentialité | https://connacri.github.io/CabaLink/privacy_policy.html |
+| Lien de suppression de compte | https://connacri.github.io/CabaLink/account_deletion.html |
 
 Suppression partielle sans supprimer le compte : **Oui** (photo, documents, messages,
 colis supprimables dans l'app).

@@ -1,4 +1,4 @@
-# 🚀 CargoLink — Quickstart Actionable & Distribution Timeline
+# 🚀 CabaLink — Quickstart Actionable & Distribution Timeline
 
 ## QUICKSTART (Print This!)
 
@@ -50,22 +50,22 @@ Example: `youtube_8min_1920x1080_sep2026.mp4`
 
 ### YOUTUBE — Post & Description
 
-**URL**: https://youtube.com/@CargoLinkDZ
+**URL**: https://youtube.com/@CabaLinkDZ
 
 ```
 ═══════════════════════════════════════════════════════════════
 
 TITLE (60 chars max):
-CargoLink — Importer 50% Moins Cher en Algérie | Tutoriel Complet
+CabaLink — Importer 50% Moins Cher en Algérie | Tutoriel Complet
 
 DESCRIPTION:
-🚀 Découvrez CargoLink, la première plateforme algérienne 
+🚀 Découvrez CabaLink, la première plateforme algérienne 
 qui révolutionne l'import !
 
 ⏰ TIMESTAMPS :
 0:00 🔥 Hook — Le problème des frais d'import
 0:30 👥 Témoignages de clients/shippers
-2:00 ✨ Présentation CargoLink
+2:00 ✨ Présentation CabaLink
 3:00 👤 Workflow Client (4 étapes)
 5:00 🚚 Workflow Expéditeur
 6:00 ⚙️ Dashboard Admin
@@ -111,7 +111,7 @@ ALLOW EMBEDDING: YES
 ═══════════════════════════════════════════════════════════════
 
 CAPTION (150 chars max, will show full in app):
-CargoLink révolutionne l'import en Algérie 🚀
+CabaLink révolutionne l'import en Algérie 🚀
 
 ⏰ TIMESTAMPS :
 0:00 Hook — le problème
@@ -126,7 +126,7 @@ Android: https://play.google.com/store/apps/details?id=com.cargolink.app
 Lien en bio ⬇️
 
 HASHTAGS:
-#CargoLink #Algérie #Commerce #Import #Startup #Tech 
+#CabaLink #Algérie #Commerce #Import #Startup #Tech 
 #Flutter #Logistics #SmallBusiness #Entrepreneurship 
 #DZ #Business #Tutoriel #Trending #Viral
 
@@ -151,7 +151,7 @@ UPLOAD SCHEDULE:
 
 ### LINKEDIN — Post (Full Text)
 
-**Company Page**: CargoLink DZ | **Founder Personal**: [Your Profile]
+**Company Page**: CabaLink DZ | **Founder Personal**: [Your Profile]
 
 ```
 ═══════════════════════════════════════════════════════════════
@@ -162,7 +162,7 @@ MAIN TEXT (280 chars soft limit, but LinkedIn allows more):
 
 🚀 Lancer un business d'import sans apport initial.
 
-CargoLink a commencé par une frustration simple:
+CabaLink a commencé par une frustration simple:
 Pourquoi les Algériens paient-ils 2× le prix
 pour importer un produit simple ?
 
@@ -178,13 +178,13 @@ Si vous cherchez à :
 👉 Envoyer des colis moins cher
 👉 Rejoindre une startup tech algérienne
 
-Téléchargez CargoLink → Lien dans le premier commentaire
+Téléchargez CabaLink → Lien dans le premier commentaire
 
 Un merci spécial à l'équipe pour ce travail incroyable
 sur les animations, la UX, et l'infrastructure.
 
 L'Algérie a des talents. L'Algérie a besoin d'outils modernes.
-CargoLink en est un.
+CabaLink en est un.
 
 ═══════════════════════════════════════════════════════════════
 
@@ -200,7 +200,7 @@ Des questions ? 💬 Répondez dans les commentaires !
 ═══════════════════════════════════════════════════════════════
 
 HASHTAGS (add in caption or first comment):
-#CargoLink #Startup #Algérie #Entrepreneurship #Commerce 
+#CabaLink #Startup #Algérie #Entrepreneurship #Commerce 
 #Technology #Import #Logistics #Flutter #Supabase #Stripe
 #SmallBusiness #Innovation #DZ #Business #Tech
 
@@ -219,13 +219,13 @@ RE-POST: None (LinkedIn algo discourages reposts)
 
 ## 📧 EMAIL TEMPLATE
 
-**To**: Existing CargoLink users (from app database)
+**To**: Existing CabaLink users (from app database)
 
 ```
 ═══════════════════════════════════════════════════════════════
 
 SUBJECT LINE (60 chars):
-Découvrez CargoLink en 8 minutes (tutoriel complet)
+Découvrez CabaLink en 8 minutes (tutoriel complet)
 
 FROM: support@cargolink.dz
 REPLY-TO: hello@cargolink.dz
@@ -236,7 +236,7 @@ EMAIL BODY:
 
 Salut 👋
 
-Vous utilisez CargoLink depuis quelque temps ?
+Vous utilisez CabaLink depuis quelque temps ?
 
 Nous venons de créer un tutoriel complet (8 min) qui explique
 TOUT: comment chercher une offre, réserver, payer, suivre...
@@ -259,16 +259,16 @@ Pourquoi le regarder ?
 Avez-vous des questions après ? Répondez à cet email, 
 nous adorons les retours.
 
-Merci d'utiliser CargoLink 🙏
+Merci d'utiliser CabaLink 🙏
 
-L'équipe CargoLink
+L'équipe CabaLink
 support@cargolink.dz
 
 ═══════════════════════════════════════════════════════════════
 
 EMAIL DESIGN:
 - Template: Simple & clean (Mailchimp, ConvertKit, or Brevo)
-- Colors: CargoLink primary (indigo #6366F1) + white
+- Colors: CabaLink primary (indigo #6366F1) + white
 - CTA Button: "Regarder le tutoriel" (bright, contrasted)
 - Footer: Copyright + Unsubscribe link
 
@@ -288,7 +288,7 @@ EXPECTED CTR: 5-8%
 ```
 Texte court (WhatsApp ne montre que ~160 chars avant "see more"):
 
-CargoLink a un tutoriel COMPLET en vidéo 🎬
+CabaLink a un tutoriel COMPLET en vidéo 🎬
 
 Découvrez en 45 sec pourquoi –50% vs DHL/FedEx:
 
@@ -529,5 +529,5 @@ After main launch video, create:
 
 ---
 
-Generated for Connacri | CargoLink Launch Team | August 2026
+Generated for Connacri | CabaLink Launch Team | August 2026
 Version 1.0 | Last updated: 2026-08-15

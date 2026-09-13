@@ -296,11 +296,11 @@ warning: in the working copy of 'lib/screens/admin/super_admin_dashboard_screen.
 
 **Output:**
 ```
-git : To github.com:Connacri/CargoLink.git
+git : To github.com:Connacri/CabaLink.git
 Au caract�re Ligne:1 : 1
 + git push origin master 2>&1 | Select-Object -Last 2
 + ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: (To github.com:Connacri/CargoLink.git:String) [], RemoteException
+    + CategoryInfo          : NotSpecified: (To github.com:Connacri/CabaLink.git:String) [], RemoteException
     + FullyQualifiedErrorId : NativeCommandError
  
    70a3b02..210580e  master -> master
@@ -1483,7 +1483,7 @@ C:\Users\gzers\AndroidStudioProjects\cargolink\lib\screens\auth\role_selection_s
 85:             title: widget.firstTime
 86:                 ? 'Choisissez votre rôle'
 87:                 : 'Changer de rôle',
-88:             subtitle: 'Que souhaitez-vous faire sur CargoLink ?',
+88:             subtitle: 'Que souhaitez-vous faire sur CabaLink ?',
 89:             icon: Icons.verified_user,
 90:           ),
 91:           SliverPadding(
@@ -1723,7 +1723,7 @@ Let me read the auth service and providers.
 43: }
 44: 
 45: /// Result of a Google sign-in. `isNewUser` is true when the Firebase user has
-46: /// no CargoLink profile yet (first sign-in), in which case the UI must ask the
+46: /// no CabaLink profile yet (first sign-in), in which case the UI must ask the
 47: /// user to pick a role before entering the app.
 48: class GoogleSignInResult {
 49:   final bool isNewUser;
@@ -2229,7 +2229,7 @@ Let me read the auth service and providers.
 549:   /// rejects the send with INVALID_CONTINUE_URI.
 550:   static final fbauth.ActionCodeSettings _verificationCodeSettings =
 551:       fbauth.ActionCodeSettings(
-552:     url: 'https://connacri.github.io/CargoLink/',
+552:     url: 'https://connacri.github.io/CabaLink/',
 553:     handleCodeInApp: false,
 554:     androidPackageName: 'com.cargolink.dz.cargolink',
 555:     androidInstallApp: true,
@@ -2343,7 +2343,7 @@ Let me read the auth service and providers.
 663:     }
 664:   }
 665: 
-666:   /// Create the CargoLink profile for a brand-new user (e.g. first Google
+666:   /// Create the CabaLink profile for a brand-new user (e.g. first Google
 667:   /// sign-in) with the role they picked. Used by the role-selection flow.
 668:   Future<void> createProfileWithRole({
 669:     required String role,
@@ -2762,15 +2762,15 @@ C:\Users\gzers\AndroidStudioProjects\cargolink\lib\app\app.dart:
 19: import 'app_widgets.dart';
 20: import 'home_tabs_screen.dart';
 21: 
-22: class CargoLinkApp extends ConsumerWidget {
-23:   const CargoLinkApp({Key? key}) : super(key: key);
+22: class CabaLinkApp extends ConsumerWidget {
+23:   const CabaLinkApp({Key? key}) : super(key: key);
 24: 
 25:   @override
 26:   Widget build(BuildContext context, WidgetRef ref) {
 27:     final authState = ref.watch(authStateProvider);
 28: 
 29:     return MaterialApp(
-30:       title: 'CargoLink',
+30:       title: 'CabaLink',
 31:       theme: AppTheme.darkTheme,
 32:         home: authState.when(
 33:         data: (authData) {
@@ -2925,7 +2925,7 @@ C:\Users\gzers\AndroidStudioProjects\cargolink\lib\app\app.dart:
 87:       body: CustomScrollView(
 88:         slivers: [
 89:           const GradientSliverHeader(
-90:             title: 'CargoLink',
+90:             title: 'CabaLink',
 91:             subtitle: 'Connexion à votre compte',
 92:             icon: Icons.local_shipping,
 93:           ),
@@ -3858,7 +3858,7 @@ Timeline on RE-LOGIN (existing user who already has a role):
 2. `_handleLogin()` → `signInWithEmail` → OK.
 3. Inside `signInWithEmail`, `_onAuthenticated(user)` is called (token exchange), then `_ensureProfileIfAbsent` (profile exists → returns).
 4. `_afterSignIn()` → invalidates `authStateProvider`, `currentUserProvider`, `currentShipperProvider`.
-5. `authStateProvider` rebuild → emits signed-in state → `CargoLinkApp` switches home → `AccountGateScreen`.
+5. `authStateProvider` rebuild → emits signed-in state → `CabaLinkApp` switches home → `AccountGateScreen`.
 6. `AccountGateScreen` watches `currentUserProvider` → loading. When resolved: if non-null → HomeTabs; if null → `_GateRoleDecider`.
 
 For the role page to appear and disappear: The window where `currentUserProvider` returns null has to exist. When would that be?
@@ -3916,7 +3916,7 @@ And `HomeTabsScreen` itself:
 final currentUser = ref.watch(currentUserProvider);
 ```
 
-Now, the KEY: `CargoLinkApp.home` is `authState.when(...)`. This is the root. When `authStateProvider` emits a new value, the whole MaterialApp home replaces.
+Now, the KEY: `CabaLinkApp.home` is `authState.when(...)`. This is the root. When `authStateProvider` emits a new value, the whole MaterialApp home replaces.
 
 Consequence: When the user is signed in and ON the role selection screen (`_GateRoleDecider` rendered due to null), and then `authStateProvider` emits ANOTHER signed-in state (e.g., because `idTokenChanges` fires again, or because `_afterSignIn` invalidated it), the entire `home` widget rebuilds → `AccountGateScreen` re-mounts → `currentUserProvider` is now cached (resolved non-null) → straight to HomeTabs. So the role screen "disappears".
 
@@ -4041,7 +4041,7 @@ fe18093 Targeted broadcasts by role, logout icon for all roles, monotonic Androi
 54e0454 Align pubspec version with latest release tag v0.1.28
 f6d27ac Activate Supabase Realtime for bookings and shipments with live list refresh
 4b01b98 Fix Google account-switch on web and invalidate account providers on sign-in/out
-765bb33 Add CargoLink V2 multi-shipper network layer (models, service, providers)
+765bb33 Add CabaLink V2 multi-shipper network layer (models, service, providers)
 1783d50 Fix pagination shimmer and UI overflow issues
 1ae88ee Fix shimmer crash in slivers, restore missing content, add server-side search
 7f21a08 Redesign all screens with shared UI kit and lazy infinite scrolling
@@ -4258,7 +4258,7 @@ Let me read these.
 147:           physics: const AlwaysScrollableScrollPhysics(),
 148:           slivers: [
 149:             GradientSliverHeader(
-150:               title: 'CargoLink',
+150:               title: 'CabaLink',
 151:               subtitle: 'Trouvez les meilleurs micro-importateurs pour vos commandes',
 152:               icon: Icons.airplanemode_active,
 153:               trailing: Row(
@@ -9018,11 +9018,11 @@ warning: in the working copy of 'lib/screens/auth/account_gate_screen.dart', LF 
 
 **Output:**
 ```
-git : To github.com:Connacri/CargoLink.git
+git : To github.com:Connacri/CabaLink.git
 Au caract�re Ligne:1 : 1
 + git push origin master 2>&1 | Select-Object -Last 2
 + ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: (To github.com:Connacri/CargoLink.git:String) [], RemoteException
+    + CategoryInfo          : NotSpecified: (To github.com:Connacri/CabaLink.git:String) [], RemoteException
     + FullyQualifiedErrorId : NativeCommandError
  
    210580e..9529a2d  master -> master

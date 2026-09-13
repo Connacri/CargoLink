@@ -1,4 +1,4 @@
-# 📦 CargoLink
+# 📦 CabaLink
 
 > Plateforme mobile type **DHL** qui connecte les **micro-importateurs** (voyageurs avec excédent de bagage) aux **clients** en Algérie pour importer des produits à moindre coût.
 
@@ -6,9 +6,9 @@
 |---|---|---|
 | 🎯 **–50 à –70 %** vs DHL/FedEx | 🇩🇿 Optimisé marché algérien | 🏗 Flutter + Supabase Realtime |
 
-🔗 **Démo web (GitHub Pages)** : https://connacri.github.io/CargoLink/
-🔒 **Politique de confidentialité** : https://connacri.github.io/CargoLink/privacy_policy.html
-🗑 **Suppression de compte & données** : https://connacri.github.io/CargoLink/account_deletion.html
+🔗 **Démo web (GitHub Pages)** : https://connacri.github.io/CabaLink/
+🔒 **Politique de confidentialité** : https://connacri.github.io/CabaLink/privacy_policy.html
+🗑 **Suppression de compte & données** : https://connacri.github.io/CabaLink/account_deletion.html
 
 ---
 
@@ -361,7 +361,7 @@ flutter build windows --release
 keytool -genkeypair -v -keystore cargolink-release.jks -alias cargolink \
   -keyalg RSA -keysize 2048 -validity 10000 \
   -storepass VOTRE_STORE_PASS -keypass VOTRE_KEY_PASS \
-  -dname "CN=CargoLink, OU=Dev, O=CargoLink, L=Alger, S=Alger, C=DZ"
+  -dname "CN=CabaLink, OU=Dev, O=CabaLink, L=Alger, S=Alger, C=DZ"
 # Encodage base64 (PowerShell)
 [Convert]::ToBase64String([IO.File]::ReadAllBytes("cargolink-release.jks"))
 # Collez le résultat dans le secret KEYSTORE_BASE64
@@ -402,4 +402,4 @@ Configurer via la CLI : `supabase secrets set NOM_SECRET=...`
 
 ## 📄 License
 
-MIT © 2026 — CargoLink
+MIT © 2026 — CabaLink
