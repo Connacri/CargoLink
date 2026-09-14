@@ -152,7 +152,7 @@ flutter_launcher_icons:
 # Splash screen configuration. Run: dart run flutter_native_splash:create
 flutter_native_splash:
   color: "#FFFFFF"
-  image: assets/icons/splash3.jpeg
+  image: assets/icons/splash3.png
 
   android: true
   ios: true
@@ -162,7 +162,7 @@ flutter_native_splash:
 
   android_12:
     color: "#FFFFFF"
-    image: assets/icons/splash3.jpeg
+    image: assets/icons/splash3.png
 
 dependency_overrides:
   sign_in_with_apple: ^8.1.0

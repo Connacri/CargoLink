@@ -583,6 +583,7 @@ class _ShipperDashboardScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const SizedBox(height: AppTheme.spaceSm),
           // Large "Publier une offre" button
           InkWell(
             onTap: () => _showPublishDialog(shipper.id),
