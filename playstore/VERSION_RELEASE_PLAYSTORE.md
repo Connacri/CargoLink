@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.87** |
-| Code de version (versionCode) | **312** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `a198e8b` |
-| Statut CI | Release `v1.1.87` en cours de publication par la CI |
+| Version (versionName) | **1.1.88** |
+| Code de version (versionCode) | **315** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `a0a6fcd` |
+| Statut CI | Release `v1.1.88` en cours de publication par la CI |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -51,6 +51,21 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 > Les notes ci-dessous sont rédigées pour les utilisateurs de l'application
 > (et non pour les développeurs) : elles décrivent les nouveautés en langage
 > simple, sans détail technique.
+
+### Version 1.1.88
+
+- **Guide Micro-Importation bilingue (Français / Arabe)** : le tutoriel
+  est maintenant disponible en deux langues avec un sélecteur intégré.
+  La condition d'éligibilité reste affichée en grand et en permanence,
+  et toutes les autres sections se déplient au toucher (étapes,
+  institutions, fiscalité, produits interdits, sanctions).
+- **Liens officiels cliquables** : chaque institution (ANAE, BEA, CASNOS,
+  DGI, douane, etc.) ouvre directement son site officiel depuis l'application.
+- Détails renforcés : contingent (1,8 M DA/déplacement, 2 déplacements/mois),
+  taux douane 5 % + IFU 0,5 % (art. 143 LF 2026), cotisations CASNOS 2026,
+  échéances, calculs pédagogiques et liste des marchandises exclues.
+- Réparation de l'écran « Gérer mon compte » (matériau de fond manquant
+  sur la zone dangereuse qui pouvait masquer les clics).
 
 ### Version 1.1.87
 
