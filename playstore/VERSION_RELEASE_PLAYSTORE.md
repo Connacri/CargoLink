@@ -12,7 +12,7 @@
 |---|---|---|
 | Version (versionName) | **1.1.87** |
 | Code de version (versionCode) | **312** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `(commit en cours)` |
+| Commit de référence | `a198e8b` |
 | Statut CI | Release `v1.1.87` en cours de publication par la CI |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
