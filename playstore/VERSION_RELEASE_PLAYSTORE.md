@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.88** |
-| Code de version (versionCode) | **315** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `a0a6fcd` |
-| Statut CI | Release `v1.1.88` en cours de publication par la CI |
+| Version (versionName) | **1.2.2** |
+| Code de version (versionCode) | **317** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `481975e` |
+| Statut CI | Release `v1.2.2` publiée avec succès (AAB signé + APK + Web + Windows) |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -52,8 +52,10 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 > (et non pour les développeurs) : elles décrivent les nouveautés en langage
 > simple, sans détail technique.
 
-### Version 1.1.88
+### Version 1.2.2
 
+- **Première version 1.2.x** : la numérotation de release a atteint 1.1.99
+  puis bascule sur la mineure suivante (schéma `1.{MINOR}.{PATCH}`).
 - **Guide Micro-Importation bilingue (Français / Arabe)** : le tutoriel
   est maintenant disponible en deux langues avec un sélecteur intégré.
   La condition d'éligibilité reste affichée en grand et en permanence,
@@ -64,8 +66,11 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 - Détails renforcés : contingent (1,8 M DA/déplacement, 2 déplacements/mois),
   taux douane 5 % + IFU 0,5 % (art. 143 LF 2026), cotisations CASNOS 2026,
   échéances, calculs pédagogiques et liste des marchandises exclues.
+- Guide pas-à-pas complet livré dans `les_MD/tuto_micro_importation_etapes.md`.
 - Réparation de l'écran « Gérer mon compte » (matériau de fond manquant
   sur la zone dangereuse qui pouvait masquer les clics).
+- Correction CI Android : suppression de l'étape `setup-android` devenue
+  incompatible avec les runners GitHub (le SDK est préinstallé).
 
 ### Version 1.1.87
 
