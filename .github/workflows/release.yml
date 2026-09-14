@@ -78,8 +78,6 @@ jobs:
           flutter-version: 3.44.0
           channel: stable
 
-      - uses: android-actions/setup-android@v3
-
       - name: Install Android SDK platform 36
         run: |
           yes | sdkmanager --licenses > /dev/null || true
@@ -121,8 +119,6 @@ jobs:
         with:
           flutter-version: 3.44.0
           channel: stable
-
-      - uses: android-actions/setup-android@v3
 
       - name: Install Android SDK platform 36
         run: |
