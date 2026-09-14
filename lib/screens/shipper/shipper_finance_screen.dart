@@ -487,8 +487,9 @@ class _ShipperFinanceScreenState extends ConsumerState<ShipperFinanceScreen> {
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
       data: (s) {
-        if (s.totalPaid == 0 && s.totalPending == 0)
+        if (s.totalPaid == 0 && s.totalPending == 0) {
           return const SizedBox.shrink();
+        }
         return Padding(
           padding: const EdgeInsets.fromLTRB(
             AppTheme.spaceMd,

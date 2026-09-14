@@ -367,60 +367,63 @@ class _AccountManagementScreenState
               ),
               const SizedBox(height: AppTheme.spaceLg),
 
-              Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.errorColor.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                  border: Border.all(
-                      color: AppTheme.errorColor.withValues(alpha: 0.2)),
-                ),
-                padding: const EdgeInsets.all(AppTheme.spaceMd),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.warning_amber_rounded,
-                            color: AppTheme.errorColor, size: 20),
-                        const SizedBox(width: AppTheme.spaceSm),
-                        Text('Zone dangereuse',
-                            style: AppTheme.h3
-                                .copyWith(color: AppTheme.errorColor)),
-                      ],
-                    ),
-                    const SizedBox(height: AppTheme.spaceSm),
-                    const Text(
-                      'Ces actions sont irréversibles. Veuillez bien réfléchir avant de continuer.',
-                      style: AppTheme.caption,
-                    ),
-                    const SizedBox(height: AppTheme.spaceMd),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.person_off_outlined,
-                          color: AppTheme.warningColor),
-                      title: const Text('Désactiver le compte'),
-                      subtitle: const Text(
-                        'Votre compte sera masqué mais les données restent sauvegardées.',
+              Material(
+                color: AppTheme.errorColor.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                    border: Border.all(
+                        color: AppTheme.errorColor.withValues(alpha: 0.2)),
+                  ),
+                  padding: const EdgeInsets.all(AppTheme.spaceMd),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.warning_amber_rounded,
+                              color: AppTheme.errorColor, size: 20),
+                          const SizedBox(width: AppTheme.spaceSm),
+                          Text('Zone dangereuse',
+                              style: AppTheme.h3
+                                  .copyWith(color: AppTheme.errorColor)),
+                        ],
+                      ),
+                      const SizedBox(height: AppTheme.spaceSm),
+                      const Text(
+                        'Ces actions sont irréversibles. Veuillez bien réfléchir avant de continuer.',
                         style: AppTheme.caption,
                       ),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: _deactivateAccount,
-                    ),
-                    const Divider(),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.delete_forever_outlined,
-                          color: AppTheme.errorColor),
-                      title: const Text('Supprimer le compte',
-                          style: TextStyle(color: AppTheme.errorColor)),
-                      subtitle: const Text(
-                        'Suppression définitive après 30 jours de délai.',
-                        style: AppTheme.caption,
+                      const SizedBox(height: AppTheme.spaceMd),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.person_off_outlined,
+                            color: AppTheme.warningColor),
+                        title: const Text('Désactiver le compte'),
+                        subtitle: const Text(
+                          'Votre compte sera masqué mais les données restent sauvegardées.',
+                          style: AppTheme.caption,
+                        ),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: _deactivateAccount,
                       ),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: _requestDeletion,
-                    ),
-                  ],
+                      const Divider(),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.delete_forever_outlined,
+                            color: AppTheme.errorColor),
+                        title: const Text('Supprimer le compte',
+                            style: TextStyle(color: AppTheme.errorColor)),
+                        subtitle: const Text(
+                          'Suppression définitive après 30 jours de délai.',
+                          style: AppTheme.caption,
+                        ),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: _requestDeletion,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: AppTheme.spaceXxl),
