@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.86** |
-| Code de version (versionCode) | **311** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `fa555a3` |
-| Statut CI | Release `v1.1.86` en cours de publication par la CI |
+| Version (versionName) | **1.1.87** |
+| Code de version (versionCode) | **312** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `(commit en cours)` |
+| Statut CI | Release `v1.1.87` en cours de publication par la CI |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -51,6 +51,15 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 > Les notes ci-dessous sont rédigées pour les utilisateurs de l'application
 > (et non pour les développeurs) : elles décrivent les nouveautés en langage
 > simple, sans détail technique.
+
+### Version 1.1.87
+
+- **Guide Micro-Importation** : un tutoriel complet et officiel est
+  désormais accessible depuis la page de connexion et le profil de tous
+  les rôles. Il couvre l'éligibilité, les 17 étapes du parcours, la
+  fiscalité (5% douane + 0.5% IFU), les produits interdits, les
+  institutions à connaître et les références légales (décret 25-170,
+  Loi de finances 2026).
 
 ### Version 1.1.83
 

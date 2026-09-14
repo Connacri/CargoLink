@@ -241,6 +241,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
             ),
+            SliverToBoxAdapter(
+              child: StaggeredEntrance(
+                delay: const Duration(milliseconds: 480),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppTheme.spaceXs,
+                  ),
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.of(context)
+                        .pushNamed('/micro-import-tutorial'),
+                    icon: const Icon(Icons.local_shipping_rounded, size: 18),
+                    label: const Text('Guide micro-importation'),
+                  ),
+                ),
+              ),
+            ),
             const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLg)),
           ],
         ),

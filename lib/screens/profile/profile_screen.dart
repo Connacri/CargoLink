@@ -1458,6 +1458,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             padding: EdgeInsets.zero,
             child: ListTile(
               leading: const AnimatedIconDot(
+                  icon: Icons.local_shipping_rounded,
+                  color: AppTheme.accentColor),
+              title: const Text('Guide micro-importation'),
+              subtitle: const Text(
+                'Comment devenir micro-importateur en Algérie',
+                style: AppTheme.caption,
+              ),
+              trailing: const Icon(Icons.chevron_right,
+                  color: AppTheme.textSecondaryColor),
+              onTap: () => Navigator.of(context)
+                  .pushNamed('/micro-import-tutorial'),
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceSm),
+          GlassCard(
+            padding: EdgeInsets.zero,
+            child: ListTile(
+              leading: const AnimatedIconDot(
                   icon: Icons.settings_outlined, color: AppTheme.primaryColor),
               title: const Text('Gérer mon compte'),
               trailing: const Icon(Icons.chevron_right,
@@ -1484,7 +1502,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
           const SizedBox(height: AppTheme.spaceLg),
-          const SizedBox(height: AppTheme.spaceMd),
         ],
       ),
     );

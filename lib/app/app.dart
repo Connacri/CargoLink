@@ -29,6 +29,7 @@ import '../screens/client/offer_detail_screen.dart';
 import '../screens/client/payment_screen.dart';
 import '../screens/client/tracking_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/shared/micro_import_tutorial_screen.dart';
 import '../screens/referral/referral_screen.dart';
 import '../screens/client/delivery_request_screen.dart';
 import '../screens/shipper/delivery_browse_screen.dart';
@@ -131,6 +132,8 @@ class CargoLinkApp extends ConsumerWidget {
         '/delivery-requests': (context) => const DeliveryRequestScreen(),
         '/delivery-browse': (context) => const DeliveryBrowseScreen(),
         '/Boarding-PassApp': (context) => const BoardingPassDemoPage(),
+        '/micro-import-tutorial': (context) =>
+            const MicroImportTutorialScreen(),
       },
       debugShowCheckedModeBanner: false,
     );
