@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.1.85** |
-| Code de version (versionCode) | **309** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `3f0e09c` |
-| Statut CI | Release `v1.1.85` en cours de publication par la CI |
+| Version (versionName) | **1.1.86** |
+| Code de version (versionCode) | **311** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `fa555a3` |
+| Statut CI | Release `v1.1.86` en cours de publication par la CI |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
