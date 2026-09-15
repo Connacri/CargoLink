@@ -39,15 +39,11 @@ class _LoadingScreenState extends State<LoadingScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const CircleAvatar(
-              radius: 50,
-              backgroundColor: AppTheme.primaryColor,
-              child: Icon(Icons.flight_takeoff, size: 50, color: Colors.white),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'CabaLink',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+                radius: 80,
+                backgroundColor: AppTheme.primaryColor,
+                backgroundImage: AssetImage(
+                  'assets/icons/splash3.png',
+                )),
             const SizedBox(height: 8),
             Text(
               _timedOut
