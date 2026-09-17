@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.2.8** |
-| Code de version (versionCode) | **323** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `c3036d4` |
-| Statut CI | Release `v1.2.8` publiée avec succès (AAB signé + APK + Web + Windows) |
+| Version (versionName) | **1.2.9** |
+| Code de version (versionCode) | **324** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `4c946ef` |
+| Statut CI | Release `v1.2.9` en cours de build après push (validation du fix SDK Facebook sur AAB/APK) |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -56,6 +56,15 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 
 - **Première version 1.2.x** : la numérotation de release a atteint 1.1.99
   puis bascule sur la mineure suivante (schéma `1.{MINOR}.{PATCH}`).
+
+### Version 1.2.9
+
+- **Correction du partage Facebook** : le wrapper natif `ShareDialog` a été
+  adapté à l'API du SDK Facebook Android 18.3 (`facebook-share:18.3.0`) —
+  `registerStaticCallback` et `ShareDialog.Result` ont disparu de cette
+  version Kotlin. Le partage utilise désormais `registerCallback` (par
+  instance de dialog) et le type de résultat `com.facebook.share.Sharer.Result`.
+  Le build Android de la CI (AAB + APK) compile de nouveau.
 
 ### Version 1.2.8
 
