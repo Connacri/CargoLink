@@ -7,6 +7,7 @@ import androidx.core.view.WindowCompat
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
 import com.facebook.FacebookException
+import com.facebook.share.Sharer
 import com.facebook.share.model.ShareLinkContent
 import com.facebook.share.widget.ShareDialog
 import io.flutter.embedding.android.FlutterActivity
@@ -17,12 +18,31 @@ class MainActivity : FlutterActivity() {
 
     private val CHANNEL = "com.cargolink.dz.cargolink/facebook"
     private lateinit var callbackManager: CallbackManager
+    private lateinit var shareDialog: ShareDialog
     private var shareResult: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
         callbackManager = CallbackManager.Factory.create()
+        shareDialog = ShareDialog(this)
+        shareDialog.registerCallback(
+            callbackManager,
+            object : FacebookCallback<Sharer.Result> {
+                override fun onSuccess(result: Sharer.Result) {
+                    shareResult?.success(true)
+                    shareResult = null
+                }
+                override fun onCancel() {
+                    shareResult?.success(false)
+                    shareResult = null
+                }
+                override fun onError(error: FacebookException) {
+                    shareResult?.success(false)
+                    shareResult = null
+                }
+            }
+        )
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -46,7 +66,7 @@ class MainActivity : FlutterActivity() {
                         }
                         .build()
                     if (ShareDialog.canShow(ShareLinkContent::class.java)) {
-                        ShareDialog(this).show(shareContent)
+                        shareDialog.show(shareContent)
                     } else {
                         shareResult?.success(false)
                         shareResult = null
@@ -59,24 +79,6 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
-
-        ShareDialog.registerStaticCallback(
-            callbackManager,
-            object : FacebookCallback<ShareDialog.Result> {
-                override fun onSuccess(output: ShareDialog.Result) {
-                    shareResult?.success(true)
-                    shareResult = null
-                }
-                override fun onCancel() {
-                    shareResult?.success(false)
-                    shareResult = null
-                }
-                override fun onError(error: FacebookException) {
-                    shareResult?.success(false)
-                    shareResult = null
-                }
-            }
-        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
