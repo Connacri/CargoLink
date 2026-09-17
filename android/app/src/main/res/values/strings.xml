@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Nom de l'application (utilisé par FacebookActivity, entre autres) -->
+    <string name="app_name">CabaLink</string>
     <!-- Facebook App ID — developers.facebook.com → App 1789077855740955 -->
     <string name="facebook_app_id">1789077855740955</string>
     <!-- fb<APP_ID> : requis pour Chrome Custom Tabs / fallback web dialog -->
