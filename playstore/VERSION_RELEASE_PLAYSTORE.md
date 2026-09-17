@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.2.4** |
-| Code de version (versionCode) | **319** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `ef7deae` |
-| Statut CI | Release `v1.2.4` publiée avec succès (AAB signé + APK + Web + Windows) |
+| Version (versionName) | **1.2.8** |
+| Code de version (versionCode) | **323** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `c3036d4` |
+| Statut CI | Release `v1.2.8` publiée avec succès (AAB signé + APK + Web + Windows) |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -56,6 +56,20 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 
 - **Première version 1.2.x** : la numérotation de release a atteint 1.1.99
   puis bascule sur la mineure suivante (schéma `1.{MINOR}.{PATCH}`).
+
+### Version 1.2.8
+
+- **Partage d'une offre sur Facebook** : un bouton Facebook (icône bleue)
+  apparaît sur les cartes d'offres du flux client et dans le tableau de bord
+  expéditeur, à côté du partage classique. Il ouvre le dialogue de partage
+  natif Facebook (`ShareDialog`) : si l'app Facebook est installée, le
+  partage passe par elle ; sinon, un dialogue web de repli s'affiche. Le
+  lien partagé pointe vers la page web publique de l'offre
+  (`offer.html?id=…`) avec le hashtag #CabaLink.
+- **Intégration SDK Facebook Android** : App ID `1789077855740955`, Client
+  Token configuré dans `strings.xml`, manifest enrichi (FacebookActivity,
+  FacebookContentProvider, CustomTabActivity) et wrapper natif
+  `ShareDialog` via `MethodChannel`.
 
 ### Version 1.2.3
 
