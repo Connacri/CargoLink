@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.2.9** |
-| Code de version (versionCode) | **324** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `4c946ef` |
-| Statut CI | Release `v1.2.9` en cours de build après push (validation du fix SDK Facebook sur AAB/APK) |
+| Version (versionName) | **1.2.10** |
+| Code de version (versionCode) | **326** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `69b9942` |
+| Statut CI | Release `v1.2.10` en cours de build après push (validation du fix FacebookActivity) |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -56,6 +56,14 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 
 - **Première version 1.2.x** : la numérotation de release a atteint 1.1.99
   puis bascule sur la mineure suivante (schéma `1.{MINOR}.{PATCH}`).
+
+### Version 1.2.10
+
+- **Correction de compilation Android (AAPT)** : la ressource `string/app_name`
+  (référencée par la `FacebookActivity` ajoutée pour le partage) manquait au
+  projet — la compilation des ressources échouait en CI (`resource string/app_name
+  not found`). La chaîne `CabaLink` est désormais définie dans
+  `values/strings.xml` ; le build Android (AAB + APK) est de nouveau compilable.
 
 ### Version 1.2.9
 
