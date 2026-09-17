@@ -44,6 +44,7 @@ class ShipperCard extends StatefulWidget {
     required this.onBook,
     this.onChat,
     this.onShare,
+    this.onShareFacebook,
   });
 
   final String shipperId;
@@ -85,6 +86,10 @@ class ShipperCard extends StatefulWidget {
 
   /// Partage de l'offre (image billet + lien profond). Absent = pas de bouton.
   final VoidCallback? onShare;
+
+  /// Partage direct de l'offre via le ShareDialog natif Facebook.
+  /// Absent = pas de bouton Facebook.
+  final VoidCallback? onShareFacebook;
 
   @override
   State<ShipperCard> createState() => _ShipperCardState();
@@ -321,6 +326,18 @@ class _ShipperCardState extends State<ShipperCard> {
               tooltip: 'Partager cette offre',
               icon: const Icon(Icons.share, size: 20),
               color: AppTheme.primaryColor,
+              padding: EdgeInsets.zero,
+            ),
+          ),
+        if (widget.onShareFacebook != null)
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: IconButton(
+              onPressed: widget.onShareFacebook,
+              tooltip: 'Partager sur Facebook',
+              icon: const Icon(Icons.facebook, size: 22),
+              color: const Color(0xFF1877F2),
               padding: EdgeInsets.zero,
             ),
           ),

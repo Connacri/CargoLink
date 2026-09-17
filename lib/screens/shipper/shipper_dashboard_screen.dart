@@ -2401,6 +2401,15 @@ class _ShipmentMiniCard extends ConsumerWidget {
                   icon: const Icon(Icons.share, size: 20),
                   // style: ButtonStyle(color: AppTheme.primaryColor,),
                 ),
+                TextButton.icon(
+                  onPressed: () =>
+                      OfferShareService.shareOfferOnFacebook(shipment.id),
+                  label: const Text('Facebook'),
+                  icon: const Icon(Icons.facebook, size: 20),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF1877F2),
+                  ),
+                ),
               ],
             ),
           ],

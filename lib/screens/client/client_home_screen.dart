@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../../data/models/models.dart';
+import '../../data/services/offer_share_service.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/enums/lifecycle_step.dart';
@@ -1436,6 +1437,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             shipment,
             pricePerKg: shipment.pricePerKg + commission,
           ),
+      onShareFacebook: () =>
+          OfferShareService.shareOfferOnFacebook(shipment.id),
     );
   }
 

@@ -1,14 +1,92 @@
 package com.cargolink.dz.cargolink
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.core.view.WindowCompat
+import com.facebook.CallbackManager
+import com.facebook.FacebookCallback
+import com.facebook.FacebookException
+import com.facebook.share.model.ShareLinkContent
+import com.facebook.share.widget.ShareDialog
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+
+    private val CHANNEL = "com.cargolink.dz.cargolink/facebook"
+    private lateinit var callbackManager: CallbackManager
+    private var shareResult: MethodChannel.Result? = null
+
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+
+        callbackManager = CallbackManager.Factory.create()
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            CHANNEL
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "shareLink" -> {
+                    val url = call.argument<String>("url") ?: return@setMethodCallHandler
+                    val hashtag = call.argument<String>("hashtag")
+                    shareResult = result
+                    val shareContent = ShareLinkContent.Builder()
+                        .setContentUrl(Uri.parse(url))
+                        .apply {
+                            if (!hashtag.isNullOrBlank()) {
+                                setShareHashtag(
+                                    com.facebook.share.model.ShareHashtag.Builder()
+                                        .setHashtag(hashtag)
+                                        .build()
+                                )
+                            }
+                        }
+                        .build()
+                    if (ShareDialog.canShow(ShareLinkContent::class.java)) {
+                        ShareDialog(this).show(shareContent)
+                    } else {
+                        shareResult?.success(false)
+                        shareResult = null
+                    }
+                }
+                "canShareLink" -> {
+                    val canShow = ShareDialog.canShow(ShareLinkContent::class.java)
+                    result.success(canShow)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        ShareDialog.registerStaticCallback(
+            callbackManager,
+            object : FacebookCallback<ShareDialog.Result> {
+                override fun onSuccess(output: ShareDialog.Result) {
+                    shareResult?.success(true)
+                    shareResult = null
+                }
+                override fun onCancel() {
+                    shareResult?.success(false)
+                    shareResult = null
+                }
+                override fun onError(error: FacebookException) {
+                    shareResult?.success(false)
+                    shareResult = null
+                }
+            }
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Enable edge-to-edge display (replaces deprecated setStatusBarColor /
-        // setNavigationBarColor).  Safe for Android 15+ and backward-compatible.
         WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        callbackManager.onActivityResult(requestCode, resultCode, data)
+        super.onActivityResult(requestCode, resultCode, data)
     }
 }

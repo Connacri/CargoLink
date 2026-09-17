@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Facebook App ID — developers.facebook.com → App 1789077855740955 -->
+    <string name="facebook_app_id">1789077855740955</string>
+    <!-- fb<APP_ID> : requis pour Chrome Custom Tabs / fallback web dialog -->
+    <string name="fb_login_protocol_scheme">fb1789077855740955</string>
+    <!-- Client token — copier depuis FB Console → Réglages → Avancé → Client Token -->
+    <string name="facebook_client_token">ff142f286d750a20b15f56b271d74ca6</string>
+</resources>

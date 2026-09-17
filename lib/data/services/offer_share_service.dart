@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/constants/app_constants.dart';
@@ -83,6 +83,22 @@ class OfferShareService {
       await Share.shareXFiles([file], text: text);
     } else {
       await Share.share(text);
+    }
+  }
+
+  /// Partage l'offre via le ShareDialog natif Facebook.
+  /// Retourne `true` si le dialog a été affiché, `false` sinon (fallback).
+  static Future<bool> shareOfferOnFacebook(String shipmentId) async {
+    const channel = MethodChannel('com.cargolink.dz.cargolink/facebook');
+    final url = webLinkFor(shipmentId);
+    try {
+      final result = await channel.invokeMethod<bool>('shareLink', {
+        'url': url,
+        'hashtag': '#CabaLink',
+      });
+      return result ?? false;
+    } on MissingPluginException {
+      return false;
     }
   }
 
