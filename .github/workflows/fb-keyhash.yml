@@ -1,0 +1,35 @@
+name: Facebook Key Hash
+
+# One-shot CI helper: prints the Facebook "publication" key hash of the release
+# keystore (secret KEYSTORE_BASE64) so it can be pasted into
+# developers.facebook.com -> App -> Android platform -> Key Hashes.
+# Not run automatically: trigger it manually (Actions tab -> Run workflow).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: none
+
+jobs:
+  fb-release-key-hash:
+    name: Facebook release key hash
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Print Facebook release key hash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEYSTORE_KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release_keystore.jks"
+          keytool -exportcert \
+            -alias "$KEYSTORE_KEY_ALIAS" \
+            -keystore "$RUNNER_TEMP/release_keystore.jks" \
+            -storepass "$KEYSTORE_PASSWORD" \
+          | openssl sha1 -binary | openssl base64
