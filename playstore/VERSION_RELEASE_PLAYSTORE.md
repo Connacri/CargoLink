@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.2.2** |
-| Code de version (versionCode) | **317** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `481975e` |
-| Statut CI | Release `v1.2.2` publiée avec succès (AAB signé + APK + Web + Windows) |
+| Version (versionName) | **1.2.4** |
+| Code de version (versionCode) | **319** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `ef7deae` |
+| Statut CI | Release `v1.2.4` publiée avec succès (AAB signé + APK + Web + Windows) |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -56,6 +56,14 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 
 - **Première version 1.2.x** : la numérotation de release a atteint 1.1.99
   puis bascule sur la mineure suivante (schéma `1.{MINOR}.{PATCH}`).
+
+### Version 1.2.3
+
+- **Écran de chargement corrigé** : l'avatar du logo (CircleAvatar) affichait
+  un fond blanc vide car `backgroundImage` recevait un widget `Image.asset` au
+  lieu d'un `AssetImage`. Le rendu du logo de démarrage est corrigé.
+
+### Version 1.2.2
 - **Guide Micro-Importation bilingue (Français / Arabe)** : le tutoriel
   est maintenant disponible en deux langues avec un sélecteur intégré.
   La condition d'éligibilité reste affichée en grand et en permanence,
