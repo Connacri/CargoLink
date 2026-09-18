@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.2.10** |
+| Version (versionName) | **1.2.12** |
 | Code de version (versionCode) | **326** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `69b9942` |
-| Statut CI | Release `v1.2.10` en cours de build après push (validation du fix FacebookActivity) |
+| Commit de référence | `196d7b3` |
+| Statut CI | Release `v1.2.12` publiée avec succès (AAB signé + APK + Web + Windows) |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -57,24 +57,7 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 - **Première version 1.2.x** : la numérotation de release a atteint 1.1.99
   puis bascule sur la mineure suivante (schéma `1.{MINOR}.{PATCH}`).
 
-### Version 1.2.10
-
-- **Correction de compilation Android (AAPT)** : la ressource `string/app_name`
-  (référencée par la `FacebookActivity` ajoutée pour le partage) manquait au
-  projet — la compilation des ressources échouait en CI (`resource string/app_name
-  not found`). La chaîne `CabaLink` est désormais définie dans
-  `values/strings.xml` ; le build Android (AAB + APK) est de nouveau compilable.
-
-### Version 1.2.9
-
-- **Correction du partage Facebook** : le wrapper natif `ShareDialog` a été
-  adapté à l'API du SDK Facebook Android 18.3 (`facebook-share:18.3.0`) —
-  `registerStaticCallback` et `ShareDialog.Result` ont disparu de cette
-  version Kotlin. Le partage utilise désormais `registerCallback` (par
-  instance de dialog) et le type de résultat `com.facebook.share.Sharer.Result`.
-  Le build Android de la CI (AAB + APK) compile de nouveau.
-
-### Version 1.2.8
+### Version 1.2.12
 
 - **Partage d'une offre sur Facebook** : un bouton Facebook (icône bleue)
   apparaît sur les cartes d'offres du flux client et dans le tableau de bord
@@ -85,8 +68,15 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
   (`offer.html?id=…`) avec le hashtag #CabaLink.
 - **Intégration SDK Facebook Android** : App ID `1789077855740955`, Client
   Token configuré dans `strings.xml`, manifest enrichi (FacebookActivity,
-  FacebookContentProvider, CustomTabActivity) et wrapper natif
-  `ShareDialog` via `MethodChannel`.
+  FacebookContentProvider, CustomTabActivity) et wrapper natif `ShareDialog`
+  (MethodChannel `com.cargolink.dz.cargolink/facebook` — `shareLink` /
+  `canShareLink`).
+- **Corrections CI Android** : le wrapper `ShareDialog` est adapté à l'API du
+  SDK Facebook 18.3 (Kotlin) — `registerCallback` (par instance) +
+  `com.facebook.share.Sharer.Result` à la place de l'ancien
+  `registerStaticCallback` / `ShareDialog.Result`. Ressource
+  `string/app_name` ajoutée (`CabaLink`) pour satisfaire la `FacebookActivity`.
+  Les builds Android (AAB + APK) recompilent et la release est publiée.
 
 ### Version 1.2.3
 
