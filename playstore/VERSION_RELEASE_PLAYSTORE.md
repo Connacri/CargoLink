@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.2.12** |
-| Code de version (versionCode) | **326** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `196d7b3` |
-| Statut CI | Release `v1.2.12` publiée avec succès (AAB signé + APK + Web + Windows) |
+| Version (versionName) | **1.2.18** |
+| Code de version (versionCode) | **333** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `aa81698` |
+| Statut CI | Release `v1.2.18` en cours de publication (AAB signé + APK + Web + Windows) |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -51,6 +51,18 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 > Les notes ci-dessous sont rédigées pour les utilisateurs de l'application
 > (et non pour les développeurs) : elles décrivent les nouveautés en langage
 > simple, sans détail technique.
+
+### Version 1.2.18
+
+- **Référencement Google (Search Console)** : le fichier de validation
+  `google0e300e25e677afe0.html` est désormais bien publié à la racine du site
+  (GitHub Pages). Il était présent dans le dépôt mais absent du déploiement,
+  ce qui provoquait l'échec « Impossible de trouver le fichier de validation
+  à l'emplacement requis ». La validation HTML peut maintenant être refaite.
+- **Balises SEO / indexation** : `web/index.html` enrichi (titre, description,
+  Open Graph, données structurées) pour améliorer l'indexation du site web.
+- **Qualité** : correction d'un `Container` inutile dans la carte d'offre ;
+  `flutter analyze` repasse à 0 issue.
 
 ### Version 1.2.2
 
