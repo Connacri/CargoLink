@@ -39,6 +39,7 @@ jobs:
           cp docs/privacy_policy.html build/web/privacy_policy.html
           cp docs/account_deletion.html build/web/account_deletion.html
           cp docs/offer.html build/web/offer.html
+          cp web/google0e300e25e677afe0.html build/web/google0e300e25e677afe0.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

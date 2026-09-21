@@ -319,12 +319,10 @@ class _RoutePoint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      //color: Colors.amber,
-      child: Column(
-        crossAxisAlignment:
-            alignEnd ? CrossAxisAlignment.center : CrossAxisAlignment.center,
-        children: [
+    return Column(
+      crossAxisAlignment:
+          alignEnd ? CrossAxisAlignment.center : CrossAxisAlignment.center,
+      children: [
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(code,
@@ -364,8 +362,7 @@ class _RoutePoint extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: Colors.grey.shade800)),
-        ],
-      ),
+      ],
     );
   }
 }
