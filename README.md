@@ -6,9 +6,9 @@
 |---|---|---|
 | 🎯 **–50 à –70 %** vs DHL/FedEx | 🇩🇿 Optimisé marché algérien | 🏗 Flutter + Supabase Realtime |
 
-🔗 **Démo web (GitHub Pages)** : https://connacri.github.io/CabaLink/
-🔒 **Politique de confidentialité** : https://connacri.github.io/CabaLink/privacy_policy.html
-🗑 **Suppression de compte & données** : https://connacri.github.io/CabaLink/account_deletion.html
+🔗 **Démo web (GitHub Pages)** : https://connacri.github.io/CargoLink/
+🔒 **Politique de confidentialité** : https://connacri.github.io/CargoLink/privacy_policy.html
+🗑 **Suppression de compte & données** : https://connacri.github.io/CargoLink/account_deletion.html
 
 ---
 

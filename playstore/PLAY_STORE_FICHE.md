@@ -70,7 +70,7 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 
 ### Lien de suppression de compte
 ```
-https://connacri.github.io/CabaLink/account_deletion.html
+https://connacri.github.io/CargoLink/account_deletion.html
 ```
 
 ### Suppression partielle sans supprimer le compte
@@ -80,7 +80,7 @@ https://connacri.github.io/CabaLink/account_deletion.html
 
 ## 5. Politique de confidentialité (URL requise)
 ```
-https://connacri.github.io/CabaLink/privacy_policy.html
+https://connacri.github.io/CargoLink/privacy_policy.html
 ```
 
 ---

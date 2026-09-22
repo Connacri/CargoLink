@@ -18,8 +18,8 @@
 
 - Package : `com.cargolink.dz.cargolink`. AAB signé publié automatiquement en GitHub Release.
 - Fiche Play Store prête à copier : `playstore/PLAY_STORE_FICHE.md`.
-- Politique de confidentialité : https://connacri.github.io/CabaLink/privacy_policy.html
-- Suppression de compte : https://connacri.github.io/CabaLink/account_deletion.html
+- Politique de confidentialité : https://connacri.github.io/CargoLink/privacy_policy.html
+- Suppression de compte : https://connacri.github.io/CargoLink/account_deletion.html
 
 ## Qualité (avant de commit/push)
 

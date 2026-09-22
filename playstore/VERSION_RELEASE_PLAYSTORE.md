@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.2.18** |
-| Code de version (versionCode) | **333** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `aa81698` |
-| Statut CI | Release `v1.2.18` en cours de publication (AAB signé + APK + Web + Windows) |
+| Version (versionName) | **1.2.19** |
+| Code de version (versionCode) | **334** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `8661754` |
+| Statut CI | Release `v1.2.19` en cours de publication (AAB signé + APK + Web + Windows) |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -22,7 +22,7 @@
 
 **Télécharger le bundle** (remplacer `X.Y.Z` par la version ci-dessus) :
 ```
-https://github.com/Connacri/CabaLink/releases/download/vX.Y.Z/app-release.aab
+https://github.com/Connacri/CargoLink/releases/download/vX.Y.Z/app-release.aab
 ```
 
 **Canal de test conseillé** : Play Console → « Test interne » d'abord (sécurité),
@@ -51,6 +51,18 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 > Les notes ci-dessous sont rédigées pour les utilisateurs de l'application
 > (et non pour les développeurs) : elles décrivent les nouveautés en langage
 > simple, sans détail technique.
+
+### Version 1.2.19
+
+- **Correction du site web renommé `CabaLink` → `CargoLink`** : toutes les URL
+  publiques (partage d'offre, politique de confidentialité, suppression de
+  compte) pointent désormais vers `https://connacri.github.io/CargoLink/`
+  (le repo GitHub a été renommé, l'ancien chemin `/CabaLink/` renvoyait 404).
+  À revalider dans Search Console : le fichier
+  `google0e300e25e677afe0.html` est bien servi à la racine du site, et le site
+  publié est bien sous `/CargoLink/`.
+- **Indexation** : ajout de `robots.txt` et `sitemap.xml` (Sitemap déclaré)
+  pour aider Google à découvrir et indexer le site web.
 
 ### Version 1.2.18
 
@@ -1380,8 +1392,8 @@ Hébergées sur **GitHub Pages** (déployées automatiquement par le workflow `d
 
 | Champ Play Console | URL |
 |---|---|
-| Politique de confidentialité | https://connacri.github.io/CabaLink/privacy_policy.html |
-| Lien de suppression de compte | https://connacri.github.io/CabaLink/account_deletion.html |
+| Politique de confidentialité | https://connacri.github.io/CargoLink/privacy_policy.html |
+| Lien de suppression de compte | https://connacri.github.io/CargoLink/account_deletion.html |
 
 Suppression partielle sans supprimer le compte : **Oui** (photo, documents, messages,
 colis supprimables dans l'app).
