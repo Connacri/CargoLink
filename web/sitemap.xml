@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://connacri.github.io/CargoLink/</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://connacri.github.io/CargoLink/privacy_policy.html</loc>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://connacri.github.io/CargoLink/account_deletion.html</loc>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://connacri.github.io/CargoLink/offer.html</loc>
+    <priority>0.6</priority>
+  </url>
+</urlset>

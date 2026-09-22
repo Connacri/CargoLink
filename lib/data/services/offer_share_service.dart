@@ -15,7 +15,7 @@ import '../models/models.dart';
 /// non-inscrits) + lien deep link pour ouverture directe dans l'app.
 class OfferShareService {
   static const _deepLinkScheme = 'cargolink';
-  static const _webBaseUrl = 'https://connacri.github.io/CabaLink/offer.html';
+  static const _webBaseUrl = 'https://connacri.github.io/CargoLink/offer.html';
   static const _playStoreUrl =
       'https://play.google.com/store/apps/details?id=com.cargolink.dz.cargolink';
 

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://connacri.github.io/CargoLink/sitemap.xml
