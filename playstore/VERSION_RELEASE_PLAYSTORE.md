@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.2.19** |
-| Code de version (versionCode) | **334** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `8661754` |
-| Statut CI | Release `v1.2.19` en cours de publication (AAB signé + APK + Web + Windows) |
+| Version (versionName) | **1.2.20** |
+| Code de version (versionCode) | **336** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `8c2d518` |
+| Statut CI | Release `v1.2.20` en cours de publication (AAB signé + APK + Web + Windows) |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -51,6 +51,18 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 > Les notes ci-dessous sont rédigées pour les utilisateurs de l'application
 > (et non pour les développeurs) : elles décrivent les nouveautés en langage
 > simple, sans détail technique.
+
+### Version 1.2.20
+
+- **Nouveau guide CabaLink complet (43 points)**, consultable depuis l'écran de
+  connexion (« Guide CabaLink »), entièrement bilingue français / arabe avec
+  bascule FR/AR et affichage arabe en lecture de droite à gauche : carrousel
+  des rôles (voyageur, expéditeur, ambassadeur), jauge de poids utilisé
+  (60 kg → 40 kg), simulateur de commission (2 €/kg, 540 DZD/kg) et carte
+  d'embarquement ambassadeur.
+- **Corrections techniques** : crash à l'ouverture du guide (géométrie sliver),
+  débordements de contenu à l'écran, chiffres et simulateurs toujours en
+  lecture de gauche à droite même en arabe.
 
 ### Version 1.2.19
 
