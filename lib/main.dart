@@ -44,7 +44,7 @@ Future<void> main() async {
           brightness: Brightness.dark,
           dragHandleColor: Colors.white38,
         ),
-        child: const CargoLinkApp(),
+        child: const CabaLinkApp(),
       ),
     ),
   );

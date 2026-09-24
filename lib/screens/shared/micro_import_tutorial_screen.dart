@@ -33,8 +33,10 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
           slivers: [
             GradientSliverHeader(
               title: _isArabic ? 'الاستيراد المصغّر' : 'Micro-Importation',
-              subtitle:
-                  _isArabic ? 'الدليل الرسمي الجزائر 2026' : 'Guide officiel Algérie 2026',
+              subtitle: _isArabic
+                  ? 'الدليل الرسمي الجزائر 2026'
+                  : 'Guide officiel Algérie 2026',
+              fontFamily: fontFamily,
               icon: Icons.local_shipping_rounded,
               expandedHeight: 210,
               trailing: _buildLangToggle(fontFamily),
@@ -111,7 +113,8 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
 
             // ── ÉLIGIBILITÉ — grande carte toujours visible ──
             SliverToBoxAdapter(
-              child: _EligibilityCard(isArabic: _isArabic, fontFamily: fontFamily),
+              child:
+                  _EligibilityCard(isArabic: _isArabic, fontFamily: fontFamily),
             ),
 
             // ── Comprendre le dispositif ──
@@ -158,9 +161,7 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
               child: _AccordionSection(
                 isArabic: _isArabic,
                 fontFamily: fontFamily,
-                title: _isArabic
-                    ? 'السلع المستبعدة'
-                    : 'Marchandises exclues',
+                title: _isArabic ? 'السلع المستبعدة' : 'Marchandises exclues',
                 icon: Icons.block_rounded,
                 color: AppTheme.errorColor,
                 children: _isArabic ? _arProducts : _frProducts,
@@ -172,9 +173,7 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
               child: _AccordionSection(
                 isArabic: _isArabic,
                 fontFamily: fontFamily,
-                title: _isArabic
-                    ? 'السقوف والقواعد'
-                    : 'Plafonds & règles',
+                title: _isArabic ? 'السقوف والقواعد' : 'Plafonds & règles',
                 icon: Icons.gavel_rounded,
                 color: AppTheme.infoColor,
                 children: _isArabic ? _arLimits : _frLimits,
@@ -300,15 +299,15 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
       1,
       'Vérifier son éligibilité',
       'Vérifiez que vous remplissez toutes les conditions : nationalité '
-      'algérienne, résidence en Algérie, âge légal, activité exclusive '
-      '(pas de salarié ni d\'autre activité rémunérée).',
+          'algérienne, résidence en Algérie, âge légal, activité exclusive '
+          '(pas de salarié ni d\'autre activité rémunérée).',
     ),
     const _Block.step(
       2,
       'Créer son compte ANAE',
       'Inscrivez-vous sur la plateforme ANAE : www.anae.dz. Validez votre '
-      'e-mail et votre numéro de téléphone, puis complétez vos '
-      'informations personnelles.',
+          'e-mail et votre numéro de téléphone, puis complétez vos '
+          'informations personnelles.',
       links: [
         _Link('Site ANAE', 'https://www.anae.dz/'),
         _Link('Liste des activités', 'https://activities.anae.dz/'),
@@ -318,16 +317,16 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
       3,
       'Demander la carte auto-entrepreneur (code 080101)',
       'Sélectionnez l\'activité « Micro-importation » — code 080101, joignez '
-      'les documents demandés (pièce d\'identité, photo, justificatif de '
-      'domicile) et envoyez la demande. La carte est gratuite et le '
-      'traitement annoncé est d\'environ 3 jours ouvrables.',
+          'les documents demandés (pièce d\'identité, photo, justificatif de '
+          'domicile) et envoyez la demande. La carte est gratuite et le '
+          'traitement annoncé est d\'environ 3 jours ouvrables.',
     ),
     const _Block.step(
       4,
       'Obtenir / activer son NIF',
       'Vérifiez auprès de votre service fiscal territorial (DGI) la situation '
-      'de votre dossier et obtenez les documents d\'existence fiscale '
-      'nécessaires aux démarches bancaires.',
+          'de votre dossier et obtenez les documents d\'existence fiscale '
+          'nécessaires aux démarches bancaires.',
       links: [
         _Link('DGI', 'https://www.mfdgi.gov.dz/'),
       ],
@@ -336,8 +335,8 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
       5,
       'Affiliation CASNOS',
       'Déclarez votre activité à la CASNOS. Option forfait 24 000 DA/an '
-      '(décret n°26-257) ou régime à 15 % de l\'assiette (minimum '
-      '43 200 DA/an sur la base du SNMG 2026).',
+          '(décret n°26-257) ou régime à 15 % de l\'assiette (minimum '
+          '43 200 DA/an sur la base du SNMG 2026).',
       links: [
         _Link('CASNOS', 'https://www.casnos.com.dz/'),
         _Link('Services en ligne', 'https://www.eservices.casnos.com.dz/'),
@@ -347,8 +346,8 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
       6,
       'Ouvrir la domiciliation + compte BEA',
       'Ouvrez votre compte micro-importateur en devises à la Banque '
-      'Extérieure d\'Algérie (BEA). Documents : carte ANAE, pièce '
-      'd\'identité, justificatif de résidence, NIF, copie du passeport.',
+          'Extérieure d\'Algérie (BEA). Documents : carte ANAE, pièce '
+          'd\'identité, justificatif de résidence, NIF, copie du passeport.',
       links: [
         _Link('BEA micro-importateur', 'https://www.bea.dz/micro-importateur'),
       ],
@@ -357,23 +356,23 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
       7,
       'Activer les moyens de paiement',
       'Commandez la Mastercard micro-importateur (plafond 1 800 000 DA '
-      'par opération, 2 fois/mois, retrait jusqu\'à 500 €/mois) et la carte '
-      'CIB (jusqu\'à 1 300 000 DA pour les paiements nationaux).',
+          'par opération, 2 fois/mois, retrait jusqu\'à 500 €/mois) et la carte '
+          'CIB (jusqu\'à 1 300 000 DA pour les paiements nationaux).',
     ),
     const _Block.step(
       8,
       'Demander l\'autorisation générale',
       'La plateforme ANAE permet de demander et télécharger votre '
-      'autorisation générale. Conservez dans votre dossier numérique : '
-      'carte ANAE, NIF, affiliation CASNOS, justificatifs BEA.',
+          'autorisation générale. Conservez dans votre dossier numérique : '
+          'carte ANAE, NIF, affiliation CASNOS, justificatifs BEA.',
     ),
     const _Block.step(
       9,
       'Vérifier les marchandises avant achat',
       'Ne jamais acheter un produit uniquement parce qu\'il est vendu '
-      'librement dans le pays de départ. Identifiez le produit, le code SH, '
-      'vérifiez la liste ANAE des marchandises exclues et les règles '
-      'sectorielles avant tout paiement.',
+          'librement dans le pays de départ. Identifiez le produit, le code SH, '
+          'vérifiez la liste ANAE des marchandises exclues et les règles '
+          'sectorielles avant tout paiement.',
       links: [
         _Link('Liste des marchandises exclues',
             'https://anae.dz/micro-importer/prohibited/'),
@@ -383,59 +382,59 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
       10,
       'Préparer factures et informations produits',
       'Une facture utile identifie : vendeur, date, produit, marque, modèle, '
-      'quantité, prix unitaire, montant total, devise, origine. Évitez les '
-      'achats sans justificatif.',
+          'quantité, prix unitaire, montant total, devise, origine. Évitez les '
+          'achats sans justificatif.',
     ),
     const _Block.step(
       11,
       'Déclaration préalable des marchandises',
       'Avant l\'arrivée des marchandises sur le territoire douanier, '
-      'déclarez la liste des marchandises sur la plateforme dédiée : '
-      'identité, NIN, voyage, nature, désignation précise, quantité, '
-      'provenance, origine, valeur en devise.',
+          'déclarez la liste des marchandises sur la plateforme dédiée : '
+          'identité, NIN, voyage, nature, désignation précise, quantité, '
+          'provenance, origine, valeur en devise.',
     ),
     const _Block.step(
       12,
       'Effectuer le voyage',
       'Respectez le plafond de 1 800 000 DA par déplacement et '
-      '2 déplacements maximum par mois. Préparez un dossier physique et '
-      'numérique complet (carte ANAE, autorisation, passeport, factures, '
-      'justificatifs de paiement).',
+          '2 déplacements maximum par mois. Préparez un dossier physique et '
+          'numérique complet (carte ANAE, autorisation, passeport, factures, '
+          'justificatifs de paiement).',
     ),
     const _Block.step(
       13,
       'Présenter les marchandises à la douane',
       'Présentez documents et marchandises, effectuez la déclaration, '
-      'présentez les factures, acceptez le contrôle, corrigez toute '
-      'différence constatée.',
+          'présentez les factures, acceptez le contrôle, corrigez toute '
+          'différence constatée.',
     ),
     const _Block.step(
       14,
       'Payer droits de douane et IFU',
       'Droits de douane : 5 % du régime réduit (LF 2026 art. 143) + IFU '
-      'libératoire 0,5 % calculé sur une assiette spéciale (valeur en '
-      'douane + droits + marge forfaitaire 30 %).',
+          'libératoire 0,5 % calculé sur une assiette spéciale (valeur en '
+          'douane + droits + marge forfaitaire 30 %).',
     ),
     const _Block.step(
       15,
       'Récupérer les documents de dédouanement',
       'Récupérez le justificatif de paiement et les documents douaniers, '
-      'puis archivez l\'opération. Conservez tout pour la traçabilité.',
+          'puis archivez l\'opération. Conservez tout pour la traçabilité.',
     ),
     const _Block.step(
       16,
       'Tenir une comptabilité simplifiée',
       'Tenez un registre coté et paraphé : date, opération, fournisseur, '
-      'nature des marchandises, quantités, valeur, dépenses, recettes, '
-      'justificatifs.',
+          'nature des marchandises, quantités, valeur, dépenses, recettes, '
+          'justificatifs.',
     ),
     const _Block.step(
       17,
       'Déclarer obligations fiscales et sociales',
       'Suivez vos obligations CASNOS (affiliation, assiette, cotisations) et '
-      'fiscales. Confirmez auprès du CDI/DGI territorial si une déclaration '
-      'annuelle ou une formalité résiduelle reste exigée pour votre '
-      'situation particulière.',
+          'fiscales. Confirmez auprès du CDI/DGI territorial si une déclaration '
+          'annuelle ou une formalité résiduelle reste exigée pour votre '
+          'situation particulière.',
     ),
   ];
 
@@ -614,7 +613,7 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
     const _Block.institution(
       'ANAE',
       'Agence Nationale de l\'Auto-Entrepreneur — carte, activité 080101, '
-      'autorisation générale, espace micro-importateur.',
+          'autorisation générale, espace micro-importateur.',
       'https://www.anae.dz/',
     ),
     const _Block.institution(
@@ -645,7 +644,7 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
     const _Block.institution(
       'BEA',
       'Banque Extérieure d\'Algérie — compte micro-importateur, devises, '
-      'Mastercard / CIB.',
+          'Mastercard / CIB.',
       'https://www.bea.dz/micro-importateur',
     ),
     const _Block.institution(
@@ -722,7 +721,7 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
     const _Block.institution(
       'Décret exécutif n°25-170 (28 juin 2025)',
       'Conditions et modalités d\'exercice de la micro-importation par '
-      'l\'auto-entrepreneur — JO n°40.',
+          'l\'auto-entrepreneur — JO n°40.',
       'https://www.commerce.gov.dz/fr/reglementation/decret-executif-n-deg-25-170-j-o-n-deg-40-du-29-juin-2025',
     ),
     const _Block.text(
@@ -733,7 +732,7 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
     const _Block.institution(
       'Décret exécutif n°26-257 (JO n°53, 23 juillet 2026)',
       'Confirme le forfait CASNOS de 24 000 DA/an ou le régime à 15 % '
-      'de l\'assiette.',
+          'de l\'assiette.',
       'https://www.casnos.com.dz/',
     ),
     const _Block.text(
@@ -773,13 +772,13 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
       1,
       'التحقق من الأهلية',
       'تحقق من استيفاء جميع الشروط: الجنسية الجزائرية، الإقامة في الجزائر، '
-      'السن القانوني، مزاولة النشاط حصراً (بدون وظيفة أو نشاط آخر).',
+          'السن القانوني، مزاولة النشاط حصراً (بدون وظيفة أو نشاط آخر).',
     ),
     const _Block.step(
       2,
       'إنشاء حساب ANAE',
       'سجّل في منصة ANAE: www.anae.dz. أكّد بريدك الإلكتروني ورقم هاتفك ثم '
-      'أكمل معلوماتك الشخصية.',
+          'أكمل معلوماتك الشخصية.',
       links: [
         _Link('موقع ANAE', 'https://www.anae.dz/'),
       ],
@@ -788,91 +787,91 @@ class _MicroImportTutorialScreenState extends State<MicroImportTutorialScreen> {
       3,
       'طلب بطاقة المقاول الذاتي (080101)',
       'اختر نشاط «الاستيراد المصغّر» — الرمز 080101، وأرفق الوثائق المطلوبة '
-      'وأرسل الطلب. البطاقة مجانية والمعالجة عادة في نحو 3 أيام عمل.',
+          'وأرسل الطلب. البطاقة مجانية والمعالجة عادة في نحو 3 أيام عمل.',
     ),
     const _Block.step(
       4,
       'الحصول على NIF وتفعيله',
       'تحقق لدى مصلحة الضرائب الإقليمية (DGI) من وضعية ملفك واحصل على '
-      'وثائق الوجود الجبائي اللازمة للإجراءات البنكية.',
+          'وثائق الوجود الجبائي اللازمة للإجراءات البنكية.',
     ),
     const _Block.step(
       5,
       'الانخراط في CASNOS',
       'صرّح بنشاطك لدى صندوق غير الأجراء. اختيار المبلغ الثابت 24 000 دج/سنة '
-      'أو نظام 15% من الوعاء (الحد الأدنى 43 200 دج/سنة).',
+          'أو نظام 15% من الوعاء (الحد الأدنى 43 200 دج/سنة).',
     ),
     const _Block.step(
       6,
       'فتح حساب BEA',
       'افتح حساب المستورد المصغّر بالعملة لدى البنك الخارجي الجزائري (BEA). '
-      'الوثائق: بطاقة ANAE، بطاقة الهوية، إثبات الإقامة، NIF، نسخة من جواز السفر.',
+          'الوثائق: بطاقة ANAE، بطاقة الهوية، إثبات الإقامة، NIF، نسخة من جواز السفر.',
     ),
     const _Block.step(
       7,
       'تفعيل وسائل الدفع',
       'اطلب بطاقة ماستركارد للمستورد المصغّر (سقف 1 800 000 دج للعملية، '
-      'مرتين شهرياً، سحب حتى 500 يورو/شهر) وبطاقة CIB.م',
+          'مرتين شهرياً، سحب حتى 500 يورو/شهر) وبطاقة CIB.م',
     ),
     const _Block.step(
       8,
       'طلب الترخيص العام',
       'تتيح منصة ANAE طلب وتحميل الترخيص العام. احتفظ في ملفك الرقمي: بطاقة '
-      'ANAE، NIF، الانخراط في CASNOS، الوثائق البنكية.',
+          'ANAE، NIF، الانخراط في CASNOS، الوثائق البنكية.',
     ),
     const _Block.step(
       9,
       'التحقق من البضائع قبل الشراء',
       'لا تشترِ منتجاً لمجرد أنه يباع بحرية في بلد المغادرة. عرّف المنتج '
-      'والرمز الجمركي، وتحقق من قائمة ANAE للسلع المستبعدة قبل أي دفع.',
+          'والرمز الجمركي، وتحقق من قائمة ANAE للسلع المستبعدة قبل أي دفع.',
     ),
     const _Block.step(
       10,
       'تحضير الفواتير ومعلومات المنتجات',
       'فاتورة مفيدة تحدّد: البائع، التاريخ، المنتج، العلامة، الطراز، الكمية، '
-      'السعر، المبلغ الإجمالي، العملة، المنشأ. تجنّب المشتريات بدون إثبات.',
+          'السعر، المبلغ الإجمالي، العملة، المنشأ. تجنّب المشتريات بدون إثبات.',
     ),
     const _Block.step(
       11,
       'التصريح المسبق بالبضائع',
       'قبل وصول البضائع إلى التراب الجمركي، صرّح بقائمة البضائع في المنصة: '
-      'الهوية، NIN، الرحلة، الطبيعة، الوصف الدقيق، الكمية، المنشأ، القيمة.',
+          'الهوية، NIN، الرحلة، الطبيعة، الوصف الدقيق، الكمية، المنشأ، القيمة.',
     ),
     const _Block.step(
       12,
       'القيام بالرحلة',
       'احترم سقف 1 800 000 دج للرحلة وسفرتين شهرياً كحد أقصى. جهّز ملفاً '
-      'ورقياً ورقمياً كاملاً.',
+          'ورقياً ورقمياً كاملاً.',
     ),
     const _Block.step(
       13,
       'تقديم البضائع للجمارك',
       'قدّم الوثائق والبضائع، نفّذ التصريح، قدّم الفواتير، اقبل المراقبة، '
-      'وصحّح أي فرق مُلاحظ.',
+          'وصحّح أي فرق مُلاحظ.',
     ),
     const _Block.step(
       14,
       'دفع الرسوم وIFU',
       'الرسوم الجمركية: 5% (النظام المخفّض) + IFU إبرائي 0.5% محسوب على '
-      'وعاء خاص (القيمة + الرسوم + هامش 30%).',
+          'وعاء خاص (القيمة + الرسوم + هامش 30%).',
     ),
     const _Block.step(
       15,
       'استلام وثائق الإفراج الجمركي',
       'استلم إثبات الدفع والوثائق الجمركية ثم أرشف العملية واحتفظ بكل شيء '
-      'لأجل التتبع.',
+          'لأجل التتبع.',
     ),
     const _Block.step(
       16,
       'مسك محاسبة مبسطة',
       'مسك سجل مرقّم ومصادق عليه: التاريخ، العملية، المورد، طبيعة البضائع، '
-      'الكميات، القيمة، النفقات، الإيرادات.',
+          'الكميات، القيمة، النفقات، الإيرادات.',
     ),
     const _Block.step(
       17,
       'التصريح بالالتزامات الجبائية والاجتماعية',
       'تابع التزاماتك لدى CASNOS (الانخراط، الوعاء، الاشتراكات) والجباية. '
-      'أكّد لدى مصلحة الضرائب ما إذا كان تصريح سنوي مطلوباً.',
+          'أكّد لدى مصلحة الضرائب ما إذا كان تصريح سنوي مطلوباً.',
     ),
   ];
 
@@ -1070,8 +1069,8 @@ class _LegalWarning extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.warningColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-          border: Border.all(
-              color: AppTheme.warningColor.withValues(alpha: 0.25)),
+          border:
+              Border.all(color: AppTheme.warningColor.withValues(alpha: 0.25)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1121,13 +1120,17 @@ class _KeyCard extends StatelessWidget {
         children: [
           Icon(icon, color: color, size: 26),
           const SizedBox(height: AppTheme.spaceXs),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: color,
-              fontFamily: fontFamily,
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Text(
+              value,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: color,
+                fontFamily: fontFamily,
+              ),
             ),
           ),
           const SizedBox(height: 2),
@@ -1135,7 +1138,8 @@ class _KeyCard extends StatelessWidget {
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-                fontSize: 11, color: AppTheme.textSecondaryColor,
+                fontSize: 11,
+                color: AppTheme.textSecondaryColor,
                 fontFamily: fontFamily),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -1180,7 +1184,8 @@ class _EligibilityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final conditions = isArabic ? _arConditions : _conditions;
-    final title = isArabic ? 'شروط الأهلية' : 'Éligibilité — toutes les conditions';
+    final title =
+        isArabic ? 'شروط الأهلية' : 'Éligibilité — toutes les conditions';
     final subtitle = isArabic
         ? 'يجب استيفاء كل الشروط للتحقق من الأهلية'
         : 'Toutes ces conditions doivent être remplies.';
@@ -1212,8 +1217,8 @@ class _EligibilityCard extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(50),
                   ),
-                  child: const Icon(Icons.how_to_reg_rounded,
-                      color: Colors.white),
+                  child:
+                      const Icon(Icons.how_to_reg_rounded, color: Colors.white),
                 ),
                 const SizedBox(width: AppTheme.spaceSm),
                 Expanded(
@@ -1380,8 +1385,8 @@ class _AccordionSectionState extends State<_AccordionSection> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: widget.children
                       .map((b) => Padding(
-                            padding: const EdgeInsets.only(
-                                bottom: AppTheme.spaceSm),
+                            padding:
+                                const EdgeInsets.only(bottom: AppTheme.spaceSm),
                             child: b.build(widget.fontFamily),
                           ))
                       .toList(),
@@ -1464,23 +1469,36 @@ class _Block {
 
   Widget build(String? fontFamily) {
     if (isText) {
-      return _TextBlock(text: textValue!, emphasized: emphasized,
-          links: links, fontFamily: fontFamily);
+      return _TextBlock(
+          text: textValue!,
+          emphasized: emphasized,
+          links: links,
+          fontFamily: fontFamily);
     }
     if (number > 0) {
-      return _StepBlock(number: number, title: title!, text: textValue!,
-          links: links, fontFamily: fontFamily);
+      return _StepBlock(
+          number: number,
+          title: title!,
+          text: textValue!,
+          links: links,
+          fontFamily: fontFamily);
     }
     if (url != null && title != null && textValue != null) {
-      return _InstitutionBlock(title: title!, text: textValue!,
-          link: _Link('', url!), fontFamily: fontFamily);
+      return _InstitutionBlock(
+          title: title!,
+          text: textValue!,
+          link: _Link('', url!),
+          fontFamily: fontFamily);
     }
     if (calcRows.isNotEmpty) {
       return _CalcBlock(title: title!, rows: calcRows, fontFamily: fontFamily);
     }
     if (items.isNotEmpty && title != null) {
-      return _BulletsBlock(title: title!, items: items,
-          withCheckmarks: false, fontFamily: fontFamily);
+      return _BulletsBlock(
+          title: title!,
+          items: items,
+          withCheckmarks: false,
+          fontFamily: fontFamily);
     }
     return const SizedBox.shrink();
   }
@@ -1489,6 +1507,7 @@ class _Block {
 class _Link {
   final String label;
   final String url;
+
   const _Link(this.label, this.url);
 }
 
@@ -1561,7 +1580,8 @@ class _StepBlock extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.primaryLighter,
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.15)),
+        border:
+            Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1700,8 +1720,7 @@ class _LinkText extends StatelessWidget {
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
                   decoration: TextDecoration.underline,
-                  decorationColor:
-                      AppTheme.primaryColor.withValues(alpha: 0.4),
+                  decorationColor: AppTheme.primaryColor.withValues(alpha: 0.4),
                   fontFamily: fontFamily,
                 ),
               ),

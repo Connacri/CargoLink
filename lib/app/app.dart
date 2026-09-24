@@ -29,6 +29,7 @@ import '../screens/client/offer_detail_screen.dart';
 import '../screens/client/payment_screen.dart';
 import '../screens/client/tracking_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/shared/Guide_cabaLink.dart';
 import '../screens/shared/micro_import_tutorial_screen.dart';
 import '../screens/referral/referral_screen.dart';
 import '../screens/client/delivery_request_screen.dart';
@@ -43,8 +44,8 @@ import 'home_tabs_screen.dart';
 /// download dialog on the web) above every route.
 final appNavigatorKey = GlobalKey<NavigatorState>();
 
-class CargoLinkApp extends ConsumerWidget {
-  const CargoLinkApp({super.key});
+class CabaLinkApp extends ConsumerWidget {
+  const CabaLinkApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -134,6 +135,7 @@ class CargoLinkApp extends ConsumerWidget {
         '/Boarding-PassApp': (context) => const BoardingPassDemoPage(),
         '/micro-import-tutorial': (context) =>
             const MicroImportTutorialScreen(),
+        '/Guide_cabaLink_PromoBanner': (context) => const CabaLinkPage(),
       },
       debugShowCheckedModeBanner: false,
     );

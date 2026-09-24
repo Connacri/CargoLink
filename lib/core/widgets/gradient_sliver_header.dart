@@ -13,6 +13,7 @@ class GradientSliverHeader extends StatelessWidget {
     super.key,
     required this.title,
     this.subtitle,
+    this.fontFamily,
     this.icon,
     this.trailing,
     this.gradient = AppTheme.primaryGradient,
@@ -22,6 +23,7 @@ class GradientSliverHeader extends StatelessWidget {
 
   final String title;
   final String? subtitle;
+  final String? fontFamily;
   final IconData? icon;
   final Widget? trailing;
   final LinearGradient gradient;
@@ -58,11 +60,11 @@ class GradientSliverHeader extends StatelessWidget {
           title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              fontFamily: fontFamily),
         ),
         background: _HeaderBackground(
           gradient: gradient,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/widgets/CabaLinkPromoCard.dart';
 import '../../providers/index.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
@@ -51,7 +52,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _afterSignIn();
     } catch (e) {
       if (mounted) {
-      await showAuthErrorDialog(context, error: e);
+        await showAuthErrorDialog(context, error: e);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -256,6 +257,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               ),
+            ),
+            const SliverToBoxAdapter(
+              child: CabaLinkPromoCard(),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLg)),
           ],
