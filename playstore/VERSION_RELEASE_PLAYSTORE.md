@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.2.20** |
-| Code de version (versionCode) | **336** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `8c2d518` |
-| Statut CI | Release `v1.2.20` en cours de publication (AAB signé + APK + Web + Windows) |
+| Version (versionName) | **1.2.21** |
+| Code de version (versionCode) | **337** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `40533bf` |
+| Statut CI | Release `v1.2.21` en cours de publication (AAB signé + APK + Web + Windows) |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -51,6 +51,18 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 > Les notes ci-dessous sont rédigées pour les utilisateurs de l'application
 > (et non pour les développeurs) : elles décrivent les nouveautés en langage
 > simple, sans détail technique.
+
+### Version 1.2.21
+
+- **Carte « Guide CabaLink » de la page de connexion avec fond illustré** :
+  la carte promotionnelle affiche désormais une image d'illustration en
+  arrière-plan, avec un léger dégradé sombre côté texte pour garder une
+  lecture claire sur tous les téléphones.
+- **Corrections techniques** : carte promo fiabilisée sur petit écran (hauteur
+  bornée, titre et bouton « Lire le guide » compressés avec des points de
+  suspension au lieu de déborder), carte ambassadeur du guide adaptée en
+  hauteur selon le contenu (plus de débordement vertical sur écrans étroits
+  ni sous Windows), et nouveaux tests de régression pour garantir le rendu.
 
 ### Version 1.2.20
 
