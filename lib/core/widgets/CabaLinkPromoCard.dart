@@ -17,14 +17,6 @@ class CabaLinkPromoCard extends StatelessWidget {
         height: 175,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF596FD8),
-              Color(0xFF3153B8),
-            ],
-          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.10),
@@ -37,6 +29,27 @@ class CabaLinkPromoCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(28),
           child: Stack(
             children: [
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/images/aa.png',
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.45),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
               // Décor en arrière-plan
               Positioned(
                 left: -20,
@@ -60,12 +73,16 @@ class CabaLinkPromoCard extends StatelessWidget {
                 bottom: 0,
                 child: Transform.rotate(
                   angle: -0.10,
-                  child: Stack(
-                    children: [
-                      _fakePaper(-18, 18, 0.03),
-                      _fakePaper(-10, 10, -0.02),
-                      _fakePaper(0, 0, -0.08),
-                    ],
+                  child: SizedBox(
+                    width: 150,
+                    height: 128,
+                    child: Stack(
+                      children: [
+                        _fakePaper(-18, 18, 0.03),
+                        _fakePaper(-10, 10, -0.02),
+                        _fakePaper(0, 0, -0.08),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -78,6 +95,8 @@ class CabaLinkPromoCard extends StatelessWidget {
                   children: [
                     const Text(
                       'Guide CabaLink',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 22,
@@ -87,7 +106,7 @@ class CabaLinkPromoCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Découvrez comment promouvoir CabaLink',
+                      'Découvrez comment Utiliser CabaLink pour s\'enrichir',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -99,12 +118,16 @@ class CabaLinkPromoCard extends StatelessWidget {
                     const Spacer(),
                     Row(
                       children: [
-                        Text(
-                          'Lire le guide',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.95),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                        Flexible(
+                          child: Text(
+                            'Lire le guide',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.95),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),

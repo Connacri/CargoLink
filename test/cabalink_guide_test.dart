@@ -83,4 +83,22 @@ void main() {
     await tester.pump(const Duration(milliseconds: 250));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('CabaLinkPage fits narrow devices without overflow', (tester) async {
+    tester.view.physicalSize = const Size(381, 625);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(const MaterialApp(home: CabaLinkPage()));
+    await tester.pump(const Duration(milliseconds: 1200));
+    expect(tester.takeException(), isNull);
+
+    final scrollable = find.byType(CustomScrollView);
+    for (int i = 0; i < 15; i++) {
+      await tester.fling(scrollable, const Offset(0, -900), 4000);
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump(const Duration(milliseconds: 250));
+    }
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -182,7 +182,8 @@ class CabaLinkPromoBanner extends StatelessWidget {
                 Navigator.of(context).push(
                   PageRouteBuilder(
                     transitionDuration: const Duration(milliseconds: 480),
-                    reverseTransitionDuration: const Duration(milliseconds: 380),
+                    reverseTransitionDuration:
+                        const Duration(milliseconds: 380),
                     pageBuilder: (_, animation, __) => const CabaLinkPage(),
                     transitionsBuilder: (_, animation, __, child) {
                       final curved = CurvedAnimation(
@@ -357,7 +358,7 @@ class _CabaLinkPageState extends State<CabaLinkPage> {
         data: _cabaLinkTheme(context),
         child: Directionality(
           textDirection: _direction,
-child: CustomScrollView(
+          child: CustomScrollView(
             slivers: [
               _buildAppBar(context),
               SliverToBoxAdapter(child: _buildIntro()),
@@ -538,7 +539,7 @@ child: CustomScrollView(
           SliverToBoxAdapter(
             child: _aysSectionHeader(
               isArabic: isArabic,
-                title: CabalinkGuideUi.highlightPrinciples,
+              title: CabalinkGuideUi.highlightPrinciples,
               subtitle: CabalinkGuideUi.highlightPrinciplesSub,
             ),
           ),
@@ -1067,6 +1068,7 @@ class _RoleCard extends StatelessWidget {
   final bool isArabic;
 
   String get _name => role.name.pick(isArabic: isArabic);
+
   String get _detail => role.shortDescription.pick(isArabic: isArabic);
 
   @override
@@ -1094,7 +1096,8 @@ class _RoleCard extends StatelessWidget {
               color: _CabaLinkColors.inkNavy,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(role.icon, color: _CabaLinkColors.tagBrassLight, size: 22),
+            child:
+                Icon(role.icon, color: _CabaLinkColors.tagBrassLight, size: 22),
           ),
           const SizedBox(height: 12),
           Text(
@@ -1284,10 +1287,14 @@ class _CommissionSimulatorState extends State<_CommissionSimulator> {
 
   double get _commissionTotalDzd =>
       _weightKg * kCabaLinkCommissionPerKg * kCabaLinkRateDzd;
+
   double get _ambassadorTotalDzd =>
       _weightKg * kAmbassadorSharePerKg * kCabaLinkRateDzd;
+
   double get _transporterTotalDzd => _weightKg * _pricePerKg;
+
   double get _finalPerKg => _pricePerKg + kCabaLinkCommissionDzdPerKg();
+
   double get _finalTotal => _transporterTotalDzd + _commissionTotalDzd;
 
   @override
@@ -1567,143 +1574,131 @@ class _AmbassadorPass extends StatelessWidget {
           ),
         ],
       ),
-clipBehavior: Clip.antiAlias,
-      child: SizedBox(
-        height: 264,
-        child: Stack(
-        children: [
-          PositionedDirectional(
-            start: 0,
-            top: 0,
-            bottom: 0,
-            width: 96,
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF0E1B33), Color(0xFF1D3A52)],
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const SizedBox(height: 16),
-                  Column(
-                    children: [
-                      Text(
-                        CabalinkGuideUi.ambassadorCode.pick(isArabic: ar),
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 2,
-                          color: Colors.white.withOpacity(0.6),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'CBK-AMBASS',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: _CabaLinkColors.tagBrassLight,
-                          letterSpacing: 0.6,
-                        ),
-                      ),
-                    ],
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              width: 96,
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF0E1B33), Color(0xFF1D3A52)],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 18),
-                    child: Column(
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const SizedBox(height: 16),
+                    Column(
                       children: [
-                        Container(
-                          width: 34,
-                          height: 34,
-                          decoration: const BoxDecoration(
-                            color: _CabaLinkColors.tagBrass,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.card_giftcard,
-                            color: _CabaLinkColors.deepNight,
-                            size: 18,
+                        Text(
+                          CabalinkGuideUi.ambassadorCode.pick(isArabic: ar),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 2,
+                            color: Colors.white.withOpacity(0.6),
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          CabalinkGuideUi.ambassadorShareKg.pick(isArabic: ar),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
+                        const SizedBox(height: 6),
+                        const Text(
+                          'CBK-AMBASS',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: _CabaLinkColors.tagBrassLight,
+                            letterSpacing: 0.6,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 18),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: const BoxDecoration(
+                              color: _CabaLinkColors.tagBrass,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.card_giftcard,
+                              color: _CabaLinkColors.deepNight,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            CabalinkGuideUi.ambassadorShareKg
+                                .pick(isArabic: ar),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          PositionedDirectional(
-            start: 97,
-            top: 0,
-            bottom: 0,
-            width: 1,
-            child: Container(color: _CabaLinkColors.ink.withOpacity(0.06)),
-          ),
-          Positioned.fill(
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsetsDirectional.only(
-                start: 118,
-                top: 18,
-                end: 18,
-                bottom: 18,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    CabalinkGuideUi.ambassadorYou.pick(isArabic: ar),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: _CabaLinkColors.ink,
-                      height: 1.2,
+            Container(
+              width: 1,
+              color: _CabaLinkColors.ink.withOpacity(0.06),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      CabalinkGuideUi.ambassadorYou.pick(isArabic: ar),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: _CabaLinkColors.ink,
+                        height: 1.2,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Directionality(
-                    textDirection: TextDirection.ltr,
-                    child: Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Text(
-                        '1 €/kg pour l’ambassadeur · 1 €/kg pour CabaLink · 2 €/kg au total',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          height: 1.4,
-                          color: _CabaLinkColors.altitudeTeal,
-                          fontWeight: FontWeight.w600,
+                    const SizedBox(height: 8),
+                    const Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          '1 €/kg pour l’ambassadeur · 1 €/kg pour CabaLink · 2 €/kg au total',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            height: 1.4,
+                            color: _CabaLinkColors.altitudeTeal,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    CabalinkGuideUi.ambassadorActivity.pick(isArabic: ar),
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      height: 1.4,
-                      color: _CabaLinkColors.inkMuted,
+                    const SizedBox(height: 8),
+                    Text(
+                      CabalinkGuideUi.ambassadorActivity.pick(isArabic: ar),
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        height: 1.4,
+                        color: _CabaLinkColors.inkMuted,
+                      ),
                     ),
-                  ),
-],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );
@@ -1749,18 +1744,18 @@ class _PrincipleTile extends StatelessWidget {
               color: _CabaLinkColors.ink,
             ),
           ),
-const SizedBox(height: 3),
+          const SizedBox(height: 3),
           Expanded(
             child: Text(
-            principle.detail.pick(isArabic: isArabic),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 11.5,
-              height: 1.3,
-              color: _CabaLinkColors.inkMuted,
+              principle.detail.pick(isArabic: isArabic),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11.5,
+                height: 1.3,
+                color: _CabaLinkColors.inkMuted,
+              ),
             ),
-          ),
           ),
         ],
       ),
@@ -2157,4 +2152,3 @@ class _GuideTableWidget extends StatelessWidget {
     );
   }
 }
-
