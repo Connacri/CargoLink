@@ -49,6 +49,20 @@ class CabaLinkPromoCard extends StatelessWidget {
                   ),
                 ),
               ),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.65),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
 
               // Décor en arrière-plan
               Positioned(
@@ -62,26 +76,6 @@ class CabaLinkPromoCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(25),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Illustration à gauche
-              Positioned(
-                left: 18,
-                bottom: 0,
-                child: Transform.rotate(
-                  angle: -0.10,
-                  child: SizedBox(
-                    width: 150,
-                    height: 128,
-                    child: Stack(
-                      children: [
-                        _fakePaper(-18, 18, 0.03),
-                        _fakePaper(-10, 10, -0.02),
-                        _fakePaper(0, 0, -0.08),
-                      ],
                     ),
                   ),
                 ),
@@ -150,42 +144,6 @@ class CabaLinkPromoCard extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _fakePaper(double left, double top, double angle) {
-    return Positioned(
-      left: left,
-      top: top,
-      child: Transform.rotate(
-        angle: angle,
-        child: Container(
-          width: 125,
-          height: 105,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.92),
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 8,
-                offset: const Offset(2, 4),
-              ),
-            ],
-          ),
-          child: const Padding(
-            padding: EdgeInsets.all(14),
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: Icon(
-                Icons.flight_takeoff_rounded,
-                color: Color(0xFF4D63C9),
-                size: 42,
-              ),
-            ),
           ),
         ),
       ),

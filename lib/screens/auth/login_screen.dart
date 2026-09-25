@@ -89,10 +89,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         top: false,
         child: CustomScrollView(
           slivers: [
-            const CompactSliverHeader(
-              title: 'CabaLink',
-              subtitle: 'Connexion à votre compte',
-              icon: Icons.flight_takeoff,
+            // const CompactSliverHeader(
+            //   title: 'CabaLink',
+            //   subtitle: 'Connexion à votre compte',
+            //   icon: Icons.flight_takeoff_rounded,
+            // ),
+            const SliverToBoxAdapter(
+              child: CabaLinkPromoCard(),
+            ),
+            SliverToBoxAdapter(
+              child: StaggeredEntrance(
+                delay: const Duration(milliseconds: 480),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppTheme.spaceXs,
+                    horizontal: AppTheme.spaceXs,
+                  ),
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.of(context)
+                        .pushNamed('/micro-import-tutorial'),
+                    icon: const Icon(Icons.local_shipping_rounded, size: 18),
+                    label: const Text('Guide micro-importation',
+                        style: TextStyle(fontFamily: 'OSWALD')),
+                  ),
+                ),
+              ),
             ),
             SliverPadding(
               padding: const EdgeInsets.all(AppTheme.spaceMd),
@@ -163,7 +184,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: TextButton(
                             onPressed:
                                 _isLoading ? null : _handleForgotPassword,
-                            child: const Text('Mot de passe oublié ?'),
+                            child: const Text('Mot de passe oublié ?',
+                                style: TextStyle(fontFamily: 'OSWALD')),
                           ),
                         ),
                         const SizedBox(height: AppTheme.spaceSm),
@@ -207,7 +229,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     _handleGoogleSignIn();
                                   },
                             icon: const Icon(Icons.g_mobiledata),
-                            label: const Text('Continuer avec Google'),
+                            label: const Text('Continuer avec Google',
+                                style: TextStyle(fontFamily: 'OSWALD')),
                           ),
                         ),
                       ],
@@ -221,7 +244,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 delay: const Duration(milliseconds: 440),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    vertical: AppTheme.spaceSm,
+                    vertical: AppTheme.spaceXs,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -235,32 +258,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ? null
                             : () => Navigator.of(context)
                                 .pushReplacementNamed('/signup'),
-                        child: const Text('S\'inscrire'),
+                        child: const Text(
+                          'S\'inscrire',
+                          style: TextStyle(fontFamily: 'OSWALD'),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
             ),
-            SliverToBoxAdapter(
-              child: StaggeredEntrance(
-                delay: const Duration(milliseconds: 480),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppTheme.spaceXs,
-                  ),
-                  child: TextButton.icon(
-                    onPressed: () => Navigator.of(context)
-                        .pushNamed('/micro-import-tutorial'),
-                    icon: const Icon(Icons.local_shipping_rounded, size: 18),
-                    label: const Text('Guide micro-importation'),
-                  ),
-                ),
-              ),
-            ),
-            const SliverToBoxAdapter(
-              child: CabaLinkPromoCard(),
-            ),
+
             const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLg)),
           ],
         ),

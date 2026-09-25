@@ -144,7 +144,7 @@ class _VerificationCard extends ConsumerWidget {
                             AppTheme.body.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 2),
-Text(
+                      Text(
                         shipper.passportNumber != null
                             ? 'Passport: ${shipper.passportNumber}'
                             : 'Type: ${shipper.isMicroImportateur ? 'Micro-Importateur' : 'Voyageur ordinaire'}',
@@ -163,8 +163,7 @@ Text(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if ((shipper.passportPhotoUrl?.isNotEmpty ?? false))
-                    _photoTile(
-                        context, 'Passeport', shipper.passportPhotoUrl!),
+                    _photoTile(context, 'Passeport', shipper.passportPhotoUrl!),
                   if ((shipper.livePhotoUrl?.isNotEmpty ?? false)) ...[
                     if ((shipper.passportPhotoUrl?.isNotEmpty ?? false))
                       const SizedBox(width: AppTheme.spaceSm),
