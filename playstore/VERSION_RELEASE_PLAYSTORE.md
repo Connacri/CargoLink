@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.2.21** |
-| Code de version (versionCode) | **337** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `40533bf` |
-| Statut CI | Release `v1.2.21` en cours de publication (AAB signé + APK + Web + Windows) |
+| Version (versionName) | **1.2.22** |
+| Code de version (versionCode) | **340** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `00e5d00` |
+| Statut CI | Release `v1.2.22` en cours de publication (AAB signé + APK + Web + Windows) |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -51,6 +51,19 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 > Les notes ci-dessous sont rédigées pour les utilisateurs de l'application
 > (et non pour les développeurs) : elles décrivent les nouveautés en langage
 > simple, sans détail technique.
+
+### Version 1.2.22
+
+- **Carte « Guide CabaLink » mise en avant sur la page de connexion** : elle
+  s'affiche désormais en tête d'écran avec un nouveau fond illustré (double
+  voile sombre pour un meilleur contraste du texte), juste au-dessus du
+  formulaire et du bouton « Guide micro-importation ».
+- **En-têtes avec dégradé, sans fond opaque** : les en-têtes dégradés
+  (dépliables et compacts) n'ont plus de fond bleu fixe — le dégradé
+  s'affiche correctement, y compris pendant le défilement.
+- **Police Oswald étendue** : les boutons et textes de la page de connexion
+  (mot de passe oublié, connexion Google, inscription) utilisent désormais
+  la police Oswald, cohérente avec le reste de l'application.
 
 ### Version 1.2.21
 
