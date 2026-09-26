@@ -31,7 +31,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     super.didChangeDependencies();
     // Pré-remplir le code parrain depuis un deep link
     final code = ModalRoute.of(context)?.settings.arguments;
-    if (code is String && code.isNotEmpty && _referralCodeController.text.isEmpty) {
+    if (code is String &&
+        code.isNotEmpty &&
+        _referralCodeController.text.isEmpty) {
       _referralCodeController.text = code.toUpperCase();
       _referralFromDeepLink = true;
     }
@@ -335,7 +337,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             ? null
                             : () => Navigator.of(context)
                                 .pushReplacementNamed('/login'),
-                        child: const Text('Se connecter'),
+                        child: const Text('Se connecter',
+                            style: TextStyle(fontFamily: 'OSWALD')),
                       ),
                     ],
                   ),

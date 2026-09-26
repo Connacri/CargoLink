@@ -86,7 +86,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
-        top: false,
+        top: true,
         child: CustomScrollView(
           slivers: [
             // const CompactSliverHeader(

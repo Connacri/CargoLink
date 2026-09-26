@@ -75,7 +75,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 child: Center(
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Retour à la connexion'),
+                    child: const Text('Retour à la connexion',
+                        style: TextStyle(fontFamily: 'OSWALD')),
                   ),
                 ),
               ),

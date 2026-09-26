@@ -1470,7 +1470,7 @@ class _Block {
   Widget build(String? fontFamily) {
     if (isText) {
       return _TextBlock(
-          text: textValue!,
+          text: _ltrNumbers(textValue!),
           emphasized: emphasized,
           links: links,
           fontFamily: fontFamily);
@@ -1478,30 +1478,48 @@ class _Block {
     if (number > 0) {
       return _StepBlock(
           number: number,
-          title: title!,
-          text: textValue!,
+          title: _ltrNumbers(title!),
+          text: _ltrNumbers(textValue!),
           links: links,
           fontFamily: fontFamily);
     }
     if (url != null && title != null && textValue != null) {
       return _InstitutionBlock(
-          title: title!,
-          text: textValue!,
+          title: _ltrNumbers(title!),
+          text: _ltrNumbers(textValue!),
           link: _Link('', url!),
           fontFamily: fontFamily);
     }
     if (calcRows.isNotEmpty) {
-      return _CalcBlock(title: title!, rows: calcRows, fontFamily: fontFamily);
+      return _CalcBlock(
+          title: _ltrNumbers(title!),
+          rows: [for (final r in calcRows) (_ltrNumbers(r.$1), _ltrNumbers(r.$2))],
+          fontFamily: fontFamily);
     }
     if (items.isNotEmpty && title != null) {
       return _BulletsBlock(
-          title: title!,
-          items: items,
+          title: _ltrNumbers(title!),
+          items: [for (final it in items) _ltrNumbers(it)],
           withCheckmarks: false,
           fontFamily: fontFamily);
     }
     return const SizedBox.shrink();
   }
+}
+
+/// Isole les séquences de chiffres (avec séparateurs et %) par des directs
+/// LTR ([LRI]…[PDI]) : dans un paragraphe RTL, une suite comme « 50 000 »
+/// est réordonnée en « 000 50 » par l'algorithme bidi. En l'isolant, les
+/// chiffres restent toujours en sens LTR, y compris en arabe.
+String _ltrNumbers(String input) {
+  const lri = '\u2066';
+  const pdi = '\u2069';
+  return input.replaceAllMapped(RegExp(r'\d[\d\s.,%]*'), (m) {
+    final run = m.group(0)!;
+    final trimmed = run.trimRight();
+    final trailing = run.substring(trimmed.length);
+    return '$lri$trimmed$pdi$trailing';
+  });
 }
 
 class _Link {
