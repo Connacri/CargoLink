@@ -10,10 +10,10 @@
 
 | Élément | Valeur |
 |---|---|---|
-| Version (versionName) | **1.2.22** |
-| Code de version (versionCode) | **340** (monotone, obligatoirement croissant entre 2 dépôts) |
-| Commit de référence | `00e5d00` |
-| Statut CI | Release `v1.2.22` en cours de publication (AAB signé + APK + Web + Windows) |
+| Version (versionName) | **1.2.23** |
+| Code de version (versionCode) | **342** (monotone, obligatoirement croissant entre 2 dépôts) |
+| Commit de référence | `53e3d16` |
+| Statut CI | Release `v1.2.23` en cours de publication (AAB signé + APK + Web + Windows) |
 | Type de build | **App Bundle (.aab) signé** — seul format accepté par la Play Console |
 | Fichier à déposer | `app-release.aab` (≈ 84 Mo) |
 | Origine du fichier | GitHub Release (workflow `release.yml`, job `android-aab`) |
@@ -51,6 +51,14 @@ CabaLink est la premiere application algerienne dediee a l'expedition et au suiv
 > Les notes ci-dessous sont rédigées pour les utilisateurs de l'application
 > (et non pour les développeurs) : elles décrivent les nouveautés en langage
 > simple, sans détail technique.
+
+### Version 1.2.23
+
+- **Chiffres toujours en sens de lecture correct (arabe)** : dans le guide
+  Micro-Importation (fiscalité, calculs, étapes, CASNOS…), les montants
+  comme « 50 000 DA », « 24 000 دج/سنة » ou « 0,5 % » restent affichés
+  dans le bon ordre même quand le texte est en arabe (sens de gauche à
+  droite isolé pour les nombres au sein du paragraphe arabe).
 
 ### Version 1.2.22
 
