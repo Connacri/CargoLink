@@ -30,7 +30,7 @@ class GradientSliverHeader extends StatelessWidget {
     return SliverAppBar(
       pinned: true,
       elevation: 0,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.primaryColor,
       expandedHeight: expandedHeight,
       automaticallyImplyLeading: true,
       iconTheme: const IconThemeData(
