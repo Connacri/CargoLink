@@ -23,6 +23,7 @@ import '../data/services/offer_share_service.dart';
 import '../data/services/referral_service.dart';
 import '../data/services/delivery_service.dart';
 import '../data/services/forbidden_item_service.dart';
+import '../data/services/promo_card_service.dart';
 import '../data/models/referral_models.dart';
 
 // ============================================================================
@@ -666,6 +667,20 @@ final settingsServiceProvider = Provider<SettingsService>((ref) {
 final platformSettingsProvider = FutureProvider<PlatformSettings>((ref) async {
   final settingsService = ref.watch(settingsServiceProvider);
   return settingsService.getSettings();
+});
+
+// ============================================================================
+// PROMO CARD PROVIDERS (carte « Guide CabaLink » — configuration fondateur)
+// ============================================================================
+
+final promoCardServiceProvider = Provider<PromoCardService>((ref) {
+  return PromoCardService();
+});
+
+/// Configuration de la carte « Guide CabaLink » (écran de connexion).
+/// Tombe sur [PromoCardConfig.fallback] si la ligne est absente ou en erreur.
+final promoCardProvider = FutureProvider<PromoCardConfig>((ref) async {
+  return ref.watch(promoCardServiceProvider).getPromoCard();
 });
 
 // ============================================================================

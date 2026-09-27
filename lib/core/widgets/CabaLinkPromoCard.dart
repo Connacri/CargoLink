@@ -1,7 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class CabaLinkPromoCard extends StatelessWidget {
+import '../../data/models/models.dart';
+import '../../providers/index.dart';
+
+/// Carte promotionnelle « Guide CabaLink » affichée sur l'écran de connexion.
+///
+/// Le contenu (image de fond, titre, sous-titre, CTA et padding LTRB) est
+/// piloté par la configuration du slot « guide » de la table `promo_cards`
+/// (modifiable par le fondateur). En cas d'absence de la ligne ou d'erreur
+/// réseau, on retombe sur la [PromoCardConfig.fallback] codée en dur.
+class CabaLinkPromoCard extends ConsumerWidget {
   const CabaLinkPromoCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final config = ref.watch(promoCardProvider).valueOrNull ??
+        PromoCardConfig.fallback;
+    return PromoCardView(config: config);
+  }
+}
+
+/// Rendu de la carte à partir d'une configuration. Réutilisé par l'écran
+/// fondateur pour l'aperçu en direct et par la carte publique (login).
+class PromoCardView extends StatelessWidget {
+  const PromoCardView({super.key, required this.config, this.background});
+
+  final PromoCardConfig config;
+
+  /// Fond personnalisé (aperçu fondateur) : si fourni (ex. image locale), il
+  /// remplace l'image réseau/asset du bucket « promos ».
+  final Widget? background;
+
+  /// Affiche l'image réseau du bucket « promos », ou l'asset par défaut.
+  Widget _buildBackground(PromoCardConfig config) {
+    const fallbackAsset = Image(
+      image: AssetImage('assets/images/aa.png'),
+      fit: BoxFit.cover,
+    );
+    final url = config.imageUrl;
+    if (url == null || url.trim().isEmpty) return fallbackAsset;
+    return Image.network(
+      url,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => fallbackAsset,
+      loadingBuilder: (context, child, progress) => progress == null
+          ? child
+          : Container(color: const Color(0xFF2A3270)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +77,8 @@ class CabaLinkPromoCard extends StatelessWidget {
           child: Stack(
             children: [
               Positioned.fill(
-                child: Image.asset(
-                  'assets/images/aa.png',
-                  fit: BoxFit.cover,
-                ),
+                child: background ??
+                    _buildBackground(config),
               ),
               Positioned.fill(
                 child: DecoratedBox(
@@ -81,17 +126,22 @@ class CabaLinkPromoCard extends StatelessWidget {
                 ),
               ),
 
-              // Contenu
+              // Contenu (padding LTRB configurable par le fondateur)
               Padding(
-                padding: const EdgeInsets.fromLTRB(175, 25, 20, 20),
+                padding: EdgeInsets.fromLTRB(
+                  config.paddingLeft.toDouble(),
+                  config.paddingTop.toDouble(),
+                  config.paddingRight.toDouble(),
+                  config.paddingBottom.toDouble(),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Guide CabaLink',
+                    Text(
+                      config.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -100,7 +150,7 @@ class CabaLinkPromoCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Découvrez comment Utiliser CabaLink pour s\'enrichir',
+                      config.subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -114,7 +164,7 @@ class CabaLinkPromoCard extends StatelessWidget {
                       children: [
                         Flexible(
                           child: Text(
-                            'Lire le guide',
+                            config.ctaLabel,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(

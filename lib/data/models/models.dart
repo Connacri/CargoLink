@@ -1764,3 +1764,109 @@ class DeletedAccount {
     };
   }
 }
+
+// ============================================================================
+// PROMO CARD MODEL (carte « Guide CabaLink » configurable par le fondateur)
+//
+// Une ligne par slot d'affichage. La colonne `slot` identifie l'emplacement ;
+// « guide » pilote la carte affichée sur l'écran de connexion (image de fond +
+// textes + padding LTRB). Les admins/fondateurs modifient la configuration via
+// l'écran dédié (bucket Storage public « promos »).
+// ============================================================================
+
+class PromoCardConfig {
+  /// Slot utilisé par la carte « Guide CabaLink » sur l'écran de connexion.
+  static const String slotGuide = 'guide';
+
+  final String slot;
+  final String title;
+  final String subtitle;
+  final String ctaLabel;
+
+  /// URL publique de l'image de fond (bucket « promos »). Null → l'app
+  /// utilise l'asset par défaut (`assets/images/aa.png`).
+  final String? imageUrl;
+
+  /// Padding du contenu (gauche / haut / droite / bas) — modifiable depuis
+  /// l'écran fondateur pour repositionner le texte sur l'image.
+  final int paddingLeft;
+  final int paddingTop;
+  final int paddingRight;
+  final int paddingBottom;
+
+  final bool isActive;
+
+  const PromoCardConfig({
+    this.slot = slotGuide,
+    this.title = 'Guide CabaLink',
+    this.subtitle = 'Découvrez comment Utiliser CabaLink pour s\'enrichir',
+    this.ctaLabel = 'Lire le guide',
+    this.imageUrl,
+    this.paddingLeft = 175,
+    this.paddingTop = 25,
+    this.paddingRight = 20,
+    this.paddingBottom = 20,
+    this.isActive = true,
+  });
+
+  /// Configuration de repli : correspond exactement à l'ancienne carte codée
+  /// en dur (utilisée tant que la ligne Supabase est absente ou en erreur).
+  static const PromoCardConfig fallback = PromoCardConfig();
+
+  factory PromoCardConfig.fromJson(Map<String, dynamic> json) {
+    return PromoCardConfig(
+      slot: json['slot'] as String? ?? slotGuide,
+      title: json['title'] as String? ?? 'Guide CabaLink',
+      subtitle: json['subtitle'] as String? ??
+          'Découvrez comment Utiliser CabaLink pour s\'enrichir',
+      ctaLabel: json['cta_label'] as String? ?? 'Lire le guide',
+      imageUrl: json['image_url'] as String?,
+      paddingLeft: (json['padding_left'] as num?)?.toInt() ?? 175,
+      paddingTop: (json['padding_top'] as num?)?.toInt() ?? 25,
+      paddingRight: (json['padding_right'] as num?)?.toInt() ?? 20,
+      paddingBottom: (json['padding_bottom'] as num?)?.toInt() ?? 20,
+      isActive: json['is_active'] as bool? ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'slot': slot,
+      'title': title,
+      'subtitle': subtitle,
+      'cta_label': ctaLabel,
+      'image_url': imageUrl,
+      'padding_left': paddingLeft,
+      'padding_top': paddingTop,
+      'padding_right': paddingRight,
+      'padding_bottom': paddingBottom,
+      'is_active': isActive,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+  }
+
+  PromoCardConfig copyWith({
+    String? title,
+    String? subtitle,
+    String? ctaLabel,
+    String? imageUrl,
+    int? paddingLeft,
+    int? paddingTop,
+    int? paddingRight,
+    int? paddingBottom,
+    bool? isActive,
+  }) {
+    return PromoCardConfig(
+      slot: slot,
+      title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
+      ctaLabel: ctaLabel ?? this.ctaLabel,
+      imageUrl: imageUrl ?? this.imageUrl,
+      paddingLeft: paddingLeft ?? this.paddingLeft,
+      paddingTop: paddingTop ?? this.paddingTop,
+      paddingRight: paddingRight ?? this.paddingRight,
+      paddingBottom: paddingBottom ?? this.paddingBottom,
+      isActive: isActive ?? this.isActive,
+    );
+  }
+}

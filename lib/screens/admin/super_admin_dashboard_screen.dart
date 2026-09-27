@@ -22,6 +22,7 @@ import 'subscription_management_screen.dart';
 import 'subscription_packs_screen.dart';
 import 'forbidden_items_screen.dart';
 import 'shipper_type_finance_screen.dart';
+import 'promo_card_settings_screen.dart';
 
 /// Founder (super_admin) dashboard — accès total et contrôle de la plateforme :
 /// stats globales, gestion de tous les comptes (rôles, activation,
@@ -258,6 +259,10 @@ class _SuperAdminDashboardScreenState
                     child: _SectionTitle(title: 'Paramètres d\'affichage'),
                   ),
                   SliverToBoxAdapter(child: _DisplaySettingsShortcut()),
+                  SliverToBoxAdapter(
+                    child: _SectionTitle(title: 'Carte Guide CabaLink'),
+                  ),
+                  SliverToBoxAdapter(child: _PromoCardShortcut()),
                   SliverToBoxAdapter(
                     child: _SectionTitle(title: 'Zone de danger'),
                   ),
@@ -3508,6 +3513,42 @@ class _DisplaySettingsShortcut extends StatelessWidget {
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => const DisplaySettingsScreen(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// PROMO CARD SETTINGS SHORTCUT (carte « Guide CabaLink » — fondateur)
+// ============================================================================
+
+class _PromoCardShortcut extends StatelessWidget {
+  const _PromoCardShortcut();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMd),
+      child: GlassCard(
+        padding: EdgeInsets.zero,
+        child: ListTile(
+          leading: const AnimatedIconDot(
+            icon: Icons.stars_rounded,
+            color: AppTheme.accentColor,
+          ),
+          title: const Text('Personnaliser la carte promo'),
+          subtitle: const Text(
+            'Image de fond (bucket), textes et padding de l\'écran connexion',
+            style: AppTheme.caption,
+          ),
+          trailing: const Icon(Icons.chevron_right,
+              color: AppTheme.textSecondaryColor),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const PromoCardSettingsScreen(),
             ),
           ),
         ),
