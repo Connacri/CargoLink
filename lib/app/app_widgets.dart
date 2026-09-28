@@ -191,12 +191,12 @@ class _WebAndroidDownloadBannerState extends State<WebAndroidDownloadBanner> {
   }
 
   Future<void> _openApk() async {
-    final url = Uri.parse(AppConstants.androidApkUrl);
+    final url = Uri.parse(AppConstants.playStoreUrl);
     final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Impossible d\'ouvrir le lien de téléchargement'),
+          content: Text('Impossible d\'ouvrir le lien Google Play'),
         ),
       );
     }
